@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from .. import autocorr
+# from .. import autocorr
 from ..state import State
 
 __all__ = ["Backend"]
@@ -17,7 +17,17 @@ class Backend(object):
             dtype = np.float64
         self.dtype = dtype
 
-    def reset(self, nwalkers, ndim, ntemps=1, truth=None, branches=None):
+    def reset(
+        self,
+        nwalkers,
+        ndim_max,
+        nleaves_max=1,
+        ntemps=1,
+        truth=None,
+        nbranches=None,
+        ndim_list=None,
+        branch_names=None,
+    ):
         """Clear the state of the chain and empty the backend
 
         Args:
@@ -27,50 +37,31 @@ class Backend(object):
         """
         self.nwalkers = int(nwalkers)  # trees
         self.ntemps = int(ntemps)
+        self.nleaves_max = int(nleaves_max)
+        self.nbranches = int(nbranches)
+        self.ndim_max = ndim_max
 
-        # prepare branch information
-        if branches is not None:
-            if isinstance(branches, list):
-                self.nbranches = len(branches)
-            else:
-                raise ValueError("branches must be a list of strings.")
-
-            if not isinstance(ndim, list):
-                raise ValueError("If providing branches, ndim must be a list.")
-
-            self.branches = branches
-            self.ndim = ndim
-
-        else:
-            self.nbranches = 1
-            self.branches = ["model-1"]
-
-            if isinstance(ndim, list):
-                if len(ndim) > 1:
-                    raise ValueError(
-                        "If only using 1 branch, ndim must be an integer or a length-1 list."
-                    )
-
-                self.ndim = ndim
-
-            elif isinstance(ndim, int):
-                self.ndim = [ndim]
-
-            else:
-                raise ValueError(
-                    "ndim must be an integer with 1 branch or a length-1 list."
-                )
-
+        self.ndims = (
+            np.asarray(ndim_list)
+            if ndim_list is not None
+            else np.array([ndim_max], dtype=int)
+        )
         self.iteration = 0
         self.accepted = np.zeros((self.ntemps, self.nwalkers), dtype=self.dtype)
-        self.chain = {
-            branch: np.empty(
-                (0, self.ntemps, self.nwalkers, branch_ndim), dtype=self.dtype
-            )
-            for branch, branch_ndim in zip(self.branches, self.ndim)
-        }
+        self.chain = np.empty(
+            (
+                0,
+                self.ntemps,
+                self.nwalkers,
+                self.nbranches,
+                self.nleaves_max,
+                self.ndim_max,
+            ),
+            dtype=self.dtype,
+        )
         self.log_prob = np.empty((0, self.ntemps, self.nwalkers), dtype=self.dtype)
         self.blobs = None
+        self.betas = np.empty((0, self.ntemps, self.nwalkers), dtype=self.dtype)
         self.random_state = None
         self.initialized = True
 
@@ -147,6 +138,27 @@ class Backend(object):
         """
         return self.get_value("log_prob", **kwargs)
 
+    def get_betas(self, **kwargs):
+        """ TODO: this
+
+        TODO: make betas optional
+
+        Get the chain of log probabilities evaluated at the MCMC samples
+
+        Args:
+            flat (Optional[bool]): Flatten the chain across the ensemble.
+                (default: ``False``)
+            thin (Optional[int]): Take only every ``thin`` steps from the
+                chain. (default: ``1``)
+            discard (Optional[int]): Discard the first ``discard`` steps in
+                the chain as burn-in. (default: ``0``)
+
+        Returns:
+            array[..., nwalkers]: The chain of log probabilities.
+
+        """
+        return self.get_value("betas", **kwargs)
+
     def get_last_sample(self):
         """Access the most recent sample in the chain"""
         if (not self.initialized) or self.iteration <= 0:
@@ -166,7 +178,7 @@ class Backend(object):
             random_state=self.random_state,
         )
 
-    def get_autocorr_time(self, discard=0, thin=1, **kwargs):
+    def get_autocorr_time(self, discard=0, thin=1, all_temps=False, **kwargs):
         """Compute an estimate of the autocorrelation time for each parameter
 
         Args:
@@ -185,13 +197,22 @@ class Backend(object):
                 chain for each parameter.
 
         """
-        x = self.get_chain(discard=discard, thin=thin)
+        ind = self.ntemps if all_temps else 1
+        x = self.get_chain(discard=discard, thin=thin)[:, :ind]
+
+        # TODO: fix this
         return thin * autocorr.integrated_time(x, **kwargs)
 
     @property
     def shape(self):
-        """The dimensions of the ensemble ``(nwalkers, ndim)``"""
-        return self.ntemps, self.nwalkers, self.ndim
+        """The dimensions of the ensemble ``(ntemps, nwalkers, ndim)``"""
+        return (
+            self.ntemps,
+            self.nwalkers,
+            self.nbranches,
+            self.nleaves_max,
+            self.ndim_max,
+        )
 
     def _check_blobs(self, blobs):
         has_blobs = self.has_blobs()
@@ -211,13 +232,26 @@ class Backend(object):
         """
         self._check_blobs(blobs)
         i = ngrow - (len(self.chain) - self.iteration)
-        a = np.empty((i, self.nwalkers, self.ndim), dtype=self.dtype)
+        a = np.empty(
+            (
+                i,
+                self.ntemps,
+                self.nwalkers,
+                self.nbranches,
+                self.nleaves_max,
+                self.ndim_max,
+            ),
+            dtype=self.dtype,
+        )
         self.chain = np.concatenate((self.chain, a), axis=0)
-        a = np.empty((i, self.nwalkers), dtype=self.dtype)
+        a = np.empty((i, self.ntemps, self.nwalkers), dtype=self.dtype)
         self.log_prob = np.concatenate((self.log_prob, a), axis=0)
+        a = np.empty((i, self.ntemps, self.nwalkers), dtype=self.dtype)
+        self.betas = np.concatenate((self.betas, a), axis=0)
+
         if blobs is not None:
-            dt = np.dtype((blobs.dtype, blobs.shape[1:]))
-            a = np.empty((i, self.nwalkers), dtype=dt)
+            dt = np.dtype((blobs.dtype, blobs.shape[2:]))
+            a = np.empty((i, self.ntemps, self.nwalkers), dtype=dt)
             if self.blobs is None:
                 self.blobs = a
             else:
@@ -225,24 +259,30 @@ class Backend(object):
 
     def _check(self, state, accepted):
         self._check_blobs(state.blobs)
-        nwalkers, ndim = self.shape
+        ntemps, nwalkers, nbranches, nleaves_max, ndim_max = self.shape
         has_blobs = self.has_blobs()
-        if state.coords.shape != (nwalkers, ndim):
+        if state.coords.shape != (ntemps, nwalkers, nbranches, nleaves_max, ndim_max):
             raise ValueError(
-                "invalid coordinate dimensions; expected {0}".format((nwalkers, ndim))
+                "invalid coordinate dimensions; expected {0}".format(
+                    (ntemps, nwalkers, nbranches, nleaves_max, ndim_max)
+                )
             )
-        if state.log_prob.shape != (nwalkers,):
+        if state.log_prob.shape != (ntemps, nwalkers,):
             raise ValueError(
-                "invalid log probability size; expected {0}".format(nwalkers)
+                "invalid log probability size; expected {0}".format(ntemps, nwalkers)
             )
         if state.blobs is not None and not has_blobs:
             raise ValueError("unexpected blobs")
         if state.blobs is None and has_blobs:
             raise ValueError("expected blobs, but none were given")
-        if state.blobs is not None and len(state.blobs) != nwalkers:
-            raise ValueError("invalid blobs size; expected {0}".format(nwalkers))
-        if accepted.shape != (nwalkers,):
-            raise ValueError("invalid acceptance size; expected {0}".format(nwalkers))
+        if state.blobs is not None and state.blobs.shape[:2] != (ntemps, nwalkers):
+            raise ValueError(
+                "invalid blobs size; expected {0}".format(ntemps, nwalkers)
+            )
+        if accepted.shape != (ntemps, nwalkers,):
+            raise ValueError(
+                "invalid acceptance size; expected {0}".format(ntemps, nwalkers)
+            )
 
     def save_step(self, state, accepted):
         """Save a step to the backend
@@ -255,10 +295,13 @@ class Backend(object):
         """
         self._check(state, accepted)
 
-        self.chain[self.iteration, :, :] = state.coords
-        self.log_prob[self.iteration, :] = state.log_prob
+        self.chain[self.iteration, :, :, :, :, :] = state.coords
+        self.log_prob[self.iteration, :, :] = state.log_prob
         if state.blobs is not None:
             self.blobs[self.iteration, :] = state.blobs
+        if state.betas is not None:
+            self.betas[self.iteration, :] = state.betas
+
         self.accepted += accepted
         self.random_state = state.random_state
         self.iteration += 1
