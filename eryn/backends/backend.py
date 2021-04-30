@@ -18,15 +18,7 @@ class Backend(object):
         self.dtype = dtype
 
     def reset(
-        self,
-        nwalkers,
-        ndim_max,
-        nleaves_max=1,
-        ntemps=1,
-        truth=None,
-        nbranches=None,
-        ndim_list=None,
-        branch_names=None,
+        self, nwalkers, ndims, nleaves_max=1, ntemps=1, truth=None, branch_names=None
     ):
         """Clear the state of the chain and empty the backend
 
@@ -37,28 +29,59 @@ class Backend(object):
         """
         self.nwalkers = int(nwalkers)  # trees
         self.ntemps = int(ntemps)
-        self.nleaves_max = int(nleaves_max)
-        self.nbranches = int(nbranches)
-        self.ndim_max = ndim_max
 
-        self.ndims = (
-            np.asarray(ndim_list)
-            if ndim_list is not None
-            else np.array([ndim_max], dtype=int)
-        )
+        if isinstance(ndims, int):
+            self.ndims = np.array([ndims])
+        elif isinstance(ndims, list) or isinstance(ndims, np.ndarray):
+            self.ndims = np.asarray(ndims)
+        else:
+            raise ValueError("ndims is to be a scalar int or a list.")
+
+        if isinstance(nleaves_max, int):
+            self.nleaves_max = np.array([nleaves_max])
+        elif isinstance(nleaves_max, list) or isinstance(nleaves_max, np.ndarray):
+            self.nleaves_max = np.asarray(nleaves_max)
+        else:
+            raise ValueError("nleaves_max is to be a scalar int or a list.")
+
+        if len(self.nleaves_max) != len(self.ndims):
+            raise ValueError(
+                "Number of branches indicated by nleaves_max and ndims are not equivalent (nleaves_max: {}, ndims: {}).".format(
+                    len(self.nleaves_max), len(self.ndims)
+                )
+            )
+
+        self.nbranches = len(self.nleaves_max)
+        if branch_names is not None:
+            if isinstance(branch_names, str):
+                branch_names = [branch_names]
+
+            elif not isinstance(branch_names, list):
+                raise ValueError("branch_names must be string or list of strings.")
+
+            elif len(branch_names) != self.nbranches:
+                raise ValueError(
+                    "Number of branches indicated by nleaves_max and branch_names are not equivalent (nleaves_max: {}, branch_names: {}).".format(
+                        len(self.nleaves_max), len(branch_names)
+                    )
+                )
+
+        else:
+            branch_names = ["model_{}".format(i) for i in range(self.nbranches)]
+
+        self.branch_names = branch_names
+
         self.iteration = 0
         self.accepted = np.zeros((self.ntemps, self.nwalkers), dtype=self.dtype)
-        self.chain = np.empty(
-            (
-                0,
-                self.ntemps,
-                self.nwalkers,
-                self.nbranches,
-                self.nleaves_max,
-                self.ndim_max,
-            ),
-            dtype=self.dtype,
-        )
+
+        self.chain = {
+            name: np.empty(
+                (0, self.ntemps, self.nwalkers, nleaves, ndim), dtype=self.dtype
+            )
+            for name, nleaves, ndim in zip(
+                self.branch_names, self.nleaves_max, self.ndims
+            )
+        }
         self.log_prob = np.empty((0, self.ntemps, self.nwalkers), dtype=self.dtype)
         self.blobs = None
         self.betas = np.empty((0, self.ntemps, self.nwalkers), dtype=self.dtype)
@@ -79,6 +102,21 @@ class Backend(object):
 
         if name == "blobs" and not self.has_blobs():
             return None
+
+        if name == "chain":
+            v_all = {
+                key: self.chain[key][discard + thin - 1 : self.iteration : thin]
+                for key in self.chain
+            }
+            if flat:
+                v_out = {}
+                for key, v in v_all.items():
+                    s = list(v.shape[1:])
+                    s[0] = np.prod(v.shape[:2])
+                    v.reshape(s)
+                    v_out[key] = v
+                return v_out
+            return v_all
 
         v = getattr(self, name)[discard + thin - 1 : self.iteration : thin]
         if flat:
@@ -206,13 +244,12 @@ class Backend(object):
     @property
     def shape(self):
         """The dimensions of the ensemble ``(ntemps, nwalkers, ndim)``"""
-        return (
-            self.ntemps,
-            self.nwalkers,
-            self.nbranches,
-            self.nleaves_max,
-            self.ndim_max,
-        )
+        return {
+            key: (self.ntemps, self.nwalkers, nleaves, ndim)
+            for key, nleaves, ndim in zip(
+                self.branch_names, self.nleaves_max, self.ndims
+            )
+        }
 
     def _check_blobs(self, blobs):
         has_blobs = self.has_blobs()
@@ -231,19 +268,25 @@ class Backend(object):
 
         """
         self._check_blobs(blobs)
-        i = ngrow - (len(self.chain) - self.iteration)
-        a = np.empty(
-            (
-                i,
-                self.ntemps,
-                self.nwalkers,
-                self.nbranches,
-                self.nleaves_max,
-                self.ndim_max,
-            ),
-            dtype=self.dtype,
-        )
-        self.chain = np.concatenate((self.chain, a), axis=0)
+
+        i = ngrow - (len(self.chain[list(self.chain.keys())[0]]) - self.iteration)
+        {
+            key: (self.ntemps, self.nwalkers, nleaves, ndim)
+            for key, nleaves, ndim in zip(
+                self.branch_names, self.nleaves_max, self.ndims
+            )
+        }
+        a = {
+            key: np.empty(
+                (i, self.ntemps, self.nwalkers, nleaves, ndim), dtype=self.dtype
+            )
+            for key, nleaves, ndim in zip(
+                self.branch_names, self.nleaves_max, self.ndims
+            )
+        }
+        self.chain = {
+            key: np.concatenate((self.chain[key], a[key]), axis=0) for key in a
+        }
         a = np.empty((i, self.ntemps, self.nwalkers), dtype=self.dtype)
         self.log_prob = np.concatenate((self.log_prob, a), axis=0)
         a = np.empty((i, self.ntemps, self.nwalkers), dtype=self.dtype)
@@ -259,14 +302,24 @@ class Backend(object):
 
     def _check(self, state, accepted):
         self._check_blobs(state.blobs)
-        ntemps, nwalkers, nbranches, nleaves_max, ndim_max = self.shape
+        shapes = self.shape
         has_blobs = self.has_blobs()
-        if state.coords.shape != (ntemps, nwalkers, nbranches, nleaves_max, ndim_max):
-            raise ValueError(
-                "invalid coordinate dimensions; expected {0}".format(
-                    (ntemps, nwalkers, nbranches, nleaves_max, ndim_max)
+
+        ntemps, nwalkers = self.ntemps, self.nwalkers
+        for key, shape in shapes.items():
+            ntemp1, nwalker1, nleaves1, ndim1 = state.branches[key].shape
+            ntemp2, nwalker2, nleaves2, ndim2 = shape
+
+            if (ntemp1, nwalker1, ndim1) != (
+                ntemp2,
+                nwalker2,
+                ndim2,
+            ) or nleaves1 > nleaves2:
+                raise ValueError(
+                    "invalid coordinate dimensions for model {1} with shape {2}; expected {0}".format(
+                        shape, key, state.branches[key].shape
+                    )
                 )
-            )
         if state.log_prob.shape != (ntemps, nwalkers,):
             raise ValueError(
                 "invalid log probability size; expected {0}".format(ntemps, nwalkers)
@@ -295,7 +348,13 @@ class Backend(object):
         """
         self._check(state, accepted)
 
-        self.chain[self.iteration, :, :, :, :, :] = state.coords
+        for key, model in state.branches.items():
+            inds = np.array([[np.array([model.inds]).T]])
+            # add to chain along axis
+            np.put_along_axis(
+                self.chain[key][self.iteration], inds, model.coords, axis=2
+            )
+
         self.log_prob[self.iteration, :, :] = state.log_prob
         if state.blobs is not None:
             self.blobs[self.iteration, :] = state.blobs
