@@ -29,15 +29,22 @@ def atleast_5d(x):
 class Branch(object):
     def __init__(self, coords, inds=None):
         self.coords = coords
-        self.ntemps, self.ntrees, self.nleaves, self.ndim = coords.shape
+        self.ntemps, self.ntrees, self.nleaves_max, self.ndim = coords.shape
         self.shape = coords.shape
 
         if inds is None:
-            self.inds = np.arange(self.nleaves)
+            self.inds = np.full((self.ntemps, self.ntrees, self.nleaves_max), True)
         elif not isinstance(inds, np.ndarray):
             raise ValueError("inds must be np.ndarray in Branch.")
+        elif inds.shape != (self.ntemps, self.ntrees, self.nleaves_max):
+            raise ValueError("inds has wrong shape.")
         else:
             self.inds = inds
+
+        self.nleaves = np.sum(self.inds, axis=-1)
+
+        if np.any(self.nleaves <= 0):
+            raise ValueError("Number of leaves <= 0 not allowed.")
 
 
 class State(object):
@@ -58,12 +65,13 @@ class State(object):
             generator.
     """
 
-    __slots__ = "branches", "log_prob", "blobs", "betas", "random_state"
+    __slots__ = "branches", "log_prob", "log_prior", "blobs", "betas", "random_state"
 
     def __init__(
         self,
         coords,
         log_prob=None,
+        log_prior=None,
         blobs=None,
         random_state=None,
         betas=None,
@@ -75,6 +83,7 @@ class State(object):
         if hasattr(coords, "branches"):
             self.branches = dc(coords.branches)
             self.log_prob = dc(coords.log_prob)
+            self.log_prior = dc(coords.log_prior)
             self.blobs = dc(coords.blobs)
             self.betas = dc(coords.betas)
             self.random_state = dc(coords.random_state)
@@ -90,8 +99,9 @@ class State(object):
             for key, temp_coords in coords.items()
         }
         self.log_prob = dc(np.atleast_2d(log_prob)) if log_prob is not None else None
+        self.log_prior = dc(np.atleast_2d(log_prior)) if log_prior is not None else None
         self.blobs = dc(np.atleast_3d(blobs)) if blobs is not None else None
-        self.betas = dc(np.atleast_2d(betas)) if betas is not None else None
+        self.betas = dc(np.atleast_1d(betas)) if betas is not None else None
         self.random_state = dc(random_state)
 
     def __repr__(self):

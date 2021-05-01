@@ -83,8 +83,13 @@ class Backend(object):
             )
         }
         self.log_prob = np.empty((0, self.ntemps, self.nwalkers), dtype=self.dtype)
+        self.log_prior = np.empty((0, self.ntemps, self.nwalkers), dtype=self.dtype)
+        self.inds = {
+            name: np.empty((0, self.ntemps, self.nwalkers, nleaves), dtype=self.dtype)
+            for name, nleaves in zip(self.branch_names, self.nleaves_max)
+        }
         self.blobs = None
-        self.betas = np.empty((0, self.ntemps, self.nwalkers), dtype=self.dtype)
+        self.betas = np.empty((0, self.ntemps), dtype=self.dtype)
         self.random_state = None
         self.initialized = True
 
@@ -106,6 +111,21 @@ class Backend(object):
         if name == "chain":
             v_all = {
                 key: self.chain[key][discard + thin - 1 : self.iteration : thin]
+                for key in self.chain
+            }
+            if flat:
+                v_out = {}
+                for key, v in v_all.items():
+                    s = list(v.shape[1:])
+                    s[0] = np.prod(v.shape[:2])
+                    v.reshape(s)
+                    v_out[key] = v
+                return v_out
+            return v_all
+
+        if name == "inds":
+            v_all = {
+                key: self.inds[key][discard + thin - 1 : self.iteration : thin]
                 for key in self.chain
             }
             if flat:
@@ -142,6 +162,24 @@ class Backend(object):
         """
         return self.get_value("chain", **kwargs)
 
+    def get_inds(self, **kwargs):
+        """Get the stored chain of MCMC samples
+
+        Args:
+            flat (Optional[bool]): Flatten the chain across the ensemble.
+                (default: ``False``)
+            thin (Optional[int]): Take only every ``thin`` steps from the
+                chain. (default: ``1``)
+            discard (Optional[int]): Discard the first ``discard`` steps in
+                the chain as burn-in. (default: ``0``)
+
+        Returns:
+            array[..., nwalkers, ndim]: The MCMC samples.
+
+        """
+        # TODO: add get nleaves based on inds
+        return self.get_value("inds", **kwargs)
+
     def get_blobs(self, **kwargs):
         """Get the chain of blobs for each sample in the chain
 
@@ -175,6 +213,23 @@ class Backend(object):
 
         """
         return self.get_value("log_prob", **kwargs)
+
+    def get_log_prior(self, **kwargs):
+        """Get the chain of log probabilities evaluated at the MCMC samples
+
+        Args:
+            flat (Optional[bool]): Flatten the chain across the ensemble.
+                (default: ``False``)
+            thin (Optional[int]): Take only every ``thin`` steps from the
+                chain. (default: ``1``)
+            discard (Optional[int]): Discard the first ``discard`` steps in
+                the chain as burn-in. (default: ``0``)
+
+        Returns:
+            array[..., nwalkers]: The chain of log probabilities.
+
+        """
+        return self.get_value("log_prior", **kwargs)
 
     def get_betas(self, **kwargs):
         """ TODO: this
@@ -212,6 +267,8 @@ class Backend(object):
         return State(
             self.get_chain(discard=it - 1)[0],
             log_prob=self.get_log_prob(discard=it - 1)[0],
+            log_prior=self.get_log_prior(discard=it - 1)[0],
+            inds=self.get_inds(discard=it - 1)[0],
             blobs=blobs,
             random_state=self.random_state,
         )
@@ -287,9 +344,16 @@ class Backend(object):
         self.chain = {
             key: np.concatenate((self.chain[key], a[key]), axis=0) for key in a
         }
+        a = {
+            key: np.empty((i, self.ntemps, self.nwalkers, nleaves), dtype=self.dtype)
+            for key, nleaves in zip(self.branch_names, self.nleaves_max)
+        }
+        self.inds = {key: np.concatenate((self.inds[key], a[key]), axis=0) for key in a}
         a = np.empty((i, self.ntemps, self.nwalkers), dtype=self.dtype)
         self.log_prob = np.concatenate((self.log_prob, a), axis=0)
         a = np.empty((i, self.ntemps, self.nwalkers), dtype=self.dtype)
+        self.log_prior = np.concatenate((self.log_prior, a), axis=0)
+        a = np.empty((i, self.ntemps), dtype=self.dtype)
         self.betas = np.concatenate((self.betas, a), axis=0)
 
         if blobs is not None:
@@ -320,9 +384,23 @@ class Backend(object):
                         shape, key, state.branches[key].shape
                     )
                 )
+
+            if (ntemp1, nwalker1, nleaves1) != state.branches[key].inds.shape:
+                raise ValueError(
+                    "invalid inds dimensions for model {1} with shape {2}; expected {0}".format(
+                        (ntemp1, nwalker1, nleaves1),
+                        key,
+                        state.branches[key].inds.shape,
+                    )
+                )
+
         if state.log_prob.shape != (ntemps, nwalkers,):
             raise ValueError(
                 "invalid log probability size; expected {0}".format(ntemps, nwalkers)
+            )
+        if state.log_prior.shape != (ntemps, nwalkers,):
+            raise ValueError(
+                "invalid log prior size; expected {0}".format(ntemps, nwalkers)
             )
         if state.blobs is not None and not has_blobs:
             raise ValueError("unexpected blobs")
@@ -349,13 +427,15 @@ class Backend(object):
         self._check(state, accepted)
 
         for key, model in state.branches.items():
-            inds = np.array([[np.array([model.inds]).T]])
-            # add to chain along axis
-            np.put_along_axis(
-                self.chain[key][self.iteration], inds, model.coords, axis=2
-            )
+            self.inds[key][self.iteration] = model.inds
+            # TODO: how do we want to store final info
+            # right now is leaves zeros in unsed leaves
+            # state retains old coordinates
+            coords_in = model.coords * model.inds[:, :, :, None]
+            self.chain[key][self.iteration] = coords_in
 
         self.log_prob[self.iteration, :, :] = state.log_prob
+        self.log_prior[self.iteration, :, :] = state.log_prior
         if state.blobs is not None:
             self.blobs[self.iteration, :] = state.blobs
         if state.betas is not None:
