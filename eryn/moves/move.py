@@ -40,15 +40,18 @@ class Move(object):
 
         """
         if subset is None:
-            subset = np.ones(len(old_state.coords), dtype=bool)
+            subset = np.tile(
+                np.arange(old_state.log_prob.shape[1]), (old_state.log_prob.shape[0], 1)
+            )
 
         accepted_temp = np.take_along_axis(accepted, subset, axis=1)
 
         old_log_probs = np.take_along_axis(old_state.log_prob, subset, axis=1)
         new_log_probs = new_state.log_prob
-        temp_change_log_prob = (
-            new_log_probs * (accepted_temp) + old_log_probs + (~accepted_temp)
+        temp_change_log_prob = new_log_probs * (accepted_temp) + old_log_probs * (
+            ~accepted_temp
         )
+
         np.put_along_axis(old_state.log_prob, subset, temp_change_log_prob, axis=1)
 
         old_log_priors = np.take_along_axis(old_state.log_prior, subset, axis=1)

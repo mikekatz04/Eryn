@@ -23,14 +23,18 @@ class StretchMove(RedBlueMove):
         self.a = a
         super(StretchMove, self).__init__(**kwargs)
 
-    def get_proposal(self, s_all, c_all, random):
+    def get_proposal(self, s_all, c_all, random, inds=None):
         newpos = {}
         for i, name in enumerate(s_all):
             c = c_all[name]
             s = s_all[name]
             c = np.concatenate(c, axis=0)
             Ns, Nc = len(s), len(c)
-            ndim_temp = s.astype(bool).sum(axis=(1, 2))
+            # gets rid of any values of exactly zero
+            if inds is None:
+                ndim_temp = s_all[name].shape[-1] * s_all[name].shape[-2]
+            else:
+                ndim_temp = inds[name].sum(axis=(1)) * s_all[name].shape[-1]
             if i == 0:
                 ndim = ndim_temp
                 Ns_check = Ns

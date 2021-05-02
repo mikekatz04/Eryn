@@ -10,6 +10,7 @@ from .red_blue import RedBlueMove
 from .stretch import StretchMove
 from .walk import WalkMove
 from .tempering import TemperatureControl
+from .rj import ReversibleJump
 
 __all__ = [
     "Move",

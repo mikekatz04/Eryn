@@ -97,7 +97,6 @@ class RedBlueMove(Move):
                 sets = {
                     key: [
                         state.branches[key].coords[t, inds[t] == j]
-                        * state.branches[key].inds[t, inds[t] == j][:, :, None]
                         for j in range(self.nsplits)
                     ]
                     for key in state.branches
@@ -106,7 +105,13 @@ class RedBlueMove(Move):
                 c = {key: sets[key][:split] + sets[key][split + 1 :] for key in sets}
 
                 # Get the move-specific proposal.
-                q_temp, factors_temp = self.get_proposal(s, c, model.random)
+                temp_inds = {
+                    name: state.branches_inds[name][t, inds[t] == split]
+                    for name in state.branches_inds
+                }
+                q_temp, factors_temp = self.get_proposal(
+                    s, c, model.random, inds=temp_inds
+                )
                 for name in q:
                     q[name][t] = q_temp[name]
 
@@ -120,6 +125,21 @@ class RedBlueMove(Move):
                 )
                 for name in state.branches
             }
+            temp_coords = {
+                name: np.take_along_axis(
+                    state.branches[name].coords,
+                    all_inds_shaped[:, :, None, None],
+                    axis=1,
+                )
+                for name in state.branches
+            }
+
+            # fix values in q that are not actually being teseted here
+            for name in q:
+                q[name] = q[name] * (new_inds[name][:, :, :, None]) + temp_coords[
+                    name
+                ] * (~new_inds[name][:, :, :, None])
+
             # Compute prior of the proposed position
             logp = model.compute_log_prior_fn(q, inds=new_inds)
             # Compute the lnprobs of the proposed position.
@@ -146,6 +166,7 @@ class RedBlueMove(Move):
             new_state = State(
                 q, log_prob=logl, log_prior=logp, blobs=new_blobs, inds=new_inds
             )
+
             state = self.update(state, new_state, accepted, subset=all_inds_shaped)
 
         if self.temperature_control is not None:
