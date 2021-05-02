@@ -104,6 +104,14 @@ class State(object):
         self.betas = dc(np.atleast_1d(betas)) if betas is not None else None
         self.random_state = dc(random_state)
 
+    @property
+    def branches_inds(self):
+        return {name: branch.inds for name, branch in self.branches.items()}
+
+    @property
+    def branches_coords(self):
+        return {name: branch.coords for name, branch in self.branches.items()}
+
     def __repr__(self):
         return "State({0}, log_prob={1}, blobs={2}, betas={3}, random_state={4})".format(
             self.coords, self.log_prob, self.blobs, self.betas, self.random_state
