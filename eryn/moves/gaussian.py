@@ -31,32 +31,52 @@ class GaussianMove(MHMove):
 
     """
 
-    def __init__(self, cov, mode="vector", factor=None):
-        # Parse the proposal type.
-        try:
-            float(cov)
+    def __init__(self, cov_all, mode="vector", factor=None, **kwargs):
 
-        except TypeError:
-            cov = np.atleast_1d(cov)
-            if len(cov.shape) == 1:
-                # A diagonal proposal was given.
-                ndim = len(cov)
-                proposal = _diagonal_proposal(np.sqrt(cov), factor, mode)
+        self.all_proposal = {}
+        for name, cov in cov_all.items():
+            # Parse the proposal type.
+            try:
+                float(cov)
 
-            elif len(cov.shape) == 2 and cov.shape[0] == cov.shape[1]:
-                # The full, square covariance matrix was given.
-                ndim = cov.shape[0]
-                proposal = _proposal(cov, factor, mode)
+            except TypeError:
+                cov = np.atleast_1d(cov)
+                if len(cov.shape) == 1:
+                    # A diagonal proposal was given.
+                    ndim = len(cov)
+                    proposal = _diagonal_proposal(np.sqrt(cov), factor, mode)
+
+                elif len(cov.shape) == 2 and cov.shape[0] == cov.shape[1]:
+                    # The full, square covariance matrix was given.
+                    ndim = cov.shape[0]
+                    proposal = _proposal(cov, factor, mode)
+
+                else:
+                    raise ValueError("Invalid proposal scale dimensions")
 
             else:
-                raise ValueError("Invalid proposal scale dimensions")
+                # This was a scalar proposal.
+                ndim = None
+                proposal = _isotropic_proposal(np.sqrt(cov), factor, mode)
+            self.all_proposal[name] = proposal
 
-        else:
-            # This was a scalar proposal.
-            ndim = None
-            proposal = _isotropic_proposal(np.sqrt(cov), factor, mode)
+        super(GaussianMove, self).__init__(ndim=ndim, **kwargs)
 
-        super(GaussianMove, self).__init__(proposal, ndim=ndim)
+    def get_proposal(self, branches_coords, branches_inds, random):
+
+        q = {}
+        for name, coords, inds in zip(
+            branches_coords.keys(), branches_coords.values(), branches_inds.values()
+        ):
+            ntemps, nwalkers, _, _ = coords.shape
+            proposal_fn = self.all_proposal[name]
+            inds_here = np.where(inds == True)
+
+            q[name] = coords.copy()
+            new_coords, _ = proposal_fn(coords[inds_here], random)
+            q[name][inds_here] = new_coords.copy()
+
+        return q, np.zeros((ntemps, nwalkers))
 
 
 class _isotropic_proposal(object):
@@ -75,10 +95,9 @@ class _isotropic_proposal(object):
 
         if mode not in self.allowed_modes:
             raise ValueError(
-                (
-                    "'{0}' is not a recognized mode. "
-                    "Please select from: {1}"
-                ).format(mode, self.allowed_modes)
+                ("'{0}' is not a recognized mode. " "Please select from: {1}").format(
+                    mode, self.allowed_modes
+                )
             )
         self.mode = mode
 
@@ -116,5 +135,5 @@ class _proposal(_isotropic_proposal):
 
     def get_updated_vector(self, rng, x0):
         return x0 + self.get_factor(rng) * rng.multivariate_normal(
-            np.zeros(len(self.scale)), self.scale
+            np.zeros(len(self.scale)), self.scale, size=len(x0)
         )

@@ -177,8 +177,26 @@ class Backend(object):
             array[..., nwalkers, ndim]: The MCMC samples.
 
         """
-        # TODO: add get nleaves based on inds
         return self.get_value("inds", **kwargs)
+
+    def get_nleaves(self, **kwargs):
+        """Get the stored chain of MCMC samples
+
+        Args:
+            flat (Optional[bool]): Flatten the chain across the ensemble.
+                (default: ``False``)
+            thin (Optional[int]): Take only every ``thin`` steps from the
+                chain. (default: ``1``)
+            discard (Optional[int]): Discard the first ``discard`` steps in
+                the chain as burn-in. (default: ``0``)
+
+        Returns:
+            array[..., nwalkers, ndim]: The MCMC samples.
+
+        """
+        inds = self.get_value("inds", **kwargs)
+        nleaves = {name: np.sum(inds[name], axis=-1, dtype=int) for name in inds}
+        return nleaves
 
     def get_blobs(self, **kwargs):
         """Get the chain of blobs for each sample in the chain

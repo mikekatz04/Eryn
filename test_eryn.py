@@ -186,6 +186,9 @@ backend.reset(
     branch_names=branch_names,
 )
 
+factor = 0.01
+cov = {"gauss": np.diag(np.ones(3)) * factor, "sine": np.diag(np.ones(2)) * factor}
+
 # backend.grow(100, blobs)
 
 ensemble = EnsembleSampler(
@@ -198,9 +201,11 @@ ensemble = EnsembleSampler(
     nbranches=len(branch_names),
     branch_names=branch_names,
     nleaves_max=nleaves_max,
+    cov=cov,
 )
 
-nsteps = 1000
-ensemble.run_mcmc(state, nsteps, progress=True)
+nsteps = 100000
+ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin=5)
 
+testing = ensemble.get_nleaves()
 breakpoint()

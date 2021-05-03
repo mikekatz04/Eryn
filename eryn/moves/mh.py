@@ -28,9 +28,13 @@ class MHMove(Move):
 
     """
 
-    def __init__(self, proposal_function, ndim=None):
+    def __init__(self, ndim=None, **kwargs):
+
+        super(MHMove, self).__init__(**kwargs)
         self.ndim = ndim
-        self.get_proposal = proposal_function
+
+    def get_proposal(self, sample, complement, random):
+        raise NotImplementedError("The proposal must be implemented by " "subclasses")
 
     def propose(self, model, state):
         """Use the move to generate a proposal and compute the acceptance
@@ -44,22 +48,41 @@ class MHMove(Move):
 
         """
         # Check to make sure that the dimensions match.
-        nwalkers, ndim = state.coords.shape
-        if self.ndim is not None and self.ndim != ndim:
-            raise ValueError("Dimension mismatch in proposal")
+        ntemps, nwalkers, _, _ = state.branches[list(state.branches.keys())[0]].shape
+        # if self.ndim is not None and self.ndim != ndim:
+        #    raise ValueError("Dimension mismatch in proposal")
 
         # Get the move-specific proposal.
-        q, factors = self.get_proposal(state.coords, model.random)
+        q, factors = self.get_proposal(
+            state.branches_coords, state.branches_inds, model.random
+        )
 
+        # Compute prior of the proposed position
+        logp = model.compute_log_prior_fn(q, inds=state.branches_inds)
         # Compute the lnprobs of the proposed position.
-        new_log_probs, new_blobs = model.compute_log_prob_fn(q)
+        logl, new_blobs = model.compute_log_prob_fn(q, inds=state.branches_inds)
 
-        # Loop over the walkers and update them accordingly.
-        lnpdiff = new_log_probs - state.log_prob + factors
-        accepted = np.log(model.random.rand(nwalkers)) < lnpdiff
+        logP = self.compute_log_posterior(logl, logp)
+
+        prev_logl = state.log_prob
+
+        prev_logp = state.log_prior
+
+        # TODO: check about prior = - inf
+        # takes care of tempering
+        prev_logP = self.compute_log_posterior(prev_logl, prev_logp)
+
+        lnpdiff = factors + logP - prev_logP
+
+        accepted = lnpdiff > np.log(model.random.rand(ntemps, nwalkers))
 
         # Update the parameters
-        new_state = State(q, log_prob=new_log_probs, blobs=new_blobs)
+        new_state = State(
+            q, log_prob=logl, log_prior=logp, blobs=new_blobs, inds=state.branches_inds
+        )
         state = self.update(state, new_state, accepted)
+
+        if self.temperature_control is not None:
+            state, accepted = self.temperature_control.temper_comps(state, accepted)
 
         return state, accepted
