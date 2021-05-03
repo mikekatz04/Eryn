@@ -83,13 +83,10 @@ class ReversibleJump(Move):
             move.tune(state, accepted)
 
         # TODO: do we want an probability that the model count will not change?
-        new_inds = {}
-        q = {}
+        inds_for_change = {}
         for (name, branch), min_k, max_k in zip(
             state.branches.items(), self.min_k, self.max_k
         ):
-            new_inds[name] = branch.inds.copy()
-            q[name] = branch.coords.copy()
             nleaves = branch.nleaves
             change = model.random.choice([-1, +1], size=nleaves.shape)
 
@@ -99,7 +96,15 @@ class ReversibleJump(Move):
                 + (-1) * (nleaves == max_k)
             )
 
+            inds_for_change[name] = {}
+            num_increases = np.sum(change == +1)
+            inds_for_change[name]["+1"] = np.zeros((num_increases, 3), dtype=int)
+            num_decreases = np.sum(change == -1)
+            inds_for_change[name]["-1"] = np.zeros((num_decreases, 3), dtype=int)
+
             # TODO: not loop ? Is it necessary?
+            increase_i = 0
+            decrease_i = 0
             for t in range(ntemps):
                 for w in range(nwalkers):
                     change_tw = change[t][w]
@@ -108,7 +113,10 @@ class ReversibleJump(Move):
                     if change_tw == +1:
                         inds_false = np.where(inds_tw == False)[0]
                         ind_change = model.random.choice(inds_false)
-                        new_inds[name][t, w, ind_change] = True
+                        inds_for_change[name]["+1"][increase_i] = np.array(
+                            [t, w, ind_change], dtype=int
+                        )
+                        increase_i += 1
 
                         # TODO: change this so we can actually generate new coords rather than reuse old standing coords
                         # q[name][t, w, ind_change, :] = branch.coords[
@@ -119,8 +127,15 @@ class ReversibleJump(Move):
                         # change_tw == -1
                         inds_true = np.where(inds_tw == True)[0]
                         ind_change = model.random.choice(inds_true)
-                        new_inds[name][t, w, ind_change] = False
+                        inds_for_change[name]["-1"][decrease_i] = np.array(
+                            [t, w, ind_change], dtype=int
+                        )
+                        decrease_i += 1
                         # do not care currently about what we do with discarded coords, they just sit in the state
+
+        q, new_inds, factors = self.get_proposal(
+            state.branches_coords, state.branches_inds, inds_for_change, model.random,
+        )
 
         # Compute prior of the proposed position
         logp = model.compute_log_prior_fn(q, inds=new_inds)
@@ -139,7 +154,6 @@ class ReversibleJump(Move):
 
         # TODO: fix this
         # this is where _metropolisk should come in
-        factors = np.zeros_like(logP)
         lnpdiff = factors + logP - prev_logP
 
         accepted = lnpdiff > np.log(model.random.rand(ntemps, nwalkers))
