@@ -78,7 +78,7 @@ def log_prob_fn(
 
         template[i] += gauss_out[inds1].sum(axis=0) + sine_out[inds2].sum(axis=0)
 
-    ll = -np.sum((template - data) ** 2 / data ** 2, axis=-1) / len(t)
+    ll = -np.sum((template - data) ** 2 / data ** 2, axis=-1)  # /np.sqrt(len(t))
     return ll
 
 
@@ -204,8 +204,22 @@ ensemble = EnsembleSampler(
     cov=cov,
 )
 
-nsteps = 100000
+nsteps = 10000
 ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin=5)
 
 testing = ensemble.get_nleaves()
+
+import matplotlib.pyplot as plt
+
+check = ensemble.get_chain()["sine"][:, 0, :, :, 1].flatten()
+check = check[check != 0.0]
+plt.hist(check, bins=30)
+plt.show()
+
+plt.close()
+
+plt.hist(testing["sine"][:, 0].flatten(), bins=30)
+plt.hist(testing["gauss"][:, 0].flatten(), bins=30)
+plt.show()
+plt.close()
 breakpoint()
