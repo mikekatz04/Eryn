@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from copy import deepcopy
 import numpy as np
 
 from ..state import State
@@ -142,8 +143,15 @@ class RedBlueMove(Move):
 
             # Compute prior of the proposed position
             logp = model.compute_log_prior_fn(q, inds=new_inds)
+
+            # do not run log likelihood where logp = -inf
+            branches_inds_copy = deepcopy(new_inds)
+            inds_bad = np.where(np.isinf(logp))
+            for key in branches_inds_copy:
+                branches_inds_copy[key][inds_bad] = False
+
             # Compute the lnprobs of the proposed position.
-            logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds)
+            logl, new_blobs = model.compute_log_prob_fn(q, inds=branches_inds_copy)
 
             logP = self.compute_log_posterior(logl, logp)
 

@@ -735,41 +735,52 @@ class _FunctionWrapper(object):
         try:
             # take information out of dict and spread to x1..xn
             x_in = {}
+            if inds is None:
+                inds = {
+                    name: np.full(x[name].shape[:-1], True, dtype=bool) for name in x
+                }
+
+            groups = groups_from_inds(inds)
+
+            ll_groups = {}
+            temp_unique_groups = []
+            for key, group in groups.items():
+                unique_groups, inverse = np.unique(group, return_inverse=True)
+                ll_groups[key] = np.arange(len(unique_groups))[inverse]
+                temp_unique_groups.append(unique_groups)
+
+            unique_groups = np.unique(np.concatenate(temp_unique_groups))
+
+            for i, (name, coords) in enumerate(x.items()):
+                ntemps, nwalkers, nleaves_max, ndim = coords.shape
+                nwalkers_all = ntemps * nwalkers
+                x_in[name] = coords[inds[name]]
+
             if self.provide_groups:
-                if inds is None:
-                    inds = {
-                        name: np.full(x[name].shape[:-1], True, dtype=bool)
-                        for name in x
-                    }
-
-                groups = groups_from_inds(inds)
-
-                for i, (name, coords) in enumerate(x.items()):
-                    ntemps, nwalkers, nleaves_max, ndim = coords.shape
-                    x_in[name] = coords[inds[name]]
-
-                args_in = list(x_in.values()) + list(groups.values())
+                args_in = list(x_in.values()) + list(ll_groups.values())
 
             else:
-                for i, (name, coords) in enumerate(x.items()):
-                    ntemps, nwalkers, nleaves_max, ndim = coords.shape
-
-                    # TODO: add copy here?
-                    x_in[name] = coords.reshape(-1, ndim)
-
                 args_in = list(x_in.values())
 
             args_in += list(self.args)
 
             out = self.f(*args_in, **self.kwargs)
 
+            # -1e300 because -np.inf screws up state acceptance transfer in proposals
+            ll = np.full(nwalkers_all, -1e300)
             if out.ndim == 2:
+                ll[unique_groups] = out[:, 0]
+                blobs_out = np.zeros_like(out[:, 1:])
+                blobs_out[unique_groups] = out[:, 1:]
+
                 return [
-                    out[:, 0].reshape(ntemps, nwalkers),
-                    out[:, 1:].reshape(ntemps, nwalkers, -1),
+                    ll.reshape(ntemps, nwalkers),
+                    blobs_out.reshape(ntemps, nwalkers, -1),
                 ]
             else:
-                return out.reshape(ntemps, nwalkers)
+                ll[unique_groups] = out
+                return ll.reshape(ntemps, nwalkers)
+
         except:  # pragma: no cover
             import traceback
 
