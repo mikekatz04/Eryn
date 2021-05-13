@@ -71,8 +71,8 @@ class EnsembleSampler(object):
         ndims,  # assumes ndim_max
         log_prob_fn,
         priors,
-        rj=True,
-        provide_groups=True,
+        rj=False,
+        provide_groups=False,  # TODO: improve this
         tempering_kwargs={},
         nbranches=1,
         nleaves_max=1,
@@ -179,6 +179,9 @@ class EnsembleSampler(object):
             elif isinstance(test, PriorContainer):
                 self.priors = priors
 
+            elif hasattr(test, "logpdf"):
+                self.priors = {"model_0": PriorContainer(priors)}
+
             else:
                 raise ValueError(
                     "priors dictionary items must be dictionaries with prior information or instances of the PriorContainer class."
@@ -190,6 +193,12 @@ class EnsembleSampler(object):
             ndims = [ndims for _ in range(nbranches)]
         elif not isinstance(ndims, list):
             raise ValueError("ndims must be integer or list.")
+
+        if isinstance(ndims, int):
+            ndims = [ndims]
+
+        if isinstance(nleaves_max, int):
+            nleaves_max = [nleaves_max]
 
         self.ndims = ndims  # interpeted as ndim_max
         self.nwalkers = nwalkers

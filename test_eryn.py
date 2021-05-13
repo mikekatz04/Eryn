@@ -201,7 +201,9 @@ ensemble = EnsembleSampler(
     nbranches=len(branch_names),
     branch_names=branch_names,
     nleaves_max=nleaves_max,
+    provide_groups=True,
     cov=cov,
+    rj=True,
 )
 
 nsteps = 10000

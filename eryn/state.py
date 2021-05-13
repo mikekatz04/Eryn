@@ -22,10 +22,6 @@ def atleast_4d(x):
     return atleast_nd(x, 4)
 
 
-def atleast_5d(x):
-    return atleast_nd(x, 5)
-
-
 class Branch(object):
     def __init__(self, coords, inds=None):
         self.coords = coords
@@ -88,6 +84,26 @@ class State(object):
             self.betas = dc(coords.betas)
             self.random_state = dc(coords.random_state)
             return
+
+        # protect against simplifying settings
+        if isinstance(coords, np.ndarray):
+            # TODO: maybe adjust this later
+            # assume just nwalkers provided
+            if coords.ndim == 2:
+                coords = coords[None, :, None, :]
+
+            # assume (ntemps, nwalkers) provided
+            if coords.ndim == 3:
+                coords = coords[:, :, None, :]
+
+            elif coords.ndim < 2 or coords.ndim > 4:
+                raise ValueError(
+                    "Dimension off coordinates must be between 2 and 4. coords dimension is {0}.".format(
+                        coords.ndim
+                    )
+                )
+
+            coords = {"model_0": atleast_4d(coords)}
 
         if inds is None:
             inds = {key: None for key in coords}
