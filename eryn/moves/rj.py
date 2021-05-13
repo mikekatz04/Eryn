@@ -140,7 +140,7 @@ class ReversibleJump(Move):
         # Compute prior of the proposed position
         logp = model.compute_log_prior_fn(q, inds=new_inds)
         # Compute the lnprobs of the proposed position.
-        logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds)
+        logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds, logp=logp)
 
         logP = self.compute_log_posterior(logl, logp)
 

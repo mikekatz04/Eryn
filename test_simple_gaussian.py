@@ -55,7 +55,7 @@ def test_no_temps():
     ensemble = EnsembleSampler(nwalkers, ndim, log_prob_fn, priors, args=[means, cov],)
 
     nsteps = 50000
-    ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin=5)
+    ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin=100)
 
     check = ensemble.get_chain()["model_0"].reshape(-1, ndim)
     return check
@@ -105,7 +105,7 @@ def test_with_temps():
     )
 
     nsteps = 50000
-    ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin=20)
+    ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin=100)
 
     check = ensemble.get_chain()["model_0"][:, 0, :].reshape(-1, ndim)
 

@@ -392,14 +392,6 @@ class EnsembleSampler(object):
                 "best performance"
             )
 
-        if state.log_prob is None:
-            coords = {name: branch.coords for name, branch in state.branches.items()}
-
-            if self.provide_groups:
-                inds = {name: branch.inds for name, branch in state.branches.items()}
-            else:
-                inds = None
-            state.log_prob, state.blobs = self.compute_log_prob(coords, inds=inds)
         if state.log_prior is None:
             coords = {name: branch.coords for name, branch in state.branches.items()}
             if self.provide_groups:
@@ -407,6 +399,18 @@ class EnsembleSampler(object):
             else:
                 inds = None
             state.log_prior = self.compute_log_prior(coords, inds=inds)
+
+        if state.log_prob is None:
+            coords = {name: branch.coords for name, branch in state.branches.items()}
+
+            if self.provide_groups:
+                inds = {name: branch.inds for name, branch in state.branches.items()}
+            else:
+                inds = None
+            state.log_prob, state.blobs = self.compute_log_prob(
+                coords, inds=inds, logp=state.log_prior
+            )
+
         if np.shape(state.log_prob) != (self.ntemps, self.nwalkers):
             raise ValueError("incompatible input dimensions")
         if np.shape(state.log_prior) != (self.ntemps, self.nwalkers):
@@ -561,7 +565,7 @@ class EnsembleSampler(object):
 
         # START HERE and add inds and then do tempering
 
-    def compute_log_prob(self, coords, inds=None):
+    def compute_log_prob(self, coords, inds=None, logp=None):
         """Calculate the vector of log-probability for the walkers
 
         Args:
@@ -587,7 +591,23 @@ class EnsembleSampler(object):
 
         # Run the log-probability calculations (optionally in parallel).
         if self.vectorize:
-            results = self.log_prob_fn(p, inds=inds)
+            # do not run log likelihood where logp = -inf
+            if inds is None:
+                inds = {
+                    name: np.full(coords[name].shape[:-1], True, dtype=bool)
+                    for name in coords
+                }
+
+            # if no prior values are added, compute_prior
+            if logp is None:
+                logp = self.compute_log_prior_fn(q, inds=inds)
+
+            inds_copy = deepcopy(inds)
+            inds_bad = np.where(np.isinf(logp))
+            for key in inds_copy:
+                inds_copy[key][inds_bad] = False
+
+            results = self.log_prob_fn(p, inds=inds_copy)
             if not isinstance(results, list):
                 results = [results]
         else:
