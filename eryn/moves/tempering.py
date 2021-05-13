@@ -200,9 +200,12 @@ class TemperatureControl(object):
             if ntemps == 1:
                 betas = np.array([1.0])
             else:
-                raise NotImplementedError
+                if len(ndim) > 1:
+                    raise ValueError(
+                        "If building a temp ladder, only done for one model."
+                    )
                 # TODO: ndim in rj?
-                betas = make_ladder(ndim, ntemps=ntemps, Tmax=Tmax)
+                betas = make_ladder(ndim[0], ntemps=ntemps, Tmax=Tmax)
 
         self.nwalkers = nwalkers
         self.betas = betas

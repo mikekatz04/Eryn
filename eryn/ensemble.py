@@ -111,13 +111,21 @@ class EnsembleSampler(object):
 
         assert len(branch_names) == nbranches
 
+        if isinstance(ndims, int):
+            ndims = [ndims for _ in range(nbranches)]
+        elif not isinstance(ndims, list):
+            raise ValueError("ndims must be integer or list.")
+
+        if isinstance(nleaves_max, int):
+            nleaves_max = [nleaves_max]
+
         if tempering_kwargs == {}:
             self.ntemps = 1
             self.temperature_control = None
         else:
             # TODO: fix ndim
             self.temperature_control = TemperatureControl(
-                None, nwalkers, **tempering_kwargs
+                ndims, nwalkers, **tempering_kwargs
             )
             self.ntemps = self.temperature_control.ntemps
 
@@ -188,17 +196,6 @@ class EnsembleSampler(object):
                 )
         else:
             raise ValueError("Priors must be a dictionary.")
-
-        if isinstance(ndims, int):
-            ndims = [ndims for _ in range(nbranches)]
-        elif not isinstance(ndims, list):
-            raise ValueError("ndims must be integer or list.")
-
-        if isinstance(ndims, int):
-            ndims = [ndims]
-
-        if isinstance(nleaves_max, int):
-            nleaves_max = [nleaves_max]
 
         self.ndims = ndims  # interpeted as ndim_max
         self.nwalkers = nwalkers

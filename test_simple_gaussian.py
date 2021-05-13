@@ -10,69 +10,133 @@ def log_prob_fn(x, mu, invcov):
     return -0.5 * (diff * np.dot(invcov, diff.T).T).sum(axis=1)
 
 
-ndim = 5
-nwalkers = 100
-
-np.random.seed(42)
-means = np.zeros(ndim)  # np.random.rand(ndim)
-
-cov = 0.5 - np.random.rand(ndim ** 2).reshape((ndim, ndim))
-cov = np.triu(cov)
-cov += cov.T - np.diag(cov.diagonal())
-cov = np.dot(cov, cov)
-cov *= 10000.0
-invcov = np.linalg.inv(cov)
-
-# cov = np.diag(np.ones(5)) * 10.0
-
-p0 = np.random.randn(nwalkers, ndim)
-
-lims = 2.0
-priors = {i: uniform_dist(-lims, lims) for i in range(ndim)}
-
-coords = np.zeros((nwalkers, ndim))
+def log_prob_fn_wrap(x, *args):
+    shape = x.shape[:-1]
+    ndim = x.shape[-1]
+    x_temp = x.reshape(-1, ndim).copy()
+    temp = log_prob_fn(x_temp, *args)
+    out = temp.reshape(shape)
+    return out
 
 
-for ind, dist in priors.items():
-    coords[:, ind] = dist.rvs(size=(nwalkers,))
+def test_no_temps():
+    ndim = 5
+    nwalkers = 100
+
+    np.random.seed(42)
+    means = np.zeros(ndim)  # np.random.rand(ndim)
+
+    cov = 0.5 - np.random.rand(ndim ** 2).reshape((ndim, ndim))
+    cov = np.triu(cov)
+    cov += cov.T - np.diag(cov.diagonal())
+    cov = np.dot(cov, cov)
+    cov *= 10000.0
+    invcov = np.linalg.inv(cov)
+
+    # cov = np.diag(np.ones(5)) * 10.0
+
+    p0 = np.random.randn(nwalkers, ndim)
+
+    lims = 2.0
+    priors = {i: uniform_dist(-lims, lims) for i in range(ndim)}
+
+    coords = np.zeros((nwalkers, ndim))
+
+    for ind, dist in priors.items():
+        coords[:, ind] = dist.rvs(size=(nwalkers,))
+
+    log_prob = log_prob_fn(coords, means, cov)
+    check = log_prob_fn(means[None, :], means, cov)
+
+    blobs = None  # np.random.randn(ntemps, nwalkers, 3)
+
+    state = State(coords, log_prob=log_prob, blobs=blobs)
+
+    ensemble = EnsembleSampler(nwalkers, ndim, log_prob_fn, priors, args=[means, cov],)
+
+    nsteps = 50000
+    ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin=5)
+
+    check = ensemble.get_chain()["model_0"].reshape(-1, ndim)
+    return check
 
 
-log_prob = log_prob_fn(coords, means, cov)
-check = log_prob_fn(means[None, :], means, cov)
+def test_with_temps():
+    ndim = 5
+    ntemps = 10
+    nwalkers = 100
 
-blobs = None  # np.random.randn(ntemps, nwalkers, 3)
+    np.random.seed(42)
+    means = np.zeros(ndim)  # np.random.rand(ndim)
 
-state = State(coords, log_prob=log_prob, blobs=blobs)
+    cov = 0.5 - np.random.rand(ndim ** 2).reshape((ndim, ndim))
+    cov = np.triu(cov)
+    cov += cov.T - np.diag(cov.diagonal())
+    cov = np.dot(cov, cov)
+    cov *= 10000.0
+    invcov = np.linalg.inv(cov)
 
-state2 = State(state)
+    # cov = np.diag(np.ones(5)) * 10.0
 
-backend = Backend()
+    p0 = np.random.randn(ntemps, nwalkers, ndim)
 
-backend.reset(
-    nwalkers, ndim,
-)
+    lims = 2.0
+    priors = {i: uniform_dist(-lims, lims) for i in range(ndim)}
 
-# backend.grow(100, blobs)
+    coords = np.zeros((ntemps, nwalkers, ndim))
 
-ensemble = EnsembleSampler(nwalkers, ndim, log_prob_fn, priors, args=[means, cov],)
+    for ind, dist in priors.items():
+        coords[:, :, ind] = dist.rvs(size=(ntemps, nwalkers,))
 
-nsteps = 50000
-ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin=5)
+    log_prob = log_prob_fn_wrap(coords, means, cov)
+    check = log_prob_fn_wrap(means[None, None, :], means, cov)
 
-testing = ensemble.get_nleaves()
+    blobs = None  # np.random.randn(ntemps, nwalkers, 3)
 
-import matplotlib.pyplot as plt
+    state = State(coords, log_prob=log_prob, blobs=blobs)
 
-check = ensemble.get_chain()["model_0"].reshape(-1, ndim)[0::]
-import corner
+    ensemble = EnsembleSampler(
+        nwalkers,
+        ndim,
+        log_prob_fn_wrap,
+        priors,
+        args=[means, cov],
+        tempering_kwargs={"Tmax": np.inf, "ntemps": 10},
+    )
 
-fig = corner.corner(
-    check[0::20],
-    range=[0.999 for _ in range(ndim)],
-    levels=(1 - np.exp(-0.5 * np.array([1, 2, 3]) ** 2)),
-    bins=30,
-)
-plt.show()
+    nsteps = 50000
+    ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin=20)
 
-plt.close()
-breakpoint()
+    check = ensemble.get_chain()["model_0"][:, 0, :].reshape(-1, ndim)
+
+    return check
+
+
+if __name__ == "__main__":
+    check_temps = test_with_temps()
+    check_no_temps = test_no_temps()
+
+    import corner
+
+    ndim = 5
+    fig = corner.corner(
+        check_temps,
+        range=[0.9999 for _ in range(ndim)],
+        levels=(1 - np.exp(-0.5 * np.array([1, 2, 3]) ** 2)),
+        bins=30,
+        plot_density=False,
+    )
+    corner.corner(
+        check_no_temps,
+        range=[0.9999 for _ in range(ndim)],
+        levels=(1 - np.exp(-0.5 * np.array([1, 2, 3]) ** 2)),
+        bins=30,
+        plot_density=False,
+        fig=fig,
+    )
+    import matplotlib.pyplot as plt
+
+    plt.show()
+
+    plt.close()
+    breakpoint()
