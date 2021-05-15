@@ -63,7 +63,7 @@ def test_no_temps():
 
 def test_with_temps():
     ndim = 5
-    ntemps = 10
+    ntemps = 30
     nwalkers = 100
 
     np.random.seed(42)
@@ -95,23 +95,25 @@ def test_with_temps():
 
     state = State(coords, log_prob=log_prob, blobs=blobs)
 
+    burn = 1000
     ensemble = EnsembleSampler(
         nwalkers,
         ndim,
         log_prob_fn_wrap,
         priors,
         args=[means, cov],
-        tempering_kwargs={"Tmax": np.inf, "ntemps": 10},
+        tempering_kwargs={"Tmax": np.inf, "ntemps": ntemps, "stop_adaptation": burn},
         plot_iterations=-1,
     )
 
     nsteps = 5000
-    ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin_by=1)
+    ensemble.run_mcmc(state, nsteps, burn=burn, progress=True, thin_by=1)
 
     check = ensemble.get_chain()["model_0"][:, 0, :].reshape(-1, ndim)
 
     check_ac1 = ensemble.backend.get_autocorr_time(average=True, all_temps=True)
     check_ac = ensemble.backend.get_autocorr_time()
+    evidence = ensemble.backend.get_evidence_estimate(return_error=True)
     breakpoint()
     return check
 

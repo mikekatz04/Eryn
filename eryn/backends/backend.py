@@ -320,6 +320,26 @@ class Backend(object):
         # TODO: should we have thin here like in original emcee implementation?
         return {name: values * thin for name, values in out.items()}
 
+    def get_evidence_estimate(self, discard=0, thin=1, return_error=True):
+
+        logls_all = self.get_log_prob(discard=discard, thin=thin)
+        betas_all = self.get_betas(discard=discard, thin=thin)
+
+        if not (betas_all == betas_all[0]).all():
+            raise ValueError(
+                "Cannot compute evidence estimation if betas are allowed to vary. Use stop_adaptation kwarg in temperature settings."
+            )
+
+        betas = betas_all[0]
+        logls = np.mean(logls_all, axis=(0, -1))
+
+        logZ, dlogZ = thermodynamic_integration_log_evidence(betas, logls)
+
+        if return_error:
+            return (logZ, dlogZ)
+        else:
+            return logZ
+
     @property
     def shape(self):
         """The dimensions of the ensemble ``(ntemps, nwalkers, ndim)``"""
