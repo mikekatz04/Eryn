@@ -12,6 +12,7 @@ from .moves import StretchMove, TemperatureControl, PriorGenerate, GaussianMove
 from .pbar import get_progress_bar
 from .state import State
 from .prior import PriorContainer
+from .utils import PlotContainer
 
 __all__ = ["EnsembleSampler", "walkers_independent"]
 
@@ -88,7 +89,7 @@ class EnsembleSampler(object):
         autocorr_iter_count=100,
         autocorr_multiplier=1000,
         plot_iterations=-1,
-        plot_kwargs={},
+        plot_generator=None,
         periodic=None,
         update_fn=None,
         update=-1,
@@ -283,6 +284,12 @@ class EnsembleSampler(object):
         self.all_walkers = self.nwalkers * self.ntemps
         self.verbose = verbose
 
+        # prepare plotting
+        self.plot_iterations = plot_iterations
+
+        if plot_generator is None and self.plot_iterations > 0:
+            self.plot_generator = PlotContainer("output", backend=self.backend)
+
     @property
     def random_state(self):
         """
@@ -332,7 +339,6 @@ class EnsembleSampler(object):
         tune=False,
         skip_initial_state_check=True,
         thin_by=1,
-        thin=None,
         store=True,
         progress=False,
     ):
@@ -500,14 +506,26 @@ class EnsembleSampler(object):
             print("Start burn")
             burn_kwargs = deepcopy(kwargs)
             burn_kwargs["store"] = False
+            burn_kwargs["thin_by"] = 1
             for results in self.sample(initial_state, iterations=burn, **burn_kwargs):
                 pass
             initial_state = results
             print("Finish burn")
 
+        thin_by = 1 if "thin_by" not in kwargs else kwargs["thin_by"]
         results = None
+        i = 0
         for results in self.sample(initial_state, iterations=nsteps, **kwargs):
-            pass
+
+            if (
+                self.plot_iterations > 0
+                and (i + 1) % (self.plot_iterations * thin_by) == 0
+            ):
+                self.plot_generator.generate_update(
+                    burn=0, thin=1
+                )  # TODO: remove defaults
+
+            i += 1
 
         # Store so that the ``initial_state=None`` case will work
         self._previous_state = results

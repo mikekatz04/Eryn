@@ -203,11 +203,12 @@ ensemble = EnsembleSampler(
     nleaves_max=nleaves_max,
     provide_groups=True,
     cov=cov,
+    plot_iterations=10,
     rj=True,
 )
 
 nsteps = 10000
-ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin=5)
+ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin_by=5)
 
 testing = ensemble.get_nleaves()
 

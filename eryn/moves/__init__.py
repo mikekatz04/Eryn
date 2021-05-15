@@ -22,5 +22,8 @@ __all__ = [
     "WalkMove",
     "KDEMove",
     "DEMove",
+    "PriorGenerate",
+    "TemperatureControl",
+    "ReversibleJump",
     "DESnookerMove",
 ]

@@ -102,10 +102,11 @@ def test_with_temps():
         priors,
         args=[means, cov],
         tempering_kwargs={"Tmax": np.inf, "ntemps": 10},
+        plot_iterations=10,
     )
 
     nsteps = 50000
-    ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin=100)
+    ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin_by=10)
 
     check = ensemble.get_chain()["model_0"][:, 0, :].reshape(-1, ndim)
 

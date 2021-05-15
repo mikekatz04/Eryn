@@ -92,6 +92,7 @@ class Backend(object):
         self.betas = np.empty((0, self.ntemps), dtype=self.dtype)
         self.random_state = None
         self.initialized = True
+        self.truth = truth
 
     def has_blobs(self):
         """Returns ``True`` if the model includes blobs"""
@@ -462,6 +463,61 @@ class Backend(object):
         self.accepted += accepted
         self.random_state = state.random_state
         self.iteration += 1
+
+    def get_info(self, burn=None, thin=None):
+        samples = self.get_chain()
+        tau = None
+        if burn is None or thin is None:
+            # TODO setup autocorr
+            raise NotImplementedError
+            if self.thin_chain_by_ac:
+                tau = self.get_autocorr_time(tol=0)
+                if burn is None:
+                    burn = int(2 * np.max(tau))
+
+                if thin is None:
+                    thin = int(0.5 * np.min(tau))
+            else:
+                if burn is None:
+                    burn = 0
+
+                if thin is None:
+                    thin = 1
+
+        if thin == 0:
+            thin = 1
+
+        if burn is None:
+            burn = int(2 * np.max(tau))
+
+        if thin is None:
+            thin = int(0.5 * np.min(tau))
+
+        samples = {name: samples[name][burn::thin] for name in samples}
+
+        # add all information that would be needed from backend
+        out_info = dict(samples=samples)
+        out_info["thin"] = thin
+        out_info["burn"] = burn
+
+        # get log prob
+        out_info["log_prob"] = self.get_log_prob(thin=thin, discard=burn)
+
+        # get temperatures
+        out_info["betas"] = self.get_betas(thin=thin, discard=burn)
+
+        # get inds
+        out_info["inds"] = self.get_inds(thin=thin, discard=burn)
+
+        out_info["shapes"] = self.shape
+        out_info["ntemps"] = self.ntemps
+        out_info["nwalkers"] = self.nwalkers
+        out_info["nbranches"] = self.nbranches
+        out_info["branch names"] = self.branch_names
+        out_info["ndims"] = self.ndims
+        out_info["tau"] = tau
+
+        return out_info
 
     def __enter__(self):
         return self
