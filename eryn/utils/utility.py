@@ -136,6 +136,9 @@ def thermodynamic_integration_log_evidence(betas, logls):
     difference temperatures, the sampler can approximate the above
     integral.
     """
+
+    # TODO: check this stuff
+
     if len(betas) != len(logls):
         raise ValueError("Need the same number of log(L) values as temperatures.")
 
