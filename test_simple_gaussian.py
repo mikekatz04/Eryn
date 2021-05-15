@@ -102,14 +102,17 @@ def test_with_temps():
         priors,
         args=[means, cov],
         tempering_kwargs={"Tmax": np.inf, "ntemps": 10},
-        plot_iterations=10,
+        plot_iterations=-1,
     )
 
-    nsteps = 50000
-    ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin_by=10)
+    nsteps = 5000
+    ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin_by=1)
 
     check = ensemble.get_chain()["model_0"][:, 0, :].reshape(-1, ndim)
 
+    check_ac1 = ensemble.backend.get_autocorr_time(average=True, all_temps=True)
+    check_ac = ensemble.backend.get_autocorr_time()
+    breakpoint()
     return check
 
 

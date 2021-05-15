@@ -203,13 +203,15 @@ ensemble = EnsembleSampler(
     nleaves_max=nleaves_max,
     provide_groups=True,
     cov=cov,
-    plot_iterations=10,
+    plot_iterations=-1,
     rj=True,
 )
 
-nsteps = 10000
+nsteps = 200
 ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin_by=5)
 
+check = ensemble.backend.get_autocorr_time(average=True, all_temps=True)
+breakpoint()
 testing = ensemble.get_nleaves()
 
 import matplotlib.pyplot as plt

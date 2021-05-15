@@ -114,7 +114,6 @@ class PlotContainer:
                     fig.suptitle(
                         f"Branch: {name}\nTemperature: {temp}\nLeaf: {leaf}\nSample Size: {samples_in.shape[0]}"
                     )
-                    print(name, temp, leaf)
                     pdf.savefig(fig)
                     plt.close()
 

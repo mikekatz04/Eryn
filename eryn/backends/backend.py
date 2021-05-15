@@ -2,7 +2,7 @@
 
 import numpy as np
 
-# from .. import autocorr
+from ..utils.utility import get_integrated_act, thermodynamic_integration_log_evidence
 from ..state import State
 
 __all__ = ["Backend"]
@@ -312,10 +312,13 @@ class Backend(object):
 
         """
         ind = self.ntemps if all_temps else 1
-        x = self.get_chain(discard=discard, thin=thin)[:, :ind]
+        x = self.get_chain(discard=discard, thin=thin)
+        x = {name: value[:, :ind] for name, value in x.items()}
 
-        # TODO: fix this
-        return thin * autocorr.integrated_time(x, **kwargs)
+        out = get_integrated_act(x, **kwargs)
+
+        # TODO: should we have thin here like in original emcee implementation?
+        return {name: values * thin for name, values in out.items()}
 
     @property
     def shape(self):
