@@ -77,6 +77,7 @@ class EnsembleSampler(object):
         tempering_kwargs={},
         nbranches=1,
         nleaves_max=1,
+        nbranches_min=None,
         test_inds=None,
         pool=None,
         moves=None,
@@ -201,20 +202,21 @@ class EnsembleSampler(object):
         self.ndims = ndims  # interpeted as ndim_max
         self.nwalkers = nwalkers
         self.nbranches = nbranches
-        self.nleaves_max = nleaves_max
         self.branch_names = branch_names
+        self.nleaves_max = nleaves_max
+        if nbranches_min is None:
+            nbranches_min = list(np.ones(nbranches).astype(int))
+        self.nbranches_min = nbranches_min
 
         # TODO: adjust for how we want to choose if rj / for now it is rj == True
         if rj:
-            # TODO: make min_k adjustable
             # TODO: deal with tuning
-            min_k = [1, 1]
             rj_move = PriorGenerate(
                 self.priors,
                 self._moves,
                 self._weights,
                 self.nleaves_max,
-                min_k,
+                self.nbranches_min,
                 tune=False,
                 temperature_control=self.temperature_control,
             )
