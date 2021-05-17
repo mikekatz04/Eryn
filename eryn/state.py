@@ -87,23 +87,24 @@ class State(object):
 
         # protect against simplifying settings
         if isinstance(coords, np.ndarray):
+            coords = {"model_0": atleast_4d(coords)}
+
+        for name in coords:
             # TODO: maybe adjust this later
             # assume just nwalkers provided
-            if coords.ndim == 2:
-                coords = coords[None, :, None, :]
+            if coords[name].ndim == 2:
+                coords[name] = coords[name][None, :, None, :]
 
             # assume (ntemps, nwalkers) provided
-            if coords.ndim == 3:
-                coords = coords[:, :, None, :]
+            if coords[name].ndim == 3:
+                coords[name] = coords[name][:, :, None, :]
 
-            elif coords.ndim < 2 or coords.ndim > 4:
+            elif coords[name].ndim < 2 or coords[name].ndim > 4:
                 raise ValueError(
                     "Dimension off coordinates must be between 2 and 4. coords dimension is {0}.".format(
                         coords.ndim
                     )
                 )
-
-            coords = {"model_0": atleast_4d(coords)}
 
         if inds is None:
             inds = {key: None for key in coords}
@@ -128,6 +129,8 @@ class State(object):
     def branches_coords(self):
         return {name: branch.coords for name, branch in self.branches.items()}
 
+    """
+    # TODO
     def __repr__(self):
         return "State({0}, log_prob={1}, blobs={2}, betas={3}, random_state={4})".format(
             self.coords, self.log_prob, self.blobs, self.betas, self.random_state
@@ -147,3 +150,4 @@ class State(object):
         if self.random_state is not None:
             temp += (self.random_state,)
         return iter(temp)
+    """

@@ -92,8 +92,7 @@ class EnsembleSampler(object):
         plot_generator=None,
         periodic=None,  # TODO: add periodic to proposals
         update_fn=None,
-        update=-1,
-        update_kwargs={},
+        update_iterations=-1,
         stopping_fn=None,
         stopping_iterations=-1,
         info={},
@@ -139,7 +138,7 @@ class EnsembleSampler(object):
                     StretchMove(
                         live_dangerously=True,
                         temperature_control=self.temperature_control,
-                        a=1.1,
+                        a=2.0,
                     )
                 ]
                 self._weights = [1.0]
@@ -272,11 +271,6 @@ class EnsembleSampler(object):
             log_prob_fn, args, kwargs, provide_groups=self.provide_groups
         )
 
-        # update information
-        self.update_fn = update_fn
-        self.update = update
-        self.update_kwargs = update_kwargs.copy()
-
         # stopping information
         self.stopping_fn = stopping_fn
         self.stopping_iterations = stopping_iterations
@@ -292,8 +286,13 @@ class EnsembleSampler(object):
                 "output", backend=self.backend, thin_chain_by_ac=True
             )
 
+        # prepare stopping functions
         self.stopping_fn = stopping_fn
         self.stopping_iterations = stopping_iterations
+
+        # prepare update functions
+        self.update_fn = update_fn
+        self.update_iterations = update_iterations
 
     @property
     def random_state(self):
@@ -507,18 +506,25 @@ class EnsembleSampler(object):
                 )
             initial_state = self._previous_state
 
+        thin_by = 1 if "thin_by" not in kwargs else kwargs["thin_by"]
+
         if burn is not None:
             print("Start burn")
             burn_kwargs = deepcopy(kwargs)
             burn_kwargs["store"] = False
             burn_kwargs["thin_by"] = 1
+            i = 0
             for results in self.sample(initial_state, iterations=burn, **burn_kwargs):
-                pass
+                # TODO: decide what to do here, in terms of storing information
+                # if self.update_iterations > 0 and self.update_fn is not None and (i + 1) % (self.update_iterations * thin_by) == 0:
+                #    stop = self.update_fn(i, results, self)
+                i += 1
+
             initial_state = results
             print("Finish burn")
 
-        thin_by = 1 if "thin_by" not in kwargs else kwargs["thin_by"]
         results = None
+
         i = 0
         for results in self.sample(initial_state, iterations=nsteps, **kwargs):
 
@@ -526,7 +532,7 @@ class EnsembleSampler(object):
                 self.plot_iterations > 0
                 and (i + 1) % (self.plot_iterations * thin_by) == 0
             ):
-                self.plot_generator.generate_update()  # TODO: remove defaults
+                self.plot_generator.generate_plot_info()  # TODO: remove defaults
 
             if (
                 self.stopping_iterations > 0
@@ -537,6 +543,13 @@ class EnsembleSampler(object):
 
                 if stop:
                     break
+
+            if (
+                self.update_iterations > 0
+                and self.update_fn is not None
+                and (i + 1) % (self.update_iterations * thin_by) == 0
+            ):
+                stop = self.update_fn(i, results, self)
 
             i += 1
 

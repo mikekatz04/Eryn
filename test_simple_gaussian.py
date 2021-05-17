@@ -3,7 +3,53 @@ from eryn.backends.backend import Backend
 from eryn.ensemble import EnsembleSampler
 from eryn.prior import uniform_dist
 from eryn.utils.stopping import AutoCorrelationStop
+from eryn.utils.updates import AdjustStretchProposalScale
+from eryn.pipeline import PipelineGuide, InfoManager, PipelineModule
 import numpy as np
+
+
+class InitialSearch(PipelineModule):
+    def initialize_module(self, sampler):
+        self.sampler = sampler
+
+        coords = {
+            name: self.sampler.priors[name].rvs(
+                size=(self.sampler.ntemps, self.sampler.nwalkers,)
+            )
+            for name in self.sampler.priors
+        }
+
+        self.initial_state = State(coords)
+
+    def update_module(self, info_manager):
+        self.info_manager = info_manager
+
+    def run_module(self, progress=True):
+        self.sampler.run_mcmc(self.initial_state, 1000, thin_by=1, progress=progress)
+        last_sample = self.sampler.backend.get_last_sample()
+        self.update_information(self.info_manager, last_sample=last_sample)
+
+    def update_information(self, info_manger, **kwargs):
+        info_manger.update_info(**kwargs)
+
+
+class PE(PipelineModule):
+    def initialize_module(self, sampler):
+        self.sampler = sampler
+
+    def update_module(self, info_manager):
+        self.info_manager = info_manager
+
+    def run_module(self, progress=True):
+        self.sampler.backend.reset_base()
+        last_sample = self.info_manager.last_sample
+        self.sampler.run_mcmc(
+            last_sample, 5000, burn=1000, thin_by=5, progress=progress
+        )
+        self.update_information(self.info_manager, last_sample=last_sample)
+
+    def update_information(self, info_manger, **kwargs):
+        info_manger.update_info(**kwargs)
 
 
 def log_prob_fn(x, mu, invcov):
@@ -104,10 +150,12 @@ def test_with_temps():
 
     blobs = None  # np.random.randn(ntemps, nwalkers, 3)
 
-    state = State(coords, log_prob=log_prob, blobs=blobs)
+    # state = State(coords, log_prob=log_prob, blobs=blobs)
 
     burn = 1000
     stopping_fn = AutoCorrelationStop(verbose=True)
+
+    update_fn = AdjustStretchProposalScale()
 
     ensemble = EnsembleSampler(
         nwalkers,
@@ -119,12 +167,27 @@ def test_with_temps():
         plot_iterations=1000,
         stopping_fn=stopping_fn,
         stopping_iterations=1000,
+        update_fn=update_fn,
+        update_iterations=100,
     )
 
-    nsteps = 50000
-    ensemble.run_mcmc(state, nsteps, burn=burn, progress=True, thin_by=1)
+    info_manager = InfoManager(name="testing gaussian", test_attribute="yes")
 
-    check = ensemble.get_chain()["model_0"][:, 0, :].reshape(-1, ndim)
+    init_search = InitialSearch("initial search")
+    init_search.initialize_module(ensemble)
+
+    pe = PE("PE")
+    pe.initialize_module(ensemble)
+
+    pipe = PipelineGuide(info_manager, [init_search, pe])
+
+    pipe.run(progress=True)
+
+    breakpoint()
+    # nsteps = 50000
+    # ensemble.run_mcmc(state, nsteps, burn=burn, progress=True, thin_by=1)
+
+    # check = ensemble.get_chain()["model_0"][:, 0, :].reshape(-1, ndim)
 
     # check_ac1 = ensemble.backend.get_autocorr_time(average=True, all_temps=True)
     # check_ac = ensemble.backend.get_autocorr_time()

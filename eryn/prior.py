@@ -69,13 +69,20 @@ class PriorContainer:
         return prior_vals
 
     def rvs(self, size=1):
-        out = np.zeros((size, self.ndim))
-        for i, (inds, prior_i) in enumerate(self.priors):
 
-            if len(inds) == 1:
-                out[:, inds] = np.atleast_2d(prior_i.rvs(size=size)).T
-            else:
-                out[:, inds] = prior_i.rvs(size=size)
+        if isinstance(size, int):
+            size = (size,)
+
+        elif not isinstance(size, tuple):
+            raise ValueError("Size must be int or tuple of ints.")
+
+        out_inds = tuple([slice(None) for _ in range(len(size))])
+
+        out = np.zeros(size + (self.ndim,))
+        for i, (inds, prior_i) in enumerate(self.priors):
+            inds_in = out_inds + (inds,)
+            adjust_inds = out_inds + (None,)
+            out[inds_in] = prior_i.rvs(size=size)[adjust_inds]
 
         return out
 

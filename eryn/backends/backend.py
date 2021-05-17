@@ -17,6 +17,9 @@ class Backend(object):
             dtype = np.float64
         self.dtype = dtype
 
+    def reset_base(self):
+        self.reset(*self.reset_args, **self.reset_kwargs)
+
     def reset(
         self, nwalkers, ndims, nleaves_max=1, ntemps=1, truth=None, branch_names=None
     ):
@@ -27,6 +30,13 @@ class Backend(object):
             ndim (int): The number of dimensions
 
         """
+        self.reset_args = (nwalkers, ndims)
+        self.reset_kwargs = dict(
+            nleaves_max=nleaves_max,
+            ntemps=ntemps,
+            truth=truth,
+            branch_names=branch_names,
+        )
         self.nwalkers = int(nwalkers)  # trees
         self.ntemps = int(ntemps)
 
@@ -85,7 +95,7 @@ class Backend(object):
         self.log_prob = np.empty((0, self.ntemps, self.nwalkers), dtype=self.dtype)
         self.log_prior = np.empty((0, self.ntemps, self.nwalkers), dtype=self.dtype)
         self.inds = {
-            name: np.empty((0, self.ntemps, self.nwalkers, nleaves), dtype=self.dtype)
+            name: np.empty((0, self.ntemps, self.nwalkers, nleaves), dtype=bool)
             for name, nleaves in zip(self.branch_names, self.nleaves_max)
         }
         self.blobs = None
@@ -301,14 +311,19 @@ class Backend(object):
         blobs = self.get_blobs(discard=it - 1)
         if blobs is not None:
             blobs = blobs[0]
-        return State(
-            self.get_chain(discard=it - 1)[0],
+
+        last_sample = State(
+            {name: temp[0] for name, temp in self.get_chain(discard=it - 1).items()},
             log_prob=self.get_log_prob(discard=it - 1)[0],
             log_prior=self.get_log_prior(discard=it - 1)[0],
-            inds=self.get_inds(discard=it - 1)[0],
+            inds={
+                name: temp[0] for name, temp in self.get_inds(discard=it - 1).items()
+            },
             blobs=blobs,
             random_state=self.random_state,
         )
+
+        return last_sample
 
     def get_autocorr_time(
         self, discard=0, thin=1, all_temps=False, multiply_thin=True, **kwargs
@@ -409,7 +424,7 @@ class Backend(object):
             key: np.concatenate((self.chain[key], a[key]), axis=0) for key in a
         }
         a = {
-            key: np.empty((i, self.ntemps, self.nwalkers, nleaves), dtype=self.dtype)
+            key: np.empty((i, self.ntemps, self.nwalkers, nleaves), dtype=bool)
             for key, nleaves in zip(self.branch_names, self.nleaves_max)
         }
         self.inds = {key: np.concatenate((self.inds[key], a[key]), axis=0) for key in a}

@@ -166,7 +166,7 @@ class PlotContainer:
         if close_file:
             pdf.close()
 
-    def generate_update(self, burn=0, thin=1, save=True, name=None, **kwargs):
+    def generate_plot_info(self, burn=0, thin=1, save=True, name=None, **kwargs):
         if self.backend is None:
             raise ValueError("Must initialize with a backend.")
 
