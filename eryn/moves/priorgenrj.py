@@ -52,6 +52,8 @@ class PriorGenerate(ReversibleJump):
             current_priors = self.priors[name]
             inds_here = tuple(inds_for_change["+1"].T)
             num_inds_change = len(inds_here[0])
+
+            # TODO: Add the possibility of drawing from other distributions than priors (new class)
             q[name][inds_here] = current_priors.rvs(size=num_inds_change)
 
         # TODO: deal with factors
