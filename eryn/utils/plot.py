@@ -1,7 +1,8 @@
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib as mpl
+mpl.rcParams['text.usetex']=False # TODO: Handle this properly. If left untreated it fails for people who use tex by default
 import matplotlib.pyplot as plt
-
 import corner.corner
 
 
