@@ -90,7 +90,7 @@ class EnsembleSampler(object):
         autocorr_multiplier=1000,
         plot_iterations=-1,
         plot_generator=None,
-        periodic=None,  # TODO: add periodic
+        periodic=None,  # TODO: add periodic to proposals
         update_fn=None,
         update=-1,
         update_kwargs={},

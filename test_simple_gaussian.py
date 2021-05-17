@@ -2,7 +2,7 @@ from eryn.state import State
 from eryn.backends.backend import Backend
 from eryn.ensemble import EnsembleSampler
 from eryn.prior import uniform_dist
-from eryn.stopping import AutoCorrelationStop
+from eryn.utils.stopping import AutoCorrelationStop
 import numpy as np
 
 
