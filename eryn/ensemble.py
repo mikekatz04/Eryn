@@ -573,8 +573,7 @@ class EnsembleSampler(object):
                 prior_out_temp = self.priors[name].logpdf(x_in[name])
                 for i in range(num_groups):
                     inds_temp = np.where(groups[name] == i)[0]
-                    num_in_group = len(inds_temp)
-                    check = prior_out_temp[inds_temp].sum() / num_in_group
+                    check = prior_out_temp[inds_temp].sum()
                     prior_out[i] += check
 
             prior_out = prior_out.reshape(ntemps, nwalkers)
