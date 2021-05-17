@@ -145,6 +145,7 @@ if __name__ == "__main__":
         levels=(1 - np.exp(-0.5 * np.array([1, 2, 3]) ** 2)),
         bins=30,
         plot_density=False,
+        color='crimson',
     )
     corner.corner(
         check_no_temps,
@@ -153,6 +154,7 @@ if __name__ == "__main__":
         bins=30,
         plot_density=False,
         fig=fig,
+        color='cornflowerblue',
     )
     import matplotlib.pyplot as plt
 
