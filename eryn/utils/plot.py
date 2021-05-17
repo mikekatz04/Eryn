@@ -82,11 +82,19 @@ class PlotContainer:
         self.backend = backend
 
     def generate_corner(
-        self, burn=None, thin=None, pdf=None, name=None, info=None, **corner_kwargs
+        self, burn=0, thin=1, pdf=None, name=None, info=None, **corner_kwargs
     ):
+
+        if self.thin_chain_by_ac:
+            burn = 0
+            thin = 1
 
         if info is None and self.backend is not None:
             info = self.backend.get_info(burn=burn, thin=thin)
+
+        if self.thin_chain_by_ac:
+            burn = info["ac_burn"]
+            thin = info["ac_thin"]
 
         # TODO: add valueerrors
 
@@ -120,7 +128,7 @@ class PlotContainer:
         if close_file:
             pdf.close()
 
-    def generate_info_page(self, info=None, pdf=None, burn=None, thin=None):
+    def generate_info_page(self, info=None, pdf=None, burn=0, thin=1):
 
         if info is None and self.backend is not None:
             info = self.backend.get_info(burn=burn, thin=thin)
@@ -158,7 +166,7 @@ class PlotContainer:
         if close_file:
             pdf.close()
 
-    def generate_update(self, burn=None, thin=None, save=True, name=None, **kwargs):
+    def generate_update(self, burn=0, thin=1, save=True, name=None, **kwargs):
         if self.backend is None:
             raise ValueError("Must initialize with a backend.")
 

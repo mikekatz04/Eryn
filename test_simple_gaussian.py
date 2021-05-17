@@ -2,6 +2,7 @@ from eryn.state import State
 from eryn.backends.backend import Backend
 from eryn.ensemble import EnsembleSampler
 from eryn.prior import uniform_dist
+from eryn.stopping import AutoCorrelationStop
 import numpy as np
 
 
@@ -52,10 +53,20 @@ def test_no_temps():
 
     state = State(coords, log_prob=log_prob, blobs=blobs)
 
-    ensemble = EnsembleSampler(nwalkers, ndim, log_prob_fn, priors, args=[means, cov],)
+    stopping_fn = AutoCorrelationStop(verbose=True)
+
+    ensemble = EnsembleSampler(
+        nwalkers,
+        ndim,
+        log_prob_fn,
+        priors,
+        args=[means, cov],
+        stopping_iterations=1000,
+        stopping_fn=stopping_fn,
+    )
 
     nsteps = 50000
-    ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin=100)
+    ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin_by=1)
 
     check = ensemble.get_chain()["model_0"].reshape(-1, ndim)
     return check
@@ -96,6 +107,8 @@ def test_with_temps():
     state = State(coords, log_prob=log_prob, blobs=blobs)
 
     burn = 1000
+    stopping_fn = AutoCorrelationStop(verbose=True)
+
     ensemble = EnsembleSampler(
         nwalkers,
         ndim,
@@ -103,18 +116,19 @@ def test_with_temps():
         priors,
         args=[means, cov],
         tempering_kwargs={"Tmax": np.inf, "ntemps": ntemps, "stop_adaptation": burn},
-        plot_iterations=-1,
+        plot_iterations=1000,
+        stopping_fn=stopping_fn,
+        stopping_iterations=1000,
     )
 
-    nsteps = 5000
+    nsteps = 50000
     ensemble.run_mcmc(state, nsteps, burn=burn, progress=True, thin_by=1)
 
     check = ensemble.get_chain()["model_0"][:, 0, :].reshape(-1, ndim)
 
-    check_ac1 = ensemble.backend.get_autocorr_time(average=True, all_temps=True)
-    check_ac = ensemble.backend.get_autocorr_time()
-    evidence = ensemble.backend.get_evidence_estimate(return_error=True)
-    breakpoint()
+    # check_ac1 = ensemble.backend.get_autocorr_time(average=True, all_temps=True)
+    # check_ac = ensemble.backend.get_autocorr_time()
+    # evidence = ensemble.backend.get_evidence_estimate(return_error=True)
     return check
 
 

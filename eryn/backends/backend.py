@@ -146,7 +146,7 @@ class Backend(object):
             return v.reshape(s)
         return v
 
-    def get_chain(self, **kwargs):
+    def get_chain(self, thin=1, discard=0, **kwargs):
         """Get the stored chain of MCMC samples
 
         Args:
@@ -162,6 +162,24 @@ class Backend(object):
 
         """
         return self.get_value("chain", **kwargs)
+
+    def get_autocorr_thin_burn(self):
+        tau = self.get_autocorr_time()
+        tau_max = 0.0
+        for name, values in tau.items():
+            temp_max = np.max(values)
+            tau_max = tau_max if tau_max > temp_max else temp_max
+
+        discard = int(2 * tau_max)
+
+        tau_min = 1e10
+        for name, values in tau.items():
+            temp_min = np.min(values)
+            tau_min = tau_min if tau_min < temp_min else temp_min
+
+        thin = int(0.5 * tau_min)
+
+        return (discard, thin)
 
     def get_inds(self, **kwargs):
         """Get the stored chain of MCMC samples
@@ -292,7 +310,9 @@ class Backend(object):
             random_state=self.random_state,
         )
 
-    def get_autocorr_time(self, discard=0, thin=1, all_temps=False, **kwargs):
+    def get_autocorr_time(
+        self, discard=0, thin=1, all_temps=False, multiply_thin=True, **kwargs
+    ):
         """Compute an estimate of the autocorrelation time for each parameter
 
         Args:
@@ -317,8 +337,10 @@ class Backend(object):
 
         out = get_integrated_act(x, **kwargs)
 
+        thin_factor = thin if multiply_thin else 1
+
         # TODO: should we have thin here like in original emcee implementation?
-        return {name: values * thin for name, values in out.items()}
+        return {name: values * thin_factor for name, values in out.items()}
 
     def get_evidence_estimate(self, discard=0, thin=1, return_error=True):
 
@@ -487,41 +509,16 @@ class Backend(object):
         self.random_state = state.random_state
         self.iteration += 1
 
-    def get_info(self, burn=None, thin=None):
-        samples = self.get_chain()
-        tau = None
-        if burn is None or thin is None:
-            # TODO setup autocorr
-            raise NotImplementedError
-            if self.thin_chain_by_ac:
-                tau = self.get_autocorr_time(tol=0)
-                if burn is None:
-                    burn = int(2 * np.max(tau))
+    def get_info(self, burn=0, thin=1):
 
-                if thin is None:
-                    thin = int(0.5 * np.min(tau))
-            else:
-                if burn is None:
-                    burn = 0
-
-                if thin is None:
-                    thin = 1
-
-        if thin == 0:
-            thin = 1
-
-        if burn is None:
-            burn = int(2 * np.max(tau))
-
-        if thin is None:
-            thin = int(0.5 * np.min(tau))
-
-        samples = {name: samples[name][burn::thin] for name in samples}
+        samples = self.get_chain(discard=burn, thin=thin)
 
         # add all information that would be needed from backend
         out_info = dict(samples=samples)
         out_info["thin"] = thin
         out_info["burn"] = burn
+
+        tau = self.get_autocorr_time()
 
         # get log prob
         out_info["log_prob"] = self.get_log_prob(thin=thin, discard=burn)
@@ -539,6 +536,11 @@ class Backend(object):
         out_info["branch names"] = self.branch_names
         out_info["ndims"] = self.ndims
         out_info["tau"] = tau
+        out_info["ac_burn"] = int(2 * np.max(list(tau.values())))
+        out_info["ac_thin"] = int(0.5 * np.min(list(tau.values())))
+
+        if out_info["ac_thin"] < 1:
+            out_info["ac_thin"] = 1
 
         return out_info
 

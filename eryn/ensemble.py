@@ -90,12 +90,12 @@ class EnsembleSampler(object):
         autocorr_multiplier=1000,
         plot_iterations=-1,
         plot_generator=None,
-        periodic=None,
+        periodic=None,  # TODO: add periodic
         update_fn=None,
         update=-1,
         update_kwargs={},
         stopping_fn=None,
-        stopping_iter=-1,
+        stopping_iterations=-1,
         info={},
         branch_names=None,
         vectorize=True,
@@ -279,7 +279,7 @@ class EnsembleSampler(object):
 
         # stopping information
         self.stopping_fn = stopping_fn
-        self.stopping_iter = stopping_iter
+        self.stopping_iterations = stopping_iterations
 
         self.all_walkers = self.nwalkers * self.ntemps
         self.verbose = verbose
@@ -288,7 +288,12 @@ class EnsembleSampler(object):
         self.plot_iterations = plot_iterations
 
         if plot_generator is None and self.plot_iterations > 0:
-            self.plot_generator = PlotContainer("output", backend=self.backend)
+            self.plot_generator = PlotContainer(
+                "output", backend=self.backend, thin_chain_by_ac=True
+            )
+
+        self.stopping_fn = stopping_fn
+        self.stopping_iterations = stopping_iterations
 
     @property
     def random_state(self):
@@ -521,9 +526,17 @@ class EnsembleSampler(object):
                 self.plot_iterations > 0
                 and (i + 1) % (self.plot_iterations * thin_by) == 0
             ):
-                self.plot_generator.generate_update(
-                    burn=0, thin=1
-                )  # TODO: remove defaults
+                self.plot_generator.generate_update()  # TODO: remove defaults
+
+            if (
+                self.stopping_iterations > 0
+                and self.stopping_fn is not None
+                and (i + 1) % (self.stopping_iterations * thin_by) == 0
+            ):
+                stop = self.stopping_fn(i, results, self)
+
+                if stop:
+                    break
 
             i += 1
 
