@@ -145,6 +145,7 @@ if __name__ == "__main__":
         levels=(1 - np.exp(-0.5 * np.array([1, 2, 3]) ** 2)),
         bins=30,
         plot_density=False,
+        hist_kwargs={'density':True},
         color='crimson',
     )
     corner.corner(
@@ -153,11 +154,12 @@ if __name__ == "__main__":
         levels=(1 - np.exp(-0.5 * np.array([1, 2, 3]) ** 2)),
         bins=30,
         plot_density=False,
+        hist_kwargs={'density':True},
         fig=fig,
         color='cornflowerblue',
     )
     import matplotlib.pyplot as plt
-
+    fig.savefig('comparison_temps_notemps.pdf',bbox_inches='tight')
     plt.show()
 
     plt.close()
