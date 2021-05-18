@@ -1,7 +1,10 @@
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib as mpl
-mpl.rcParams['text.usetex']=False # TODO: Handle this properly. If left untreated it fails for people who use tex by default
+
+mpl.rcParams[
+    "text.usetex"
+] = False  # TODO: Handle this properly. If left untreated it fails for people who use tex by default
 import matplotlib.pyplot as plt
 import corner.corner
 
@@ -33,6 +36,8 @@ class PlotContainer:
         self.corner_kwargs = corner_kwargs
 
         self.injection = self.backend.truth
+        if self.injection is not None and len(self.injection) == 0:
+            self.injection = None
 
         default_corner_kwargs = dict(
             levels=(1 - np.exp(-0.5 * np.array([1, 2, 3]) ** 2)),

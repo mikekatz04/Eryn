@@ -5,6 +5,7 @@ from eryn.prior import uniform_dist
 from eryn.utils.stopping import AutoCorrelationStop
 from eryn.utils.updates import AdjustStretchProposalScale
 from eryn.pipeline import PipelineGuide, InfoManager, PipelineModule
+from eryn.backends import HDFBackend
 import numpy as np
 
 
@@ -140,22 +141,24 @@ def test_with_temps():
     lims = 2.0
     priors = {i: uniform_dist(-lims, lims) for i in range(ndim)}
 
-    coords = np.zeros((ntemps, nwalkers, ndim))
+    coords = np.zeros((ntemps, nwalkers, 1, ndim))
 
     for ind, dist in priors.items():
-        coords[:, :, ind] = dist.rvs(size=(ntemps, nwalkers,))
+        coords[:, :, :, ind] = dist.rvs(size=(ntemps, nwalkers,))[:, :, None]
 
-    log_prob = log_prob_fn_wrap(coords, means, cov)
+    log_prob = log_prob_fn_wrap(coords, means, cov)[:, :, 0]
     check = log_prob_fn_wrap(means[None, None, :], means, cov)
 
     blobs = None  # np.random.randn(ntemps, nwalkers, 3)
 
-    # state = State(coords, log_prob=log_prob, blobs=blobs)
+    state = State(coords, log_prob=log_prob, blobs=blobs)
 
     burn = 1000
     stopping_fn = AutoCorrelationStop(verbose=True)
 
     update_fn = AdjustStretchProposalScale()
+
+    backend = HDFBackend("test_hdf.h5")
 
     ensemble = EnsembleSampler(
         nwalkers,
@@ -169,6 +172,7 @@ def test_with_temps():
         stopping_iterations=1000,
         update_fn=update_fn,
         update_iterations=100,
+        backend=backend,
     )
 
     info_manager = InfoManager(name="testing gaussian", test_attribute="yes")
@@ -176,16 +180,16 @@ def test_with_temps():
     init_search = InitialSearch("initial search")
     init_search.initialize_module(ensemble)
 
-    pe = PE("PE")
-    pe.initialize_module(ensemble)
+    # pe = PE("PE")
+    # pe.initialize_module(ensemble)
 
-    pipe = PipelineGuide(info_manager, [init_search, pe])
+    # pipe = PipelineGuide(info_manager, [init_search, pe])
 
-    pipe.run(progress=True)
+    # pipe.run(progress=True)
 
-    breakpoint()
-    # nsteps = 50000
-    # ensemble.run_mcmc(state, nsteps, burn=burn, progress=True, thin_by=1)
+    # breakpoint()
+    nsteps = 50000
+    ensemble.run_mcmc(state, nsteps, burn=burn, progress=True, thin_by=1)
 
     # check = ensemble.get_chain()["model_0"][:, 0, :].reshape(-1, ndim)
 
@@ -208,8 +212,8 @@ if __name__ == "__main__":
         levels=(1 - np.exp(-0.5 * np.array([1, 2, 3]) ** 2)),
         bins=30,
         plot_density=False,
-        hist_kwargs={'density':True},
-        color='crimson',
+        hist_kwargs={"density": True},
+        color="crimson",
     )
     corner.corner(
         check_no_temps,
@@ -217,12 +221,13 @@ if __name__ == "__main__":
         levels=(1 - np.exp(-0.5 * np.array([1, 2, 3]) ** 2)),
         bins=30,
         plot_density=False,
-        hist_kwargs={'density':True},
+        hist_kwargs={"density": True},
         fig=fig,
-        color='cornflowerblue',
+        color="cornflowerblue",
     )
     import matplotlib.pyplot as plt
-    fig.savefig('comparison_temps_notemps.pdf',bbox_inches='tight')
+
+    fig.savefig("comparison_temps_notemps.pdf", bbox_inches="tight")
     plt.show()
 
     plt.close()

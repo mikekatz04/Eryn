@@ -508,7 +508,7 @@ class Backend(object):
         for key, model in state.branches.items():
             self.inds[key][self.iteration] = model.inds
             # TODO: how do we want to store final info
-            # right now is leaves zeros in unsed leaves
+            # right now is leaves zeros in unused leaves
             # state retains old coordinates
             coords_in = model.coords * model.inds[:, :, :, None]
             self.chain[key][self.iteration] = coords_in
