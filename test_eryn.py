@@ -79,7 +79,9 @@ def log_prob_fn(
         template[i] += gauss_out[inds1].sum(axis=0) + sine_out[inds2].sum(axis=0)
 
     ll = -np.sum((template - data) ** 2 / data ** 2, axis=-1)  # /np.sqrt(len(t))
-    return ll
+    blobs = np.random.randn(*(ll.shape + (5,)))
+    out = np.concatenate([np.expand_dims(ll, axis=-1), blobs], axis=-1)
+    return out
 
 
 nwalkers = 50
@@ -155,7 +157,7 @@ groups = {
 coords_in = {name: coords[name][inds[name]] for name in coords}
 groups_in = {name: groups[name][inds[name]] for name in groups}
 
-log_prob = log_prob_fn(
+temp = log_prob_fn(
     coords_in["gauss"],
     coords_in["sine"],
     groups_in["gauss"],
@@ -166,25 +168,19 @@ log_prob = log_prob_fn(
     fill_values=None,
 )
 
+log_prob = temp[:, 0]
+blobs = temp[:, 1:]
 log_prob = log_prob.reshape(ntemps, nwalkers)
+blobs = blobs.reshape(ntemps, nwalkers, -1)
 betas = np.linspace(1.0, 0.0, ntemps)
-
-blobs = None  # np.random.randn(ntemps, nwalkers, 3)
 
 state = State(coords, log_prob=log_prob, betas=betas, blobs=blobs, inds=inds)
 
 state2 = State(state)
 
-backend = Backend()
+from eryn.backends import HDFBackend
 
-backend.reset(
-    nwalkers,
-    ndims,
-    nleaves_max=nleaves_max,
-    ntemps=ntemps,
-    truth=None,
-    branch_names=branch_names,
-)
+backend = HDFBackend("testing_full.h5")
 
 factor = 0.01
 cov = {"gauss": np.diag(np.ones(3)) * factor, "sine": np.diag(np.ones(2)) * factor}
@@ -205,13 +201,14 @@ ensemble = EnsembleSampler(
     cov=cov,
     plot_iterations=-1,
     rj=True,
+    backend=backend,
 )
 
-nsteps = 200
+nsteps = 10000
 ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin_by=5)
 
 check = ensemble.backend.get_autocorr_time(average=True, all_temps=True)
-breakpoint()
+
 testing = ensemble.get_nleaves()
 
 import matplotlib.pyplot as plt

@@ -117,13 +117,21 @@ class Move(object):
         ]
 
         if new_state.blobs is not None:
-            raise NotImplementedError
             if old_state.blobs is None:
                 raise ValueError(
                     "If you start sampling with a given log_prob, "
                     "you also need to provide the current list of "
                     "blobs at that position."
                 )
-            old_state.blobs[m1] = new_state.blobs[m2]
+
+            old_blobs = np.take_along_axis(old_state.blobs, subset[:, :, None], axis=1)
+            new_blobs = new_state.blobs
+            temp_change_blobs = new_blobs * (accepted_temp[:, :, None]) + old_blobs * (
+                ~accepted_temp[:, :, None]
+            )
+
+            np.put_along_axis(
+                old_state.blobs, subset[:, :, None], temp_change_blobs, axis=1
+            )
 
         return old_state

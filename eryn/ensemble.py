@@ -533,6 +533,7 @@ class EnsembleSampler(object):
                 and (i + 1) % (self.plot_iterations * thin_by) == 0
             ):
                 self.plot_generator.generate_plot_info()  # TODO: remove defaults
+                breakpoint()
 
             if (
                 self.stopping_iterations > 0
@@ -834,9 +835,8 @@ class _FunctionWrapper(object):
             ll = np.full(nwalkers_all, -1e300)
             if out.ndim == 2:
                 ll[unique_groups] = out[:, 0]
-                blobs_out = np.zeros_like(out[:, 1:])
+                blobs_out = np.zeros((nwalkers_all, out.shape[1] - 1))
                 blobs_out[unique_groups] = out[:, 1:]
-
                 return [
                     ll.reshape(ntemps, nwalkers),
                     blobs_out.reshape(ntemps, nwalkers, -1),

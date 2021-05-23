@@ -243,7 +243,7 @@ class TemperatureControl(object):
 
         return loglT
 
-    def temperature_swaps(self, x, logP, logl, logp, inds=None, accepted=None):
+    def temperature_swaps(self, x, logP, logl, logp, inds=None, blobs=None):
         """
         Perform parallel-tempering temperature swaps on the state in ``x`` with associated ``logP`` and ``logl``.
         """
@@ -275,10 +275,8 @@ class TemperatureControl(object):
             logl_temp = np.copy(logl[i, iperm[sel]])
             logp_temp = np.copy(logp[i, iperm[sel]])
             logP_temp = np.copy(logP[i, iperm[sel]])
-
-            # TODO do we want accpeted to move with swaps?
-            # if accepted is not None:
-            #    accepted_temp = np.copy(accepted[i, iperm[sel]])
+            if blobs is not None:
+                blobs_temp = np.copy(blobs[i, iperm[sel]])
 
             for name in x:
                 x[name][i, iperm[sel], :, :] = x[name][i - 1, i1perm[sel], :, :]
@@ -290,8 +288,8 @@ class TemperatureControl(object):
             logP[i, iperm[sel]] = (
                 logP[i - 1, i1perm[sel]] - dbeta * logl[i - 1, i1perm[sel]]
             )
-            # if accepted is not None:
-            #    accepted[i, iperm[sel]] = accepted[i - 1, i1perm[sel]]
+            if blobs is not None:
+                blobs[i, iperm[sel]] = blobs[i - 1, i1perm[sel]]
 
             for name in x:
                 x[name][i - 1, i1perm[sel], :, :] = x_temp[name][i, iperm[sel], :, :]
@@ -303,10 +301,11 @@ class TemperatureControl(object):
             logl[i - 1, i1perm[sel]] = logl_temp
             logp[i - 1, i1perm[sel]] = logp_temp
             logP[i - 1, i1perm[sel]] = logP_temp + dbeta * logl_temp
-            # if accepted is not None:
-            #    accepted[i - 1, i1perm[sel]] = accepted_temp
 
-        return x, logP, logl, logp, inds, accepted
+            if blobs is not None:
+                blobs[i - 1, i1perm[sel]] = blobs_temp
+
+        return x, logP, logl, logp, inds, blobs
 
     def _get_ladder_adjustment(self, time, betas0, ratios):
         """
@@ -334,15 +333,14 @@ class TemperatureControl(object):
         logl = state.log_prob
         logp = state.log_prior
         logP = self.compute_log_posterior_tempered(logl, logp)
-        x, logP, logl, logp, inds, accepted = self.temperature_swaps(
+        x, logP, logl, logp, inds, blobs = self.temperature_swaps(
             state.branches_coords,
             logP.copy(),
             logl.copy(),
             logp.copy(),
             inds=state.branches_inds,
-            accepted=accepted,
+            blobs=state.blobs,
         )
-        new_blobs = None  # TODO: adjust for blobs
 
         ratios = self.swaps_accepted / self.swaps_proposed
 
@@ -355,7 +353,7 @@ class TemperatureControl(object):
             x,
             log_prob=logl,
             log_prior=logp,
-            blobs=new_blobs,
+            blobs=blobs,
             inds=inds,
             betas=self.betas,
             random_state=state.random_state,

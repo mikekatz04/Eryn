@@ -113,7 +113,6 @@ class HDFBackend(Backend):
             ndim (int): The number of dimensions
 
         """
-
         with self.open("a") as f:
             if self.name in f:
                 del f[self.name]
@@ -363,22 +362,22 @@ class HDFBackend(Backend):
                 has_blobs = g.attrs["has_blobs"]
                 if not has_blobs:
                     nwalkers = g.attrs["nwalkers"]
-                    dt = np.dtype((blobs.dtype, blobs.shape[1:]))
+                    ntemps = g.attrs["ntemps"]
                     g.create_dataset(
                         "blobs",
-                        (ntot, nwalkers),
-                        maxshape=(None, nwalkers),
-                        dtype=dt,
+                        (ntot, ntemps, nwalkers, blobs.shape[-1]),
+                        maxshape=(None, ntemps, nwalkers, blobs.shape[-1]),
+                        dtype=self.dtype,
                         compression=self.compression,
                         compression_opts=self.compression_opts,
                     )
                 else:
                     g["blobs"].resize(ntot, axis=0)
-                    if g["blobs"].dtype.shape != blobs.shape[1:]:
+                    if g["blobs"].shape[1:] != blobs.shape:
                         raise ValueError(
                             "Existing blobs have shape {} but new blobs "
                             "requested with shape {}".format(
-                                g["blobs"].dtype.shape, blobs.shape[1:]
+                                g["blobs"].shape[1:], blobs.shape
                             )
                         )
                 g.attrs["has_blobs"] = True

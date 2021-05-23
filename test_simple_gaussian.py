@@ -64,7 +64,8 @@ def log_prob_fn_wrap(x, *args):
     x_temp = x.reshape(-1, ndim).copy()
     temp = log_prob_fn(x_temp, *args)
     out = temp.reshape(shape)
-    return out
+    blobs = np.random.randn(*(out.shape[:2] + (3,)))
+    return np.concatenate([np.expand_dims(out, axis=-1), blobs], axis=-1)
 
 
 def test_no_temps():
@@ -146,10 +147,11 @@ def test_with_temps():
     for ind, dist in priors.items():
         coords[:, :, :, ind] = dist.rvs(size=(ntemps, nwalkers,))[:, :, None]
 
-    log_prob = log_prob_fn_wrap(coords, means, cov)[:, :, 0]
-    check = log_prob_fn_wrap(means[None, None, :], means, cov)
+    out = log_prob_fn_wrap(coords[:, :, 0, :], means, cov)
+    log_prob = out[:, :, 0]
+    blobs = out[:, :, 1:]
 
-    blobs = None  # np.random.randn(ntemps, nwalkers, 3)
+    # check = log_prob_fn_wrap(means[None, None, :], means, cov)
 
     state = State(coords, log_prob=log_prob, blobs=blobs)
 
