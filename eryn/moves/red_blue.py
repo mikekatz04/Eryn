@@ -157,6 +157,7 @@ class RedBlueMove(Move):
             # takes care of tempering
             prev_logP = self.compute_log_posterior(prev_logl, prev_logp)
 
+            # TODO: think about factors in tempering
             lnpdiff = factors + logP - prev_logP
 
             keep = lnpdiff > np.log(model.random.rand(ntemps, nwalkers_here))

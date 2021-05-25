@@ -21,7 +21,14 @@ class Backend(object):
         self.reset(*self.reset_args, **self.reset_kwargs)
 
     def reset(
-        self, nwalkers, ndims, nleaves_max=1, ntemps=1, truth=None, branch_names=None
+        self,
+        nwalkers,
+        ndims,
+        nleaves_max=1,
+        ntemps=1,
+        truth=None,
+        branch_names=None,
+        rj=False,
     ):
         """Clear the state of the chain and empty the backend
 
@@ -36,9 +43,11 @@ class Backend(object):
             ntemps=ntemps,
             truth=truth,
             branch_names=branch_names,
+            rj=rj,
         )
         self.nwalkers = int(nwalkers)  # trees
         self.ntemps = int(ntemps)
+        self.rj = rj
 
         if isinstance(ndims, int):
             self.ndims = np.array([ndims])
@@ -83,6 +92,8 @@ class Backend(object):
 
         self.iteration = 0
         self.accepted = np.zeros((self.ntemps, self.nwalkers), dtype=self.dtype)
+        if self.rj:
+            self.rj_accepted = np.zeros((self.ntemps, self.nwalkers), dtype=self.dtype)
 
         self.chain = {
             name: np.empty(
@@ -394,6 +405,12 @@ class Backend(object):
         if self.iteration > 0 and blobs is not None and not has_blobs:
             raise ValueError("inconsistent use of blobs")
 
+    def _check_rj_accepted(self, rj_accepted):
+        if not self.rj and rj_accepted is not None:
+            raise ValueError("inconsistent use of rj_accepted")
+        if self.rj and rj_accepted is None:
+            raise ValueError("inconsistent use of rj_accepted")
+
     def grow(self, ngrow, blobs):
         """Expand the storage space by some number of samples
 
@@ -443,8 +460,11 @@ class Backend(object):
             else:
                 self.blobs = np.concatenate((self.blobs, a), axis=0)
 
-    def _check(self, state, accepted):
+    def _check(self, state, accepted, rj_accepted=None):
+
         self._check_blobs(state.blobs)
+        self._check_rj_accepted(rj_accepted)
+
         shapes = self.shape
         has_blobs = self.has_blobs()
 
@@ -494,16 +514,27 @@ class Backend(object):
                 "invalid acceptance size; expected {0}".format(ntemps, nwalkers)
             )
 
-    def save_step(self, state, accepted):
+        if self.rj:
+            if rj_accepted.shape != (ntemps, nwalkers,):
+                raise ValueError(
+                    "invalid rj acceptance size; expected {0}".format(ntemps, nwalkers)
+                )
+
+    def save_step(self, state, accepted, rj_accepted=None):
         """Save a step to the backend
 
         Args:
             state (State): The :class:`State` of the ensemble.
             accepted (ndarray): An array of boolean flags indicating whether
                 or not the proposal for each walker was accepted.
+            rj_accepted (ndarray, optional): An array of boolean flags indicating whether
+                or not the reversable jump proposal for each walker was accepted.
+                If :code:`self.rj` is True, then rj_accepted must be an array with
+                :code:`rj_accepted.shape == accepted.shape`. If :code:`self.rj`
+                is False, then rj_accepted must be None, which is the default.
 
         """
-        self._check(state, accepted)
+        self._check(state, accepted, rj_accepted=rj_accepted)
 
         for key, model in state.branches.items():
             self.inds[key][self.iteration] = model.inds
@@ -521,6 +552,9 @@ class Backend(object):
             self.betas[self.iteration, :] = state.betas
 
         self.accepted += accepted
+        if self.rj:
+            self.rj_accepted += rj_accepted
+
         self.random_state = state.random_state
         self.iteration += 1
 

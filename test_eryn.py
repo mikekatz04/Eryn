@@ -92,7 +92,7 @@ nleaves_max = [5, 4]
 
 branch_names = ["gauss", "sine"]
 
-num = 100
+num = 500
 t = np.linspace(-5, 5, num)
 
 gauss_inj_params = [[10.0, 1.0, 0.25], [10.0, -1.0, 0.25]]
@@ -204,7 +204,7 @@ ensemble = EnsembleSampler(
     backend=backend,
 )
 
-nsteps = 10000
+nsteps = 1000
 ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin_by=5)
 
 check = ensemble.backend.get_autocorr_time(average=True, all_temps=True)
@@ -213,7 +213,7 @@ testing = ensemble.get_nleaves()
 
 import matplotlib.pyplot as plt
 
-check = ensemble.get_chain()["sine"][:, 0, :, :, 1].flatten()
+check = ensemble.get_chain()["gauss"][:, 0, :, :, 1].flatten()
 check = check[check != 0.0]
 plt.hist(check, bins=30)
 plt.show()
