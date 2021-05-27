@@ -15,7 +15,7 @@ def gaussian_flat(x, a, b, c):
     return f_x
 
 
-def log_prob_fn(x1, group1, data, inds=None, fill_inds=[], fill_values=None):
+def log_prob_fn(x1, group1, t, data, inds=None, fill_inds=[], fill_values=None):
 
     # gauss
     if len(fill_inds) > 0:
@@ -46,8 +46,8 @@ def log_prob_fn(x1, group1, data, inds=None, fill_inds=[], fill_values=None):
         inds1 = np.where(group1 == i)
 
         template[i] += gauss_out[inds1].sum(axis=0)
-
-    ll = -0.5 * np.sum(((template - data) / sigma) ** 2, axis=-1)  # /np.sqrt(len(t))
+    # breakpoint()
+    ll = - 0.5 * np.sum(((template - data) / sigma) ** 2, axis=-1) / len(t)
     return ll
 
 
@@ -55,7 +55,7 @@ nwalkers = 50
 ntemps = 4
 nbranches = 2
 ndims = [3]
-nleaves_max = [8]
+nleaves_max = [3]
 
 branch_names = ["gauss"]
 
@@ -68,7 +68,7 @@ injection = np.zeros(num)
 for pars in gauss_inj_params:
     injection += gaussian_flat(t, *pars)
 
-sigma = 0.5
+sigma = 0.01
 y = injection + sigma * np.random.randn(len(injection))
 
 import matplotlib.pyplot as plt
@@ -97,8 +97,17 @@ for nleaf, ndim, name in zip(nleaves_max, ndims, branch_names):
     for ind, dist in temp.items():
         coords[name][:, :, :, ind] = dist.rvs(size=(ntemps, nwalkers, nleaf))
 
+# Do the actual true vals in 
+# coords['gauss'][0,0] = np.asarray(gauss_inj_params)
+
+
+# inds = None
+# inds = {
+#     name: np.random.randint(0, high=2, size=(ntemps, nwalkers, nleaf), dtype=bool)
+#     for nleaf, name in zip(nleaves_max, branch_names)
+# }
 inds = {
-    name: np.random.randint(0, high=2, size=(ntemps, nwalkers, nleaf), dtype=bool)
+    name: np.full((ntemps, nwalkers, nleaf), True, dtype=bool)
     for nleaf, name in zip(nleaves_max, branch_names)
 }
 
@@ -121,12 +130,12 @@ groups = {
 
 coords_in = {name: coords[name][inds[name]] for name in coords}
 groups_in = {name: groups[name][inds[name]] for name in groups}
-
+breakpoint()
 log_prob = log_prob_fn(
     coords_in["gauss"],
     groups_in["gauss"],
     t,
-    injection,
+    y,
     fill_inds=[],
     fill_values=None,
 )
@@ -149,10 +158,10 @@ backend.reset(
     ntemps=ntemps,
     truth=None,
     branch_names=branch_names,
-    rj=True,
+    rj=False,
 )
 
-factor = 0.01
+factor = 0.001
 cov = {"gauss": np.diag(np.ones(3)) * factor}
 
 # backend.grow(100, blobs)
@@ -170,11 +179,11 @@ ensemble = EnsembleSampler(
     provide_groups=True,
     cov=cov,
     plot_iterations=-1,
-    rj_moves=True,
+    rj_moves=None,
 )
 
-nsteps = 20000
-ensemble.run_mcmc(state, nsteps, burn=10000, progress=True, thin_by=5)
+nsteps = 4000
+ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin_by=5)
 
 check = ensemble.backend.get_autocorr_time(average=True, all_temps=True)
 # breakpoint()

@@ -233,6 +233,8 @@ class EnsembleSampler(object):
             self.has_reversible_jump = True
             self._rj_moves = [rj_moves]
             self._rj_weights = [1.0]
+        else:
+            self.has_reversible_jump = False
 
         if self.has_reversible_jump:
             self._rj_weights = np.atleast_1d(self._rj_weights).astype(float)
