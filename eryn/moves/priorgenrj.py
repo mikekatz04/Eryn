@@ -29,26 +29,37 @@ class PriorGenerate(ReversibleJump):
         q = {}
         new_inds = {}
         factors = {}
-        for name, coords, inds, inds_for_change in zip(
-            all_coords.keys(),
-            all_coords.values(),
-            all_inds.values(),
-            all_inds_for_change.values(),
+
+        for i, (name, coords, inds, inds_for_change) in enumerate(
+            zip(
+                all_coords.keys(),
+                all_coords.values(),
+                all_inds.values(),
+                all_inds_for_change.values(),
+            )
         ):
             ntemps, nwalkers, nleaves_max, ndim = coords.shape
             new_inds[name] = inds.copy()
             q[name] = coords.copy()
 
+            if i == 0:
+                factors = np.zeros((ntemps, nwalkers))
+
             # adjust inds
-            # adjust births from False -> True
-            inds_here = tuple(inds_for_change["+1"].T)
-            new_inds[name][inds_here] = True
 
             # adjust deaths from True -> False
             inds_here = tuple(inds_for_change["-1"].T)
             new_inds[name][inds_here] = False
 
-            # add coordsinates for new leaves
+            # factor is +log q()
+            num_available = inds.sum(axis=-1)
+            factors[inds_here[:2]] += +1 * np.log(1 / num_available[inds_here[:2]])
+
+            # adjust births from False -> True
+            inds_here = tuple(inds_for_change["+1"].T)
+            new_inds[name][inds_here] = True
+
+            # add coordinates for new leaves
             current_priors = self.priors[name]
             inds_here = tuple(inds_for_change["+1"].T)
             num_inds_change = len(inds_here[0])
@@ -56,7 +67,7 @@ class PriorGenerate(ReversibleJump):
             # TODO: Add the possibility of drawing from other distributions than priors (new class)
             q[name][inds_here] = current_priors.rvs(size=num_inds_change)
 
-        # TODO: deal with factors
-        factors = np.zeros((ntemps, nwalkers))
+            # factor is -log q()
+            factors[inds_here[:2]] += -1 * current_priors.logpdf(q[name][inds_here])
 
         return q, new_inds, factors

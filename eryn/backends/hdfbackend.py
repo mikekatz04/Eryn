@@ -104,7 +104,14 @@ class HDFBackend(Backend):
         return f
 
     def reset(
-        self, nwalkers, ndims, nleaves_max=1, ntemps=1, truth=[], branch_names=None
+        self,
+        nwalkers,
+        ndims,
+        nleaves_max=1,
+        ntemps=1,
+        truth=[],
+        branch_names=None,
+        rj=False,
     ):
         """Clear the state of the chain and empty the backend
 
@@ -126,6 +133,7 @@ class HDFBackend(Backend):
             )
             self.nwalkers = int(nwalkers)  # trees
             self.ntemps = int(ntemps)
+            self.rj = rj
 
             if isinstance(ndims, int):
                 self.ndims = np.array([ndims])
@@ -186,6 +194,14 @@ class HDFBackend(Backend):
                 compression=self.compression,
                 compression_opts=self.compression_opts,
             )
+
+            if self.rj:
+                g.create_dataset(
+                    "rj_accepted",
+                    data=np.zeros((ntemps, nwalkers)),
+                    compression=self.compression,
+                    compression_opts=self.compression_opts,
+                )
 
             g.create_dataset(
                 "log_prob",
@@ -323,6 +339,11 @@ class HDFBackend(Backend):
             return f[self.name]["accepted"][...]
 
     @property
+    def rj_accepted(self):
+        with self.open() as f:
+            return f[self.name]["rj_accepted"][...]
+
+    @property
     def random_state(self):
         with self.open() as f:
             elements = [
@@ -382,16 +403,21 @@ class HDFBackend(Backend):
                         )
                 g.attrs["has_blobs"] = True
 
-    def save_step(self, state, accepted):
+    def save_step(self, state, accepted, rj_accepted=None):
         """Save a step to the backend
 
         Args:
             state (State): The :class:`State` of the ensemble.
             accepted (ndarray): An array of boolean flags indicating whether
                 or not the proposal for each walker was accepted.
+            rj_accepted (ndarray, optional): An array of boolean flags indicating whether
+                or not the reversable jump proposal for each walker was accepted.
+                If :code:`self.rj` is True, then rj_accepted must be an array with
+                :code:`rj_accepted.shape == accepted.shape`. If :code:`self.rj`
+                is False, then rj_accepted must be None, which is the default.
 
         """
-        self._check(state, accepted)
+        self._check(state, accepted, rj_accepted=rj_accepted)
 
         with self.open("a") as f:
             g = f[self.name]
@@ -406,6 +432,8 @@ class HDFBackend(Backend):
             if state.blobs is not None:
                 g["blobs"][iteration, :] = state.blobs
             g["accepted"][:] += accepted
+            if self.rj:
+                g["rj_accepted"][:] += rj_accepted
 
             for i, v in enumerate(state.random_state):
                 g.attrs["random_state_{0}".format(i)] = v

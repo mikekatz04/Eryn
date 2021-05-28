@@ -9,13 +9,13 @@ def gaussian(x, a, b, c):
     f_x = a[:, None] * np.exp(-((x[None, :] - b[:, None]) ** 2) / (2 * c[:, None] ** 2))
     return f_x
 
+
 def gaussian_flat(x, a, b, c):
     f_x = a * np.exp(-((x - b) ** 2) / (2 * c ** 2))
     return f_x
 
-def log_prob_fn(
-    x1, group1, data, inds=None, fill_inds=[], fill_values=None
-):
+
+def log_prob_fn(x1, group1, t, data, inds=None, fill_inds=[], fill_values=None):
 
     # gauss
     if len(fill_inds) > 0:
@@ -46,36 +46,46 @@ def log_prob_fn(
         inds1 = np.where(group1 == i)
 
         template[i] += gauss_out[inds1].sum(axis=0)
-
-    ll = -.5 * np.sum( ( (template - data) / sigma )** 2, axis=-1)  # /np.sqrt(len(t))
+    # breakpoint()
+    ll = - 0.5 * np.sum(((template - data) / sigma) ** 2, axis=-1) / len(t)
     return ll
 
 
-nwalkers    = 50
-ntemps      = 4
-nbranches   = 2
-ndims       = [3]
-nleaves_max = [8]
+nwalkers = 50
+ntemps = 10
+nbranches = 2
+ndims = [3]
+nleaves_max = [12]
 
 branch_names = ["gauss"]
 
-num = 100
-t   = np.linspace(-5, 5, num)
+num = 500
+t = np.linspace(-10, 10, num)
 
-gauss_inj_params = [[3.0, 2.0, 0.25], [4.0, -2.0, 0.25],[2.0, 0.0, 0.4]]
+gauss_inj_params = [
+    [3.0, 2.0, 0.25],
+    [4.0, -2.0, 0.25],
+    [2.0, 0.0, 0.4],
+    [3.5, -5.0, 0.25],
+    [5.0, 5.0, 0.25],
+    [3.0, 8.0, 0.25],
+    [3.0, -8.0, 0.25],
+]
+
 injection = np.zeros(num)
 
 for pars in gauss_inj_params:
     injection += gaussian_flat(t, *pars)
 
-sigma = .5
-y     = injection + sigma * np.random.randn(len(injection))
+sigma = 0.01
+y = injection + sigma * np.random.randn(len(injection))
 
-# import matplotlib.pyplot as plt
-# plt.plot(t, y, label='data', color='lightskyblue')
-# plt.plot(t, injection, label='injection', color='crimson')
-# plt.show()
-# breakpoint()
+import matplotlib.pyplot as plt
+
+#plt.plot(t, y, label="data", color="lightskyblue")
+#plt.plot(t, injection, label="injection", color="crimson")
+#plt.show()
+#plt.close()
 
 priors = {
     "gauss": {
@@ -95,10 +105,19 @@ for nleaf, ndim, name in zip(nleaves_max, ndims, branch_names):
     for ind, dist in temp.items():
         coords[name][:, :, :, ind] = dist.rvs(size=(ntemps, nwalkers, nleaf))
 
+# Do the actual true vals in
+# coords['gauss'][0,0] = np.asarray(gauss_inj_params)
+
+
+# inds = None
 inds = {
-    name: np.random.randint(0, high=2, size=(ntemps, nwalkers, nleaf), dtype=bool)
-    for nleaf, name in zip(nleaves_max, branch_names)
+     name: np.random.randint(0, high=2, size=(ntemps, nwalkers, nleaf), dtype=bool)
+     for nleaf, name in zip(nleaves_max, branch_names)
 }
+#inds = {
+#    name: np.full((ntemps, nwalkers, nleaf), True, dtype=bool)
+#    for nleaf, name in zip(nleaves_max, branch_names)
+#}
 
 for name, inds_temp in inds.items():
     inds_fix = np.where(np.sum(inds_temp, axis=-1) == 0)
@@ -124,7 +143,7 @@ log_prob = log_prob_fn(
     coords_in["gauss"],
     groups_in["gauss"],
     t,
-    injection,
+    y,
     fill_inds=[],
     fill_values=None,
 )
@@ -147,9 +166,10 @@ backend.reset(
     ntemps=ntemps,
     truth=None,
     branch_names=branch_names,
+    rj=True,
 )
 
-factor = 0.01
+factor = 0.001
 cov = {"gauss": np.diag(np.ones(3)) * factor}
 
 # backend.grow(100, blobs)
@@ -159,7 +179,7 @@ ensemble = EnsembleSampler(
     ndims,  # assumes ndim_max
     log_prob_fn,
     priors,
-    args=[t, injection],
+    args=[t, y],
     tempering_kwargs=dict(betas=betas),
     nbranches=len(branch_names),
     branch_names=branch_names,
@@ -167,11 +187,11 @@ ensemble = EnsembleSampler(
     provide_groups=True,
     cov=cov,
     plot_iterations=-1,
-    rj=True,
+    rj_moves=True,
 )
 
-nsteps = 200
-ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin_by=5)
+nsteps = 2000
+ensemble.run_mcmc(state, nsteps, burn=2500, progress=True, thin_by=5)
 
 check = ensemble.backend.get_autocorr_time(average=True, all_temps=True)
 # breakpoint()
@@ -186,10 +206,12 @@ plt.show()
 
 plt.close()
 
-bns = np.arange(1, nleaves_max[0] + 2) - 0.5 # Justto make it pretty and center the bins
+bns = (
+    np.arange(1, nleaves_max[0] + 2) - 0.5
+)  # Justto make it pretty and center the bins
 plt.hist(testing["gauss"][:, 0].flatten() + 1, bins=bns)
 plt.xticks(np.arange(1, nleaves_max[0] + 1))
-plt.xlabel('# of peaks in the data')
+plt.xlabel("# of peaks in the data")
 plt.show()
 plt.close()
 breakpoint()

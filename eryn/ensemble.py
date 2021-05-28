@@ -72,7 +72,6 @@ class EnsembleSampler(object):
         ndims,  # assumes ndim_max
         log_prob_fn,
         priors,
-        rj=False,
         provide_groups=False,  # TODO: improve this
         tempering_kwargs={},
         nbranches=1,
@@ -80,6 +79,7 @@ class EnsembleSampler(object):
         test_inds=None,
         pool=None,
         moves=None,
+        rj_moves=None,
         args=None,
         kwargs=None,
         backend=None,
@@ -129,39 +129,6 @@ class EnsembleSampler(object):
             )
             self.ntemps = self.temperature_control.ntemps
 
-        # Parse the move schedule
-        if moves is None:
-
-            if cov is None:
-                # TODO: remove live_dangerously
-                self._moves = [
-                    StretchMove(
-                        live_dangerously=True,
-                        temperature_control=self.temperature_control,
-                        a=2.0,
-                    )
-                ]
-                self._weights = [1.0]
-
-            else:
-                # TODO: remove live_dangerously
-                self._moves = [
-                    GaussianMove(cov, temperature_control=self.temperature_control)
-                ]
-                self._weights = [1.0]
-        elif isinstance(moves, Iterable):
-            try:
-                self._moves, self._weights = zip(*moves)
-            except TypeError:
-                self._moves = moves
-                self._weights = np.ones(len(moves))
-        else:
-            self._moves = [moves]
-            self._weights = [1.0]
-
-        self._weights = np.atleast_1d(self._weights).astype(float)
-        self._weights /= np.sum(self._weights)
-
         self.pool = pool
         self.vectorize = vectorize
         self.blobs_dtype = blobs_dtype
@@ -203,22 +170,75 @@ class EnsembleSampler(object):
         self.nleaves_max = nleaves_max
         self.branch_names = branch_names
 
+        # Parse the move schedule
+        if moves is None:
+            if cov is None:
+                # TODO: remove live_dangerously
+                self._moves = [
+                    StretchMove(
+                        live_dangerously=True,
+                        temperature_control=self.temperature_control,
+                        a=2.0,
+                    )
+                ]
+                self._weights = [1.0]
+
+            else:
+                # TODO: remove live_dangerously
+                self._moves = [
+                    GaussianMove(cov, temperature_control=self.temperature_control)
+                ]
+                self._weights = [1.0]
+
+        elif isinstance(moves, Iterable):
+            try:
+                self._moves, self._weights = zip(*moves)
+            except TypeError:
+                self._moves = moves
+                self._weights = np.ones(len(moves))
+        else:
+            self._moves = [moves]
+            self._weights = [1.0]
+
+        self._weights = np.atleast_1d(self._weights).astype(float)
+        self._weights /= np.sum(self._weights)
+
         # TODO: adjust for how we want to choose if rj / for now it is rj == True
-        if rj:
+        if isinstance(rj_moves, bool):
+            self.has_reversible_jump = rj_moves
             # TODO: make min_k adjustable
             # TODO: deal with tuning
-            min_k = [1, 1]
-            rj_move = PriorGenerate(
-                self.priors,
-                self._moves,
-                self._weights,
-                self.nleaves_max,
-                min_k,
-                tune=False,
-                temperature_control=self.temperature_control,
-            )
-            self._moves = [rj_move]
-            self._weights = [1.0]
+            if self.has_reversible_jump:
+                min_k = [1, 1]
+                rj_move = PriorGenerate(
+                    self.priors,
+                    self.nleaves_max,
+                    min_k,
+                    tune=False,
+                    temperature_control=self.temperature_control,
+                )
+                self._rj_moves = [rj_move]
+                self._rj_weights = [1.0]
+
+        elif isinstance(rj_moves, Iterable):
+            self.has_reversible_jump = True
+
+            try:
+                self._rj_moves, self._rj_weights = zip(*rj_moves)
+            except TypeError:
+                self._rj_moves = rj_moves
+                self._rj_weights = np.ones(len(rj_moves))
+
+        elif rj_moves is not None:
+            self.has_reversible_jump = True
+            self._rj_moves = [rj_moves]
+            self._rj_weights = [1.0]
+        else:
+            self.has_reversible_jump = False
+
+        if self.has_reversible_jump:
+            self._rj_weights = np.atleast_1d(self._rj_weights).astype(float)
+            self._rj_weights /= np.sum(self._rj_weights)
 
         self.backend = Backend() if backend is None else backend
         self.info = info
@@ -230,6 +250,7 @@ class EnsembleSampler(object):
                 branch_names=branch_names,
                 ntemps=self.ntemps,
                 nleaves_max=nleaves_max,
+                rj=self.has_reversible_jump,
                 **info
             )
             state = np.random.get_state()
@@ -465,16 +486,31 @@ class EnsembleSampler(object):
                     # Choose a random move
                     move = self._random.choice(self._moves, p=self._weights)
 
-                    # Propose
+                    # Propose (in model)
                     state, accepted = move.propose(model, state)
                     state.random_state = self.random_state
 
                     if tune:
                         move.tune(state, accepted)
 
+                    if self.has_reversible_jump:
+                        rj_move = self._random.choice(
+                            self._rj_moves, p=self._rj_weights
+                        )
+
+                        # Propose (Between models)
+                        state, rj_accepted = rj_move.propose(model, state)
+                        state.random_state = self.random_state
+
+                        if tune:
+                            rj_move.tune(state, rj_accepted)
+
+                    else:
+                        rj_accepted = None
+
                     # Save the new step
                     if store and (i + 1) % checkpoint_step == 0:
-                        self.backend.save_step(state, accepted)
+                        self.backend.save_step(state, accepted, rj_accepted=rj_accepted)
 
                     pbar.update(1)
                     i += 1
@@ -533,7 +569,6 @@ class EnsembleSampler(object):
                 and (i + 1) % (self.plot_iterations * thin_by) == 0
             ):
                 self.plot_generator.generate_plot_info()  # TODO: remove defaults
-                breakpoint()
 
             if (
                 self.stopping_iterations > 0
@@ -586,8 +621,8 @@ class EnsembleSampler(object):
                 for i in range(num_groups):
                     inds_temp = np.where(groups[name] == i)[0]
                     num_in_group = len(inds_temp)
-                    check = prior_out_temp[inds_temp].sum() / num_in_group
-                    prior_out[i] += check
+                    # check = (prior_out_temp[inds_temp].sum() / num_in_group)
+                    prior_out[i] += prior_out_temp[inds_temp].sum()
 
             prior_out = prior_out.reshape(ntemps, nwalkers)
             return prior_out
@@ -725,6 +760,14 @@ class EnsembleSampler(object):
     def acceptance_fraction(self):
         """The fraction of proposed steps that were accepted"""
         return self.backend.accepted / float(self.backend.iteration)
+
+    @property
+    def rj_acceptance_fraction(self):
+        """The fraction of proposed steps that were accepted"""
+        if self.has_reversible_jump:
+            return self.backend.rj_accepted / float(self.backend.iteration)
+        else:
+            return None
 
     def get_chain(self, **kwargs):
         return self.get_value("chain", **kwargs)

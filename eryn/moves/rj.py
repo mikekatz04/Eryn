@@ -34,12 +34,10 @@ class ReversibleJump(Move):
 
     """
 
-    def __init__(self, moves, weights, max_k, min_k, tune=False, **kwargs):
+    def __init__(self, max_k, min_k, tune=False, **kwargs):
         super(ReversibleJump, self).__init__(**kwargs)
         self.max_k = max_k
         self.min_k = min_k
-        self.moves = moves
-        self.weights = weights
         self.tune = tune
 
         # TODO: add stuff here if needed like prob of birth / death
@@ -72,15 +70,6 @@ class ReversibleJump(Move):
 
         # Split the ensemble in half and iterate over these two halves.
         accepted = np.zeros((ntemps, nwalkers), dtype=bool)
-
-        # Choose a random move
-        move = model.random.choice(self.moves, p=self.weights)
-
-        # Propose
-        state, accepted = move.propose(model, state)
-
-        if self.tune:
-            move.tune(state, accepted)
 
         # TODO: do we want an probability that the model count will not change?
         inds_for_change = {}
@@ -136,6 +125,26 @@ class ReversibleJump(Move):
         q, new_inds, factors = self.get_proposal(
             state.branches_coords, state.branches_inds, inds_for_change, model.random,
         )
+
+        # TODO: check this
+        edge_factors = np.zeros((ntemps, nwalkers))
+        # get factors for edges
+        for (name, branch), min_k, max_k in zip(
+            state.branches.items(), self.min_k, self.max_k
+        ):
+            nleaves = branch.nleaves
+
+            # fix proposal asymmetry at bottom of k range
+            inds_min = np.where(nleaves == min_k)
+            # numerator term so +ln
+            edge_factors[inds_min] += np.log(1 / 2.0)
+
+            # fix proposal asymmetry at top of k range
+            inds_max = np.where(nleaves == max_k)
+            # numerator term so -ln
+            edge_factors[inds_max] -= np.log(1 / 2.0)
+
+        factors += edge_factors
 
         # Compute prior of the proposed position
         logp = model.compute_log_prior_fn(q, inds=new_inds)
