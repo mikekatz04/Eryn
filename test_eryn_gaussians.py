@@ -52,17 +52,26 @@ def log_prob_fn(x1, group1, t, data, inds=None, fill_inds=[], fill_values=None):
 
 
 nwalkers = 50
-ntemps = 4
+ntemps = 10
 nbranches = 2
 ndims = [3]
-nleaves_max = [3]
+nleaves_max = [12]
 
 branch_names = ["gauss"]
 
-num = 100
-t = np.linspace(-5, 5, num)
+num = 500
+t = np.linspace(-10, 10, num)
 
-gauss_inj_params = [[3.0, 2.0, 0.25], [4.0, -2.0, 0.25], [2.0, 0.0, 0.4]]
+gauss_inj_params = [
+    [3.0, 2.0, 0.25],
+    [4.0, -2.0, 0.25],
+    [2.0, 0.0, 0.4],
+    [3.5, -5.0, 0.25],
+    [5.0, 5.0, 0.25],
+    [3.0, 8.0, 0.25],
+    [3.0, -8.0, 0.25],
+]
+
 injection = np.zeros(num)
 
 for pars in gauss_inj_params:
@@ -73,11 +82,10 @@ y = injection + sigma * np.random.randn(len(injection))
 
 import matplotlib.pyplot as plt
 
-# plt.plot(t, y, label="data", color="lightskyblue")
-# plt.plot(t, injection, label="injection", color="crimson")
-# plt.show()
-# plt.close()
-# breakpoint()
+#plt.plot(t, y, label="data", color="lightskyblue")
+#plt.plot(t, injection, label="injection", color="crimson")
+#plt.show()
+#plt.close()
 
 priors = {
     "gauss": {
@@ -97,19 +105,19 @@ for nleaf, ndim, name in zip(nleaves_max, ndims, branch_names):
     for ind, dist in temp.items():
         coords[name][:, :, :, ind] = dist.rvs(size=(ntemps, nwalkers, nleaf))
 
-# Do the actual true vals in 
+# Do the actual true vals in
 # coords['gauss'][0,0] = np.asarray(gauss_inj_params)
 
 
 # inds = None
-# inds = {
-#     name: np.random.randint(0, high=2, size=(ntemps, nwalkers, nleaf), dtype=bool)
-#     for nleaf, name in zip(nleaves_max, branch_names)
-# }
 inds = {
-    name: np.full((ntemps, nwalkers, nleaf), True, dtype=bool)
-    for nleaf, name in zip(nleaves_max, branch_names)
+     name: np.random.randint(0, high=2, size=(ntemps, nwalkers, nleaf), dtype=bool)
+     for nleaf, name in zip(nleaves_max, branch_names)
 }
+#inds = {
+#    name: np.full((ntemps, nwalkers, nleaf), True, dtype=bool)
+#    for nleaf, name in zip(nleaves_max, branch_names)
+#}
 
 for name, inds_temp in inds.items():
     inds_fix = np.where(np.sum(inds_temp, axis=-1) == 0)
@@ -130,7 +138,7 @@ groups = {
 
 coords_in = {name: coords[name][inds[name]] for name in coords}
 groups_in = {name: groups[name][inds[name]] for name in groups}
-breakpoint()
+
 log_prob = log_prob_fn(
     coords_in["gauss"],
     groups_in["gauss"],
@@ -158,7 +166,7 @@ backend.reset(
     ntemps=ntemps,
     truth=None,
     branch_names=branch_names,
-    rj=False,
+    rj=True,
 )
 
 factor = 0.001
@@ -179,11 +187,11 @@ ensemble = EnsembleSampler(
     provide_groups=True,
     cov=cov,
     plot_iterations=-1,
-    rj_moves=None,
+    rj_moves=True,
 )
 
-nsteps = 4000
-ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin_by=5)
+nsteps = 2000
+ensemble.run_mcmc(state, nsteps, burn=2500, progress=True, thin_by=5)
 
 check = ensemble.backend.get_autocorr_time(average=True, all_temps=True)
 # breakpoint()

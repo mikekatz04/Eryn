@@ -141,7 +141,7 @@ class ReversibleJump(Move):
 
             # fix proposal asymmetry at top of k range
             inds_max = np.where(nleaves == max_k)
-            # numerator term so +ln
+            # numerator term so -ln
             edge_factors[inds_max] -= np.log(1 / 2.0)
 
         factors += edge_factors
