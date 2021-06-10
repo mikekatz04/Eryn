@@ -369,7 +369,7 @@ class Backend(object):
         return {name: values * thin_factor for name, values in out.items()}
 
     def get_evidence_estimate(self, discard=0, thin=1, return_error=True):
-
+        # TODO: check this
         logls_all = self.get_log_prob(discard=discard, thin=thin)
         betas_all = self.get_betas(discard=discard, thin=thin)
 

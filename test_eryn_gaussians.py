@@ -55,7 +55,7 @@ nwalkers = 50
 ntemps = 10
 nbranches = 2
 ndims = [3]
-nleaves_max = [12]
+nleaves_max = [6]
 
 branch_names = ["gauss"]
 
@@ -66,10 +66,10 @@ gauss_inj_params = [
     [3.0, 2.0, 0.25],
     [4.0, -2.0, 0.25],
     [2.0, 0.0, 0.4],
-    [3.5, -5.0, 0.25],
-    [5.0, 5.0, 0.25],
-    [3.0, 8.0, 0.25],
-    [3.0, -8.0, 0.25],
+    #[3.5, -5.0, 0.25],
+    #[5.0, 5.0, 0.25],
+    #[3.0, 8.0, 0.25],
+    #[3.0, -8.0, 0.25],
 ]
 
 injection = np.zeros(num)
@@ -191,13 +191,19 @@ ensemble = EnsembleSampler(
 )
 
 nsteps = 2000
-ensemble.run_mcmc(state, nsteps, burn=2500, progress=True, thin_by=5)
+ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin_by=5)
 
 check = ensemble.backend.get_autocorr_time(average=True, all_temps=True)
 # breakpoint()
 testing = ensemble.get_nleaves()
 
 import matplotlib.pyplot as plt
+
+# betas 1d
+# log_prob log_prior 2d with (ntemps, nwalkers)
+# nleaves 2d (ntemps, nwalkers)
+# inds 3d (ntemps, nwalkers, nleaves_max)
+# coords (ntemps, nwalkers, nleaves_max, ndim)
 
 check = ensemble.get_chain()["gauss"][:, 0, :, :, 1].flatten()
 check = check[check != 0.0]
