@@ -13,6 +13,9 @@ def uniform_dist(min, max):
     dist = stats.uniform(min, sig)
     return dist
 
+def normal_dist(mean, sigma):
+    dist = stats.norm(mean, sigma)
+    return dist
 
 def log_uniform(min, max):
     if min > max:
