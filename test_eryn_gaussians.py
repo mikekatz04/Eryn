@@ -47,13 +47,13 @@ def log_prob_fn(x1, group1, t, data, inds=None, fill_inds=[], fill_values=None):
 
         template[i] += gauss_out[inds1].sum(axis=0)
     # breakpoint()
-    ll = - 0.5 * np.sum(((template - data) / sigma) ** 2, axis=-1) / len(t)
+    ll = - 0.5 * np.sum(((template - data) / sigma) ** 2, axis=-1)  #  / len(t)
     return ll
 
 
 nwalkers = 50
-ntemps = 10
-nbranches = 2
+ntemps = 3
+#nbranches = 2
 ndims = [3]
 nleaves_max = [6]
 
@@ -64,10 +64,10 @@ t = np.linspace(-10, 10, num)
 
 gauss_inj_params = [
     [3.0, 2.0, 0.25],
-    [4.0, -2.0, 0.25],
-    [2.0, 0.0, 0.4],
+    [3.0, -2.0, 0.25],
+    [3.0, 0.0, 0.4],
     #[3.5, -5.0, 0.25],
-    #[5.0, 5.0, 0.25],
+    #[3.0, 5.0, 0.25],
     #[3.0, 8.0, 0.25],
     #[3.0, -8.0, 0.25],
 ]
@@ -89,9 +89,9 @@ import matplotlib.pyplot as plt
 
 priors = {
     "gauss": {
-        0: uniform_dist(1.0, 6.0),
+        0: uniform_dist(2.5, 3.5),
         1: uniform_dist(t.min(), t.max()),
-        2: uniform_dist(0.1, 1.0),
+        2: uniform_dist(0.2, 0.45),
     },
 }
 
@@ -190,8 +190,8 @@ ensemble = EnsembleSampler(
     rj_moves=True,
 )
 
-nsteps = 2000
-ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin_by=5)
+nsteps = 10000
+ensemble.run_mcmc(state, nsteps, burn=50000, progress=True, thin_by=1)
 
 check = ensemble.backend.get_autocorr_time(average=True, all_temps=True)
 # breakpoint()
@@ -215,7 +215,7 @@ plt.close()
 bns = (
     np.arange(1, nleaves_max[0] + 2) - 0.5
 )  # Justto make it pretty and center the bins
-plt.hist(testing["gauss"][:, 0].flatten() + 1, bins=bns)
+plt.hist(testing["gauss"][:, 0].flatten(), bins=bns)
 plt.xticks(np.arange(1, nleaves_max[0] + 1))
 plt.xlabel("# of peaks in the data")
 plt.show()
