@@ -52,24 +52,26 @@ def log_prob_fn(x1, group1, t, data, inds=None, fill_inds=[], fill_values=None):
 
 
 nwalkers = 50
-ntemps = 3
+ntemps = 10
 #nbranches = 2
 ndims = [3]
-nleaves_max = [6]
+nleaves_max = [20]
 
 branch_names = ["gauss"]
 
 num = 500
-t = np.linspace(-10, 10, num)
+t = np.linspace(-1, 1, num)
 
 gauss_inj_params = [
-    [3.0, 2.0, 0.25],
-    [3.0, -2.0, 0.25],
-    [3.0, 0.0, 0.4],
-    #[3.5, -5.0, 0.25],
-    #[3.0, 5.0, 0.25],
-    #[3.0, 8.0, 0.25],
-    #[3.0, -8.0, 0.25],
+    [3.0, -0.4, 0.1],
+    [3.3, -0.2, 0.1],
+    [2.6, -0.1, 0.1],
+    [3.4, 0.0, 0.1],
+    [2.9, 0.3, 0.1],
+    [2.7, 0.35, 0.1],
+    [3.2, 0.7, 0.1],
+    [3.3, -0.3, 0.1],
+    [3.1, -0.15, 0.1],
 ]
 
 injection = np.zeros(num)
@@ -77,21 +79,21 @@ injection = np.zeros(num)
 for pars in gauss_inj_params:
     injection += gaussian_flat(t, *pars)
 
-sigma = 0.01
+sigma = 0.25
 y = injection + sigma * np.random.randn(len(injection))
 
 import matplotlib.pyplot as plt
 
-#plt.plot(t, y, label="data", color="lightskyblue")
-#plt.plot(t, injection, label="injection", color="crimson")
-#plt.show()
-#plt.close()
+plt.plot(t, y, label="data", color="lightskyblue")
+plt.plot(t, injection, label="injection", color="crimson")
+plt.show()
+plt.close()
 
 priors = {
     "gauss": {
         0: uniform_dist(2.5, 3.5),
         1: uniform_dist(t.min(), t.max()),
-        2: uniform_dist(0.2, 0.45),
+        2: uniform_dist(0.01, 0.21),
     },
 }
 
@@ -100,20 +102,31 @@ coords = {
     for nleaf, ndim, name in zip(nleaves_max, ndims, branch_names)
 }
 
+sig1 = 0.0000001
 for nleaf, ndim, name in zip(nleaves_max, ndims, branch_names):
-    temp = priors[name]
-    for ind, dist in temp.items():
-        coords[name][:, :, :, ind] = dist.rvs(size=(ntemps, nwalkers, nleaf))
+    for nn in range(nleaf):
+        if nn >= len(gauss_inj_params):
+            nn = np.random.randint(low=0, high=3)
+        coords[name][:, :, nn] = np.random.multivariate_normal(gauss_inj_params[nn], np.diag(np.ones(3) * sig1), size=(ntemps, nwalkers))  # dist.rvs(size=(ntemps, nwalkers, nleaf))
 
 # Do the actual true vals in
 # coords['gauss'][0,0] = np.asarray(gauss_inj_params)
 
 
 # inds = None
+#inds = {
+#     name: np.random.randint(0, high=2, size=(ntemps, nwalkers, nleaf), dtype=bool)
+#     for nleaf, name in zip(nleaves_max, branch_names)
+#}
+
 inds = {
-     name: np.random.randint(0, high=2, size=(ntemps, nwalkers, nleaf), dtype=bool)
+     name: np.random.randint(low=0, high=1, size=(ntemps, nwalkers, nleaf), dtype=bool)
      for nleaf, name in zip(nleaves_max, branch_names)
 }
+
+inds['gauss'][:, :, :3] = True
+breakpoint()
+
 #inds = {
 #    name: np.full((ntemps, nwalkers, nleaf), True, dtype=bool)
 #    for nleaf, name in zip(nleaves_max, branch_names)
@@ -169,7 +182,7 @@ backend.reset(
     rj=True,
 )
 
-factor = 0.001
+factor = 0.0001
 cov = {"gauss": np.diag(np.ones(3)) * factor}
 
 # backend.grow(100, blobs)
@@ -190,8 +203,8 @@ ensemble = EnsembleSampler(
     rj_moves=True,
 )
 
-nsteps = 10000
-ensemble.run_mcmc(state, nsteps, burn=50000, progress=True, thin_by=1)
+nsteps = 20000
+ensemble.run_mcmc(state, nsteps, burn=10000, progress=True, thin_by=1)
 
 check = ensemble.backend.get_autocorr_time(average=True, all_temps=True)
 # breakpoint()
