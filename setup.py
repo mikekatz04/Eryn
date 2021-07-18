@@ -10,7 +10,6 @@ setup(
         "eryn",
         "eryn.backends",
         "eryn.moves",
-        # "eryn.pipeline",
-        # "eryn.utils",
+        "eryn.utils",
     ],
 )
