@@ -47,10 +47,21 @@ class HDFBackend(Backend):
     Args:
         filename (str): The name of the HDF5 file where the chain will be
             saved.
-        name (str; optional): The name of the group where the chain will
+        name (str, optional): The name of the group where the chain will
             be saved.
-        read_only (bool; optional): If ``True``, the backend will throw a
+        read_only (bool, optional): If ``True``, the backend will throw a
             ``RuntimeError`` if the file is opened with write access.
+        dtype (dtype, optional): Dtype to use for data storage. If None,
+            program uses np.float64. (default: ``None``)
+        compression (str, optional): Compression type for h5 file. See more information
+            in the
+            `h5py documentation <https://docs.h5py.org/en/stable/high/dataset.html#filter-pipeline>`_.
+        compression_opts (int, optional): Compression level for h5 file. See more information
+            in the
+            `h5py documentation <https://docs.h5py.org/en/stable/high/dataset.html#filter-pipeline>`_.
+        store_missing_leaves (double, optional): Number to store for leaves that are not
+            used in a specific step. (default: ``np.nan``)
+
 
     """
 
@@ -62,6 +73,7 @@ class HDFBackend(Backend):
         dtype=None,
         compression=None,
         compression_opts=None,
+        store_missing_leaves=np.nan
     ):
         if h5py is None:
             raise ImportError("you must install 'h5py' to use the HDFBackend")
@@ -77,6 +89,8 @@ class HDFBackend(Backend):
             self.dtype_set = True
             self.dtype = dtype
 
+        self.store_missing_leaves = store_missing_leaves
+
     @property
     def initialized(self):
         if not os.path.exists(self.filename):
@@ -88,6 +102,19 @@ class HDFBackend(Backend):
             return False
 
     def open(self, mode="r"):
+        """Opens the h5 file in the proper mode.
+
+        Args:
+            mode (str, optional): Mode to open h5 file.
+
+        Returns:
+            H5 file object: Opened file.
+
+        Raises:
+            RuntimeError: If backend is opened for writing when it is read-only.
+
+        """
+
         if self.read_only and mode != "r":
             raise RuntimeError(
                 "The backend has been loaded in read-only "
@@ -116,8 +143,21 @@ class HDFBackend(Backend):
         """Clear the state of the chain and empty the backend
 
         Args:
-            nwakers (int): The size of the ensemble
-            ndim (int): The number of dimensions
+            nwalkers (int): The size of the ensemble
+            ndims (int or list of ints): The number of dimensions for each branch.
+            nleaves_max (int or list of ints or 1D np.ndarray of ints, optional):
+                Maximum allowable leaf count for each branch. It should have
+                the same length as the number of branches.
+                (default: ``1``)
+            ntemps (int, optional): Number of rungs in the temperature ladder.
+                (default: ``1``)
+            truth (list or 1D double np.ndarray, optional): injection parameters.
+                (default: ``None``)
+            branch_names (str or list of str, optional): Names of the branches used. If not given,
+                branches will be names ``model_0``, ..., ``model_n`` for ``n`` branches.
+                (default: ``None``)
+            rj (bool, optional): If True, reversible-jump techniques are used.
+                (default: ``False``)
 
         """
         with self.open("a") as f:
@@ -185,7 +225,12 @@ class HDFBackend(Backend):
             g.attrs["nleaves_max"] = self.nleaves_max
             g.attrs["has_blobs"] = False
             g.attrs["iteration"] = 0
-            g.attrs["truth"] = truth
+
+            try:
+                g.attrs["truth"] = truth
+            except TypeError:
+                pass
+
             g.attrs["ndims"] = self.ndims
 
             g.create_dataset(
@@ -257,10 +302,29 @@ class HDFBackend(Backend):
             self.blobs = None
 
     def has_blobs(self):
+        """Returns ``True`` if the model includes blobs"""
         with self.open() as f:
             return f[self.name].attrs["has_blobs"]
 
     def get_value(self, name, flat=False, thin=1, discard=0):
+        """Returns a requested value to user.
+
+        This function helps to streamline the backend for both
+        basic and hdf backend.
+
+        Args:
+            name (str): Name of value requested.
+            flat (bool, optional): Flatten the chain across the ensemble.
+                (default: ``False``)
+            thin (int, optional): Take only every ``thin`` steps from the
+                chain. (default: ``1``)
+            discard (int, optional): Discard the first ``discard`` steps in
+                the chain as burn-in. (default: ``0``)
+
+        Returns:
+            dict or np.ndarray: Values requested.
+
+        """
         if not self.initialized:
             raise AttributeError(
                 "You must run the sampler with "
@@ -319,6 +383,14 @@ class HDFBackend(Backend):
 
     @property
     def shape(self):
+        """The dimensions of the ensemble
+
+        Returns:
+            dict: Shape of samples
+                Keys are ``branch_names`` and valeus are tuples with
+                shapes of individual branches: (ntemps, nwalkers, nleaves_max, ndim).
+
+        """
         with self.open() as f:
             g = f[self.name]
             return {
@@ -363,7 +435,7 @@ class HDFBackend(Backend):
 
         Args:
             ngrow (int): The number of steps to grow the chain.
-            blobs: The current array of blobs. This is used to compute the
+            blobs (None or np.ndarray): The current array of blobs. This is used to compute the
                 dtype for the blobs array.
 
         """
@@ -410,8 +482,8 @@ class HDFBackend(Backend):
             state (State): The :class:`State` of the ensemble.
             accepted (ndarray): An array of boolean flags indicating whether
                 or not the proposal for each walker was accepted.
-            rj_accepted (ndarray, optional): An array of boolean flags indicating whether
-                or not the reversable jump proposal for each walker was accepted.
+            rj_accepted (ndarray, optional): An array of the number of accepted steps
+                for the reversible jump proposal for each walker.
                 If :code:`self.rj` is True, then rj_accepted must be an array with
                 :code:`rj_accepted.shape == accepted.shape`. If :code:`self.rj`
                 is False, then rj_accepted must be None, which is the default.
@@ -425,7 +497,11 @@ class HDFBackend(Backend):
 
             for name, model in state.branches.items():
                 g["inds"][name][iteration] = model.inds
+                # use self.store_missing_leaves to set value for missing leaves
+                # state retains old coordinates
                 coords_in = model.coords * model.inds[:, :, :, None]
+                inds_all =  np.repeat(model.inds, 3, axis=-1).reshape(model.inds.shape + (3,))
+                coords_in[~inds_all] = self.store_missing_leaves
                 g["chain"][name][self.iteration] = coords_in
 
             g["log_prob"][iteration, :] = state.log_prob

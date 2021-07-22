@@ -1,5 +1,5 @@
 from eryn.state import State
-from eryn.backends.backend import Backend
+from eryn.backends import Backend, HDFBackend
 from eryn.ensemble import EnsembleSampler
 from eryn.prior import uniform_dist
 import numpy as np
@@ -125,7 +125,6 @@ inds = {
 }
 
 inds['gauss'][:, :, :3] = True
-breakpoint()
 
 #inds = {
 #    name: np.full((ntemps, nwalkers, nleaf), True, dtype=bool)
@@ -170,8 +169,8 @@ state = State(coords, log_prob=log_prob, betas=betas, blobs=blobs, inds=inds)
 
 state2 = State(state)
 
-backend = Backend()
-
+backend = None # HDFBackend('test_out.h5')
+"""
 backend.reset(
     nwalkers,
     ndims,
@@ -181,11 +180,13 @@ backend.reset(
     branch_names=branch_names,
     rj=True,
 )
+"""
 
 factor = 0.0001
 cov = {"gauss": np.diag(np.ones(3)) * factor}
 
 # backend.grow(100, blobs)
+
 
 ensemble = EnsembleSampler(
     nwalkers,
@@ -203,8 +204,8 @@ ensemble = EnsembleSampler(
     rj_moves=True,
 )
 
-nsteps = 20000
-ensemble.run_mcmc(state, nsteps, burn=10000, progress=True, thin_by=1)
+nsteps = 100
+ensemble.run_mcmc(state, nsteps, burn=10, progress=True, thin_by=1)
 
 check = ensemble.backend.get_autocorr_time(average=True, all_temps=True)
 # breakpoint()

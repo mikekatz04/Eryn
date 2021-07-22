@@ -1,7 +1,9 @@
-# Eryn
+Eryn
+====
 
 test docs
 
-## Versioning
+Versioning
+----------
 
 Current Version: 0.0.1

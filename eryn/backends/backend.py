@@ -9,15 +9,61 @@ __all__ = ["Backend"]
 
 
 class Backend(object):
-    """A simple default backend that stores the chain in memory"""
+    """A simple default backend that stores the chain in memory
 
-    def __init__(self, dtype=None):
+    Args:
+        store_missing_leaves (double, optional): Number to store for leaves that are not
+            used in a specific step. (default: ``np.nan``)
+        dtype (dtype, optional): Dtype to use for data storage. If None,
+            program uses np.float64. (default: ``None``)
+
+    Attributes:
+        accepted (2D int np.ndarray): Number of accepted steps for within-model moves.
+            The shape is (ntemps, nwalkers).
+        betas (2D double np.ndarray): Inverse temperature latter at each step.
+            Shape is (nsteps, ntemps). This keeps track of adjustable temperatures.
+        blobs (4D double np.ndarray): Stores extra blob information returned from
+            likelihood function. Shape is (nsteps, ntemps, nwalkers, nblobs).
+        branch_names (list of str): List of branch names.
+        chain (dict): Dictionary with branch_names as keys. The values are
+            5D double np.ndarray arrays with shape (nsteps, ntemps, nwalkers, nleaves_max, ndim).
+            These are the locations of walkers over the MCMC run.
+        dtype (dtype): Dtype to use for data storage.
+        inds (dict): Keys are branch_names. Values are 4D bool np.ndarray
+            of shape (nsteps, ntemps, nwalkers, nleaves_max). This array details which
+            leaves are used in the current step. This is really only
+            relevant for reversible jump.
+        initiailized (bool): If True, backend object has been initialized.
+        iteration (int): Current index within the data storage arrays.
+        log_prior (3D double np.ndarray): Log of the prior values. Shape is
+            (nsteps, nwalkers, ntemps).
+        log_prob (3D double np.ndarray): Log of the likelihood values. Shape is
+            (nsteps, nwalkers, ntemps).
+        nbranches (int): Number of branches.
+        ndims (1D int np.ndarray): Dimensionality of each branch.
+        nleaves_max (1D int np.ndarray): Maximum allowable leaves for each branch.
+        nwalkers (int): The size of the ensemble
+        ntemps (int): Number of rungs in the temperature ladder.
+        reset_args (tuple): Arguments to reset backend.
+        reset_kwargs (dict): Keyword arguments to reset backend.
+        rj (bool): If True, reversible-jump techniques are used.
+        rj_accepted (2D int np.ndarray): Number of accepted steps for between-model moves.
+            The shape is (ntemps, nwalkers).
+        store_missing_leaves (double): Number to store for leaves that are not
+            used in a specific step.
+
+    """
+
+    def __init__(self, store_missing_leaves=np.nan, dtype=None):
         self.initialized = False
         if dtype is None:
             dtype = np.float64
         self.dtype = dtype
 
+        self.store_missing_leaves = store_missing_leaves
+
     def reset_base(self):
+        """Allows for simple reset based on previous inputs"""
         self.reset(*self.reset_args, **self.reset_kwargs)
 
     def reset(
@@ -33,10 +79,25 @@ class Backend(object):
         """Clear the state of the chain and empty the backend
 
         Args:
-            nwakers (int): The size of the ensemble
-            ndim (int): The number of dimensions
+            nwalkers (int): The size of the ensemble
+            ndims (int or list of ints): The number of dimensions for each branch.
+            nleaves_max (int or list of ints or 1D np.ndarray of ints, optional):
+                Maximum allowable leaf count for each branch. It should have
+                the same length as the number of branches.
+                (default: ``1``)
+            ntemps (int, optional): Number of rungs in the temperature ladder.
+                (default: ``1``)
+            truth (list or 1D double np.ndarray, optional): injection parameters.
+                (default: ``None``)
+            branch_names (str or list of str, optional): Names of the branches used. If not given,
+                branches will be names ``model_0``, ..., ``model_n`` for ``n`` branches.
+                (default: ``None``)
+            rj (bool, optional): If True, reversible-jump techniques are used.
+                (default: ``False``)
 
         """
+
+        # store inputs for later resets
         self.reset_args = (nwalkers, ndims)
         self.reset_kwargs = dict(
             nleaves_max=nleaves_max,
@@ -45,7 +106,9 @@ class Backend(object):
             branch_names=branch_names,
             rj=rj,
         )
-        self.nwalkers = int(nwalkers)  # trees
+
+        # store all information to guide data storage
+        self.nwalkers = int(nwalkers)
         self.ntemps = int(ntemps)
         self.rj = rj
 
@@ -71,6 +134,8 @@ class Backend(object):
             )
 
         self.nbranches = len(self.nleaves_max)
+
+        # fill branch names accordingly
         if branch_names is not None:
             if isinstance(branch_names, str):
                 branch_names = [branch_names]
@@ -86,15 +151,21 @@ class Backend(object):
                 )
 
         else:
+            # fill default names if not given
             branch_names = ["model_{}".format(i) for i in range(self.nbranches)]
 
         self.branch_names = branch_names
 
         self.iteration = 0
+
+        # setup all the holder arrays
         self.accepted = np.zeros((self.ntemps, self.nwalkers), dtype=self.dtype)
         if self.rj:
             self.rj_accepted = np.zeros((self.ntemps, self.nwalkers), dtype=self.dtype)
+        else:
+            self.rj_accepted = None
 
+        # chains are stored in dictionaries
         self.chain = {
             name: np.empty(
                 (0, self.ntemps, self.nwalkers, nleaves, ndim), dtype=self.dtype
@@ -103,16 +174,26 @@ class Backend(object):
                 self.branch_names, self.nleaves_max, self.ndims
             )
         }
-        self.log_prob = np.empty((0, self.ntemps, self.nwalkers), dtype=self.dtype)
-        self.log_prior = np.empty((0, self.ntemps, self.nwalkers), dtype=self.dtype)
+
+        # inds correspond to leaves used or not
         self.inds = {
             name: np.empty((0, self.ntemps, self.nwalkers, nleaves), dtype=bool)
             for name, nleaves in zip(self.branch_names, self.nleaves_max)
         }
-        self.blobs = None
+
+        # log likelihood and prior
+        self.log_prob = np.empty((0, self.ntemps, self.nwalkers), dtype=self.dtype)
+        self.log_prior = np.empty((0, self.ntemps, self.nwalkers), dtype=self.dtype)
+
+        # temperature ladder
         self.betas = np.empty((0, self.ntemps), dtype=self.dtype)
+
+        self.blobs = None
+
         self.random_state = None
         self.initialized = True
+
+        # injection parameters
         self.truth = truth
 
     def has_blobs(self):
@@ -120,6 +201,24 @@ class Backend(object):
         return self.blobs is not None
 
     def get_value(self, name, flat=False, thin=1, discard=0):
+        """Returns a requested value to user.
+
+        This function helps to streamline the backend for both
+        basic and hdf backend.
+
+        Args:
+            name (str): Name of value requested.
+            flat (bool, optional): Flatten the chain across the ensemble.
+                (default: ``False``)
+            thin (int, optional): Take only every ``thin`` steps from the
+                chain. (default: ``1``)
+            discard (int, optional): Discard the first ``discard`` steps in
+                the chain as burn-in. (default: ``0``)
+
+        Returns:
+            dict or np.ndarray: Values requested.
+
+        """
         if self.iteration <= 0:
             raise AttributeError(
                 "you must run the sampler with "
@@ -127,9 +226,11 @@ class Backend(object):
                 "results"
             )
 
+        # check against blobs
         if name == "blobs" and not self.has_blobs():
             return None
 
+        # prepare chain for output
         if name == "chain":
             v_all = {
                 key: self.chain[key][discard + thin - 1 : self.iteration : thin]
@@ -145,6 +246,7 @@ class Backend(object):
                 return v_out
             return v_all
 
+        # prepare inds for output
         if name == "inds":
             v_all = {
                 key: self.inds[key][discard + thin - 1 : self.iteration : thin]
@@ -160,6 +262,8 @@ class Backend(object):
                 return v_out
             return v_all
 
+        # all other requests can filter through array output
+        # rather than the dictionary output used above
         v = getattr(self, name)[discard + thin - 1 : self.iteration : thin]
         if flat:
             s = list(v.shape[1:])
@@ -171,21 +275,36 @@ class Backend(object):
         """Get the stored chain of MCMC samples
 
         Args:
-            flat (Optional[bool]): Flatten the chain across the ensemble.
+            flat (bool, optional): Flatten the chain across the ensemble.
                 (default: ``False``)
-            thin (Optional[int]): Take only every ``thin`` steps from the
+            thin (int, optional): Take only every ``thin`` steps from the
                 chain. (default: ``1``)
-            discard (Optional[int]): Discard the first ``discard`` steps in
+            discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
 
         Returns:
-            array[..., nwalkers, ndim]: The MCMC samples.
+            dict: MCMC samples
+                The dictionary contains np.ndarrays of samples
+                across the branches.
 
         """
         return self.get_value("chain", **kwargs)
 
     def get_autocorr_thin_burn(self):
+        """Return the discard and thin values based on the autocorrelation length.
+
+        The ``discard`` is determined as 2 times the maximum correlation length among parameters.
+        The ``thin`` is determined using 1/2 times the minimum correlation legnth among parameters.
+
+        Returns:
+            tuple: Information on thin and burn
+                (discard, thin)
+        """
+
+        # get the autocorrelation times
         tau = self.get_autocorr_time()
+
+        # find the proper maximum
         tau_max = 0.0
         for name, values in tau.items():
             temp_max = np.max(values)
@@ -193,6 +312,7 @@ class Backend(object):
 
         discard = int(2 * tau_max)
 
+        # find proper minimum
         tau_min = 1e10
         for name, values in tau.items():
             temp_min = np.min(values)
@@ -206,32 +326,36 @@ class Backend(object):
         """Get the stored chain of MCMC samples
 
         Args:
-            flat (Optional[bool]): Flatten the chain across the ensemble.
+            flat (bool, optional): Flatten the chain across the ensemble.
                 (default: ``False``)
-            thin (Optional[int]): Take only every ``thin`` steps from the
+            thin (int, optional): Take only every ``thin`` steps from the
                 chain. (default: ``1``)
-            discard (Optional[int]): Discard the first ``discard`` steps in
+            discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
 
         Returns:
-            array[..., nwalkers, ndim]: The MCMC samples.
+            dict: The ``inds`` associated with the MCMC samples.
+                  The dictionary contains np.ndarrays of ``inds``
+                  across the branches indicated which leaves were used at each step.
 
         """
         return self.get_value("inds", **kwargs)
 
     def get_nleaves(self, **kwargs):
-        """Get the stored chain of MCMC samples
+        """Get the number of leaves for each walker
 
         Args:
-            flat (Optional[bool]): Flatten the chain across the ensemble.
+            flat (bool, optional): Flatten the chain across the ensemble.
                 (default: ``False``)
-            thin (Optional[int]): Take only every ``thin`` steps from the
+            thin (int, optional): Take only every ``thin`` steps from the
                 chain. (default: ``1``)
-            discard (Optional[int]): Discard the first ``discard`` steps in
+            discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
 
         Returns:
-            array[..., nwalkers, ndim]: The MCMC samples.
+            dict: nleaves on each branch.
+                The number of leaves on each branch associated with the MCMC samples
+                  within each branch.
 
         """
         inds = self.get_value("inds", **kwargs)
@@ -242,15 +366,15 @@ class Backend(object):
         """Get the chain of blobs for each sample in the chain
 
         Args:
-            flat (Optional[bool]): Flatten the chain across the ensemble.
+            flat (bool, optional): Flatten the chain across the ensemble.
                 (default: ``False``)
-            thin (Optional[int]): Take only every ``thin`` steps from the
+            thin (int, optional): Take only every ``thin`` steps from the
                 chain. (default: ``1``)
-            discard (Optional[int]): Discard the first ``discard`` steps in
+            discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
 
         Returns:
-            array[..., nwalkers]: The chain of blobs.
+            double np.ndarray[nsteps, ntemps, nwalkers, nblobs]: The chain of blobs.
 
         """
         return self.get_value("blobs", **kwargs)
@@ -259,15 +383,15 @@ class Backend(object):
         """Get the chain of log probabilities evaluated at the MCMC samples
 
         Args:
-            flat (Optional[bool]): Flatten the chain across the ensemble.
+            flat (bool, optional): Flatten the chain across the ensemble.
                 (default: ``False``)
-            thin (Optional[int]): Take only every ``thin`` steps from the
+            thin (int, optional): Take only every ``thin`` steps from the
                 chain. (default: ``1``)
-            discard (Optional[int]): Discard the first ``discard`` steps in
+            discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
 
         Returns:
-            array[..., nwalkers]: The chain of log probabilities.
+            double np.ndarray[nsteps, ntemps, nwalkers]: The chain of log likelihood values.
 
         """
         return self.get_value("log_prob", **kwargs)
@@ -276,42 +400,45 @@ class Backend(object):
         """Get the chain of log probabilities evaluated at the MCMC samples
 
         Args:
-            flat (Optional[bool]): Flatten the chain across the ensemble.
+            flat (bool, optional): Flatten the chain across the ensemble.
                 (default: ``False``)
-            thin (Optional[int]): Take only every ``thin`` steps from the
+            thin (int, optional): Take only every ``thin`` steps from the
                 chain. (default: ``1``)
-            discard (Optional[int]): Discard the first ``discard`` steps in
+            discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
 
         Returns:
-            array[..., nwalkers]: The chain of log probabilities.
+            double np.ndarray[nsteps, ntemps, nwalkers]: The chain of log prior values.
 
         """
         return self.get_value("log_prior", **kwargs)
 
     def get_betas(self, **kwargs):
-        """ TODO: this
-
-        TODO: make betas optional
-
-        Get the chain of log probabilities evaluated at the MCMC samples
+        """Get the chain of inverse temperatures
 
         Args:
-            flat (Optional[bool]): Flatten the chain across the ensemble.
+            flat (bool, optional): Flatten the chain across the ensemble.
                 (default: ``False``)
-            thin (Optional[int]): Take only every ``thin`` steps from the
+            thin (int, optional): Take only every ``thin`` steps from the
                 chain. (default: ``1``)
-            discard (Optional[int]): Discard the first ``discard`` steps in
+            discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
 
         Returns:
-            array[..., nwalkers]: The chain of log probabilities.
+            double np.ndarray[nsteps, ntemps]: The chain of temperatures.
+
 
         """
         return self.get_value("betas", **kwargs)
 
     def get_last_sample(self):
-        """Access the most recent sample in the chain"""
+        """Access the most recent sample in the chain
+
+        # TODO: link this to actual state object
+        Returns:
+            State: State object containing the last sample from the chain.
+
+        """
         if (not self.initialized) or self.iteration <= 0:
             raise AttributeError(
                 "you must run the sampler with "
@@ -319,10 +446,13 @@ class Backend(object):
                 "results"
             )
         it = self.iteration
+
+        # check for blobs
         blobs = self.get_blobs(discard=it - 1)
         if blobs is not None:
             blobs = blobs[0]
 
+        # fill a State with quantities from the last sample in the chain
         last_sample = State(
             {name: temp[0] for name, temp in self.get_chain(discard=it - 1).items()},
             log_prob=self.get_log_prob(discard=it - 1)[0],
@@ -342,45 +472,78 @@ class Backend(object):
         """Compute an estimate of the autocorrelation time for each parameter
 
         Args:
-            thin (Optional[int]): Use only every ``thin`` steps from the
+            discard (int, optional): Discard the first ``discard`` steps in
+                the chain as burn-in. (default: ``0``)
+            thin (int, optional): Use only every ``thin`` steps from the
                 chain. The returned estimate is multiplied by ``thin`` so the
                 estimated time is in units of steps, not thinned steps.
                 (default: ``1``)
-            discard (Optional[int]): Discard the first ``discard`` steps in
-                the chain as burn-in. (default: ``0``)
+            all_temps (bool, optional): If True, calculate autocorrelation across
+                all temperatures. If False, calculate autocorrelation across the minumum
+                temperature chain (usually 1/T=1). (default: ``False``)
+            multiply_thin (bool, optional) If True, include the thinning factor
+                into the autocorrelation length. (default: ``True``)
+
 
         Other arguments are passed directly to
         :func:`emcee.autocorr.integrated_time`.
 
         Returns:
-            array[ndim]: The integrated autocorrelation time estimate for the
-                chain for each parameter.
+            dict: autocorrelation times
+                The dictionary contains autocorrelation times for all parameters
+                as 1D double np.ndarrays as values with associated ``branch_names`` as
+                keys.
 
         """
+        # stopping index into temperatures
         ind = self.ntemps if all_temps else 1
+
+        # get chain
         x = self.get_chain(discard=discard, thin=thin)
         x = {name: value[:, :ind] for name, value in x.items()}
 
         out = get_integrated_act(x, **kwargs)
 
+        # apply thinning factor if desired
         thin_factor = thin if multiply_thin else 1
 
-        # TODO: should we have thin here like in original emcee implementation?
         return {name: values * thin_factor for name, values in out.items()}
 
     def get_evidence_estimate(self, discard=0, thin=1, return_error=True):
+        """Get an estimate of the evidence
+
+        Args:
+            discard (int, optional): Discard the first ``discard`` steps in
+                the chain as burn-in. (default: ``0``)
+            thin (int, optional): Use only every ``thin`` steps from the
+                chain. The returned estimate is multiplied by ``thin`` so the
+                estimated time is in units of steps, not thinned steps.
+                (default: ``1``)
+            return_error (bool, optional): If True, return the error associated
+                with the log evidence estimate. (default: ``True``)
+
+        Returns:
+            double or tuple: Evidence estimate
+                If requesting the error on the estimate, will receive a tuple:
+                ``(logZ, dlogZ)``. Otherwise, just a double value of logZ.
+
+        """
         # TODO: check this
+        # get all the likelihood and temperature values
         logls_all = self.get_log_prob(discard=discard, thin=thin)
         betas_all = self.get_betas(discard=discard, thin=thin)
 
+        # make sure that the betas were fixed during sampling (after burn in)
         if not (betas_all == betas_all[0]).all():
             raise ValueError(
                 "Cannot compute evidence estimation if betas are allowed to vary. Use stop_adaptation kwarg in temperature settings."
             )
 
+        # setup information
         betas = betas_all[0]
         logls = np.mean(logls_all, axis=(0, -1))
 
+        # get log evidence and error
         logZ, dlogZ = thermodynamic_integration_log_evidence(betas, logls)
 
         if return_error:
@@ -390,7 +553,14 @@ class Backend(object):
 
     @property
     def shape(self):
-        """The dimensions of the ensemble ``(ntemps, nwalkers, ndim)``"""
+        """The dimensions of the ensemble
+
+        Returns:
+            dict: Shape of samples
+                Keys are ``branch_names`` and valeus are tuples with
+                shapes of individual branches: (ntemps, nwalkers, nleaves_max, ndim).
+
+        """
         return {
             key: (self.ntemps, self.nwalkers, nleaves, ndim)
             for key, nleaves, ndim in zip(
@@ -399,6 +569,7 @@ class Backend(object):
         }
 
     def _check_blobs(self, blobs):
+        # check if the setup for blobs is correct
         has_blobs = self.has_blobs()
         if has_blobs and blobs is None:
             raise ValueError("inconsistent use of blobs")
@@ -406,6 +577,7 @@ class Backend(object):
             raise ValueError("inconsistent use of blobs")
 
     def _check_rj_accepted(self, rj_accepted):
+        # check fi rj_accepted is setup properly
         if not self.rj and rj_accepted is not None:
             raise ValueError("inconsistent use of rj_accepted")
         if self.rj and rj_accepted is None:
@@ -416,12 +588,13 @@ class Backend(object):
 
         Args:
             ngrow (int): The number of steps to grow the chain.
-            blobs: The current array of blobs. This is used to compute the
+            blobs (None or np.ndarray): The current array of blobs. This is used to compute the
                 dtype for the blobs array.
 
         """
         self._check_blobs(blobs)
 
+        # determine the number of entries in the chains
         i = ngrow - (len(self.chain[list(self.chain.keys())[0]]) - self.iteration)
         {
             key: (self.ntemps, self.nwalkers, nleaves, ndim)
@@ -429,6 +602,8 @@ class Backend(object):
                 self.branch_names, self.nleaves_max, self.ndims
             )
         }
+
+        # temperary addition to chains
         a = {
             key: np.empty(
                 (i, self.ntemps, self.nwalkers, nleaves, ndim), dtype=self.dtype
@@ -437,31 +612,46 @@ class Backend(object):
                 self.branch_names, self.nleaves_max, self.ndims
             )
         }
+        # combine with original chain
         self.chain = {
             key: np.concatenate((self.chain[key], a[key]), axis=0) for key in a
         }
+
+        # temperorary addition to inds
         a = {
             key: np.empty((i, self.ntemps, self.nwalkers, nleaves), dtype=bool)
             for key, nleaves in zip(self.branch_names, self.nleaves_max)
         }
+        # combine with original inds
         self.inds = {key: np.concatenate((self.inds[key], a[key]), axis=0) for key in a}
+
+        # temperorary addition for log likelihood
         a = np.empty((i, self.ntemps, self.nwalkers), dtype=self.dtype)
+        # combine with original log likelihood
         self.log_prob = np.concatenate((self.log_prob, a), axis=0)
+
+        # temperorary addition for log prior
         a = np.empty((i, self.ntemps, self.nwalkers), dtype=self.dtype)
+        # combine with original log prior
         self.log_prior = np.concatenate((self.log_prior, a), axis=0)
+
+        # temperorary addition for betas
         a = np.empty((i, self.ntemps), dtype=self.dtype)
+        # combine with original betas
         self.betas = np.concatenate((self.betas, a), axis=0)
 
         if blobs is not None:
             dt = np.dtype((blobs.dtype, blobs.shape[2:]))
+            # temperorary addition for blobs
             a = np.empty((i, self.ntemps, self.nwalkers), dtype=dt)
+            # combine with original blobs
             if self.blobs is None:
                 self.blobs = a
             else:
                 self.blobs = np.concatenate((self.blobs, a), axis=0)
 
     def _check(self, state, accepted, rj_accepted=None):
-
+        """Check all the information going in is okay."""
         self._check_blobs(state.blobs)
         self._check_rj_accepted(rj_accepted)
 
@@ -469,6 +659,8 @@ class Backend(object):
         has_blobs = self.has_blobs()
 
         ntemps, nwalkers = self.ntemps, self.nwalkers
+
+        # make sure all of the coordinate and inds dimensions are okay
         for key, shape in shapes.items():
             ntemp1, nwalker1, nleaves1, ndim1 = state.branches[key].shape
             ntemp2, nwalker2, nleaves2, ndim2 = shape
@@ -493,6 +685,7 @@ class Backend(object):
                     )
                 )
 
+        # make sure log likelihood, log prior, blobs, accepted, rj_accepted, betas
         if state.log_prob.shape != (ntemps, nwalkers,):
             raise ValueError(
                 "invalid log probability size; expected {0}".format(ntemps, nwalkers)
@@ -520,6 +713,9 @@ class Backend(object):
                     "invalid rj acceptance size; expected {0}".format(ntemps, nwalkers)
                 )
 
+        if state.betas.shape != (ntemps,):
+            raise ValueError("invalid beta size; expected {0}".format(ntemps))
+
     def save_step(self, state, accepted, rj_accepted=None):
         """Save a step to the backend
 
@@ -527,23 +723,28 @@ class Backend(object):
             state (State): The :class:`State` of the ensemble.
             accepted (ndarray): An array of boolean flags indicating whether
                 or not the proposal for each walker was accepted.
-            rj_accepted (ndarray, optional): An array of boolean flags indicating whether
-                or not the reversable jump proposal for each walker was accepted.
+            rj_accepted (ndarray, optional): An array of the number of accepted steps
+                for the reversible jump proposal for each walker.
                 If :code:`self.rj` is True, then rj_accepted must be an array with
                 :code:`rj_accepted.shape == accepted.shape`. If :code:`self.rj`
                 is False, then rj_accepted must be None, which is the default.
 
         """
+        # check to make sure all information in the state is okay
         self._check(state, accepted, rj_accepted=rj_accepted)
 
+        # save the coordinates and inds
         for key, model in state.branches.items():
             self.inds[key][self.iteration] = model.inds
-            # TODO: how do we want to store final info
-            # right now is leaves zeros in unused leaves
+            # use self.store_missing_leaves to set value for missing leaves
             # state retains old coordinates
             coords_in = model.coords * model.inds[:, :, :, None]
+
+            inds_all =  np.repeat(model.inds, 3, axis=-1).reshape(model.inds.shape + (3,))
+            coords_in[~inds_all] = self.store_missing_leaves
             self.chain[key][self.iteration] = coords_in
 
+        # save higher level quantities
         self.log_prob[self.iteration, :, :] = state.log_prob
         self.log_prior[self.iteration, :, :] = state.log_prior
         if state.blobs is not None:
@@ -558,25 +759,42 @@ class Backend(object):
         self.random_state = state.random_state
         self.iteration += 1
 
-    def get_info(self, burn=0, thin=1):
+    def get_info(self, discard=0, thin=1):
+        """Get an output info dictionary
 
-        samples = self.get_chain(discard=burn, thin=thin)
+        This dictionary could be used for diagnostics or plotting.
+
+        Args:
+            discard (int, optional): Discard the first ``discard`` steps in
+                the chain as burn-in. (default: ``0``)
+            thin (int, optional): Use only every ``thin`` steps from the
+                chain. The returned estimate is multiplied by ``thin`` so the
+                estimated time is in units of steps, not thinned steps.
+                (default: ``1``)
+
+        Returns:
+            dict: Information for diagnostics
+                Dictionary that contains much of the information for diagnostic
+                checks or plotting.
+
+        """
+        samples = self.get_chain(discard=discard, thin=thin)
 
         # add all information that would be needed from backend
         out_info = dict(samples=samples)
         out_info["thin"] = thin
-        out_info["burn"] = burn
+        out_info["burn"] = discard
 
         tau = self.get_autocorr_time()
 
         # get log prob
-        out_info["log_prob"] = self.get_log_prob(thin=thin, discard=burn)
+        out_info["log_prob"] = self.get_log_prob(thin=thin, discard=discard)
 
         # get temperatures
-        out_info["betas"] = self.get_betas(thin=thin, discard=burn)
+        out_info["betas"] = self.get_betas(thin=thin, discard=discard)
 
         # get inds
-        out_info["inds"] = self.get_inds(thin=thin, discard=burn)
+        out_info["inds"] = self.get_inds(thin=thin, discard=discard)
 
         out_info["shapes"] = self.shape
         out_info["ntemps"] = self.ntemps
