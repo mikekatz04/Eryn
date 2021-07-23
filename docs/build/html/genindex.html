@@ -88,7 +88,10 @@
             
               <p class="caption"><span class="caption-text">Documentation:</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="user/ensemble.html">Ensemble</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/state.html">State</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/backend.html">Backends</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/prior.html">Priors</a></li>
 </ul>
 
             
@@ -162,18 +165,25 @@
  | <a href="#B"><strong>B</strong></a>
  | <a href="#C"><strong>C</strong></a>
  | <a href="#D"><strong>D</strong></a>
+ | <a href="#E"><strong>E</strong></a>
  | <a href="#G"><strong>G</strong></a>
  | <a href="#H"><strong>H</strong></a>
  | <a href="#I"><strong>I</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#N"><strong>N</strong></a>
  | <a href="#O"><strong>O</strong></a>
+ | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
+ | <a href="#U"><strong>U</strong></a>
  
 </div>
 <h2 id="A">A</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.acceptance_fraction">acceptance_fraction (eryn.ensemble.EnsembleSampler property)</a>
+</li>
+  </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="user/backend.html#eryn.backends.Backend.accepted">accepted (eryn.backends.Backend attribute)</a>
 </li>
@@ -187,11 +197,15 @@
 </li>
       <li><a href="user/backend.html#eryn.backends.Backend.betas">betas (eryn.backends.Backend attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="user/backend.html#eryn.backends.Backend.blobs">blobs (eryn.backends.Backend attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="user/backend.html#eryn.backends.Backend.branch_names">branch_names (eryn.backends.Backend attribute)</a>
+</li>
+      <li><a href="user/state.html#eryn.state.State.branches_coords">branches_coords (eryn.state.State property)</a>
+</li>
+      <li><a href="user/state.html#eryn.state.State.branches_inds">branches_inds (eryn.state.State property)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -202,12 +216,24 @@
       <li><a href="user/backend.html#eryn.backends.Backend.chain">chain (eryn.backends.Backend attribute)</a>
 </li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.compute_log_prob">compute_log_prob() (eryn.ensemble.EnsembleSampler method)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="user/backend.html#eryn.backends.Backend.dtype">dtype (eryn.backends.Backend attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="E">E</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler">EnsembleSampler (class in eryn.ensemble)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -226,6 +252,8 @@
       <ul>
         <li><a href="user/backend.html#eryn.backends.HDFBackend.get_autocorr_time">(eryn.backends.HDFBackend method)</a>
 </li>
+        <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_autocorr_time">(eryn.ensemble.EnsembleSampler method)</a>
+</li>
       </ul></li>
       <li><a href="user/backend.html#eryn.backends.Backend.get_betas">get_betas() (eryn.backends.Backend method)</a>
 
@@ -238,11 +266,15 @@
       <ul>
         <li><a href="user/backend.html#eryn.backends.HDFBackend.get_blobs">(eryn.backends.HDFBackend method)</a>
 </li>
+        <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_blobs">(eryn.ensemble.EnsembleSampler method)</a>
+</li>
       </ul></li>
       <li><a href="user/backend.html#eryn.backends.Backend.get_chain">get_chain() (eryn.backends.Backend method)</a>
 
       <ul>
         <li><a href="user/backend.html#eryn.backends.HDFBackend.get_chain">(eryn.backends.HDFBackend method)</a>
+</li>
+        <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_chain">(eryn.ensemble.EnsembleSampler method)</a>
 </li>
       </ul></li>
       <li><a href="user/backend.html#eryn.backends.Backend.get_evidence_estimate">get_evidence_estimate() (eryn.backends.Backend method)</a>
@@ -255,6 +287,8 @@
 
       <ul>
         <li><a href="user/backend.html#eryn.backends.HDFBackend.get_inds">(eryn.backends.HDFBackend method)</a>
+</li>
+        <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_inds">(eryn.ensemble.EnsembleSampler method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -270,6 +304,8 @@
       <ul>
         <li><a href="user/backend.html#eryn.backends.HDFBackend.get_last_sample">(eryn.backends.HDFBackend method)</a>
 </li>
+        <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_last_sample">(eryn.ensemble.EnsembleSampler method)</a>
+</li>
       </ul></li>
       <li><a href="user/backend.html#eryn.backends.Backend.get_log_prior">get_log_prior() (eryn.backends.Backend method)</a>
 
@@ -282,11 +318,15 @@
       <ul>
         <li><a href="user/backend.html#eryn.backends.HDFBackend.get_log_prob">(eryn.backends.HDFBackend method)</a>
 </li>
+        <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_log_prob">(eryn.ensemble.EnsembleSampler method)</a>
+</li>
       </ul></li>
       <li><a href="user/backend.html#eryn.backends.Backend.get_nleaves">get_nleaves() (eryn.backends.Backend method)</a>
 
       <ul>
         <li><a href="user/backend.html#eryn.backends.HDFBackend.get_nleaves">(eryn.backends.HDFBackend method)</a>
+</li>
+        <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_nleaves">(eryn.ensemble.EnsembleSampler method)</a>
 </li>
       </ul></li>
       <li><a href="user/backend.html#eryn.backends.Backend.get_value">get_value() (eryn.backends.Backend method)</a>
@@ -343,6 +383,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="user/backend.html#eryn.backends.Backend.log_prob">log_prob (eryn.backends.Backend attribute)</a>
 </li>
+      <li><a href="user/prior.html#eryn.prior.PriorContainer.logpdf">logpdf() (eryn.prior.PriorContainer method)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -372,13 +414,31 @@
   </ul></td>
 </tr></table>
 
+<h2 id="P">P</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="user/prior.html#eryn.prior.PriorContainer">PriorContainer (class in eryn.prior)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="user/prior.html#eryn.prior.PriorContainer.priors">priors (eryn.prior.PriorContainer attribute)</a>
+</li>
+      <li><a href="user/prior.html#eryn.prior.PriorContainer.priors_in">priors_in (eryn.prior.PriorContainer attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.random_state">random_state (eryn.ensemble.EnsembleSampler property)</a>
+</li>
       <li><a href="user/backend.html#eryn.backends.Backend.reset">reset() (eryn.backends.Backend method)</a>
 
       <ul>
         <li><a href="user/backend.html#eryn.backends.HDFBackend.reset">(eryn.backends.HDFBackend method)</a>
+</li>
+        <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.reset">(eryn.ensemble.EnsembleSampler method)</a>
 </li>
       </ul></li>
       <li><a href="user/backend.html#eryn.backends.Backend.reset_args">reset_args (eryn.backends.Backend attribute)</a>
@@ -395,7 +455,11 @@
 </li>
       <li><a href="user/backend.html#eryn.backends.Backend.rj">rj (eryn.backends.Backend attribute)</a>
 </li>
+      <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.rj_acceptance_fraction">rj_acceptance_fraction (eryn.ensemble.EnsembleSampler property)</a>
+</li>
       <li><a href="user/backend.html#eryn.backends.Backend.rj_accepted">rj_accepted (eryn.backends.Backend attribute)</a>
+</li>
+      <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.run_mcmc">run_mcmc() (eryn.ensemble.EnsembleSampler method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -403,6 +467,8 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.sample">sample() (eryn.ensemble.EnsembleSampler method)</a>
+</li>
       <li><a href="user/backend.html#eryn.backends.Backend.save_step">save_step() (eryn.backends.Backend method)</a>
 
       <ul>
@@ -417,7 +483,17 @@
         <li><a href="user/backend.html#eryn.backends.HDFBackend.shape">(eryn.backends.HDFBackend property)</a>
 </li>
       </ul></li>
+      <li><a href="user/state.html#eryn.state.State">State (class in eryn.state)</a>
+</li>
       <li><a href="user/backend.html#eryn.backends.Backend.store_missing_leaves">store_missing_leaves (eryn.backends.Backend attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="U">U</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="user/prior.html#eryn.prior.uniform_dist">uniform_dist() (in module eryn.prior)</a>
 </li>
   </ul></td>
 </tr></table>

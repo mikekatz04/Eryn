@@ -3,12 +3,23 @@ from scipy import stats
 
 
 def uniform_dist(min, max):
+    """Generate uniform distribution between ``min`` and ``max``
+
+    Args:
+        min (double): Minimum in the uniform distribution
+        max (double): Maximum in the uniform distribution
+
+    Returns:
+        scipy distribution object: Uniform distribution built from scipy.stats
+
+    """
+    # adjust ordering if needed
     if min > max:
         temp = min
         min = max
         max = temp
 
-    mean = (max + min) / 2.0
+    # setup quantities for scipy
     sig = max - min
     dist = stats.uniform(min, sig)
     return dist
@@ -30,6 +41,20 @@ def log_uniform(min, max):
 
 
 class PriorContainer:
+    """Container for holding and generating prior info
+
+    Args:
+        priors_in (dict): Dictionary with keys as int or tuple of int
+            describing which parameters the prior takes. Values are
+            probability distributions with ``logpdf`` and ``rvs`` methods.
+
+    Attributes:
+        priors_in (dict): Dictionary with keys as int or tuple of int
+            describing which parameters the prior takes. Values are
+            probability distributions with ``logpdf`` and ``rvs`` methods.
+        priors (list): list of keys and values from original dictionary.
+
+    """
     def __init__(self, priors_in):
 
         self.priors_in = priors_in.copy()
@@ -62,6 +87,7 @@ class PriorContainer:
         self.ndim = uni_inds.max() + 1
 
     def logpdf(self, x, groups=None):
+        """TEST docs"""
         # TODO: check if mutliple index prior will work
         prior_vals = np.zeros(x.shape[0])
         for i, (inds, prior_i) in enumerate(self.priors):

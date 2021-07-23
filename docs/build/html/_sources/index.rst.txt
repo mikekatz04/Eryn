@@ -12,4 +12,7 @@ Welcome to Eryn's documentation!
    :maxdepth: 4
    :caption: Documentation:
 
+   user/ensemble
+   user/state
    user/backend
+   user/prior

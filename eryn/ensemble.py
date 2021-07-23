@@ -26,19 +26,44 @@ except ImportError:
 class EnsembleSampler(object):
     """An ensemble MCMC sampler
 
-    If you are upgrading from an earlier version of emcee, you might notice
-    that some arguments are now deprecated. The parameters that control the
-    proposals have been moved to the :ref:`moves-user` interface (``a`` and
-    ``live_dangerously``), and the parameters related to parallelization can
-    now be controlled via the ``pool`` argument (:ref:`parallel`).
+    The class controls the entire sampling run. It can handle
+    everything from a basic non-tempered MCMC to a parallel-tempered,
+    global fit containing multiple branches (models) and a variable
+    number of leaves (sources) per branch. (# TODO: add link to tree explainer)
+    Parameters related to parallelization can be
+    controlled via the ``pool`` argument (:ref:`parallel`).
 
     Args:
         nwalkers (int): The number of walkers in the ensemble.
-        ndim (int): Number of dimensions in the parameter space.
+        ndims (int or list of ints): Number of dimensions in the parameter space
+            for each branch tested.
         log_prob_fn (callable): A function that takes a vector in the
             parameter space as input and returns the natural logarithm of the
-            posterior probability (up to an additive constant) for that
-            position.
+            likelihood for that position. When using reversible jump, this function
+            must take a specific set of arguments: ``(x1, group1,...,xN, groupN)``,
+            where ``N`` is the number of branches. ``x1,..,xN`` are the coordinates
+            for each branch and ``group1,...,groupN`` are the groups of leaves that
+            are combined for each walker. This is due to the possibly variable number
+            of leaves associated with different walkers. ``x1`` is 2D with shape
+            (all included individual leaves of branch 1, ndim1), ``xN`` is 2D with shape
+            (all included individual leaves of branch N, ndimN). ``group1`` is
+            a 1D int array array of indexes assigning the specific leaf to a
+            specific walker. Please see the tutorial for more information. (# TODO: add link to tutorial)
+        priors (dict): The prior dictionary can take three forms. 1) A dictionary with keys
+            as int or tuple containing the int or tuple of int that describe the parameter
+            number over which to assess the prior, and values that are prior probability
+            distributions that must have a ``logpdf`` class method. 2) A dictionary with keys
+            that are ``branch_names`` and values that are dictionaries for
+            each branch as described for (1). 3) A dictionary with keys that are
+            ``branch_names`` and values are PriorContainer (# TODO: add link for prior container) objects.
+        provide_groups (bool, optional): If True, provide groups as described in ``log_prob_fn`` above.
+            A group parameter is added for each branch. (default: ``False``)
+        tempering_kwargs (dict, optional): Keyword arguments for initialization of the
+            tempering class (# TODO: add link to tempering class).  (default: ``{}``)
+        nbranches (int, optional): Number of branches (models) tested. (default: ``1``)
+        nleaves_max (int, list of int, or int np.ndarray[nbrances], optional):
+            Number of maximum allowable leaves for each branch. (default: ``1``)
+
         moves (Optional): This can be a single move object, a list of moves,
             or a "weighted" list of the form ``[(emcee.moves.StretchMove(),
             0.1), ...]``. When running, the sampler will randomly select a
@@ -76,7 +101,7 @@ class EnsembleSampler(object):
         tempering_kwargs={},
         nbranches=1,
         nleaves_max=1,
-        test_inds=None,
+        # test_inds=None,  # TODO: add ?
         pool=None,
         moves=None,
         rj_moves=None,

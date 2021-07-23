@@ -434,9 +434,8 @@ class Backend(object):
     def get_last_sample(self):
         """Access the most recent sample in the chain
 
-        # TODO: link this to actual state object
         Returns:
-            State: State object containing the last sample from the chain.
+            State: :class:`eryn.state.State` object containing the last sample from the chain.
 
         """
         if (not self.initialized) or self.iteration <= 0:
