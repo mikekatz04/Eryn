@@ -10,7 +10,8 @@ def uniform_dist(min, max):
         max (double): Maximum in the uniform distribution
 
     Returns:
-        scipy distribution object: Uniform distribution built from scipy.stats
+        scipy distribution object: Uniform distribution built from
+            `scipy.stats.uniform <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.uniform.html>_`.
 
     """
     # adjust ordering if needed
@@ -24,17 +25,26 @@ def uniform_dist(min, max):
     dist = stats.uniform(min, sig)
     return dist
 
-def normal_dist(mean, sigma):
-    dist = stats.norm(mean, sigma)
-    return dist
 
 def log_uniform(min, max):
+    """Generate log-uniform distribution between ``min`` and ``max``
+
+    Args:
+        min (double): Minimum in the log-uniform distribution
+        max (double): Maximum in the log-uniform distribution
+
+    Returns:
+        scipy distribution object: Log-uniform distribution built from
+            `scipy.stats.uniform <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.loguniform.html>_`.
+
+    """
+    # adjust ordering if needed
     if min > max:
         temp = min
         min = max
         max = temp
 
-    mean = (max + min) / 2.0
+    # setup quantities for scipy
     sig = max - min
     dist = stats.loguniform(min, sig)
     return dist
@@ -52,20 +62,32 @@ class PriorContainer:
         priors_in (dict): Dictionary with keys as int or tuple of int
             describing which parameters the prior takes. Values are
             probability distributions with ``logpdf`` and ``rvs`` methods.
-        priors (list): list of keys and values from original dictionary.
+        priors (list): list of indexes and their associated distributions arranged
+            in a list.
+        ndim (int): Full dimensionality.
+
+    Raises:
+        ValueError: Missing parameters or incorrect index keys.
 
     """
     def __init__(self, priors_in):
 
+        # copy to have
         self.priors_in = priors_in.copy()
+
+        # to separate out in list form
         self.priors = []
 
+        # setup lists
         temp_inds = []
         for inds, dist in priors_in.items():
+
+            # multiple index
             if isinstance(inds, tuple):
                 inds_in = np.asarray(inds)
                 self.priors.append([inds_in, dist])
 
+            # single index
             elif isinstance(inds, int):
                 inds_in = np.array([inds])
                 self.priors.append([inds_in, dist])
@@ -87,9 +109,19 @@ class PriorContainer:
         self.ndim = uni_inds.max() + 1
 
     def logpdf(self, x, groups=None):
-        """TEST docs"""
+        """Get logpdf by summing logpdf of individual distributions
+
+        Args:
+            x (double np.ndarray[number of tested sources, ndim]):
+                Input parameters to get prior values.
+
+        Returns:
+            np.ndarray[number of tested sources]: Prior values.
+
+        """
         # TODO: check if mutliple index prior will work
         prior_vals = np.zeros(x.shape[0])
+        # sum the logs (assumes parameters are independent)
         for i, (inds, prior_i) in enumerate(self.priors):
             vals_in = x[:, inds].squeeze()
             temp = prior_i.logpdf(vals_in)
@@ -98,18 +130,37 @@ class PriorContainer:
         return prior_vals
 
     def rvs(self, size=1):
+        """Generate random values according to prior distribution
 
+        Args:
+            size (int or tuple of ints, optional): Output size for number of generated
+                sources from prior distributions.
+
+        Returns:
+            np.ndarray[``size + (self.ndim,)``]: Generated samples.
+
+        Raises:
+            ValueError: If size is not an int or tuple.
+
+
+        """
+
+        # adjust size if int
         if isinstance(size, int):
             size = (size,)
 
         elif not isinstance(size, tuple):
             raise ValueError("Size must be int or tuple of ints.")
 
+        # setup the slicing to probably sample points
         out_inds = tuple([slice(None) for _ in range(len(size))])
 
+        # setup output and loop through priors
         out = np.zeros(size + (self.ndim,))
         for i, (inds, prior_i) in enumerate(self.priors):
+            # combines outer dimensions with indices of interest
             inds_in = out_inds + (inds,)
+            # allows for proper adding of quantities to out array
             adjust_inds = out_inds + (None,)
             out[inds_in] = prior_i.rvs(size=size)[adjust_inds]
 

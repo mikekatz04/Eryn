@@ -228,7 +228,8 @@ probability distributions with <code class="docutils literal notranslate"><span 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.prior.PriorContainer.priors">
 <span class="sig-name descname"><span class="pre">priors</span></span><a class="headerlink" href="#eryn.prior.PriorContainer.priors" title="Permalink to this definition">¶</a></dt>
-<dd><p>list of keys and values from original dictionary.</p>
+<dd><p>list of indexes and their associated distributions arranged
+in a list.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>list</p>
@@ -236,10 +237,58 @@ probability distributions with <code class="docutils literal notranslate"><span 
 </dl>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="eryn.prior.PriorContainer.ndim">
+<span class="sig-name descname"><span class="pre">ndim</span></span><a class="headerlink" href="#eryn.prior.PriorContainer.ndim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Full dimensionality.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – Missing parameters or incorrect index keys.</p>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.prior.PriorContainer.logpdf">
 <span class="sig-name descname"><span class="pre">logpdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.PriorContainer.logpdf" title="Permalink to this definition">¶</a></dt>
-<dd><p>TEST docs</p>
+<dd><p>Get logpdf by summing logpdf of individual distributions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>double np.ndarray</em><em>[</em><em>number of tested sources</em><em>, </em><em>ndim</em><em>]</em>) – Input parameters to get prior values.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Prior values.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray[number of tested sources]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.prior.PriorContainer.rvs">
+<span class="sig-name descname"><span class="pre">rvs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.PriorContainer.rvs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate random values according to prior distribution</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>size</strong> (<em>int</em><em> or </em><em>tuple of ints</em><em>, </em><em>optional</em>) – Output size for number of generated
+sources from prior distributions.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Generated samples.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray[<code class="docutils literal notranslate"><span class="pre">size</span> <span class="pre">+</span> <span class="pre">(self.ndim,)</span></code>]</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If size is not an int or tuple.</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -259,7 +308,35 @@ probability distributions with <code class="docutils literal notranslate"><span 
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Uniform distribution built from scipy.stats</p>
+<dd class="field-even"><p><dl class="simple">
+<dt>Uniform distribution built from</dt><dd><p><cite>scipy.stats.uniform &lt;https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.uniform.html&gt;_</cite>.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>scipy distribution object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="eryn.prior.log_uniform">
+<span class="sig-prename descclassname"><span class="pre">eryn.prior.</span></span><span class="sig-name descname"><span class="pre">log_uniform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.log_uniform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate log-uniform distribution between <code class="docutils literal notranslate"><span class="pre">min</span></code> and <code class="docutils literal notranslate"><span class="pre">max</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>min</strong> (<em>double</em>) – Minimum in the log-uniform distribution</p></li>
+<li><p><strong>max</strong> (<em>double</em>) – Maximum in the log-uniform distribution</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Log-uniform distribution built from</dt><dd><p><cite>scipy.stats.uniform &lt;https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.loguniform.html&gt;_</cite>.</p>
+</dd>
+</dl>
+</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>scipy distribution object</p>

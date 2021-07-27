@@ -199,7 +199,7 @@
 <p>The <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.ensemble.Ensemble</span></code> is the main driver and container for MCMC runs.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.ensemble.</span></span><span class="sig-name descname"><span class="pre">EnsembleSampler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_prob_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">provide_groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tempering_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbranches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rj_moves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blobs_dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">truth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autocorr_iter_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autocorr_multiplier</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_generator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stopping_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stopping_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.ensemble.</span></span><span class="sig-name descname"><span class="pre">EnsembleSampler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_prob_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">provide_groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tempering_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbranches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rj_moves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blobs_dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">truth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autocorr_iter_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autocorr_multiplier</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_generator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stopping_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stopping_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>An ensemble MCMC sampler</p>
 <p>The class controls the entire sampling run. It can handle
@@ -238,32 +238,83 @@ A group parameter is added for each branch. (default: <code class="docutils lite
 <li><p><strong>tempering_kwargs</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keyword arguments for initialization of the
 tempering class (# TODO: add link to tempering class).  (default: <code class="docutils literal notranslate"><span class="pre">{}</span></code>)</p></li>
 <li><p><strong>nbranches</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of branches (models) tested. (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
-<li><p><strong>nleaves_max</strong> (<em>int</em><em>, </em><em>list of int</em><em>, or </em><em>int np.ndarray</em><em>[</em><em>nbrances</em><em>]</em><em>, </em><em>optional</em>) – Number of maximum allowable leaves for each branch. (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
-<li><p><strong>moves</strong> (<em>Optional</em>) – This can be a single move object, a list of moves,
-or a “weighted” list of the form <code class="docutils literal notranslate"><span class="pre">[(emcee.moves.StretchMove(),</span>
-<span class="pre">0.1),</span> <span class="pre">...]</span></code>. When running, the sampler will randomly select a
-move from this list (optionally with weights) for each proposal.
-(default: <code class="xref py py-class docutils literal notranslate"><span class="pre">StretchMove</span></code>)</p></li>
-<li><p><strong>args</strong> (<em>Optional</em>) – A list of extra positional arguments for
-<code class="docutils literal notranslate"><span class="pre">log_prob_fn</span></code>. <code class="docutils literal notranslate"><span class="pre">log_prob_fn</span></code> will be called with the sequence
-<code class="docutils literal notranslate"><span class="pre">log_pprob_fn(p,</span> <span class="pre">*args,</span> <span class="pre">**kwargs)</span></code>.</p></li>
-<li><p><strong>kwargs</strong> (<em>Optional</em>) – A dict of extra keyword arguments for
-<code class="docutils literal notranslate"><span class="pre">log_prob_fn</span></code>. <code class="docutils literal notranslate"><span class="pre">log_prob_fn</span></code> will be called with the sequence
-<code class="docutils literal notranslate"><span class="pre">log_pprob_fn(p,</span> <span class="pre">*args,</span> <span class="pre">**kwargs)</span></code>.</p></li>
-<li><p><strong>pool</strong> (<em>Optional</em>) – An object with a <code class="docutils literal notranslate"><span class="pre">map</span></code> method that follows the same
+<li><p><strong>nleaves_max</strong> (<em>int</em><em>, </em><em>list of int</em><em>, or </em><em>int np.ndarray</em><em>[</em><em>nbranches</em><em>]</em><em>, </em><em>optional</em>) – Number of maximum allowable leaves for each branch. (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
+<li><p><strong>nleaves_min</strong> (<em>int</em><em>, </em><em>list of int</em><em>, or </em><em>int np.ndarray</em><em>[</em><em>nbranches</em><em>]</em><em>, </em><em>optional</em>) – Number of minimum allowable leaves for each branch. This is only
+used when using reversible jump. (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
+<li><p><strong>pool</strong> (<em>optional</em>) – An object with a <code class="docutils literal notranslate"><span class="pre">map</span></code> method that follows the same
 calling sequence as the built-in <code class="docutils literal notranslate"><span class="pre">map</span></code> function. This is
 generally used to compute the log-probabilities for the ensemble
 in parallel.</p></li>
-<li><p><strong>backend</strong> (<em>Optional</em>) – Either a <code class="xref py py-class docutils literal notranslate"><span class="pre">backends.Backend</span></code> or a subclass
+<li><p><strong>moves</strong> (<em>optional</em>) – This can be a single move object, a list of moves,
+or a “weighted” list of the form <code class="docutils literal notranslate"><span class="pre">[(emcee.moves.StretchMove(),</span>
+<span class="pre">0.1),</span> <span class="pre">...]</span></code>. When running, the sampler will randomly select a
+move from this list (optionally with weights) for each proposal.
+If <code class="docutils literal notranslate"><span class="pre">None</span></code>, the default will be <code class="xref py py-class docutils literal notranslate"><span class="pre">StretchMove</span></code> if <code class="docutils literal notranslate"><span class="pre">cov</span></code> is
+not provided. If <code class="docutils literal notranslate"><span class="pre">cov</span></code> is provided, it will be <code class="xref py py-class docutils literal notranslate"><span class="pre">GaussianMove</span></code>.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>rj_moves</strong> (<em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">None</span></code> ot <code class="docutils literal notranslate"><span class="pre">False</span></code>, reversible jump will not be included in the run.
+This can be a single move object, a list of moves,
+or a “weighted” list of the form <code class="docutils literal notranslate"><span class="pre">[(eryn.moves.PriorGenerate(),</span>
+<span class="pre">0.1),</span> <span class="pre">...]</span></code>. When running, the sampler will randomly select a
+move from this list (optionally with weights) for each proposal.
+If <code class="docutils literal notranslate"><span class="pre">True</span></code>, it defaults to <code class="xref py py-class docutils literal notranslate"><span class="pre">PriorGenerate</span></code>.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>args</strong> (<em>optional</em>) – A list of extra positional arguments for
+<code class="docutils literal notranslate"><span class="pre">log_prob_fn</span></code>. <code class="docutils literal notranslate"><span class="pre">log_prob_fn</span></code> will be called with the sequence
+<code class="docutils literal notranslate"><span class="pre">log_prob_fn(p,</span> <span class="pre">*args,</span> <span class="pre">**kwargs)</span></code>.</p></li>
+<li><p><strong>kwargs</strong> (<em>optional</em>) – A dict of extra keyword arguments for
+<code class="docutils literal notranslate"><span class="pre">log_prob_fn</span></code>. <code class="docutils literal notranslate"><span class="pre">log_prob_fn</span></code> will be called with the sequence
+<code class="docutils literal notranslate"><span class="pre">log_prob_fn(p,</span> <span class="pre">*args,</span> <span class="pre">**kwargs)</span></code>.</p></li>
+<li><p><strong>backend</strong> (<em>optional</em>) – Either a <code class="xref py py-class docutils literal notranslate"><span class="pre">backends.Backend</span></code> or a subclass
 (like <code class="xref py py-class docutils literal notranslate"><span class="pre">backends.HDFBackend</span></code>) that is used to store and
 serialize the state of the chain. By default, the chain is stored
 as a set of numpy arrays in memory, but new backends can be
 written to support other mediums.</p></li>
-<li><p><strong>vectorize</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">log_prob_fn</span></code> is expected
+<li><p><strong>vectorize</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">log_prob_fn</span></code> is expected
 to accept a list of position vectors instead of just one. Note
 that <code class="docutils literal notranslate"><span class="pre">pool</span></code> will be ignored if this is <code class="docutils literal notranslate"><span class="pre">True</span></code>.
 (default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
+<li><p><strong>subset</strong> (<em>int</em><em>, </em><em>optional</em>) – Set an amount of walkers to have their likelihood
+calculated (used when <code class="docutils literal notranslate"><span class="pre">vectorize</span> <span class="pre">==</span> <span class="pre">True</span></code>). This allows the user
+to maintain memory constraints while adding more walkers to the ensemble.
+When subset is <code class="docutils literal notranslate"><span class="pre">None</span></code>, all walkers are determined together.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>) # TODO implement</p></li>
+<li><p><strong>autocorr_iter_count</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of iterations of the sampler
+before the autocorrelations are checked and printed.
+<code class="docutils literal notranslate"><span class="pre">autocorr_iter_count</span> <span class="pre">==</span> <span class="pre">-1</span></code> will not check the autocorrelation lengths.
+(default: 100)</p></li>
+<li><p><strong>autocorr_multiplier</strong> (<em>int</em><em>, </em><em>optional</em>) – This will stop the sampler if the
+sampler iteration is greater than
+<code class="docutils literal notranslate"><span class="pre">autocorr_multiplier</span> <span class="pre">*</span> <span class="pre">max(autocorrelation</span> <span class="pre">lengths)</span></code>.
+(default: 50)</p></li>
+<li><p><strong>plot_iterations</strong> (<em>int</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">plot_iterations</span> <span class="pre">==</span> <span class="pre">-1</span></code>, then the
+diagnostic plots will not be constructed. Otherwise, the diagnostic
+plots will be constructed every <code class="docutils literal notranslate"><span class="pre">plot_iterations</span></code> sampler iterations.
+(default: -1)</p></li>
+<li><p><strong>plot_generator</strong> (<em>optional</em>) – # TODO: add class object that controls
+the diagnostic plotting updates. If not provided and <code class="docutils literal notranslate"><span class="pre">plot_iterations</span> <span class="pre">&gt;</span> <span class="pre">0</span></code>,
+the ensemble will initialize a default plotting setup.
+(default: None)</p></li>
+<li><p><strong>periodic</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code>. Values are dictionaries
+that have (key: value) pairs as (index to parameter: period). Periodic
+parameters are treated as having periodic boundary conditions in proposals.</p></li>
+<li><p><strong>update_fn</strong> (<em>optional</em>) – <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.utils.updates.AdjustStretchProposalScale</span></code>
+object that allows the user to update the sampler in any preferred way
+every <code class="docutils literal notranslate"><span class="pre">update_iterations</span></code> sampler iterations.</p></li>
+<li><p><strong>update_iterations</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of iterations between sampler
+updates using <code class="docutils literal notranslate"><span class="pre">update_fn</span></code>.</p></li>
+<li><p><strong>stopping_fn</strong> (<em>optional</em>) – <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.utils.stopping.Stopping</span></code> object that
+allows the user to end the sampler if specified criteria are met.</p></li>
+<li><p><strong>stopping_iterations</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of iterations between sampler
+attempts to evaluate the <code class="docutils literal notranslate"><span class="pre">stopping_fn</span></code>.</p></li>
+<li><p><strong>info</strong> (<em>dict</em><em>, </em><em>optional</em>) – Key and value pairs reprenting any information
+the user wants to add to the backend if the user is not inputing
+their own backend.</p></li>
+<li><p><strong>verbose</strong> (<em>int</em><em>, </em><em>optional</em>) – # TODO</p></li>
 </ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – Any startup issues.</p>
 </dd>
 </dl>
 <dl class="py property">
@@ -280,6 +331,11 @@ so silently.</p>
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.reset">
 <span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">info</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.reset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset the bookkeeping parameters</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>**info</strong> (<em>dict</em><em>, </em><em>optional</em>) – information to pass to backend reset method.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -289,36 +345,45 @@ so silently.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>initial_state</strong> (<a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><em>State</em></a><em> or </em><em>ndarray</em><em>[</em><em>nwalkers</em><em>, </em><em>ndim</em><em>]</em>) – The initial
+<li><p><strong>initial_state</strong> (<a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><em>State</em></a><em> or </em><em>ndarray</em><em>[</em><em>nwalkers</em><em>, </em><em>ndim</em><em>] or </em><em>dict</em>) – The initial
 <code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code> or positions of the walkers in the
-parameter space.</p></li>
-<li><p><strong>iterations</strong> (<em>Optional</em><em>[</em><em>int</em><em> or </em><em>NoneType</em><em>]</em>) – The number of steps to generate.
-<code class="docutils literal notranslate"><span class="pre">None</span></code> generates an infinite stream (requires <code class="docutils literal notranslate"><span class="pre">store=False</span></code>).</p></li>
-<li><p><strong>tune</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, the parameters of some moves
+parameter space. If multiple branches used, must be dict with keys
+as the <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values as the positions.</p></li>
+<li><p><strong>iterations</strong> (<em>int</em><em> or </em><em>NoneType</em><em>, </em><em>optional</em>) – The number of steps to generate.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> generates an infinite stream (requires <code class="docutils literal notranslate"><span class="pre">store=False</span></code>).
+(default: 1)</p></li>
+<li><p><strong>tune</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, the parameters of some moves
 will be automatically tuned.</p></li>
-<li><p><strong>thin_by</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – If you only want to store and yield every
+<li><p><strong>thin_by</strong> (<em>int</em><em>, </em><em>optional</em>) – If you only want to store and yield every
 <code class="docutils literal notranslate"><span class="pre">thin_by</span></code> samples in the chain, set <code class="docutils literal notranslate"><span class="pre">thin_by</span></code> to an
 integer greater than 1. When this is set, <code class="docutils literal notranslate"><span class="pre">iterations</span> <span class="pre">*</span>
 <span class="pre">thin_by</span></code> proposals will be made.</p></li>
-<li><p><strong>store</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – By default, the sampler stores (in memory)
+<li><p><strong>store</strong> (<em>bool</em><em>, </em><em>optional</em>) – By default, the sampler stores in the backend
 the positions and log-probabilities of the samples in the
 chain. If you are using another method to store the samples to
 a file or if you don’t need to analyze the samples after the
 fact (for burn-in for example) set <code class="docutils literal notranslate"><span class="pre">store</span></code> to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
-<li><p><strong>progress</strong> (<em>Optional</em><em>[</em><em>bool</em><em> or </em><em>str</em><em>]</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, a progress bar will
+<li><p><strong>progress</strong> (<em>bool</em><em> or </em><em>str</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, a progress bar will
 be shown as the sampler progresses. If a string, will select a
 specific <code class="docutils literal notranslate"><span class="pre">tqdm</span></code> progress bar - most notable is
 <code class="docutils literal notranslate"><span class="pre">'notebook'</span></code>, which shows a progress bar suitable for
 Jupyter notebooks.  If <code class="docutils literal notranslate"><span class="pre">False</span></code>, no progress bar will be
 shown.</p></li>
-<li><p><strong>skip_initial_state_check</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, a check
+<li><p><strong>skip_initial_state_check</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, a check
 that the initial_state can fully explore the space will be
 skipped. (default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
 </ul>
 </dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Every <code class="docutils literal notranslate"><span class="pre">thin_by</span></code> steps, this generator yields the <code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code> of the ensemble.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State">State</a></p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – Improper initialization.</p>
+</dd>
 </dl>
-<p>Every <code class="docutils literal notranslate"><span class="pre">thin_by</span></code> steps, this generator yields the
-<code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code> of the ensemble.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -328,34 +393,98 @@ skipped. (default: <code class="docutils literal notranslate"><span class="pre">
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>initial_state</strong> – The initial state or position vector. Can also be
+<li><p><strong>initial_state</strong> (<a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><em>State</em></a><em> or </em><em>ndarray</em><em>[</em><em>nwalkers</em><em>, </em><em>ndim</em><em>] or </em><em>dict</em>) – The initial
+<code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code> or positions of the walkers in the
+parameter space. If multiple branches used, must be dict with keys
+as the <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values as the positions. Can also be
 <code class="docutils literal notranslate"><span class="pre">None</span></code> to resume from where :func:<code class="docutils literal notranslate"><span class="pre">run_mcmc</span></code> left off the
 last time it executed.</p></li>
 <li><p><strong>nsteps</strong> – The number of steps to run.</p></li>
+<li><p><strong>burn</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of burn steps to run before storing information.</p></li>
 </ul>
 </dd>
 </dl>
 <p>Other parameters are directly passed to <a class="reference internal" href="#eryn.ensemble.EnsembleSampler.sample" title="eryn.ensemble.EnsembleSampler.sample"><code class="xref py py-func docutils literal notranslate"><span class="pre">sample()</span></code></a>.</p>
-<p>This method returns the most recent result from <a class="reference internal" href="#eryn.ensemble.EnsembleSampler.sample" title="eryn.ensemble.EnsembleSampler.sample"><code class="xref py py-func docutils literal notranslate"><span class="pre">sample()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>This method returns the most recent result from <a class="reference internal" href="#eryn.ensemble.EnsembleSampler.sample" title="eryn.ensemble.EnsembleSampler.sample"><code class="xref py py-func docutils literal notranslate"><span class="pre">sample()</span></code></a>.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State">State</a></p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – <code class="docutils literal notranslate"><span class="pre">If</span> <span class="pre">initial_state</span></code> is None and <code class="docutils literal notranslate"><span class="pre">run_mcmc</span></code> has never been called.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.compute_log_prior">
+<span class="sig-name descname"><span class="pre">compute_log_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.compute_log_prior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the vector of log-prior for the walkers</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coords</strong> (<em>dict</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are
+the position np.arrays[ntemps, nwalkers, nleaves_max, ndim].
+This dictionary is created with the <code class="docutils literal notranslate"><span class="pre">branches_coords</span></code> attribute
+from <code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code>.</p></li>
+<li><p><strong>inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are
+the inds np.arrays[ntemps, nwalkers, nleaves_max] that indicates
+which leaves are being used. This dictionary is created with the
+<code class="docutils literal notranslate"><span class="pre">branches_inds</span></code> attribute from <code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code>.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Prior Values</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.compute_log_prob">
 <span class="sig-name descname"><span class="pre">compute_log_prob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.compute_log_prob" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate the vector of log-probability for the walkers</p>
+<dd><p>Calculate the vector of log-likelihood for the walkers</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>coords</strong> – (ndarray[…, ndim]) The position vector in parameter
-space where the probability should be calculated.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coords</strong> (<em>dict</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are
+the position np.arrays[ntemps, nwalkers, nleaves_max, ndim].
+This dictionary is created with the <code class="docutils literal notranslate"><span class="pre">branches_coords</span></code> attribute
+from <code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code>.</p></li>
+<li><p><strong>inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are
+the inds np.arrays[ntemps, nwalkers, nleaves_max] that indicates
+which leaves are being used. This dictionary is created with the
+<code class="docutils literal notranslate"><span class="pre">branches_inds</span></code> attribute from <code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code>.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>logp</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em><em>, </em><em>optional</em>) – Log prior values associated
+with all walkers. If not provided, it will be calculated because
+if a walker has logp = -inf, its likelihood is not calculated.
+This prevents evaluting likelihood outside the prior.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Carries log-likelihood and blob information.</dt><dd><p>First entry is np.ndarray[ntemps, nwalkers] with values corresponding
+to the log likelihood of each walker. Second entry is <code class="docutils literal notranslate"><span class="pre">blobs</span></code>.</p>
 </dd>
 </dl>
-<p>This method returns:</p>
-<ul class="simple">
-<li><p>log_prob: A vector of log-probabilities with one entry for each
-walker in this sub-ensemble.</p></li>
-<li><p>blob: The list of meta data returned by the <code class="docutils literal notranslate"><span class="pre">log_post_fn</span></code> at
-this position or <code class="docutils literal notranslate"><span class="pre">None</span></code> if nothing was returned.</p></li>
-</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><p>tuple</p>
+<dl class="simple">
+<dt>Raises:</dt><dd><p>ValueError: Infinite or NaN values in parameters.</p>
+</dd>
+</dl>
+</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py property">
@@ -367,7 +496,7 @@ this position or <code class="docutils literal notranslate"><span class="pre">No
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.rj_acceptance_fraction">
 <em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">rj_acceptance_fraction</span></span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.rj_acceptance_fraction" title="Permalink to this definition">¶</a></dt>
-<dd><p>The fraction of proposed steps that were accepted</p>
+<dd><p>The fraction of proposed reversible jump steps that were accepted</p>
 </dd></dl>
 
 <dl class="py method">
@@ -519,6 +648,36 @@ the chain as burn-in. (default: <code class="docutils literal notranslate"><span
 <dd class="field-even"><p><a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State">State</a></p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.get_betas">
+<span class="sig-name descname"><span class="pre">get_betas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_betas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the chain of inverse temperatures</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flat</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flatten the chain across the ensemble.
+(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
+<li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Take only every <code class="docutils literal notranslate"><span class="pre">thin</span></code> steps from the
+chain. (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
+<li><p><strong>discard</strong> (<em>int</em><em>, </em><em>optional</em>) – Discard the first <code class="docutils literal notranslate"><span class="pre">discard</span></code> steps in
+the chain as burn-in. (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The chain of temperatures.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>double np.ndarray[nsteps, ntemps]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.get_value">
+<span class="sig-name descname"><span class="pre">get_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a specific value</p>
 </dd></dl>
 
 <dl class="py method">

@@ -6,6 +6,10 @@
 Welcome to Eryn's documentation!
 ================================
 
+.. image:: source/img/ent.jpg
+  :width: 400
+  :alt: Alternative text
+
 .. include:: README.rst
 
 .. toctree::

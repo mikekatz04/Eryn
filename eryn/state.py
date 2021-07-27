@@ -139,7 +139,7 @@ class State(object):
         # protect against simplifying settings
         if isinstance(coords, np.ndarray):
             coords = {"model_0": atleast_4d(coords)}
-        elif not isinstance(coords, dict) or not isinstance(coords, State):
+        elif not isinstance(coords, dict):
             raise ValueError("Input coords need to be np.ndarray, dict, or State object.")
 
         for name in coords:

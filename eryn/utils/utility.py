@@ -4,6 +4,39 @@
 import numpy as np
 
 
+def groups_from_inds(inds):
+    """Convert inds to group information
+
+    Args:
+        inds (dict): Keys are ``branch_names`` and values are inds
+            np.ndarrays[ntemps, nwalkers, nleaves_max] that specific
+            which leaves are used in this step.
+
+    Returns:
+        dict: Dictionary with group information.
+            Keys are ``branch_names`` and values are
+            np.ndarray[total number of used leaves]. The array is flat.
+
+    """
+    groups = {}
+    for name, inds_temp in inds.items():
+        if inds_temp is None:
+            inds_temp = np.full(x[name].shape[:-1], True, dtype=bool)
+        ntemps, nwalkers, nleaves_max = inds_temp.shape
+        num_groups = ntemps * nwalkers
+
+        # place which group each active leaf belongs to along flattened array
+        group_id = np.repeat(
+            np.arange(num_groups).reshape(ntemps, nwalkers)[:, :, None],
+            nleaves_max,
+            axis=-1,
+        )
+
+        groups[name] = group_id[inds_temp]
+
+    return groups
+
+
 def get_acf(x, axis=0, fast=False):
     """
     Estimate the autocorrelation function of a time series using the FFT.
