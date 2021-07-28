@@ -139,7 +139,6 @@ class RedBlueMove(Move, ABC):
                     for name in state.branches_inds
                 }
 
-                breakpoint()
                 q_temp, factors_temp = self.get_proposal(
                     s, c, model.random, inds=temp_inds
                 )
