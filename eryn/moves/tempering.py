@@ -5,6 +5,8 @@ from ..state import State
 
 __all__ = ["TemperatureControl"]
 
+# TODO: add temperature control to existing proposal input by user
+
 
 def make_ladder(ndim, ntemps=None, Tmax=None):
     """

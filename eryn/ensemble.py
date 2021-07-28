@@ -121,6 +121,9 @@ class EnsembleSampler(object):
             the diagnostic plotting updates. If not provided and ``plot_iterations > 0``,
             the ensemble will initialize a default plotting setup.
             (default: None)
+        plot_name (str, optional): Name of file to save diagnostic plots to. This only
+            applies if ``plot_generator == None`` and ``plot_iterations > 0``.
+            (default: ``None``)
         periodic (dict, optional): Keys are ``branch_names``. Values are dictionaries
             that have (key: value) pairs as (index to parameter: period). Periodic
             parameters are treated as having periodic boundary conditions in proposals.
@@ -163,12 +166,13 @@ class EnsembleSampler(object):
         backend=None,
         vectorize=True,
         subset=None,
-        blobs_dtype=None, # TODO check this
+        blobs_dtype=None,  # TODO check this
         truth=None,  # TODO: add this
         autocorr_iter_count=100,
-        autocorr_multiplier=1000,# TODO: adjust this to 50
+        autocorr_multiplier=1000,  # TODO: adjust this to 50
         plot_iterations=-1,
         plot_generator=None,
+        plot_name=None,
         periodic=None,  # TODO: add periodic to proposals
         update_fn=None,
         update_iterations=-1,
@@ -176,7 +180,6 @@ class EnsembleSampler(object):
         stopping_iterations=-1,
         info={},
         branch_names=None,
-
         verbose=False,
         cov=None,  # TODO: change this
     ):
@@ -299,7 +302,8 @@ class EnsembleSampler(object):
                 elif isinstance(nleave_min, list):
                     self.nleaves_min = nleaves_min
                 else:
-                    raise ValueError("If providing a minimum number of leaves, must be int or list of ints."
+                    raise ValueError(
+                        "If providing a minimum number of leaves, must be int or list of ints."
                     )
 
                 assert len(self.nleaves_min) == self.nbranches
@@ -392,8 +396,12 @@ class EnsembleSampler(object):
 
         if plot_generator is None and self.plot_iterations > 0:
             # set to default if not provided
+            if plot_name is not None:
+                name = plot_name
+            else:
+                name = "output"
             self.plot_generator = PlotContainer(
-                "output", backend=self.backend, thin_chain_by_ac=True
+                name, backend=self.backend, thin_chain_by_ac=True
             )
 
         # prepare stopping functions
@@ -661,7 +669,11 @@ class EnsembleSampler(object):
             for results in self.sample(initial_state, iterations=burn, **burn_kwargs):
                 # if updating and using burn_in, need to make sure it does not use
                 # previous chain samples since they are not stored.
-                if self.update_iterations > 0 and self.update_fn is not None and (i + 1) % (self.update_iterations * thin_by) == 0:
+                if (
+                    self.update_iterations > 0
+                    and self.update_fn is not None
+                    and (i + 1) % (self.update_iterations * thin_by) == 0
+                ):
                     stop = self.update_fn(i, results, self)
                 i += 1
 
