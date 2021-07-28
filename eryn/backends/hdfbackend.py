@@ -73,7 +73,7 @@ class HDFBackend(Backend):
         dtype=None,
         compression=None,
         compression_opts=None,
-        store_missing_leaves=np.nan
+        store_missing_leaves=np.nan,
     ):
         if h5py is None:
             raise ImportError("you must install 'h5py' to use the HDFBackend")
@@ -500,13 +500,17 @@ class HDFBackend(Backend):
                 # use self.store_missing_leaves to set value for missing leaves
                 # state retains old coordinates
                 coords_in = model.coords * model.inds[:, :, :, None]
-                inds_all =  np.repeat(model.inds, 3, axis=-1).reshape(model.inds.shape + (3,))
+                inds_all = np.repeat(model.inds, coords_in.shape[-1], axis=-1).reshape(
+                    model.inds.shape + (coords_in.shape[-1],)
+                )
                 coords_in[~inds_all] = self.store_missing_leaves
                 g["chain"][name][self.iteration] = coords_in
 
             g["log_prob"][iteration, :] = state.log_prob
             if state.blobs is not None:
                 g["blobs"][iteration, :] = state.blobs
+            if state.betas is not None:
+                g["betas"][self.iteration, :] = state.betas
             g["accepted"][:] += accepted
             if self.rj:
                 g["rj_accepted"][:] += rj_accepted

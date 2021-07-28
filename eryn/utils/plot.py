@@ -96,7 +96,7 @@ class PlotContainer:
             thin = 1
 
         if info is None and self.backend is not None:
-            info = self.backend.get_info(burn=burn, thin=thin)
+            info = self.backend.get_info(discard=burn, thin=thin)
 
         if self.thin_chain_by_ac:
             burn = info["ac_burn"]
@@ -137,7 +137,7 @@ class PlotContainer:
     def generate_info_page(self, info=None, pdf=None, burn=0, thin=1):
 
         if info is None and self.backend is not None:
-            info = self.backend.get_info(burn=burn, thin=thin)
+            info = self.backend.get_info(discard=burn, thin=thin)
 
         title_str = self.fp + " informat:\n"
 
@@ -176,7 +176,7 @@ class PlotContainer:
         if self.backend is None:
             raise ValueError("Must initialize with a backend.")
 
-        info = self.backend.get_info(burn=burn, thin=thin)
+        info = self.backend.get_info(discard=burn, thin=thin)
 
         name = self.fp if name is None else name
         with PdfPages(name + ".pdf") as pdf:

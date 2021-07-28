@@ -712,7 +712,7 @@ class Backend(object):
                     "invalid rj acceptance size; expected {0}".format(ntemps, nwalkers)
                 )
 
-        if state.betas.shape != (ntemps,):
+        if state.betas is not None and state.betas.shape != (ntemps,):
             raise ValueError("invalid beta size; expected {0}".format(ntemps))
 
     def save_step(self, state, accepted, rj_accepted=None):

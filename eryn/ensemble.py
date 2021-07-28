@@ -650,7 +650,7 @@ class EnsembleSampler(object):
 
         thin_by = 1 if "thin_by" not in kwargs else kwargs["thin_by"]
 
-        if burn is not None:
+        if burn is not None and burn != 0:
             if self.verbose:
                 print("Start burn")
 
