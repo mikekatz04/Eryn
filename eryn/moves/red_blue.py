@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from abc import ABC
 from copy import deepcopy
 import numpy as np
 
@@ -9,22 +9,22 @@ from .move import Move
 __all__ = ["RedBlueMove"]
 
 
-class RedBlueMove(Move):
+class RedBlueMove(Move, ABC):
     """
     An abstract red-blue ensemble move with parallelization as described in
     `Foreman-Mackey et al. (2013) <https://arxiv.org/abs/1202.3665>`_.
 
     Args:
-        nsplits (Optional[int]): The number of sub-ensembles to use. Each
+        nsplits (int, optional): The number of sub-ensembles to use. Each
             sub-ensemble is updated in parallel using the other sets as the
             complementary ensemble. The default value is ``2`` and you
             probably won't need to change that.
 
-        randomize_split (Optional[bool]): Randomly shuffle walkers between
+        randomize_split (bool, optional): Randomly shuffle walkers between
             sub-ensembles. The same number of walkers will be assigned to
             each sub-ensemble on each iteration. By default, this is ``True``.
 
-        live_dangerously (Optional[bool]): By default, an update will fail with
+        live_dangerously (bool, optional): By default, an update will fail with
             a ``RuntimeError`` if the number of walkers is smaller than twice
             the dimension of the problem because the walkers would then be
             stuck on a low dimensional subspace. This can be avoided by
@@ -32,6 +32,8 @@ class RedBlueMove(Move):
             Metropolis-Hastings step. If you want to do this and suppress the
             error, set ``live_dangerously = True``. Thanks goes (once again)
             to @dstndstn for this wonderful terminology.
+
+    ``kwargs`` are passed to :class:`Move` class.
 
     """
 
@@ -44,20 +46,46 @@ class RedBlueMove(Move):
         self.randomize_split = randomize_split
 
     def setup(self, coords):
+        """Any setup necessary for the proposal"""
         pass
 
-    def get_proposal(self, sample, complement, random):
+    @classmethod
+    def get_proposal(self, sample, complement, random, inds=None):
+        """Make a proposal
+
+        Args:
+            sample (dict): Keys are ``branch_names``. Values are
+                np.ndarray[subset size, nleaves_max, ndim]. This is the subset
+                whose ``coords`` are being proposed.
+            complement (dict): Keys are ``branch_names``. Values are lists of other
+                other np.ndarray[nwalkers - subset size, nleaves_max, ndim] from
+                all other subsets. This is the compliment whose ``coords`` are
+                used to form the proposal for the ``sample`` subset.
+            random (object): Current random state of the sampler.
+            inds (dict, optional): # TODO check this.
+
+        Returns:
+            tuple: Tuple contained proposal information.
+                First entry is the new coordinates as a dictionary with keys
+                as ``branch_names`` and values as np.ndarray[subset size, ndim * nleaves_max]
+                of new coordinates. Second entry is the factors associated with the
+                proposal necessary for detailed balance. This is effectively
+                any term in the detailed balance fraction. +log of factors if
+                in the numerator. -log of factors if in the denominator.
+
+        """
+
         raise NotImplementedError("The proposal must be implemented by " "subclasses")
 
     def propose(self, model, state):
         """Use the move to generate a proposal and compute the acceptance
 
         Args:
-            coords: The initial coordinates of the walkers.
-            log_probs: The initial log probabilities of the walkers.
-            log_prob_fn: A function that computes the log probabilities for a
-                subset of walkers.
-            random: A numpy-compatible random number state.
+            model (:class:`eryn.model.Model`): Carrier of sampler information.
+            state (:class:`State`): Current state of the sampler.
+
+        Returns:
+            :class:`State`: State of sampler after proposal is complete.
 
         """
         # Check that the dimensions are compatible.
@@ -110,6 +138,8 @@ class RedBlueMove(Move):
                     name: state.branches_inds[name][t, inds[t] == split]
                     for name in state.branches_inds
                 }
+
+                breakpoint()
                 q_temp, factors_temp = self.get_proposal(
                     s, c, model.random, inds=temp_inds
                 )

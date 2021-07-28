@@ -19,4 +19,5 @@ Welcome to Eryn's documentation!
    user/ensemble
    user/state
    user/backend
+   user/moves
    user/prior

@@ -1,0 +1,635 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Moves &mdash; Eryn 0.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "document", "processHtmlClass": "math|output_area"}}</script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Priors" href="prior.html" />
+    <link rel="prev" title="Backends" href="backend.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: coral" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Eryn
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="ensemble.html">Ensemble</a></li>
+<li class="toctree-l1"><a class="reference internal" href="state.html">State</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backend.html">Backends</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Moves</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#move-parent-class">Move Parent Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#metropolis-hastings-moves">Metropolis-Hastings Moves</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mh-parent-class">MH Parent Class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#implemented-mh-moves">Implemented MH Moves</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#red-blue-moves">Red-Blue Moves</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#red-blue-parent-class">Red-Blue Parent Class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#implemented-red-blue-moves">Implemented Red-Blue Moves</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#reversible-jump-moves">Reversible Jump Moves</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="prior.html">Priors</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Eryn</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Moves</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/user/moves.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <div class="rst-breadcrumbs-buttons" role="navigation" aria-label="breadcrumb navigation">
+      
+        <a href="prior.html" class="btn btn-neutral float-right" title="Priors" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+      
+      
+        <a href="backend.html" class="btn btn-neutral float-left" title="Backends" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+      
+  </div>
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="moves">
+<h1>Moves<a class="headerlink" href="#moves" title="Permalink to this headline">¶</a></h1>
+<p>Proposal distributions for MCMC.</p>
+<div class="section" id="move-parent-class">
+<h2>Move Parent Class<a class="headerlink" href="#move-parent-class" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="eryn.moves.Move">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">Move</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temperature_control</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.Move" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Parent class for proposals or “moves”</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>temperature_control</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">tempering.TemperatureControl</span></code>, optional) – This object controls the tempering. It is passes to the parent class
+to moves so that all proposals can share and use temperature settings.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.Move.compute_log_posterior_basic">
+<span class="sig-name descname"><span class="pre">compute_log_posterior_basic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.Move.compute_log_posterior_basic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the log of posterior</p>
+<p><span class="math notranslate nohighlight">\(\log{P} = \log{L} + \log{p}\)</span></p>
+<p>This method is to mesh with the tempered log posterior computation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>logl</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – Log-likelihood values.</p></li>
+<li><p><strong>logp</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – Log-prior values.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Log-Posterior values.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.Move.tune">
+<span class="sig-name descname"><span class="pre">tune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.Move.tune" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tune a proposal</p>
+<p>This is a place holder for tuning.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state</strong> (<a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.State</span></code></a>) – Current state of sampler.</p></li>
+<li><p><strong>accepted</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – Accepted values for last pass
+through proposal.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.Move.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">old_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.Move.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update a given subset of the ensemble with an accepted proposal</p>
+<p>This class was updated from <code class="docutils literal notranslate"><span class="pre">emcee</span></code> to handle the added structure
+necessary for global fitting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>old_state</strong> (<a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.State</span></code></a>) – State with current information.
+New information is added to this state.</p></li>
+<li><p><strong>old_state</strong> – State with information from proposed
+points.</p></li>
+<li><p><strong>accepted</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – A vector of booleans indicating
+which walkers were accepted.</p></li>
+<li><p><strong>subset</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em><em>, </em><em>optional</em>) – A boolean mask
+indicating which walkers were included in the subset.
+This can be used, for example, when updating only the
+primary ensemble in a <a class="reference internal" href="#eryn.moves.RedBlueMove" title="eryn.moves.RedBlueMove"><code class="xref py py-class docutils literal notranslate"><span class="pre">RedBlueMove</span></code></a>.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">old_state</span></code> with accepted points added from <code class="docutils literal notranslate"><span class="pre">new_state</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.State</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="metropolis-hastings-moves">
+<h2>Metropolis-Hastings Moves<a class="headerlink" href="#metropolis-hastings-moves" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="mh-parent-class">
+<h3>MH Parent Class<a class="headerlink" href="#mh-parent-class" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="eryn.moves.MHMove">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">MHMove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ndim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#eryn.moves.Move" title="eryn.moves.move.Move"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.move.Move</span></code></a></p>
+<p>A general Metropolis-Hastings proposal</p>
+<p>Concrete implementations can be made by providing a <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> method.
+For standard Gaussian Metropolis moves, <code class="xref py py-class docutils literal notranslate"><span class="pre">moves.GaussianMove</span></code> can be used.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MHMove.propose">
+<span class="sig-name descname"><span class="pre">propose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove.propose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use the move to generate a proposal and compute the acceptance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.model.Model</span></code>) – Carrier of sampler information.</p></li>
+<li><p><strong>state</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code>) – Current state of the sampler.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>State of sampler after proposal is complete.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MHMove.compute_log_posterior_basic">
+<span class="sig-name descname"><span class="pre">compute_log_posterior_basic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove.compute_log_posterior_basic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the log of posterior</p>
+<p><span class="math notranslate nohighlight">\(\log{P} = \log{L} + \log{p}\)</span></p>
+<p>This method is to mesh with the tempered log posterior computation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>logl</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – Log-likelihood values.</p></li>
+<li><p><strong>logp</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – Log-prior values.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Log-Posterior values.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MHMove.tune">
+<span class="sig-name descname"><span class="pre">tune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove.tune" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tune a proposal</p>
+<p>This is a place holder for tuning.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state</strong> (<a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.State</span></code></a>) – Current state of sampler.</p></li>
+<li><p><strong>accepted</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – Accepted values for last pass
+through proposal.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MHMove.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">old_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update a given subset of the ensemble with an accepted proposal</p>
+<p>This class was updated from <code class="docutils literal notranslate"><span class="pre">emcee</span></code> to handle the added structure
+necessary for global fitting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>old_state</strong> (<a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.State</span></code></a>) – State with current information.
+New information is added to this state.</p></li>
+<li><p><strong>old_state</strong> – State with information from proposed
+points.</p></li>
+<li><p><strong>accepted</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – A vector of booleans indicating
+which walkers were accepted.</p></li>
+<li><p><strong>subset</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em><em>, </em><em>optional</em>) – A boolean mask
+indicating which walkers were included in the subset.
+This can be used, for example, when updating only the
+primary ensemble in a <a class="reference internal" href="#eryn.moves.RedBlueMove" title="eryn.moves.RedBlueMove"><code class="xref py py-class docutils literal notranslate"><span class="pre">RedBlueMove</span></code></a>.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">old_state</span></code> with accepted points added from <code class="docutils literal notranslate"><span class="pre">new_state</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.State</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="implemented-mh-moves">
+<h3>Implemented MH Moves<a class="headerlink" href="#implemented-mh-moves" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+<div class="section" id="red-blue-moves">
+<h2>Red-Blue Moves<a class="headerlink" href="#red-blue-moves" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="red-blue-parent-class">
+<h3>Red-Blue Parent Class<a class="headerlink" href="#red-blue-parent-class" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="eryn.moves.RedBlueMove">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">RedBlueMove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nsplits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">randomize_split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">live_dangerously</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#eryn.moves.Move" title="eryn.moves.move.Move"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.move.Move</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<p>An abstract red-blue ensemble move with parallelization as described in
+<a class="reference external" href="https://arxiv.org/abs/1202.3665">Foreman-Mackey et al. (2013)</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nsplits</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of sub-ensembles to use. Each
+sub-ensemble is updated in parallel using the other sets as the
+complementary ensemble. The default value is <code class="docutils literal notranslate"><span class="pre">2</span></code> and you
+probably won’t need to change that.</p></li>
+<li><p><strong>randomize_split</strong> (<em>bool</em><em>, </em><em>optional</em>) – Randomly shuffle walkers between
+sub-ensembles. The same number of walkers will be assigned to
+each sub-ensemble on each iteration. By default, this is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>live_dangerously</strong> (<em>bool</em><em>, </em><em>optional</em>) – By default, an update will fail with
+a <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code> if the number of walkers is smaller than twice
+the dimension of the problem because the walkers would then be
+stuck on a low dimensional subspace. This can be avoided by
+switching between the stretch move and, for example, a
+Metropolis-Hastings step. If you want to do this and suppress the
+error, set <code class="docutils literal notranslate"><span class="pre">live_dangerously</span> <span class="pre">=</span> <span class="pre">True</span></code>. Thanks goes (once again)
+to &#64;dstndstn for this wonderful terminology.</p></li>
+</ul>
+</dd>
+</dl>
+<p><code class="docutils literal notranslate"><span class="pre">kwargs</span></code> are passed to <a class="reference internal" href="#eryn.moves.Move" title="eryn.moves.Move"><code class="xref py py-class docutils literal notranslate"><span class="pre">Move</span></code></a> class.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.RedBlueMove.setup">
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Any setup necessary for the proposal</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.RedBlueMove.get_proposal">
+<em class="property"><span class="pre">classmethod</span> </em><span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">complement</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.get_proposal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a proposal</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sample</strong> (<em>dict</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code>. Values are
+np.ndarray[subset size, nleaves_max, ndim]. This is the subset
+whose <code class="docutils literal notranslate"><span class="pre">coords</span></code> are being proposed.</p></li>
+<li><p><strong>complement</strong> (<em>dict</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code>. Values are lists of other
+other np.ndarray[nwalkers - subset size, nleaves_max, ndim] from
+all other subsets. This is the compliment whose <code class="docutils literal notranslate"><span class="pre">coords</span></code> are
+used to form the proposal for the <code class="docutils literal notranslate"><span class="pre">sample</span></code> subset.</p></li>
+<li><p><strong>random</strong> (<em>object</em>) – Current random state of the sampler.</p></li>
+<li><p><strong>inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – # TODO check this.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Tuple contained proposal information.</dt><dd><p>First entry is the new coordinates as a dictionary with keys
+as <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values as np.ndarray[subset size, ndim * nleaves_max]
+of new coordinates. Second entry is the factors associated with the
+proposal necessary for detailed balance. This is effectively
+any term in the detailed balance fraction. +log of factors if
+in the numerator. -log of factors if in the denominator.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.RedBlueMove.propose">
+<span class="sig-name descname"><span class="pre">propose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.propose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use the move to generate a proposal and compute the acceptance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.model.Model</span></code>) – Carrier of sampler information.</p></li>
+<li><p><strong>state</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code>) – Current state of the sampler.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>State of sampler after proposal is complete.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.RedBlueMove.compute_log_posterior_basic">
+<span class="sig-name descname"><span class="pre">compute_log_posterior_basic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.compute_log_posterior_basic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the log of posterior</p>
+<p><span class="math notranslate nohighlight">\(\log{P} = \log{L} + \log{p}\)</span></p>
+<p>This method is to mesh with the tempered log posterior computation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>logl</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – Log-likelihood values.</p></li>
+<li><p><strong>logp</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – Log-prior values.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Log-Posterior values.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.RedBlueMove.tune">
+<span class="sig-name descname"><span class="pre">tune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.tune" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tune a proposal</p>
+<p>This is a place holder for tuning.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state</strong> (<a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.State</span></code></a>) – Current state of sampler.</p></li>
+<li><p><strong>accepted</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – Accepted values for last pass
+through proposal.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.RedBlueMove.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">old_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update a given subset of the ensemble with an accepted proposal</p>
+<p>This class was updated from <code class="docutils literal notranslate"><span class="pre">emcee</span></code> to handle the added structure
+necessary for global fitting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>old_state</strong> (<a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.State</span></code></a>) – State with current information.
+New information is added to this state.</p></li>
+<li><p><strong>old_state</strong> – State with information from proposed
+points.</p></li>
+<li><p><strong>accepted</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – A vector of booleans indicating
+which walkers were accepted.</p></li>
+<li><p><strong>subset</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em><em>, </em><em>optional</em>) – A boolean mask
+indicating which walkers were included in the subset.
+This can be used, for example, when updating only the
+primary ensemble in a <a class="reference internal" href="#eryn.moves.RedBlueMove" title="eryn.moves.RedBlueMove"><code class="xref py py-class docutils literal notranslate"><span class="pre">RedBlueMove</span></code></a>.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">old_state</span></code> with accepted points added from <code class="docutils literal notranslate"><span class="pre">new_state</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.State</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="implemented-red-blue-moves">
+<h3>Implemented Red-Blue Moves<a class="headerlink" href="#implemented-red-blue-moves" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="reversible-jump-moves">
+<h4>Reversible Jump Moves<a class="headerlink" href="#reversible-jump-moves" title="Permalink to this headline">¶</a></h4>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="prior.html" class="btn btn-neutral float-right" title="Priors" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="backend.html" class="btn btn-neutral float-left" title="Backends" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Michael Katz and Nikos Karnesis.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
