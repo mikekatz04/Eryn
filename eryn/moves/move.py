@@ -16,8 +16,9 @@ class Move(object):
 
     """
 
-    def __init__(self, temperature_control=None):
+    def __init__(self, temperature_control=None, periodic=None):
         self.temperature_control = temperature_control
+        self.periodic = periodic
 
         if self.temperature_control is None:
             self.compute_log_posterior = self.compute_log_posterior_basic

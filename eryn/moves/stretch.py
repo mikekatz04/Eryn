@@ -14,8 +14,8 @@ class StretchMove(RedBlueMove):
     parallelization as described in `Foreman-Mackey et al. (2013)
     <https://arxiv.org/abs/1202.3665>`_.
 
-    :param a: (optional)
-        The stretch scale parameter. (default: ``2.0``)
+    Args:
+        a (double, optional): The stretch scale parameter. (default: ``2.0``)
 
     """
 
@@ -44,7 +44,18 @@ class StretchMove(RedBlueMove):
                 if Ns_check != Ns:
                     raise ValueError("Different number of walkers across models.")
             rint = random.randint(Nc, size=(Ns,))
-            newpos[name] = c[rint] - (c[rint] - s) * zz[:, None, None]
+
+            if self.periodic is not None:
+                diff = self.periodic.distance(s, c[rint], names=[name])[name]
+            else:
+                diff = c[rint] - s
+
+            temp = c[rint] - (diff) * zz[:, None, None]
+
+            if self.periodic is not None:
+                temp = self.periodic.wrap(temp, names=[name])[name]
+
+            newpos[name] = temp
 
         factors = (ndim - 1.0) * np.log(zz)
         return newpos, factors

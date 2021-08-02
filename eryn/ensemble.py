@@ -13,7 +13,9 @@ from .pbar import get_progress_bar
 from .state import State
 from .prior import PriorContainer
 from .utils import PlotContainer
+from .utils import PeriodicContainer
 from .utils.utility import groups_from_inds
+
 
 __all__ = ["EnsembleSampler", "walkers_independent"]
 
@@ -267,6 +269,7 @@ class EnsembleSampler(object):
                     StretchMove(
                         live_dangerously=True,
                         temperature_control=self.temperature_control,
+                        periodic=PeriodicContainer(periodic),
                         a=2.0,
                     )
                 ]

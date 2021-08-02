@@ -10,32 +10,24 @@ __all__ = ["RedBlueMove"]
 
 class ReversibleJump(Move):
     """
-    An abstract red-blue ensemble move with parallelization as described in
-    `Foreman-Mackey et al. (2013) <https://arxiv.org/abs/1202.3665>`_.
+    An abstract reversible jump move from # TODO: add citations.
 
     Args:
-        nsplits (Optional[int]): The number of sub-ensembles to use. Each
-            sub-ensemble is updated in parallel using the other sets as the
-            complementary ensemble. The default value is ``2`` and you
-            probably won't need to change that.
-
-        randomize_split (Optional[bool]): Randomly shuffle walkers between
-            sub-ensembles. The same number of walkers will be assigned to
-            each sub-ensemble on each iteration. By default, this is ``True``.
-
-        live_dangerously (Optional[bool]): By default, an update will fail with
-            a ``RuntimeError`` if the number of walkers is smaller than twice
-            the dimension of the problem because the walkers would then be
-            stuck on a low dimensional subspace. This can be avoided by
-            switching between the stretch move and, for example, a
-            Metropolis-Hastings step. If you want to do this and suppress the
-            error, set ``live_dangerously = True``. Thanks goes (once again)
-            to @dstndstn for this wonderful terminology.
-
+        max_k (int or list of int): Maximum number(s) of leaves for each model.
+        min_k (int or list of int): Minimum number(s) of leaves for each model.
+        tune (bool, optional): If True, tune proposal. (Default: ``False``)
+        
     """
 
     def __init__(self, max_k, min_k, tune=False, **kwargs):
         super(ReversibleJump, self).__init__(**kwargs)
+
+        if isinstance(max_k, int):
+            max_k = [max_k]
+
+        if isinstance(max_k, int):
+            min_k = [min_k]
+
         self.max_k = max_k
         self.min_k = min_k
         self.tune = tune
@@ -45,18 +37,50 @@ class ReversibleJump(Move):
     def setup(self, coords):
         pass
 
-    def get_proposal(self, sample, complement, random):
+    def get_proposal(self, all_coords, all_inds, all_inds_for_change, random):
+        """Make a proposal
+
+        Args:
+            all_coords (dict): Keys are ``branch_names``. Values are
+                np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent
+                coordinates for all the walkers.
+            all_inds (dict): Keys are ``branch_names``. Values are
+                np.ndarray[ntemps, nwalkers, nleaves_max]. These are the boolean
+                arrays marking which leaves are currently used within each walker.
+            all_inds_for_change (dict): Keys are ``branch_names``. Values are
+                dictionaries. These dictionaries have keys ``"+1"`` and ``"-1"``,
+                indicating waklkers that are adding or removing a leafm respectively.
+                The values for these dicts are ``int`` np.ndarray[..., 3]. The "..." indicates
+                the number of walkers in all temperatures that fall under either adding
+                or removing a leaf. The second dimension, 3, is the indexes into
+                the three-dimensional arrays within ``all_inds`` of the specific leaf
+                that is being added or removed from those leaves currently considered.
+            random (object): Current random state of the sampler.
+
+        Returns:
+            tuple: Tuple containing proposal information.
+                First entry is the new coordinates as a dictionary with keys
+                as ``branch_names`` and values as
+                ``double `` np.ndarray[ntemps, nwalkers, nleaves_max, ndim] containing
+                proposed coordinates. Second entry is the new ``inds`` array with
+                boolean values flipped for added or removed sources. Third entry
+                is the factors associated with the
+                proposal necessary for detailed balance. This is effectively
+                any term in the detailed balance fraction. +log of factors if
+                in the numerator. -log of factors if in the denominator.
+
+        """
         raise NotImplementedError("The proposal must be implemented by " "subclasses")
 
     def propose(self, model, state):
         """Use the move to generate a proposal and compute the acceptance
 
         Args:
-            coords: The initial coordinates of the walkers.
-            log_probs: The initial log probabilities of the walkers.
-            log_prob_fn: A function that computes the log probabilities for a
-                subset of walkers.
-            random: A numpy-compatible random number state.
+            model (:class:`eryn.model.Model`): Carrier of sampler information.
+            state (:class:`State`): Current state of the sampler.
+
+        Returns:
+            :class:`State`: State of sampler after proposal is complete.
 
         """
         # TODO: check stretch proposaln works here?
@@ -77,14 +101,17 @@ class ReversibleJump(Move):
             state.branches.items(), self.min_k, self.max_k
         ):
             nleaves = branch.nleaves
+            # choose whether to add or remove
             change = model.random.choice([-1, +1], size=nleaves.shape)
 
+            # fix edge cases
             change = (
                 change * ((nleaves != min_k) & (nleaves != max_k))
                 + (+1) * (nleaves == min_k)
                 + (-1) * (nleaves == max_k)
             )
 
+            # setup storage for this information
             inds_for_change[name] = {}
             num_increases = np.sum(change == +1)
             inds_for_change[name]["+1"] = np.zeros((num_increases, 3), dtype=int)
@@ -92,19 +119,27 @@ class ReversibleJump(Move):
             inds_for_change[name]["-1"] = np.zeros((num_decreases, 3), dtype=int)
 
             # TODO: not loop ? Is it necessary?
+            # fill the inds_for_change
             increase_i = 0
             decrease_i = 0
             for t in range(ntemps):
                 for w in range(nwalkers):
+                    # check if add or remove
                     change_tw = change[t][w]
+                    # inds array from specific walker
                     inds_tw = branch.inds[t][w]
 
+                    # adding
                     if change_tw == +1:
+                        # find where leaves are not currently used
                         inds_false = np.where(inds_tw == False)[0]
+                        # decide which spot to add
                         ind_change = model.random.choice(inds_false)
+                        # put in the indexes into inds arrays
                         inds_for_change[name]["+1"][increase_i] = np.array(
                             [t, w, ind_change], dtype=int
                         )
+                        # count increases
                         increase_i += 1
 
                         # TODO: change this so we can actually generate new coords rather than reuse old standing coords
@@ -112,16 +147,21 @@ class ReversibleJump(Move):
                         #    t, w, ind_change, :
                         # ]
 
+                    # removing
                     else:
                         # change_tw == -1
+                        # find which leavs are used
                         inds_true = np.where(inds_tw == True)[0]
+                        # choose which to remove
                         ind_change = model.random.choice(inds_true)
+                        # add indexes into inds
                         inds_for_change[name]["-1"][decrease_i] = np.array(
                             [t, w, ind_change], dtype=int
                         )
                         decrease_i += 1
                         # do not care currently about what we do with discarded coords, they just sit in the state
 
+        # propose new sources and coordinates
         q, new_inds, factors = self.get_proposal(
             state.branches_coords, state.branches_inds, inds_for_change, model.random,
         )
@@ -171,9 +211,7 @@ class ReversibleJump(Move):
         new_state = State(q, log_prob=logl, log_prior=logp, blobs=None, inds=new_inds)
         state = self.update(state, new_state, accepted)
 
-        # TODO: deal with accepted (how to track outside the accepted parts, maybe separate rj from other proposal)
         if self.temperature_control is not None:
             state, accepted = self.temperature_control.temper_comps(state, accepted)
 
-        # make accepted move specific ?
         return state, accepted

@@ -40,4 +40,14 @@ Implemented Red-Blue Moves
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Reversible Jump Moves
-***************************
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Reversible Jump Parent Class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: eryn.moves.ReversibleJump
+    :members:
+    :show-inheritance:
+    :inherited-members:
+
+Implemented Reversible Jump Moves
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
