@@ -79,8 +79,7 @@ class EnsembleSampler(object):
             or a "weighted" list of the form ``[(emcee.moves.StretchMove(),
             0.1), ...]``. When running, the sampler will randomly select a
             move from this list (optionally with weights) for each proposal.
-            If ``None``, the default will be :class:`StretchMove` if ``cov`` is
-            not provided. If ``cov`` is provided, it will be :class:`GaussianMove`.
+            If ``None``, the default will be :class:`StretchMove`.
             (default: ``None``)
         rj_moves (optional): If ``None`` ot ``False``, reversible jump will not be included in the run.
             This can be a single move object, a list of moves,
@@ -185,7 +184,6 @@ class EnsembleSampler(object):
         info={},
         branch_names=None,
         verbose=False,
-        cov=None,  # TODO: change this
     ):
 
         # TODO: check non-vectorized
@@ -278,24 +276,20 @@ class EnsembleSampler(object):
 
         # Parse the move schedule
         if moves is None:
-            if cov is None:
-                # TODO: remove live_dangerously
-                self._moves = [
-                    StretchMove(
-                        live_dangerously=True,
-                        temperature_control=self.temperature_control,
-                        periodic=periodic,
-                        a=2.0,
-                    )
-                ]
-                self._weights = [1.0]
-
-            else:
-                # TODO: deal with cov
-                self._moves = [
-                    GaussianMove(cov, temperature_control=self.temperature_control)
-                ]
-                self._weights = [1.0]
+            if rj_moves is not None:
+                raise ValueError(
+                    "If providing rj_moves, must provide moves kwargs as well."
+                )
+            # TODO: remove live_dangerously
+            self._moves = [
+                StretchMove(
+                    live_dangerously=True,
+                    temperature_control=self.temperature_control,
+                    periodic=periodic,
+                    a=2.0,
+                )
+            ]
+            self._weights = [1.0]
 
         elif isinstance(moves, Iterable):
             try:
@@ -352,6 +346,16 @@ class EnsembleSampler(object):
         if self.has_reversible_jump:
             self._rj_weights = np.atleast_1d(self._rj_weights).astype(float)
             self._rj_weights /= np.sum(self._rj_weights)
+
+        # make sure moves have temperature module
+        if self.temperature_control is not None:
+            for move in self._moves:
+                if move.temperature_control is None:
+                    move.temperature_control = self.temperature_control
+
+            for move in self._rj_moves:
+                if move.temperature_control is None:
+                    move.temperature_control = self.temperature_control
 
         # setup backend if not provided or initialized
         self.backend = Backend() if backend is None else backend

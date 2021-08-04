@@ -47,13 +47,13 @@ def log_prob_fn(x1, group1, t, data, inds=None, fill_inds=[], fill_values=None):
 
         template[i] += gauss_out[inds1].sum(axis=0)
     # breakpoint()
-    ll = - 0.5 * np.sum(((template - data) / sigma) ** 2, axis=-1)  #  / len(t)
+    ll = -0.5 * np.sum(((template - data) / sigma) ** 2, axis=-1)  #  / len(t)
     return ll
 
 
 nwalkers = 50
 ntemps = 10
-#nbranches = 2
+# nbranches = 2
 ndims = [3]
 nleaves_max = [20]
 
@@ -107,29 +107,31 @@ for nleaf, ndim, name in zip(nleaves_max, ndims, branch_names):
     for nn in range(nleaf):
         if nn >= len(gauss_inj_params):
             nn = np.random.randint(low=0, high=3)
-        coords[name][:, :, nn] = np.random.multivariate_normal(gauss_inj_params[nn], np.diag(np.ones(3) * sig1), size=(ntemps, nwalkers))  # dist.rvs(size=(ntemps, nwalkers, nleaf))
+        coords[name][:, :, nn] = np.random.multivariate_normal(
+            gauss_inj_params[nn], np.diag(np.ones(3) * sig1), size=(ntemps, nwalkers)
+        )  # dist.rvs(size=(ntemps, nwalkers, nleaf))
 
 # Do the actual true vals in
 # coords['gauss'][0,0] = np.asarray(gauss_inj_params)
 
 
 # inds = None
-#inds = {
+# inds = {
 #     name: np.random.randint(0, high=2, size=(ntemps, nwalkers, nleaf), dtype=bool)
 #     for nleaf, name in zip(nleaves_max, branch_names)
-#}
+# }
 
 inds = {
-     name: np.random.randint(low=0, high=1, size=(ntemps, nwalkers, nleaf), dtype=bool)
-     for nleaf, name in zip(nleaves_max, branch_names)
+    name: np.random.randint(low=0, high=1, size=(ntemps, nwalkers, nleaf), dtype=bool)
+    for nleaf, name in zip(nleaves_max, branch_names)
 }
 
-inds['gauss'][:, :, :3] = True
+inds["gauss"][:, :, :3] = True
 
-#inds = {
+# inds = {
 #    name: np.full((ntemps, nwalkers, nleaf), True, dtype=bool)
 #    for nleaf, name in zip(nleaves_max, branch_names)
-#}
+# }
 
 for name, inds_temp in inds.items():
     inds_fix = np.where(np.sum(inds_temp, axis=-1) == 0)
@@ -152,12 +154,7 @@ coords_in = {name: coords[name][inds[name]] for name in coords}
 groups_in = {name: groups[name][inds[name]] for name in groups}
 
 log_prob = log_prob_fn(
-    coords_in["gauss"],
-    groups_in["gauss"],
-    t,
-    y,
-    fill_inds=[],
-    fill_values=None,
+    coords_in["gauss"], groups_in["gauss"], t, y, fill_inds=[], fill_values=None,
 )
 
 log_prob = log_prob.reshape(ntemps, nwalkers)
@@ -169,7 +166,7 @@ state = State(coords, log_prob=log_prob, betas=betas, blobs=blobs, inds=inds)
 
 state2 = State(state)
 
-backend = None # HDFBackend('test_out.h5')
+backend = None  # HDFBackend('test_out.h5')
 """
 backend.reset(
     nwalkers,
@@ -187,6 +184,7 @@ cov = {"gauss": np.diag(np.ones(3)) * factor}
 
 # backend.grow(100, blobs)
 
+moves = GaussianMove(cov)
 
 ensemble = EnsembleSampler(
     nwalkers,
@@ -199,7 +197,7 @@ ensemble = EnsembleSampler(
     branch_names=branch_names,
     nleaves_max=nleaves_max,
     provide_groups=True,
-    cov=cov,
+    moves=moves,
     plot_iterations=-1,
     rj_moves=True,
 )
