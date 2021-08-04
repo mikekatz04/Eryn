@@ -17,12 +17,12 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'Eryn'
-copyright = '2021, Michael Katz and Nikos Karnesis'
-author = 'Michael Katz and Nikos Karnesis'
+project = "Eryn"
+copyright = "2021, Michael Katz and Nikos Karnesis"
+author = "Michael Katz and Nikos Karnesis"
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = "0.0.1"
 
 import pypandoc
 
@@ -32,22 +32,12 @@ with open("README.rst", "w") as fp:
 
 import sys, os
 
-sys.path.insert(0, os.path.abspath("/Users/michaelkatz/Research/FastEMRIWaveforms/"))
-sys.path.insert(
-    0, os.path.abspath("/Users/michaelkatz/Research/FastEMRIWaveforms/few/")
-)
-sys.path.insert(
-    0, os.path.abspath("/Users/michaelkatz/Research/FastEMRIWaveforms/few/amplitude/")
-)
-sys.path.insert(
-    0, os.path.abspath("/Users/michaelkatz/Research/FastEMRIWaveforms/few/trajectory/")
-)
 
 import shutil
 
 shutil.copy(
-    "/Users/michaelkatz/Research/FastEMRIWaveforms/examples/FastEMRIWaveforms_tutorial.ipynb",
-    "/Users/michaelkatz/Research/FastEMRIWaveforms/docs/source/tutorial/FastEMRIWaveforms_tutorial.ipynb",
+    "/Users/michaelkatz/Research/Eryn/examples/Eryn_tutorial.ipynb",
+    "/Users/michaelkatz/Research/Eryn/docs/source/tutorial/Eryn_tutorial.ipynb",
 )
 
 

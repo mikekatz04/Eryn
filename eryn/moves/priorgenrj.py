@@ -24,8 +24,6 @@ class PriorGenerate(ReversibleJump):
         super(PriorGenerate, self).__init__(*args, **kwargs)
 
     def get_proposal(self, all_coords, all_inds, all_inds_for_change, random):
-
-        breakpoint()
         # wc: walker coords
         # wi: walker inds
         q = {}

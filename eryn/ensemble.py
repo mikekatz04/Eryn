@@ -52,13 +52,15 @@ class EnsembleSampler(object):
             (all included individual leaves of branch N, ndimN). ``group1`` is
             a 1D int array array of indexes assigning the specific leaf to a
             specific walker. Please see the tutorial for more information. (# TODO: add link to tutorial)
-        priors (dict): The prior dictionary can take three forms. 1) A dictionary with keys
-            as int or tuple containing the int or tuple of int that describe the parameter
-            number over which to assess the prior, and values that are prior probability
-            distributions that must have a ``logpdf`` class method. 2) A dictionary with keys
-            that are ``branch_names`` and values that are dictionaries for
-            each branch as described for (1). 3) A dictionary with keys that are
-            ``branch_names`` and values are PriorContainer (# TODO: add link for prior container) objects.
+        priors (dict): The prior dictionary can take four forms.
+            1) A dictionary with keys as int or tuple containing the int or tuple of int
+            that describe the parameter number over which to assess the prior, and values that
+            are prior probability distributions that must have a ``logpdf`` class method.
+            2) A :class:`eryn.prior.PriorContainer` object.
+            3) A dictionary with keys that are ``branch_names`` and values that are dictionaries for
+            each branch as described for (1).
+            4) A dictionary with keys that are ``branch_names`` and values are
+            :class:`eryn.prior.PriorContainer` objects.
         provide_groups (bool, optional): If True, provide groups as described in ``log_prob_fn`` above.
             A group parameter is added for each branch. (default: ``False``)
         tempering_kwargs (dict, optional): Keyword arguments for initialization of the
@@ -223,7 +225,6 @@ class EnsembleSampler(object):
         self.vectorize = vectorize
         self.blobs_dtype = blobs_dtype
 
-        # TODO: deal with priors consistent across leaves
         if isinstance(priors, dict):
             test = priors[list(priors.keys())[0]]
             if isinstance(test, dict):
@@ -251,6 +252,10 @@ class EnsembleSampler(object):
                 raise ValueError(
                     "priors dictionary items must be dictionaries with prior information or instances of the PriorContainer class."
                 )
+
+        elif isinstance(priors, PriorContainer):
+            self.priors = {"model_0": priors}
+
         else:
             raise ValueError("Priors must be a dictionary.")
 
@@ -261,6 +266,16 @@ class EnsembleSampler(object):
         self.nleaves_max = nleaves_max
         self.branch_names = branch_names
 
+        if periodic is not None:
+            if not isinstance(periodic, PeriodicContainer) and not isinstance(
+                periodic, dict
+            ):
+                raise ValueError(
+                    "periodic must be PeriodicContainer or dict if not None."
+                )
+            elif isinstance(periodic, dict):
+                periodic = PeriodicContainer(periodic)
+
         # Parse the move schedule
         if moves is None:
             if cov is None:
@@ -269,7 +284,7 @@ class EnsembleSampler(object):
                     StretchMove(
                         live_dangerously=True,
                         temperature_control=self.temperature_control,
-                        periodic=PeriodicContainer(periodic),
+                        periodic=periodic,
                         a=2.0,
                     )
                 ]

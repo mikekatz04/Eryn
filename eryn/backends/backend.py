@@ -739,7 +739,9 @@ class Backend(object):
             # state retains old coordinates
             coords_in = model.coords * model.inds[:, :, :, None]
 
-            inds_all =  np.repeat(model.inds, 3, axis=-1).reshape(model.inds.shape + (3,))
+            inds_all = np.repeat(model.inds, model.coords.shape[-1], axis=-1).reshape(
+                model.inds.shape + (model.coords.shape[-1],)
+            )
             coords_in[~inds_all] = self.store_missing_leaves
             self.chain[key][self.iteration] = coords_in
 

@@ -93,6 +93,12 @@
 <li class="toctree-l1"><a class="reference internal" href="user/backend.html">Backends</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/moves.html">Moves</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/prior.html">Priors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/utils.html">Utilities</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Tutorial:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial/Eryn_tutorial.html">Getting Started with Eryn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial/Eryn_tutorial.html#Utilities">Utilities</a></li>
 </ul>
 
             
@@ -167,6 +173,7 @@
  | <a href="#C"><strong>C</strong></a>
  | <a href="#D"><strong>D</strong></a>
  | <a href="#E"><strong>E</strong></a>
+ | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
  | <a href="#H"><strong>H</strong></a>
  | <a href="#I"><strong>I</strong></a>
@@ -179,6 +186,7 @@
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
  | <a href="#U"><strong>U</strong></a>
+ | <a href="#W"><strong>W</strong></a>
  
 </div>
 <h2 id="A">A</h2>
@@ -189,6 +197,8 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="user/backend.html#eryn.backends.Backend.accepted">accepted (eryn.backends.Backend attribute)</a>
+</li>
+      <li><a href="user/utils.html#eryn.utils.PlotContainer.add_backend">add_backend() (eryn.utils.PlotContainer method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -240,6 +250,10 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="user/utils.html#eryn.utils.PeriodicContainer.distance">distance() (eryn.utils.PeriodicContainer method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="user/backend.html#eryn.backends.Backend.dtype">dtype (eryn.backends.Backend attribute)</a>
 </li>
   </ul></td>
@@ -253,9 +267,23 @@
   </ul></td>
 </tr></table>
 
+<h2 id="F">F</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="user/utils.html#eryn.utils.TransformContainer.fill_values">fill_values() (eryn.utils.TransformContainer method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="user/utils.html#eryn.utils.PlotContainer.generate_corner">generate_corner() (eryn.utils.PlotContainer method)</a>
+</li>
+      <li><a href="user/utils.html#eryn.utils.PlotContainer.generate_info_page">generate_info_page() (eryn.utils.PlotContainer method)</a>
+</li>
+      <li><a href="user/utils.html#eryn.utils.PlotContainer.generate_plot_info">generate_plot_info() (eryn.utils.PlotContainer method)</a>
+</li>
       <li><a href="user/backend.html#eryn.backends.Backend.get_autocorr_thin_burn">get_autocorr_thin_burn() (eryn.backends.Backend method)</a>
 
       <ul>
@@ -458,14 +486,18 @@
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="user/utils.html#eryn.utils.PeriodicContainer">PeriodicContainer (class in eryn.utils)</a>
+</li>
+      <li><a href="user/utils.html#eryn.utils.PlotContainer">PlotContainer (class in eryn.utils)</a>
+</li>
       <li><a href="user/prior.html#eryn.prior.PriorContainer">PriorContainer (class in eryn.prior)</a>
 </li>
       <li><a href="user/prior.html#eryn.prior.PriorContainer.priors">priors (eryn.prior.PriorContainer attribute)</a>
 </li>
-      <li><a href="user/prior.html#eryn.prior.PriorContainer.priors_in">priors_in (eryn.prior.PriorContainer attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="user/prior.html#eryn.prior.PriorContainer.priors_in">priors_in (eryn.prior.PriorContainer attribute)</a>
+</li>
       <li><a href="user/moves.html#eryn.moves.MHMove.propose">propose() (eryn.moves.MHMove method)</a>
 
       <ul>
@@ -550,6 +582,14 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="user/utils.html#eryn.utils.PlotContainer.transform">transform() (eryn.utils.PlotContainer method)</a>
+</li>
+      <li><a href="user/utils.html#eryn.utils.TransformContainer.transform_base_parameters">transform_base_parameters() (eryn.utils.TransformContainer method)</a>
+</li>
+      <li><a href="user/utils.html#eryn.utils.TransformContainer">TransformContainer (class in eryn.utils)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="user/moves.html#eryn.moves.MHMove.tune">tune() (eryn.moves.MHMove method)</a>
 
       <ul>
@@ -578,6 +618,14 @@
         <li><a href="user/moves.html#eryn.moves.ReversibleJump.update">(eryn.moves.ReversibleJump method)</a>
 </li>
       </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="W">W</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="user/utils.html#eryn.utils.PeriodicContainer.wrap">wrap() (eryn.utils.PeriodicContainer method)</a>
+</li>
   </ul></td>
 </tr></table>
 

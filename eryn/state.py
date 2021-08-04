@@ -43,6 +43,7 @@ class Branch(object):
         ValueError: ``inds`` has wrong shape or number of leaves is less than zero.
 
     """
+
     def __init__(self, coords, inds=None):
 
         # store branch info
@@ -138,9 +139,11 @@ class State(object):
 
         # protect against simplifying settings
         if isinstance(coords, np.ndarray):
-            coords = {"model_0": atleast_4d(coords)}
+            coords = {"model_0": coords}
         elif not isinstance(coords, dict):
-            raise ValueError("Input coords need to be np.ndarray, dict, or State object.")
+            raise ValueError(
+                "Input coords need to be np.ndarray, dict, or State object."
+            )
 
         for name in coords:
             if coords[name].ndim == 2:

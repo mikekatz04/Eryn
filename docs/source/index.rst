@@ -21,3 +21,10 @@ Welcome to Eryn's documentation!
    user/backend
    user/moves
    user/prior
+   user/utils
+
+.. toctree::
+  :maxdepth: 4
+  :caption: Tutorial:
+
+  tutorial/Eryn_tutorial

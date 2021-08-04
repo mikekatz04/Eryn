@@ -38,12 +38,24 @@ class PeriodicContainer:
         return names
 
     def distance(self, p1, p2, names=None):
-        """Move from p1 to p2
+        """Move from p1 to p2 with periodic distance control
 
-        s = p1 / p2 = c[rint]"""
+        Args:
+            p1 (double np.ndarray or dict): If dict, keys are ``branch_names``
+                and values are positions with parameters along the final dimension.
+                If array, positions with parameters along the final dimension.
+            p2 (double np.ndarray or dict): If dict, keys are ``branch_names``
+                and values are positions with parameters along the final dimension.
+                If array, positions with parameters along the final dimension.
+            names (str or list of str): ``branch_names`` to properly reference
+                periods associated with each branch. (default: ``None``)
+
+
+        """
 
         names = self._check_names(names)
 
+        # setup p1 and p2
         if isinstance(p1, np.ndarray) or isinstance(p2, np.ndarray):
             if len(names) > 1:
                 raise ValueError(
@@ -61,12 +73,16 @@ class PeriodicContainer:
             periods = self.periods[key]
             inds_periodic = self.inds_periodic[key]
 
+            # get basic distance
             diff = p2[key] - p1[key]
 
+            # get specific periodic parameterss
             diff_periodic = diff[:, :, inds_periodic]
 
+            # fix when the distance is over 1/2 period away
             inds_fix = np.abs(diff_periodic) > periods[np.newaxis, np.newaxis, :] / 2.0
 
+            # wrap back to make proper periodic distance
             new_s = -(
                 periods[np.newaxis, np.newaxis, :] - p1[key][:, :, inds_periodic]
             ) * (diff_periodic < 0.0) + (
@@ -75,6 +91,7 @@ class PeriodicContainer:
                 diff_periodic >= 0.0
             )
 
+            # fill new information
             diff_periodic[inds_fix] = (
                 p2[key][:, :, inds_periodic][inds_fix] - new_s[inds_fix]
             )
@@ -85,9 +102,19 @@ class PeriodicContainer:
         return out_diff
 
     def wrap(self, p, names=None):
+        """Wrap p with periodic distance control
 
+        Args:
+            p (double np.ndarray or dict): If dict, keys are ``branch_names``
+                and values are positions with parameters along the final dimension.
+                If array, positions with parameters along the final dimension.
+            names (str or list of str): ``branch_names`` to properly reference
+                periods associated with each branch. (default: ``None``)
+
+        """
         names = self._check_names(names)
 
+        # adjust input
         if isinstance(p, np.ndarray):
             if len(names) > 1:
                 raise ValueError(
@@ -97,10 +124,12 @@ class PeriodicContainer:
             if isinstance(p, np.ndarray):
                 p = {names[0]: np.atleast_3d(p)}
 
+        # wrap for each branch
         for key in names:
             pos = p[key]
             periods = self.periods[key]
             inds_periodic = self.inds_periodic[key]
+            # wrap
             pos[:, :, inds_periodic] = (
                 pos[:, :, inds_periodic] % periods[np.newaxis, np.newaxis, :]
             )

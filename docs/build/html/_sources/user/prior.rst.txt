@@ -1,7 +1,7 @@
 Priors
 ------------------------
 
-Priord distributions.
+Prior distributions.
 
 Prior Container
 ~~~~~~~~~~~~~~~~
