@@ -16,13 +16,28 @@ class MHMove(Move):
 
     """
 
-    def __init__(self, ndim=None, **kwargs):
+    def __init__(self, **kwargs):
 
         super(MHMove, self).__init__(**kwargs)
-        self.ndim = ndim
         # TODO: check ndim stuff
 
-    def get_proposal(self, sample, complement, random):
+    def get_proposal(self, branches_coords, branches_inds, random):
+        """Get proposal from distribution for MH proposal
+
+        Args:
+            branches_coords (dict): Keys are ``branch_names`` and values are
+                np.ndarray[nwalkers, nleaves_max, ndim] representing
+                coordinates for walkers.
+            branches_inds (dict): Keys are ``branch_names`` and values are
+                np.ndarray[nwalkers, nleaves_max] representing which
+                leaves are currently being used.
+            random (object): Current random state object.
+
+        Raises:
+            NotImplementedError: If proposal is not implemented in a subclass.
+
+        """
+
         raise NotImplementedError("The proposal must be implemented by " "subclasses")
 
     def propose(self, model, state):
@@ -38,8 +53,6 @@ class MHMove(Move):
         """
         # Check to make sure that the dimensions match.
         ntemps, nwalkers, _, _ = state.branches[list(state.branches.keys())[0]].shape
-        # if self.ndim is not None and self.ndim != ndim:
-        #    raise ValueError("Dimension mismatch in proposal")
 
         # Get the move-specific proposal.
         q, factors = self.get_proposal(

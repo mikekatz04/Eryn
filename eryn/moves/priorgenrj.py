@@ -3,29 +3,60 @@
 import numpy as np
 
 from .rj import ReversibleJump
+from ..prior import PriorContainer
 
 __all__ = ["PriorGenerate"]
 
 
 class PriorGenerate(ReversibleJump):
-    """
-    A `Goodman & Weare (2010)
-    <https://msp.org/camcos/2010/5-1/p04.xhtml>`_ "stretch move" with
-    parallelization as described in `Foreman-Mackey et al. (2013)
-    <https://arxiv.org/abs/1202.3665>`_.
+    """Generate Revesible-Jump proposals from prior
 
-    :param a: (optional)
-        The stretch scale parameter. (default: ``2.0``)
+    Args:
+        priors (object): :class:`PriorContainer` object that has ``logpdf``
+            and ``rvs`` methods.
 
     """
 
     def __init__(self, priors, *args, **kwargs):
+
+        if not isinstace(priors, PriorContainer):
+            raise ValueError("Priors need to be eryn.priors.PriorContainer object.")
         self.priors = priors
         super(PriorGenerate, self).__init__(*args, **kwargs)
 
     def get_proposal(self, all_coords, all_inds, all_inds_for_change, random):
-        # wc: walker coords
-        # wi: walker inds
+        """Make a proposal
+
+        Args:
+            all_coords (dict): Keys are ``branch_names``. Values are
+                np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent
+                coordinates for all the walkers.
+            all_inds (dict): Keys are ``branch_names``. Values are
+                np.ndarray[ntemps, nwalkers, nleaves_max]. These are the boolean
+                arrays marking which leaves are currently used within each walker.
+            all_inds_for_change (dict): Keys are ``branch_names``. Values are
+                dictionaries. These dictionaries have keys ``"+1"`` and ``"-1"``,
+                indicating waklkers that are adding or removing a leafm respectively.
+                The values for these dicts are ``int`` np.ndarray[..., 3]. The "..." indicates
+                the number of walkers in all temperatures that fall under either adding
+                or removing a leaf. The second dimension, 3, is the indexes into
+                the three-dimensional arrays within ``all_inds`` of the specific leaf
+                that is being added or removed from those leaves currently considered.
+            random (object): Current random state of the sampler.
+
+        Returns:
+            tuple: Tuple containing proposal information.
+                First entry is the new coordinates as a dictionary with keys
+                as ``branch_names`` and values as
+                ``double `` np.ndarray[ntemps, nwalkers, nleaves_max, ndim] containing
+                proposed coordinates. Second entry is the new ``inds`` array with
+                boolean values flipped for added or removed sources. Third entry
+                is the factors associated with the
+                proposal necessary for detailed balance. This is effectively
+                any term in the detailed balance fraction. +log of factors if
+                in the numerator. -log of factors if in the denominator.
+
+        """
         q = {}
         new_inds = {}
         factors = {}

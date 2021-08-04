@@ -63,6 +63,18 @@ class GaussianMove(MHMove):
         super(GaussianMove, self).__init__(ndim=ndim, **kwargs)
 
     def get_proposal(self, branches_coords, branches_inds, random):
+        """Get proposal from Gaussian distribution
+
+        Args:
+            branches_coords (dict): Keys are ``branch_names`` and values are
+                np.ndarray[nwalkers, nleaves_max, ndim] representing
+                coordinates for walkers.
+            branches_inds (dict): Keys are ``branch_names`` and values are
+                np.ndarray[nwalkers, nleaves_max] representing which
+                leaves are currently being used.
+            random (object): Current random state object.
+
+        """
 
         q = {}
         for name, coords, inds in zip(

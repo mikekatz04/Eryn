@@ -16,7 +16,7 @@ class ReversibleJump(Move):
         max_k (int or list of int): Maximum number(s) of leaves for each model.
         min_k (int or list of int): Minimum number(s) of leaves for each model.
         tune (bool, optional): If True, tune proposal. (Default: ``False``)
-        
+
     """
 
     def __init__(self, max_k, min_k, tune=False, **kwargs):
@@ -68,6 +68,9 @@ class ReversibleJump(Move):
                 proposal necessary for detailed balance. This is effectively
                 any term in the detailed balance fraction. +log of factors if
                 in the numerator. -log of factors if in the denominator.
+
+        Raises:
+            NotImplementedError: If this proposal is not implemented by a subclass.
 
         """
         raise NotImplementedError("The proposal must be implemented by " "subclasses")

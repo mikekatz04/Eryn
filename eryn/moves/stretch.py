@@ -8,7 +8,8 @@ __all__ = ["StretchMove"]
 
 
 class StretchMove(RedBlueMove):
-    """
+    """Affine-Invariant Proposal
+
     A `Goodman & Weare (2010)
     <https://msp.org/camcos/2010/5-1/p04.xhtml>`_ "stretch move" with
     parallelization as described in `Foreman-Mackey et al. (2013)
@@ -17,6 +18,8 @@ class StretchMove(RedBlueMove):
     Args:
         a (double, optional): The stretch scale parameter. (default: ``2.0``)
 
+    Attributes:
+        a (double): The stretch scale parameter.
     """
 
     def __init__(self, a=2.0, **kwargs):
@@ -24,6 +27,28 @@ class StretchMove(RedBlueMove):
         super(StretchMove, self).__init__(**kwargs)
 
     def get_proposal(self, s_all, c_all, random, inds=None):
+        """Generate stretch proposal
+
+        # TODO: add log proposal from ptemcee
+
+        Args:
+            s_all (dict): Keys are ``branch_names`` and values are coordinates
+                for which a proposal is to be generated.
+            c_all (dict): Keys are ``branch_names`` and values are lists. These
+                lists contain all the complement array values.
+            random (object): Random state object.
+            inds (dict, optional): Keys are ``branch_names`` and values are
+                np.ndarray[nwalkers, nleaves_max] that indicate which leaves
+                are currently being used. This is used to determine dimension of
+                proposal for detailed balance factors. (default: ``None``)
+
+        Returns:
+            tuple: First entry is new positions. Second entry is detailed balance factors.
+
+        Raises:
+            ValueError: Issues with dimensionality.
+
+        """
         newpos = {}
         for i, name in enumerate(s_all):
             c = c_all[name]
@@ -57,5 +82,6 @@ class StretchMove(RedBlueMove):
 
             newpos[name] = temp
 
+        # proper factors
         factors = (ndim - 1.0) * np.log(zz)
         return newpos, factors
