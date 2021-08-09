@@ -352,10 +352,11 @@ class EnsembleSampler(object):
             for move in self._moves:
                 if move.temperature_control is None:
                     move.temperature_control = self.temperature_control
-
-            for move in self._rj_moves:
-                if move.temperature_control is None:
-                    move.temperature_control = self.temperature_control
+                    
+            if self.has_reversible_jump:
+                for move in self._rj_moves:
+                    if move.temperature_control is None:
+                        move.temperature_control = self.temperature_control
 
         # setup backend if not provided or initialized
         self.backend = Backend() if backend is None else backend
