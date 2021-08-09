@@ -60,7 +60,7 @@ class GaussianMove(MHMove):
                 proposal = _isotropic_proposal(np.sqrt(cov), factor, mode)
             self.all_proposal[name] = proposal
 
-        super(GaussianMove, self).__init__(ndim=ndim, **kwargs)
+        super(GaussianMove, self).__init__(**kwargs)
 
     def get_proposal(self, branches_coords, branches_inds, random):
         """Get proposal from Gaussian distribution

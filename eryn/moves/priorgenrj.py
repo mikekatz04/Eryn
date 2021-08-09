@@ -19,8 +19,9 @@ class PriorGenerate(ReversibleJump):
 
     def __init__(self, priors, *args, **kwargs):
 
-        if not isinstace(priors, PriorContainer):
-            raise ValueError("Priors need to be eryn.priors.PriorContainer object.")
+        for key in priors:
+            if not isinstance(priors[key], PriorContainer):
+                raise ValueError("Priors need to be eryn.priors.PriorContainer object.")
         self.priors = priors
         super(PriorGenerate, self).__init__(*args, **kwargs)
 
