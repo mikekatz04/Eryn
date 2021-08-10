@@ -171,7 +171,7 @@ class PlotContainer:
         if info is None and self.backend is not None:
             info = self.transform(self.backend.get_info(discard=burn, thin=thin))
 
-        else:
+        elif info is None:
             raise ValueError("Need to provide either info or self.backend.")
 
         if self.thin_chain_by_ac:
@@ -249,7 +249,7 @@ class PlotContainer:
         if info is None and self.backend is not None:
             info = self.transform(self.backend.get_info(discard=burn, thin=thin))
 
-        else:
+        elif info is None:
             raise ValueError("Need to provide either info or self.backend.")
 
         # build info from long string
