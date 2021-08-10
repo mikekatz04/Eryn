@@ -352,7 +352,7 @@ class EnsembleSampler(object):
             for move in self._moves:
                 if move.temperature_control is None:
                     move.temperature_control = self.temperature_control
-                    
+
             if self.has_reversible_jump:
                 for move in self._rj_moves:
                     if move.temperature_control is None:
@@ -424,8 +424,10 @@ class EnsembleSampler(object):
             else:
                 name = "output"
             self.plot_generator = PlotContainer(
-                name, backend=self.backend, thin_chain_by_ac=True
+                fp=name, backend=self.backend, thin_chain_by_ac=True
             )
+        elif self.plot_iterations > 0:
+            self.plot_generator = plot_generator
 
         # prepare stopping functions
         self.stopping_fn = stopping_fn
