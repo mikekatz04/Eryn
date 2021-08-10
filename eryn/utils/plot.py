@@ -50,7 +50,7 @@ class PlotContainer:
         self.fp = fp
         self.thin_chain_by_ac = thin_chain_by_ac
 
-        if parameters_transforms is not None and not isinstance(
+        if parameter_transforms is not None and not isinstance(
             parameter_transforms, TransformContainer
         ):
             raise ValueError(
