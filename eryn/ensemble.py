@@ -718,17 +718,14 @@ class EnsembleSampler(object):
         for results in self.sample(initial_state, iterations=nsteps, **kwargs):
 
             # diagnostic plots
-            if (
-                self.plot_iterations > 0
-                and (i + 1) % (self.plot_iterations * thin_by) == 0
-            ):
+            if self.plot_iterations > 0 and (i + 1) % (self.plot_iterations) == 0:
                 self.plot_generator.generate_plot_info()  # TODO: remove defaults
 
             # check for stopping before updating
             if (
                 self.stopping_iterations > 0
                 and self.stopping_fn is not None
-                and (i + 1) % (self.stopping_iterations * thin_by) == 0
+                and (i + 1) % (self.stopping_iterations) == 0
             ):
                 stop = self.stopping_fn(i, results, self)
 
@@ -739,7 +736,7 @@ class EnsembleSampler(object):
             if (
                 self.update_iterations > 0
                 and self.update_fn is not None
-                and (i + 1) % (self.update_iterations * thin_by) == 0
+                and (i + 1) % (self.update_iterations) == 0
             ):
                 self.update_fn(i, results, self)
 
