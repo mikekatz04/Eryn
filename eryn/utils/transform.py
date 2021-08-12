@@ -26,6 +26,7 @@ class TransformContainer:
 
     def __init__(self, parameter_transforms=None, fill_dict=None):
 
+        self.original_parameter_transforms = parameter_transforms
         if parameter_transforms is not None:
             # differentiate between single and multi parameter transformations
             self.base_transforms = {"single_param": {}, "mult_param": {}}

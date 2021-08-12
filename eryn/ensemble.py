@@ -6,7 +6,7 @@ import numpy as np
 from itertools import count
 from copy import deepcopy
 
-from .backends import Backend
+from .backends import Backend, HDFBackend
 from .model import Model
 from .moves import StretchMove, TemperatureControl, PriorGenerate, GaussianMove
 from .pbar import get_progress_bar
@@ -359,7 +359,13 @@ class EnsembleSampler(object):
                         move.temperature_control = self.temperature_control
 
         # setup backend if not provided or initialized
-        self.backend = Backend() if backend is None else backend
+        if backend is None:
+            self.backend = Backend()
+        elif isinstance(backend, str):
+            self.backend = HDFBackend(backend)
+        else:
+            self.backend = backend
+
         self.info = info
 
         # Deal with re-used backends
@@ -861,7 +867,7 @@ class EnsembleSampler(object):
 
             # if no prior values are added, compute_prior
             if logp is None:
-                logp = self.compute_log_prior_fn(q, inds=inds)
+                logp = self.compute_log_prior(coords, inds=inds)
 
             # do not run log likelihood where logp = -inf
             inds_copy = deepcopy(inds)

@@ -797,6 +797,7 @@ class Backend(object):
         # get inds
         out_info["inds"] = self.get_inds(thin=thin, discard=discard)
 
+        # TODO: fix self.ntemps in hdf5 backend
         out_info["shapes"] = self.shape
         out_info["ntemps"] = self.ntemps
         out_info["nwalkers"] = self.nwalkers
