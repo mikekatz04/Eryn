@@ -149,3 +149,18 @@ class TransformContainer:
 
         else:
             return params
+
+    def both_transforms(self, params, copy=True, return_transpose=False, reverse=False):
+
+        if reverse:
+            temp = self.transform_base_parameters(
+                params, copy=copy, return_transpose=return_transpose
+            )
+            temp = self.fill_values(temp)
+
+        else:
+            temp = self.fill_values(params)
+            temp = self.transform_base_parameters(
+                temp, copy=copy, return_transpose=return_transpose
+            )
+        return temp
