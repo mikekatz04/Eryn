@@ -358,6 +358,16 @@ class EnsembleSampler(object):
                     if move.temperature_control is None:
                         move.temperature_control = self.temperature_control
 
+        if periodic is not None:
+            for move in self._moves:
+                if move.periodic is None:
+                    move.periodic = periodic
+
+            if self.has_reversible_jump:
+                for move in self._rj_moves:
+                    if move.periodic is None:
+                        move.periodic = periodic
+
         # setup backend if not provided or initialized
         if backend is None:
             self.backend = Backend()
