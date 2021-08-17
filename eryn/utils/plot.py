@@ -87,6 +87,7 @@ class PlotContainer:
             plot_density=False,
             plot_datapoints=False,
             smooth=0.4,
+            labels=None,
             contour_kwargs={"colors": "blue"},
             hist_kwargs={"density": True},
             truths=self.injection,
@@ -166,7 +167,6 @@ class PlotContainer:
 
 
         """
-
         # get info from backend
         if info is None and self.backend is not None:
             info = self.transform(self.backend.get_info(discard=burn, thin=thin))
@@ -203,6 +203,7 @@ class PlotContainer:
                 for leaf in range(nleaves_max):
                     # get samples
                     samples_in = coords[:, temp, :, leaf].reshape(-1, ndim)
+                    samples_in = samples_in[np.logical_not(np.isnan(samples_in))] # Discard the NaNs
 
                     # build corner figure
                     fig = corner.corner(samples_in, **corner_kwargs,)
@@ -326,6 +327,11 @@ class PlotContainer:
 
         self.generate_info_page(info=info, pdf=pdf)
         self.generate_corner(info=info, pdf=pdf)
+        # self.generate_leaves_chains(info=info, pdf=pdf)
+        # self.generate_parameter_chains(info=info, pdf=pdf)
+        # self.generate_parameter_chains_per_temperature(info=info, pdf=pdf)
+        # self.generate_posterior_chains(info=info, pdf=pdf)
+        # self.generate_xchange_acceptance_rate(info=info, pdf=pdf)
 
         # close file if created here
         if close_file:
