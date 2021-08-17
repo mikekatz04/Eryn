@@ -228,10 +228,9 @@ class PlotContainer:
         if close_file:
             pdf.close()
 
-    # TODO: Do we need this per walker as well? I would argue yes. Probably another function though
-    def generate_parameter_chains_per_temperature(
+    def generate_parameter_chains(
         self, burn=0, thin=1, pdf=None, name=None, labels=None, info=None):
-        """Generate plots of the chains per 'leaf'.
+        """Generate plots of the chains of the cold chain.
 
         This function builds plots of the MCMC traces to be added to a pdf.
 
@@ -253,11 +252,6 @@ class PlotContainer:
             info (dict, optional): Information dictionary from the backend. If not
                 provided, it will be retrieved from the backend.
                 (default: ``None``)
-            corner_kwargs (dict, optional): Pass kwarg arguments direct to
-                the corner plot. This will temperorarily overwrite entries in
-                the ``self.corner_kwargs`` attribute.
-
-
         """
         # get info from backend
         if info is None and self.backend is not None:
@@ -275,6 +269,83 @@ class PlotContainer:
             close_file = True
             name = self.fp if name is None else name
             pdf = PdfPages(name + "_traces.pdf")
+        else:
+            close_file = False
+
+        # make a trace plot for each temperature
+        for key, coords in info["samples"].items():
+            nsteps, ntemps, nwalkers, nleaves_max, ndim = coords.shape
+            # Define a colormap
+            temp = 0    
+                
+            samples_in = np.zeros( (coords[:, temp, :, :, 0].flatten().shape[0], ndim) )  # init the chains to plot
+            fig, ax    = plt.subplots(ndim, 1, sharex=True)
+            fig.subplots_adjust(hspace=0) # No space between subplots
+
+            # get the samples to plot
+            for d in range(ndim): 
+                samples_in[:, d] = coords[:, temp, :, :, d].flatten()
+                # Build the figure. 
+                ax[d].scatter(np.arange(0, samples_in[:, d].shape[0]), samples_in[:, d], marker='.', s=2., color='k', alpha=.4)
+                if labels is not None: ax[d].set_ylabel(labels[d])
+            ax[-1].set_xlim(0, samples_in.shape[0])
+            ax[-1].set_xlabel('Samples')
+                
+            # add informational title
+            fig.suptitle(
+                f"Branch: {key}\nTemperature: {temp}"
+            )
+            # save to open pdf
+            pdf.savefig(fig)
+            # close the plot not the pdf
+            plt.close()
+
+        # if pdf was created here, close it
+        if close_file:
+            pdf.close()
+
+    def generate_parameter_chains_per_temperature(
+        self, burn=0, thin=1, pdf=None, name=None, labels=None, info=None):
+        """Generate plots of the chains per temperature.
+
+        This function builds plots of the MCMC traces to be added to a pdf.
+
+        Args:
+            burn (int, optional): Number of samples to burn. If
+                ``self.thin_chain_by_ac == True``, then this is overridden.
+                (default: ``0``)
+            thin (int, optional): Number of samples to burn. If
+                ``self.thin_chain_by_ac == True``, then this is overridden.
+                (default: ``1``)
+            pdf (object, optional): An open PdfPages object
+                (`see her for an example <https://matplotlib.org/stable/gallery/misc/multipage_pdf.html>`_).
+                It will not be closed by this function. If not provided, a new pdf
+                will be opened, added to, then closed.
+                (default: ``None``)
+            name (str, optional): If not providing ``pdf`` kwarg, ``name`` will be
+                the name of the pdf document that is created and saved.
+                (default: ``None``)
+            info (dict, optional): Information dictionary from the backend. If not
+                provided, it will be retrieved from the backend.
+                (default: ``None``)
+
+        """
+        # get info from backend
+        if info is None and self.backend is not None:
+            info = self.transform(self.backend.get_info(discard=burn, thin=thin))
+
+        elif info is None:
+            raise ValueError("Need to provide either info or self.backend.")
+
+        if self.thin_chain_by_ac:
+            burn = info["ac_burn"]
+            thin = info["ac_thin"]
+
+        # open new pdf if not provided
+        if pdf is None:
+            close_file = True
+            name = self.fp if name is None else name
+            pdf = PdfPages(name + "_traces_temp.pdf")
         else:
             close_file = False
 
@@ -356,7 +427,7 @@ class PlotContainer:
         if pdf is None:
             close_file = True
             name = self.fp if name is None else name
-            pdf = PdfPages(name + "_traces_walker.pdf")
+            pdf = PdfPages(name + "_traces_temp_walker.pdf")
         else:
             close_file = False
 
@@ -393,6 +464,74 @@ class PlotContainer:
         if close_file:
             pdf.close()
 
+    def generate_posterior_chains(
+        self, burn=0, thin=1, pdf=None, name=None, info=None):
+        """Generate plots of the posterior chains per temperature.
+
+        This function builds plots of the MCMC traces to be added to a pdf.
+
+        Args:
+            burn (int, optional): Number of samples to burn. If
+                ``self.thin_chain_by_ac == True``, then this is overridden.
+                (default: ``0``)
+            thin (int, optional): Number of samples to burn. If
+                ``self.thin_chain_by_ac == True``, then this is overridden.
+                (default: ``1``)
+            pdf (object, optional): An open PdfPages object
+                (`see her for an example <https://matplotlib.org/stable/gallery/misc/multipage_pdf.html>`_).
+                It will not be closed by this function. If not provided, a new pdf
+                will be opened, added to, then closed.
+                (default: ``None``)
+            name (str, optional): If not providing ``pdf`` kwarg, ``name`` will be
+                the name of the pdf document that is created and saved.
+                (default: ``None``)
+            info (dict, optional): Information dictionary from the backend. If not
+                provided, it will be retrieved from the backend.
+                (default: ``None``)
+
+        """
+        # get info from backend
+        if info is None and self.backend is not None:
+            info = self.transform(self.backend.get_info(discard=burn, thin=thin))
+
+        elif info is None:
+            raise ValueError("Need to provide either info or self.backend.")
+
+        if self.thin_chain_by_ac:
+            burn = info["ac_burn"]
+            thin = info["ac_thin"]
+
+        # open new pdf if not provided
+        if pdf is None:
+            close_file = True
+            name = self.fp if name is None else name
+            pdf = PdfPages(name + "_traces_post.pdf")
+        else:
+            close_file = False
+
+        # make a trace plot for each temperature
+        ntemps = info['log_prob'].shape[1]
+        # Define a colormap
+        clrs = plt.cm.viridis(np.linspace(0, 1, ntemps))
+        for temp in range(ntemps):    
+            # get the samples to plot
+            post = info['log_prob'][:, temp, :].flatten()
+            # Build the figure. 
+            fig = plt.figure(figsize=(12,5))
+            plt.scatter(np.arange(0, post.shape[0]), post, marker='.', s=2., color=clrs[temp], alpha=.5)
+            plt.ylabel(f"T{temp}")
+            plt.xlim(0, post.shape[0])
+            plt.xlabel('Samples')
+                
+            # save to open pdf
+            pdf.savefig(fig)
+
+        # close the plot not the pdf
+        plt.close()
+
+        # if pdf was created here, close it
+        if close_file:
+            pdf.close()
 
     def generate_info_page(self, burn=0, thin=1, pdf=None, name=None, info=None):
         """Build an info page
@@ -501,7 +640,7 @@ class PlotContainer:
         self.generate_info_page(info=info, pdf=pdf)
         self.generate_corner(info=info, pdf=pdf)
         # self.generate_leaves_chains(info=info, pdf=pdf)
-        # self.generate_parameter_chains(info=info, pdf=pdf)
+        self.generate_parameter_chains(info=info, pdf=pdf)
         self.generate_parameter_chains_per_temperature(info=info, pdf=pdf)
         self.generate_parameter_chains_per_temperature_per_walker(info=info, pdf=pdf)
         # self.generate_posterior_chains(info=info, pdf=pdf)
