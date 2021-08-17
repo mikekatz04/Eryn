@@ -195,27 +195,34 @@ class PlotContainer:
         else:
             close_file = False
 
-        # make corner plot for each leaf
-        # TODO: make corner plot across leaves
+        # make corner plot for each temperature
+        # NOTE: I am now flattenimg the chains across walkers. Probably we need to think carefully here
         for key, coords in info["samples"].items():
             nsteps, ntemps, nwalkers, nleaves_max, ndim = coords.shape
-            for temp in range(ntemps):
-                for leaf in range(nleaves_max):
-                    # get samples
-                    samples_in = coords[:, temp, :, leaf].reshape(-1, ndim)
-                    samples_in = samples_in[np.logical_not(np.isnan(samples_in))] # Discard the NaNs
+            for temp in range(ntemps):    
+                
+                naninds    = np.logical_not(np.isnan(coords[:, temp, :, :, 0].flatten()))
+                samples_in = np.zeros( (coords[:, temp, :, :, 0].flatten()[naninds].shape[0], ndim) )  # init the chains to plot
 
-                    # build corner figure
+                # get the samples to plot
+                for d in range(ndim): 
+                    givenparam = coords[:, temp, :, :, d].flatten()
+                    samples_in[:, d] = givenparam[np.logical_not(np.isnan(givenparam))] # Discard the NaNs, each time they change the shape of the samples_in
+
+                # Build corner figure. Wrapping around a try-except in order to let it finish plotting the "healthy" chains
+                try:
                     fig = corner.corner(samples_in, **corner_kwargs,)
 
                     # add informational title
                     fig.suptitle(
-                        f"Branch: {key}\nTemperature: {temp}\nLeaf: {leaf}\nSample Size: {samples_in.shape[0]}"
+                        f"Branch: {key}\nTemperature: {temp}\nSample Size: {samples_in.shape[0]}"
                     )
                     # save to open pdf
                     pdf.savefig(fig)
                     # close the plot not the pdf
                     plt.close()
+                except Exception as e: 
+                    print(f" Did not manage to make the corner plot for Branch: {key}, Temperature: {temp}.\nActual error: [{e}]")
 
         # if pdf was created here, close it
         if close_file:
