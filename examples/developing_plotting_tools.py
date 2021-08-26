@@ -187,11 +187,11 @@ ensemble = EnsembleSampler(
 )
 
 nsteps = 2000
+burnin = 1000
 
-ensemble.run_mcmc(state, nsteps, burn=1000, progress=True, thin_by=1)
+ensemble.run_mcmc(state, nsteps, burn=burnin, progress=True, thin_by=1)
 
-check   = ensemble.backend.get_autocorr_time(average=True, all_temps=True)
-testing = ensemble.get_nleaves()
+check = ensemble.backend.get_autocorr_time(average=True, all_temps=True)
 
 plot = PlotContainer(backend=ensemble.backend)
 
@@ -211,3 +211,7 @@ plot.generate_posterior_chains()
 plot.generate_temperature_chains()
 
 plot.generate_leaves_chains(labels=paramnames)
+
+plot.generate_k_per_temperature_chains()
+
+plot.generate_k_per_tree_chains()
