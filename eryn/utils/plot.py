@@ -737,6 +737,7 @@ class PlotContainer:
         inds     = self.backend.get_value("inds") # Get the leaves out
         branches = {name: np.sum(inds[name], axis=-1, dtype=int) for name in inds}
         nbrsmx   = max(self.backend.nleaves_max)  # Maximum number of branches across the forest 
+        bns      = (np.arange(1, nbrsmx + 2) - 0.5)  # Get maximum allowed number of leaves for the given branch
 
         # make a trace plot for each temperature   
         ntemps = info['betas'].shape[1]
@@ -750,8 +751,7 @@ class PlotContainer:
                     k_chain = branches[branch][:, temp].flatten()
                 else:
                     k_chain += branches[branch][:, temp].flatten()
-                    
-            bns = (np.arange(1, nbrsmx + 2) - 0.5)  # Get maximum allowed number of leaves for the given branch
+ 
             plt.hist(k_chain, bins=bns, color=clrs[temp], edgecolor=clrs[temp], alpha=0.4, lw=3, density=True)
             plt.xticks(np.arange(1, nbrsmx + 1))
             plt.xlabel(r"$\#$ of Branches in the data")  
@@ -768,6 +768,88 @@ class PlotContainer:
         # if pdf was created here, close it
         if close_file:
             pdf.close()
+
+    def generate_k_per_tree_chains(
+        self, thin=1, pdf=None, name=None, info=None):
+        """Generate plots of the k chains per type of model.
+
+        This function builds plots of the MCMC traces to be added to a pdf.
+
+        Args:
+            burn (int, optional): Number of samples to burn. If
+                ``self.thin_chain_by_ac == True``, then this is overridden.
+                (default: ``0``)
+            thin (int, optional): Number of samples to burn. If
+                ``self.thin_chain_by_ac == True``, then this is overridden.
+                (default: ``1``)
+            pdf (object, optional): An open PdfPages object
+                (`see her for an example <https://matplotlib.org/stable/gallery/misc/multipage_pdf.html>`_).
+                It will not be closed by this function. If not provided, a new pdf
+                will be opened, added to, then closed.
+                (default: ``None``)
+            name (str, optional): If not providing ``pdf`` kwarg, ``name`` will be
+                the name of the pdf document that is created and saved.
+                (default: ``None``)
+            info (dict, optional): Information dictionary from the backend. If not
+                provided, it will be retrieved from the backend.
+                (default: ``None``)
+
+        """
+        # get info from backend
+        if info is None and self.backend is not None:
+            info = self.transform(self.backend.get_info(discard=0, thin=thin)) # NOTE: Here we want to see how the temperatures adjust, thus discard=1
+
+        elif info is None:
+            raise ValueError("Need to provide either info or self.backend.")
+
+        if self.thin_chain_by_ac:
+            thin = info["ac_thin"]
+
+        # open new pdf if not provided
+        if pdf is None:
+            close_file = True
+            name = self.fp if name is None else name
+            pdf = PdfPages(name + "_traces_k_per_tree.pdf")
+        else:
+            close_file = False
+        
+        inds     = self.backend.get_value("inds") # Get the leaves out
+        branches = {name: np.sum(inds[name], axis=-1, dtype=int) for name in inds}
+        nbrsmx   = max(self.backend.nleaves_max)  # Maximum number of branches across the forest
+        bns      = (np.arange(1, nbrsmx + 2) - 0.5)  # Get maximum allowed number of leaves 
+        nmodels  = len(list(branches.keys()))
+
+        # make a trace plot for each temperature   
+        ntemps = info['betas'].shape[1]
+        clrs   = plt.cm.viridis(np.linspace(0, 1, nmodels)) # Define a colormap
+
+        for temp in range(0, ntemps):
+
+            fig  = plt.figure(figsize=(8,6))
+            cntr = 0
+            for branch in branches: # Get the total number of components/branches per temperature
+                k_chain = branches[branch][:, temp].flatten()  
+                plt.hist(k_chain, bins=bns, color=clrs[cntr], edgecolor=clrs[cntr], \
+                            histtype='step', alpha=0.9, lw=3, density=True, label=branch)
+                cntr += 1
+
+            plt.xticks(np.arange(1, nbrsmx + 1))
+            plt.xlabel(r"$\#$ of Branches in the data")  
+            plt.legend(loc="upper right")
+            # add informational title
+            fig.suptitle(
+                f"\nTemperature: {temp}"
+            )  
+            # save to open pdf
+            pdf.savefig(fig)
+
+        # close the plot not the pdf
+        plt.close()
+
+        # if pdf was created here, close it
+        if close_file:
+            pdf.close()
+
 
     def generate_info_page(self, burn=0, thin=1, pdf=None, name=None, info=None):
         """Build an info page
@@ -883,6 +965,7 @@ class PlotContainer:
         self.generate_temperature_chains(info=info, pdf=pdf)
         self.generate_leaves_chains(info=info, pdf=pdf)
         self.generate_k_per_temperature_chains(info=info, pdf=pdf)
+        self.generate_k_per_tree_chains(info=info, pdf=pdf)
         # self.generate_xchange_acceptance_rate(info=info, pdf=pdf)
 
         # close file if created here
