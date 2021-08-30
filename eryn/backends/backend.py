@@ -271,7 +271,7 @@ class Backend(object):
             return v.reshape(s)
         return v
 
-    def get_chain(self, thin=1, discard=0, **kwargs):
+    def get_chain(self, **kwargs):
         """Get the stored chain of MCMC samples
 
         Args:
