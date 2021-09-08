@@ -26,7 +26,6 @@ class Move(object):
 
     @temperature_control.setter
     def temperature_control(self, temperature_control):
-        breakpoint()
         self._temperature_control = temperature_control
         if temperature_control is None:
             self.compute_log_posterior = self.compute_log_posterior_basic
