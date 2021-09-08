@@ -20,7 +20,15 @@ class Move(object):
         self.temperature_control = temperature_control
         self.periodic = periodic
 
-        if self.temperature_control is None:
+    @property
+    def temperature_control(self):
+        return self._temperature_control
+
+    @temperature_control.setter
+    def temperature_control(self, temperature_control):
+        breakpoint()
+        self._temperature_control = temperature_control
+        if temperature_control is None:
             self.compute_log_posterior = self.compute_log_posterior_basic
         else:
             self.compute_log_posterior = (
