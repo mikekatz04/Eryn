@@ -805,8 +805,14 @@ class Backend(object):
         out_info["branch names"] = self.branch_names
         out_info["ndims"] = self.ndims
         out_info["tau"] = tau
-        out_info["ac_burn"] = int(2 * np.max(list(tau.values())))
-        out_info["ac_thin"] = int(0.5 * np.min(list(tau.values())))
+
+        try:
+            out_info["ac_burn"] = int(2 * np.max(list(tau.values())))
+            out_info["ac_thin"] = int(0.5 * np.min(list(tau.values())))
+        except Exception as e:
+            print("Failed to calculate the autocorrelation length. Will not output this piece of information. \n\n Actual error: [{}]".format(e))
+            out_info["ac_thin"] = 1
+            out_info["ac_burn"] = 1
 
         if out_info["ac_thin"] < 1:
             out_info["ac_thin"] = 1
