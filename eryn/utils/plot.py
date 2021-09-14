@@ -542,7 +542,7 @@ class PlotContainer:
             pdf.close()
 
     def generate_temperature_chains(
-        self, thin=1, pdf=None, name=None, info=None):
+        self, thin=1, pdf=None, name=None, info=None, onefig=True):
         """Generate plots of the temperature chains.
 
         This function builds plots of the MCMC traces to be added to a pdf.
@@ -565,7 +565,8 @@ class PlotContainer:
             info (dict, optional): Information dictionary from the backend. If not
                 provided, it will be retrieved from the backend.
                 (default: ``None``)
-
+            onefig (bool, optional): Flag to plot all chains in one figure
+                (default: ``False``)
         """
         # get info from backend
         if info is None and self.backend is not None:
@@ -589,17 +590,31 @@ class PlotContainer:
         ntemps = info['betas'].shape[1]
         # Define a colormap
         clrs = plt.cm.viridis(np.linspace(0, 1, ntemps))
+
+        if onefig:
+            fig = plt.figure(figsize=(12,6))
+            plt.ylabel(r"$\beta$")
+            plt.xlabel('Samples')
+
+        # Loop over the temperatures
         for temp in range(1, ntemps-1):    
             # get the samples to plot
             betas = info['betas'][:, temp].flatten()
             # Build the figure. 
-            fig = plt.figure(figsize=(12,6))
-            plt.plot(np.arange(0, betas.shape[0]), betas, color=clrs[temp], alpha=.9)
-            plt.ylabel(r"$\beta_{{{}}}$".format(temp))
-            plt.xlim(0, betas.shape[0])
-            plt.xlabel('Samples')
-                
-            # save to open pdf
+            if onefig: 
+                plt.plot(np.arange(0, betas.shape[0]), betas, color=clrs[temp], alpha=.9, label=r"$\beta_{{{}}}$".format(temp))
+                plt.xlim(0, betas.shape[0])
+            else:
+                fig = plt.figure(figsize=(12,6))
+                plt.plot(np.arange(0, betas.shape[0]), betas, color=clrs[temp], alpha=.9)
+                plt.ylabel(r"$\beta_{{{}}}$".format(temp))
+                plt.xlim(0, betas.shape[0])
+                plt.xlabel('Samples')
+                # save to open pdf
+                pdf.savefig(fig)
+
+        if onefig: 
+            # save to open pdf in case we want a single figure
             pdf.savefig(fig)
 
         # close the plot not the pdf
