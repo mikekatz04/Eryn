@@ -1,11 +1,6 @@
 ## Load standard modules
 import numpy as np
-import matplotlib as mpl
-mpl.rcParams['text.usetex']=True
-import matplotlib.pyplot as plt
-from scipy.stats import chi2, norm
-import sys, copy, copy, glob, pickle
-from matplotlib.lines import Line2D
+import sys
 
 sys.path.append('../')
 from eryn.state import State
@@ -14,8 +9,6 @@ from eryn.ensemble import EnsembleSampler
 from eryn.prior import uniform_dist
 from eryn.moves import GaussianMove
 from eryn.utils import PlotContainer
-import numpy as np
-
 
 # seed our random number generator, so we have reproducible data
 np.random.seed(sum([ord(v) for v in 'gaussians']))
@@ -28,7 +21,6 @@ def gaussian(x, a, b, c):
 def gaussian_flat(x, a, b, c):
     f_x = a * np.exp(-((x - b) ** 2) / (2 * c ** 2))
     return f_x
-
 
 def log_prob_fn(x1, group1, t, data, inds=None, fill_inds=[], fill_values=None):
 
@@ -147,10 +139,9 @@ log_prob = log_prob_fn(
 )
 
 log_prob = log_prob.reshape(ntemps, nwalkers)
-betas = np.linspace(1.0, 0.0, ntemps)
+betas    = np.linspace(1.0, 0.0, ntemps)
 
 blobs = None  # np.random.randn(ntemps, nwalkers, 3)
-
 
 state   = State(coords, log_prob=log_prob, betas=betas, blobs=blobs, inds=inds)
 state2  = State(state)
@@ -170,13 +161,16 @@ factor = 0.0001
 cov    = {"gauss": np.diag(np.ones(3)) * factor}
 moves  = GaussianMove(cov)
 
+nsteps = 4000
+burnin = 1000
+
 ensemble = EnsembleSampler(
     nwalkers,
     ndims,  # assumes ndim_max
     log_prob_fn,
     priors,
     args=[t, y],
-    tempering_kwargs=dict(betas=betas),
+    tempering_kwargs=dict(betas=betas, stop_adaptation=-1),
     nbranches=len(branch_names),
     branch_names=branch_names,
     nleaves_max=nleaves_max,
@@ -185,9 +179,6 @@ ensemble = EnsembleSampler(
     moves=moves,
     rj_moves=True,
 )
-
-nsteps = 2000
-burnin = 1000
 
 ensemble.run_mcmc(state, nsteps, burn=burnin, progress=True, thin_by=1)
 
@@ -198,20 +189,20 @@ plot = PlotContainer(backend=ensemble.backend)
 # Define some parameter names for testing
 paramnames = [r'$A$',r'$\mu$',r'$\sigma$']
 
-plot.generate_corner(labels=paramnames)
+plot.generate_corner(burn=burnin, labels=paramnames)
 
-plot.generate_parameter_chains_per_temperature(labels=paramnames)
+plot.generate_parameter_chains_per_temperature(burn=burnin, labels=paramnames)
 
-plot.generate_parameter_chains_per_temperature_per_walker(labels=paramnames)
+plot.generate_parameter_chains_per_temperature_per_walker(burn=burnin, labels=paramnames)
 
-plot.generate_parameter_chains(labels=paramnames)
+plot.generate_parameter_chains(burn=burnin, labels=paramnames)
 
-plot.generate_posterior_chains()
+plot.generate_posterior_chains(burn=burnin)
 
-plot.generate_temperature_chains()
+plot.generate_temperature_chains(onefig=True)
 
-plot.generate_leaves_chains(labels=paramnames)
+plot.generate_leaves_chains(burn=burnin, labels=paramnames)
 
-plot.generate_k_per_temperature_chains()
+plot.generate_k_per_temperature_chains(burn=burnin)
 
-plot.generate_k_per_tree_chains()
+plot.generate_k_per_tree_chains(burn=burnin)
