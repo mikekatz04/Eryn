@@ -214,7 +214,7 @@ class EnsembleSampler(object):
         else:
             # TODO: fix ndim
             self.temperature_control = TemperatureControl(
-                ndims, nwalkers, **tempering_kwargs
+                ndims, nwalkers, nleaves_max, **tempering_kwargs
             )
             self.ntemps = self.temperature_control.ntemps
 
