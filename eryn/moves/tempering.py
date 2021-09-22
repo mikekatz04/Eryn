@@ -219,7 +219,6 @@ class TemperatureControl(object):
         self.adaptation_time, self.adaptation_lag = adaptation_time, adaptation_lag
         self.stop_adaptation = stop_adaptation
 
-        # TODO: check if stop_adaptation works
         # TODO: read this information out (specific to each proposal maybe)
         self.swaps_proposed = np.full(self.ntemps - 1, self.nwalkers)
 
