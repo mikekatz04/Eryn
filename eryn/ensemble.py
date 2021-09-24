@@ -818,12 +818,12 @@ class EnsembleSampler(object):
                 # TODO: add copy here?
                 x_in[name] = coords_i.reshape(-1, ndim)
 
-                prior_out = np.zeros((ntemps, nwalkers))
-                for name in x_in:
-                    prior_out_temp = self.priors[name].logpdf(x_in[name])
-                    prior_out += prior_out_temp.reshape(
-                        ntemps, nwalkers, nleaves_max
-                    ).sum(axis=-1)
+            prior_out = np.zeros((ntemps, nwalkers))
+            for name in x_in:
+                prior_out_temp = self.priors[name].logpdf(x_in[name])
+                prior_out += prior_out_temp.reshape(ntemps, nwalkers, nleaves_max).sum(
+                    axis=-1
+                )
 
             return prior_out
 

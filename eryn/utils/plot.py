@@ -83,7 +83,7 @@ class PlotContainer:
     def default_corner_kwargs(self):
         default_corner_kwargs = dict(
             levels=(1 - np.exp(-0.5 * np.array([1, 2, 3]) ** 2)),
-            figsize=(18,18),
+            figsize=(18, 18),
             bins=25,
             plot_density=False,
             plot_datapoints=False,
@@ -185,7 +185,7 @@ class PlotContainer:
             corner_kwargs[key] = corner_kwargs.get(key, val)
 
         # adjust color info # TODO: This is bypasssed by adding colormap according to temperature
-        if "hist_kwargs" in corner_kwargs: 
+        if "hist_kwargs" in corner_kwargs:
             if "color" in corner_kwargs["hist_kwargs"] and "color" in corner_kwargs:
                 corner_kwargs["hist_kwargs"]["color"] = corner_kwargs["color"]
 
@@ -201,22 +201,26 @@ class PlotContainer:
         # NOTE: I am now flattenimg the chains across walkers. Probably we need to think carefully here
         for key, coords in info["samples"].items():
             nsteps, ntemps, nwalkers, nleaves_max, ndim = coords.shape
-            clrs = plt.cm.viridis(np.linspace(0, 1, ntemps)) # Get a set of colors
-            for temp in range(ntemps):    
-                
-                naninds    = np.logical_not(np.isnan(coords[:, temp, :, :, 0].flatten()))
-                samples_in = np.zeros( (coords[:, temp, :, :, 0].flatten()[naninds].shape[0], ndim) )  # init the chains to plot
+            clrs = plt.cm.viridis(np.linspace(0, 1, ntemps))  # Get a set of colors
+            for temp in range(ntemps):
+
+                naninds = np.logical_not(np.isnan(coords[:, temp, :, :, 0].flatten()))
+                samples_in = np.zeros(
+                    (coords[:, temp, :, :, 0].flatten()[naninds].shape[0], ndim)
+                )  # init the chains to plot
 
                 # get the samples to plot
-                for d in range(ndim): 
+                for d in range(ndim):
                     givenparam = coords[:, temp, :, :, d].flatten()
-                    samples_in[:, d] = givenparam[np.logical_not(np.isnan(givenparam))] # Discard the NaNs, each time they change the shape of the samples_in
+                    samples_in[:, d] = givenparam[
+                        np.logical_not(np.isnan(givenparam))
+                    ]  # Discard the NaNs, each time they change the shape of the samples_in
 
                 # Build corner figure. Wrapping around a try-except in order to let it finish plotting the "healthy" chains
                 try:
-                    fig = plt.figure(figsize = corner_kwargs['figsize'])
-                    corner_kwargs['fig']   = fig # handling the figure size properly
-                    corner_kwargs['color'] = clrs[temp] # Adding the color
+                    fig = plt.figure(figsize=corner_kwargs["figsize"])
+                    corner_kwargs["fig"] = fig  # handling the figure size properly
+                    corner_kwargs["color"] = clrs[temp]  # Adding the color
                     fig = corner.corner(samples_in, **corner_kwargs,)
 
                     # add informational title
@@ -227,15 +231,18 @@ class PlotContainer:
                     pdf.savefig(fig)
                     # close the plot not the pdf
                     plt.close()
-                except Exception as e: 
-                    print(f" Did not manage to make the corner plot for Branch: {key}, Temperature: {temp}.\nActual error: [{e}]")
+                except Exception as e:
+                    print(
+                        f" Did not manage to make the corner plot for Branch: {key}, Temperature: {temp}.\nActual error: [{e}]"
+                    )
 
         # if pdf was created here, close it
         if close_file:
             pdf.close()
 
     def generate_parameter_chains(
-        self, burn=0, thin=1, pdf=None, name=None, labels=None, info=None):
+        self, burn=0, thin=1, pdf=None, name=None, labels=None, info=None
+    ):
         """Generate plots of the chains of the cold chain.
 
         This function builds plots of the MCMC traces to be added to a pdf.
@@ -283,25 +290,33 @@ class PlotContainer:
         # make a trace plot for each temperature
         for key, coords in info["samples"].items():
             nsteps, ntemps, nwalkers, nleaves_max, ndim = coords.shape
-            temp = 0    
-                
-            samples_in = np.zeros( (coords[:, temp, :, :, 0].flatten().shape[0], ndim) )  # init the chains to plot
-            fig, ax    = plt.subplots(ndim, 1, sharex=True, figsize=(12,6))
-            fig.subplots_adjust(hspace=0) # No space between subplots
+            temp = 0
+
+            samples_in = np.zeros(
+                (coords[:, temp, :, :, 0].flatten().shape[0], ndim)
+            )  # init the chains to plot
+            fig, ax = plt.subplots(ndim, 1, sharex=True, figsize=(12, 6))
+            fig.subplots_adjust(hspace=0)  # No space between subplots
 
             # get the samples to plot
-            for d in range(ndim): 
+            for d in range(ndim):
                 samples_in[:, d] = coords[:, temp, :, :, d].flatten()
-                # Build the figure. 
-                ax[d].scatter(np.arange(0, samples_in[:, d].shape[0]), samples_in[:, d], marker='.', s=2., color='k', alpha=.4)
-                if labels is not None: ax[d].set_ylabel(labels[d])
+                # Build the figure.
+                ax[d].scatter(
+                    np.arange(0, samples_in[:, d].shape[0]),
+                    samples_in[:, d],
+                    marker=".",
+                    s=2.0,
+                    color="k",
+                    alpha=0.4,
+                )
+                if labels is not None:
+                    ax[d].set_ylabel(labels[d])
             ax[-1].set_xlim(0, samples_in.shape[0])
-            ax[-1].set_xlabel('Samples')
-                
+            ax[-1].set_xlabel("Samples")
+
             # add informational title
-            fig.suptitle(
-                f"Branch: {key}\nTemperature: {temp}"
-            )
+            fig.suptitle(f"Branch: {key}\nTemperature: {temp}")
             # save to open pdf
             pdf.savefig(fig)
             # close the plot not the pdf
@@ -312,7 +327,8 @@ class PlotContainer:
             pdf.close()
 
     def generate_parameter_chains_per_temperature(
-        self, burn=0, thin=1, pdf=None, name=None, labels=None, info=None):
+        self, burn=0, thin=1, pdf=None, name=None, labels=None, info=None
+    ):
         """Generate plots of the chains per temperature.
 
         This function builds plots of the MCMC traces to be added to a pdf.
@@ -363,25 +379,33 @@ class PlotContainer:
             nsteps, ntemps, nwalkers, nleaves_max, ndim = coords.shape
             # Define a colormap
             clrs = plt.cm.viridis(np.linspace(0, 1, ntemps))
-            for temp in range(ntemps):    
-                
-                samples_in = np.zeros( (coords[:, temp, :, :, 0].flatten().shape[0], ndim) )  # init the chains to plot
-                fig, ax    = plt.subplots(ndim, 1, sharex=True, figsize=(12,6))
-                fig.subplots_adjust(hspace=0) # No space between subplots
+            for temp in range(ntemps):
+
+                samples_in = np.zeros(
+                    (coords[:, temp, :, :, 0].flatten().shape[0], ndim)
+                )  # init the chains to plot
+                fig, ax = plt.subplots(ndim, 1, sharex=True, figsize=(12, 6))
+                fig.subplots_adjust(hspace=0)  # No space between subplots
 
                 # get the samples to plot
-                for d in range(ndim): 
+                for d in range(ndim):
                     samples_in[:, d] = coords[:, temp, :, :, d].flatten()
-                    # Build the figure. 
-                    ax[d].scatter(np.arange(0, samples_in[:, d].shape[0]), samples_in[:, d], marker='.', s=2., color=clrs[temp], alpha=.5)
-                    if labels is not None: ax[d].set_ylabel(labels[d])
+                    # Build the figure.
+                    ax[d].scatter(
+                        np.arange(0, samples_in[:, d].shape[0]),
+                        samples_in[:, d],
+                        marker=".",
+                        s=2.0,
+                        color=clrs[temp],
+                        alpha=0.5,
+                    )
+                    if labels is not None:
+                        ax[d].set_ylabel(labels[d])
                 ax[-1].set_xlim(0, samples_in.shape[0])
-                ax[-1].set_xlabel('Samples')
-                    
+                ax[-1].set_xlabel("Samples")
+
                 # add informational title
-                fig.suptitle(
-                    f"Branch: {key}\nTemperature: {temp}"
-                )
+                fig.suptitle(f"Branch: {key}\nTemperature: {temp}")
                 # save to open pdf
                 pdf.savefig(fig)
                 # close the plot not the pdf
@@ -392,7 +416,8 @@ class PlotContainer:
             pdf.close()
 
     def generate_parameter_chains_per_temperature_per_walker(
-        self, burn=0, thin=1, pdf=None, name=None, labels=None, info=None):
+        self, burn=0, thin=1, pdf=None, name=None, labels=None, info=None
+    ):
         """Generate plots of the chains per temperature per walker.
 
         This function builds plots of the MCMC traces to be added to a pdf.
@@ -444,25 +469,29 @@ class PlotContainer:
             nsteps, ntemps, nwalkers, nleaves_max, ndim = coords.shape
             # Define a colormap
             clrs = plt.cm.viridis(np.linspace(0, 1, ntemps))
-            for temp in range(ntemps):    
-                
-                fig, ax    = plt.subplots(ndim, 1, sharex=True, figsize=(12,6))
-                fig.subplots_adjust(hspace=0) # No space between subplots
+            for temp in range(ntemps):
+
+                fig, ax = plt.subplots(ndim, 1, sharex=True, figsize=(12, 6))
+                fig.subplots_adjust(hspace=0)  # No space between subplots
 
                 # get the samples to plot
-                for d in range(ndim): 
+                for d in range(ndim):
                     for w in range(nwalkers):
                         chain = coords[:, temp, w, :, d]
-                        # Build the figure. 
-                        ax[d].plot(np.arange(0, chain.shape[0]), chain, color=clrs[temp], alpha=.1)
-                    if labels is not None: ax[d].set_ylabel(labels[d])
+                        # Build the figure.
+                        ax[d].plot(
+                            np.arange(0, chain.shape[0]),
+                            chain,
+                            color=clrs[temp],
+                            alpha=0.1,
+                        )
+                    if labels is not None:
+                        ax[d].set_ylabel(labels[d])
                 ax[-1].set_xlim(0, chain.shape[0])
-                ax[-1].set_xlabel('Samples')
-                    
+                ax[-1].set_xlabel("Samples")
+
                 # add informational title
-                fig.suptitle(
-                    f"Branch: {key}\nTemperature: {temp}"
-                )
+                fig.suptitle(f"Branch: {key}\nTemperature: {temp}")
                 # save to open pdf
                 pdf.savefig(fig)
                 # close the plot not the pdf
@@ -472,8 +501,7 @@ class PlotContainer:
         if close_file:
             pdf.close()
 
-    def generate_posterior_chains(
-        self, burn=0, thin=1, pdf=None, name=None, info=None):
+    def generate_posterior_chains(self, burn=0, thin=1, pdf=None, name=None, info=None):
         """Generate plots of the posterior chains per temperature.
 
         This function builds plots of the MCMC traces to be added to a pdf.
@@ -518,19 +546,26 @@ class PlotContainer:
             close_file = False
 
         # make a trace plot for each temperature
-        ntemps = info['log_prob'].shape[1]
+        ntemps = info["log_prob"].shape[1]
         # Define a colormap
         clrs = plt.cm.viridis(np.linspace(0, 1, ntemps))
-        for temp in range(ntemps):    
+        for temp in range(ntemps):
             # get the samples to plot
-            post = info['log_prob'][:, temp, :].flatten()
-            # Build the figure. 
-            fig = plt.figure(figsize=(12,6))
-            plt.scatter(np.arange(0, post.shape[0]), post, marker='.', s=2., color=clrs[temp], alpha=.5)
+            post = info["log_prob"][:, temp, :].flatten()
+            # Build the figure.
+            fig = plt.figure(figsize=(12, 6))
+            plt.scatter(
+                np.arange(0, post.shape[0]),
+                post,
+                marker=".",
+                s=2.0,
+                color=clrs[temp],
+                alpha=0.5,
+            )
             plt.ylabel(f"$p:T{temp}$")
             plt.xlim(0, post.shape[0])
-            plt.xlabel('Samples')
-                
+            plt.xlabel("Samples")
+
             # save to open pdf
             pdf.savefig(fig)
 
@@ -542,7 +577,8 @@ class PlotContainer:
             pdf.close()
 
     def generate_temperature_chains(
-        self, thin=1, pdf=None, name=None, info=None, onefig=True):
+        self, thin=1, pdf=None, name=None, info=None, onefig=True
+    ):
         """Generate plots of the temperature chains.
 
         This function builds plots of the MCMC traces to be added to a pdf.
@@ -570,7 +606,9 @@ class PlotContainer:
         """
         # get info from backend
         if info is None and self.backend is not None:
-            info = self.transform(self.backend.get_info(discard=0, thin=thin)) # NOTE: Here we want to see how the temperatures adjust, thus discard=1
+            info = self.transform(
+                self.backend.get_info(discard=0, thin=thin)
+            )  # NOTE: Here we want to see how the temperatures adjust, thus discard=1
 
         elif info is None:
             raise ValueError("Need to provide either info or self.backend.")
@@ -587,33 +625,41 @@ class PlotContainer:
             close_file = False
 
         # make a trace plot for each temperature
-        ntemps = info['betas'].shape[1]
+        ntemps = info["betas"].shape[1]
         # Define a colormap
         clrs = plt.cm.viridis(np.linspace(0, 1, ntemps))
 
         if onefig:
-            fig = plt.figure(figsize=(12,6))
+            fig = plt.figure(figsize=(12, 6))
             plt.ylabel(r"$\beta$")
-            plt.xlabel('Samples')
+            plt.xlabel("Samples")
 
         # Loop over the temperatures
-        for temp in range(1, ntemps-1):    
+        for temp in range(1, ntemps - 1):
             # get the samples to plot
-            betas = info['betas'][:, temp].flatten()
-            # Build the figure. 
-            if onefig: 
-                plt.plot(np.arange(0, betas.shape[0]), betas, color=clrs[temp], alpha=.9, label=r"$\beta_{{{}}}$".format(temp))
+            betas = info["betas"][:, temp].flatten()
+            # Build the figure.
+            if onefig:
+                plt.plot(
+                    np.arange(0, betas.shape[0]),
+                    betas,
+                    color=clrs[temp],
+                    alpha=0.9,
+                    label=r"$\beta_{{{}}}$".format(temp),
+                )
                 plt.xlim(0, betas.shape[0])
             else:
-                fig = plt.figure(figsize=(12,6))
-                plt.plot(np.arange(0, betas.shape[0]), betas, color=clrs[temp], alpha=.9)
+                fig = plt.figure(figsize=(12, 6))
+                plt.plot(
+                    np.arange(0, betas.shape[0]), betas, color=clrs[temp], alpha=0.9
+                )
                 plt.ylabel(r"$\beta_{{{}}}$".format(temp))
                 plt.xlim(0, betas.shape[0])
-                plt.xlabel('Samples')
+                plt.xlabel("Samples")
                 # save to open pdf
                 pdf.savefig(fig)
 
-        if onefig: 
+        if onefig:
             # save to open pdf in case we want a single figure
             pdf.savefig(fig)
 
@@ -625,7 +671,8 @@ class PlotContainer:
             pdf.close()
 
     def generate_leaves_chains(
-        self, burn=0, thin=1, pdf=None, name=None, labels=None, info=None):
+        self, burn=0, thin=1, pdf=None, name=None, labels=None, info=None
+    ):
         """Generate plots of the chains per leaf for the cold chain.
 
         This function builds plots of the MCMC traces to be added to a pdf.
@@ -676,26 +723,34 @@ class PlotContainer:
             nsteps, ntemps, nwalkers, nleaves_max, ndim = coords.shape
             # Define a colormap
             clrs = plt.cm.viridis(np.linspace(0, 1, ntemps))
-            temp = 0 # Plot only the cold chain
-            for leaf in range(nleaves_max):    
-                
-                samples_in = np.zeros( (coords[:, temp, :, leaf, 0].flatten().shape[0], ndim) )  # init the chains to plot
-                fig, ax    = plt.subplots(ndim, 1, sharex=True, figsize=(12,6))
-                fig.subplots_adjust(hspace=0) # No space between subplots
+            temp = 0  # Plot only the cold chain
+            for leaf in range(nleaves_max):
+
+                samples_in = np.zeros(
+                    (coords[:, temp, :, leaf, 0].flatten().shape[0], ndim)
+                )  # init the chains to plot
+                fig, ax = plt.subplots(ndim, 1, sharex=True, figsize=(12, 6))
+                fig.subplots_adjust(hspace=0)  # No space between subplots
 
                 # get the samples to plot
-                for d in range(ndim): 
+                for d in range(ndim):
                     samples_in[:, d] = coords[:, temp, :, leaf, d].flatten()
-                    # Build the figure. 
-                    ax[d].scatter(np.arange(0, samples_in[:, d].shape[0]), samples_in[:, d], marker='.', s=2., color=clrs[temp], alpha=.5)
-                    if labels is not None: ax[d].set_ylabel(labels[d])
+                    # Build the figure.
+                    ax[d].scatter(
+                        np.arange(0, samples_in[:, d].shape[0]),
+                        samples_in[:, d],
+                        marker=".",
+                        s=2.0,
+                        color=clrs[temp],
+                        alpha=0.5,
+                    )
+                    if labels is not None:
+                        ax[d].set_ylabel(labels[d])
                 ax[-1].set_xlim(0, samples_in.shape[0])
-                ax[-1].set_xlabel('Samples')
-                    
+                ax[-1].set_xlabel("Samples")
+
                 # add informational title
-                fig.suptitle(
-                    f"Branch: {key}\nTemperature: {temp}, Leaf: {leaf}"
-                )
+                fig.suptitle(f"Branch: {key}\nTemperature: {temp}, Leaf: {leaf}")
                 # save to open pdf
                 pdf.savefig(fig)
                 # close the plot not the pdf
@@ -705,8 +760,7 @@ class PlotContainer:
         if close_file:
             pdf.close()
 
-    def generate_k_per_temperature_chains(
-        self, thin=1, pdf=None, name=None, info=None):
+    def generate_k_per_temperature_chains(self, thin=1, pdf=None, name=None, info=None):
         """Generate plots of the k chains.
 
         This function builds plots of the MCMC traces to be added to a pdf.
@@ -733,7 +787,9 @@ class PlotContainer:
         """
         # get info from backend
         if info is None and self.backend is not None:
-            info = self.transform(self.backend.get_info(discard=0, thin=thin)) # NOTE: Here we want to see how the temperatures adjust, thus discard=1
+            info = self.transform(
+                self.backend.get_info(discard=0, thin=thin)
+            )  # NOTE: Here we want to see how the temperatures adjust, thus discard=1
 
         elif info is None:
             raise ValueError("Need to provide either info or self.backend.")
@@ -748,32 +804,46 @@ class PlotContainer:
             pdf = PdfPages(name + "_traces_k.pdf")
         else:
             close_file = False
-        
-        inds     = self.backend.get_value("inds") # Get the leaves out
-        branches = {name: np.sum(inds[name], axis=-1, dtype=int) for name in inds}
-        nbrsmx   = max(self.backend.nleaves_max)  # Maximum number of branches across the forest 
-        bns      = (np.arange(1, nbrsmx + 2) - 0.5)  # Get maximum allowed number of leaves for the given branch
 
-        # make a trace plot for each temperature   
-        ntemps = info['betas'].shape[1]
-        clrs   = plt.cm.viridis(np.linspace(0, 1, ntemps)) # Define a colormap
+        inds = self.backend.get_value("inds")  # Get the leaves out
+        branches = {name: np.sum(inds[name], axis=-1, dtype=int) for name in inds}
+        nbrsmx = max(
+            self.backend.nleaves_max
+        )  # Maximum number of branches across the forest
+        bns = (
+            np.arange(1, nbrsmx + 2) - 0.5
+        )  # Get maximum allowed number of leaves for the given branch
+
+        # make a trace plot for each temperature
+        ntemps = info["betas"].shape[1]
+        clrs = plt.cm.viridis(np.linspace(0, 1, ntemps))  # Define a colormap
 
         for temp in range(0, ntemps):
 
-            fig = plt.figure(figsize=(8,6))
-            for branch in branches: # Get the total number of components/branches per temperature
+            fig = plt.figure(figsize=(8, 6))
+            for (
+                branch
+            ) in (
+                branches
+            ):  # Get the total number of components/branches per temperature
                 if branch == list(branches.keys())[0]:
                     k_chain = branches[branch][:, temp].flatten()
                 else:
                     k_chain += branches[branch][:, temp].flatten()
- 
-            plt.hist(k_chain, bins=bns, color=clrs[temp], edgecolor=clrs[temp], alpha=0.4, lw=3, density=True)
+
+            plt.hist(
+                k_chain,
+                bins=bns,
+                color=clrs[temp],
+                edgecolor=clrs[temp],
+                alpha=0.4,
+                lw=3,
+                density=True,
+            )
             plt.xticks(np.arange(1, nbrsmx + 1))
-            plt.xlabel(r"$\#$ of Branches in the data")  
+            plt.xlabel(r"$\#$ of Branches in the data")
             # add informational title
-            fig.suptitle(
-                f"\nTemperature: {temp}"
-            )  
+            fig.suptitle(f"\nTemperature: {temp}")
             # save to open pdf
             pdf.savefig(fig)
 
@@ -784,8 +854,7 @@ class PlotContainer:
         if close_file:
             pdf.close()
 
-    def generate_k_per_tree_chains(
-        self, thin=1, pdf=None, name=None, info=None):
+    def generate_k_per_tree_chains(self, thin=1, pdf=None, name=None, info=None):
         """Generate plots of the k chains per type of model.
 
         This function builds plots of the MCMC traces to be added to a pdf.
@@ -812,7 +881,9 @@ class PlotContainer:
         """
         # get info from backend
         if info is None and self.backend is not None:
-            info = self.transform(self.backend.get_info(discard=0, thin=thin)) # NOTE: Here we want to see how the temperatures adjust, thus discard=1
+            info = self.transform(
+                self.backend.get_info(discard=0, thin=thin)
+            )  # NOTE: Here we want to see how the temperatures adjust, thus discard=1
 
         elif info is None:
             raise ValueError("Need to provide either info or self.backend.")
@@ -827,34 +898,47 @@ class PlotContainer:
             pdf = PdfPages(name + "_traces_k_per_tree.pdf")
         else:
             close_file = False
-        
-        inds     = self.backend.get_value("inds") # Get the leaves out
-        branches = {name: np.sum(inds[name], axis=-1, dtype=int) for name in inds}
-        nbrsmx   = max(self.backend.nleaves_max)  # Maximum number of branches across the forest
-        bns      = (np.arange(1, nbrsmx + 2) - 0.5)  # Get maximum allowed number of leaves 
-        nmodels  = len(list(branches.keys()))
 
-        # make a trace plot for each temperature   
-        ntemps = info['betas'].shape[1]
-        clrs   = plt.cm.viridis(np.linspace(0, 1, nmodels)) # Define a colormap
+        inds = self.backend.get_value("inds")  # Get the leaves out
+        branches = {name: np.sum(inds[name], axis=-1, dtype=int) for name in inds}
+        nbrsmx = max(
+            self.backend.nleaves_max
+        )  # Maximum number of branches across the forest
+        bns = np.arange(1, nbrsmx + 2) - 0.5  # Get maximum allowed number of leaves
+        nmodels = len(list(branches.keys()))
+
+        # make a trace plot for each temperature
+        ntemps = info["betas"].shape[1]
+        clrs = plt.cm.viridis(np.linspace(0, 1, nmodels))  # Define a colormap
 
         for temp in range(0, ntemps):
 
-            fig  = plt.figure(figsize=(8,6))
+            fig = plt.figure(figsize=(8, 6))
             cntr = 0
-            for branch in branches: # Get the total number of components/branches per temperature
-                k_chain = branches[branch][:, temp].flatten()  
-                plt.hist(k_chain, bins=bns, color=clrs[cntr], edgecolor=clrs[cntr], \
-                            histtype='step', alpha=0.9, lw=3, density=True, label=branch)
+            for (
+                branch
+            ) in (
+                branches
+            ):  # Get the total number of components/branches per temperature
+                k_chain = branches[branch][:, temp].flatten()
+                plt.hist(
+                    k_chain,
+                    bins=bns,
+                    color=clrs[cntr],
+                    edgecolor=clrs[cntr],
+                    histtype="step",
+                    alpha=0.9,
+                    lw=3,
+                    density=True,
+                    label=branch,
+                )
                 cntr += 1
 
             plt.xticks(np.arange(1, nbrsmx + 1))
-            plt.xlabel(r"$\#$ of Branches in the data")  
+            plt.xlabel(r"$\#$ of Branches in the data")
             plt.legend(loc="upper right")
             # add informational title
-            fig.suptitle(
-                f"\nTemperature: {temp}"
-            )  
+            fig.suptitle(f"\nTemperature: {temp}")
             # save to open pdf
             pdf.savefig(fig)
 
@@ -864,7 +948,6 @@ class PlotContainer:
         # if pdf was created here, close it
         if close_file:
             pdf.close()
-
 
     def generate_info_page(self, burn=0, thin=1, pdf=None, name=None, info=None):
         """Build an info page
@@ -971,6 +1054,7 @@ class PlotContainer:
             close_file = False
 
         # TODO: We will probably need to save to PNG. The PDFs are too heavy for large data
+        # TODO: add options
         self.generate_info_page(info=info, pdf=pdf)
         self.generate_corner(info=info, pdf=pdf)
         self.generate_parameter_chains(info=info, pdf=pdf)
