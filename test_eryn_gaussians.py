@@ -183,6 +183,7 @@ factor = 0.0001
 cov = {"gauss": np.diag(np.ones(3)) * factor}
 
 # backend.grow(100, blobs)
+from eryn.moves import GaussianMove
 
 moves = GaussianMove(cov)
 
@@ -200,6 +201,7 @@ ensemble = EnsembleSampler(
     moves=moves,
     plot_iterations=-1,
     rj_moves=True,
+    backend="test_out.h5",
 )
 
 nsteps = 100

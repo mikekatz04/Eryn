@@ -224,6 +224,7 @@ class HDFBackend(Backend):
             g.attrs["nwalkers"] = nwalkers
             g.attrs["nleaves_max"] = self.nleaves_max
             g.attrs["has_blobs"] = False
+            g.attrs["rj"] = rj
             g.attrs["iteration"] = 0
 
             try:
@@ -489,11 +490,16 @@ class HDFBackend(Backend):
                 is False, then rj_accepted must be None, which is the default.
 
         """
-        self._check(state, accepted, rj_accepted=rj_accepted)
 
         with self.open("a") as f:
             g = f[self.name]
             iteration = g.attrs["iteration"]
+
+            for key in ["rj", "ntemps", "nwalkers"]:
+                if not hasattr(self, key):
+                    setattr(self, key, g.attrs[key])
+
+            self._check(state, accepted, rj_accepted=rj_accepted)
 
             for name, model in state.branches.items():
                 g["inds"][name][iteration] = model.inds
