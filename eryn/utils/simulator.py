@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 class Simulator(torch.nn.Module):
     """ 
@@ -34,4 +35,27 @@ class GaussianSimulator(Simulator):
     def forward(self, inputs):
         inputs = inputs.view(-1, 1)
         return torch.randn(inputs.size(0), 1) + inputs
+
+
+class GaussFunc(Simulator):
+
+    def __init__(self, tvec):
+        '''
+          Implement Simulator that output the function of the Gaussian shape for a given set of parameetrs.
+        '''
+        super().__init__()
+
+        self.tvec = torch.from_numpy(tvec).type(torch.FloatTensor)
+
+    def forward(self, inputs):
+
+        a = inputs[:,0].view(-1,1)
+        b = inputs[:,1].view(-1,1)
+        c = inputs[:,2].view(-1,1)
+        
+        f_x = a * torch.exp(-(torch.pow((self.tvec - b),2)) / (2.0 * torch.pow(c,2)))
+
+        return f_x
+
+
 

@@ -1,5 +1,7 @@
 import numpy as np
 from scipy import stats
+import torch
+from torch.distributions.normal import Normal
 
 
 def uniform_dist(min, max):
@@ -165,6 +167,20 @@ class PriorContainer:
             out[inds_in] = prior_i.rvs(size=size)[adjust_inds]
 
         return out
+
+
+
+class UniformTorch(torch.distributions.uniform.Uniform):
+    '''
+       For testing Likelihood Ratio.
+    '''
+    def __init__(self, lower, upper):
+        super(UniformTorch, self).__init__(lower, upper)
+
+    def log_prob(self, sample):
+        return super(UniformTorch, self).log_prob(sample).mean()
+
+
 
 
 if __name__ == "__main__":
