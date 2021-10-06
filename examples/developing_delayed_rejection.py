@@ -151,7 +151,7 @@ factor = 0.0001
 cov    = {"gauss": np.diag(np.ones(3)) * factor}
 moves  = GaussianMove(cov)
 
-drmoves = DelayedRejection(moves, max_iter=20)
+drmoves = DelayedRejection(moves, max_iter=10)
 
 backend.reset(
     nwalkers,
