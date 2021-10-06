@@ -91,10 +91,10 @@ class DelayedRejection(Move):
         zq    = 0.0  # Not too deep into the iterations = symmetric
         if stage != iq:  
             for model in statespath[0].branches_coords:
-                y1, y2, y3, y4 = self.get_state_coords(iq, stage, statespath, model)
+                x1, x2, x3, x4 = self.get_state_coords(iq, stage, statespath, model)
                 invCmat = self.proposal.all_proposal[model].invscale
                 # TODO: Check if this does it right across dimensions. A: It does not. I need to think about it more
-                # zq += -0.5*((np.linalg.norm(np.dot(y4-y3, invCmat)))**2 - (np.linalg.norm(np.dot(y2-y1, invCmat)))**2)
+                # zq += -0.5*((np.linalg.norm(np.dot(x4-x3, invCmat)))**2 - (np.linalg.norm(np.dot(x2-x1, invCmat)))**2)
                 zq = 0.0
         return zq
 
@@ -107,7 +107,24 @@ class DelayedRejection(Move):
         x3 = statespath[stage + 1].branches_coords[m]
         x4 = statespath[stage - iq].branches_coords[m]
         return x1, x2, x3, x4
-    
+
+    def get_new_state(self, model, state, first_state):
+        """ A utility function to propose new points
+        """
+        self.proposal.temperature_control.betas = np.zeros_like(state.betas)
+        new_state, _ = self.proposal.propose(model, state) # Propose for all walkers and temps, get posterior and prior
+        logl     = new_state.log_prob
+        logp     = new_state.log_prior
+
+        # Set the temps back to the original values, get tempered posterior
+        self.proposal.temperature_control.betas = first_state.betas.copy()
+
+        # Update the parameters, update the state. TODO: Fix blobs?
+        new_state = State(
+            state.branches_coords, log_prob=logl, log_prior=logp, blobs=state.blobs, inds=state.branches_inds
+        ) # I create a new initial state that all are accepted
+        return new_state
+
     def propose(self, model, state):
         """Use the move to generate a proposal and compute the acceptance
 
@@ -122,7 +139,7 @@ class DelayedRejection(Move):
         # Check to make sure that the dimensions match.
         ntemps, nwalkers, _, _ = state.branches[list(state.branches.keys())[0]].shape
 
-        current_state = deepcopy(state)     # Get the current state and save it
+        initial_state = deepcopy(state)     # Get the current state and save it
 
         # Get the old coords and posterior values
         prev_logl = state.log_prob
@@ -133,26 +150,11 @@ class DelayedRejection(Move):
         accepted = np.zeros((ntemps, nwalkers), dtype=bool)
         rejind   = ~accepted # Get the rejected points
         logalpha = np.full((ntemps, nwalkers), -np.inf) 
-        prev_logalpha = np.full((ntemps, nwalkers), -np.inf) 
-        prev_factors  = np.zeros((ntemps, nwalkers))
-        driter = 1
+        driter   = 1 
 
-        # Set betas to 0 in order to force-propose a new point for all walkers across all temps
-        self.proposal.temperature_control.betas = np.zeros_like(state.betas)
-        new_state, _ = self.proposal.propose(model, state) # Propose for all walkers and temps, get posterior and prior
-        logl     = new_state.log_prob
-        logp     = new_state.log_prior
-        factors  = self.proposal.factors.copy() # copy the factors
+        new_initial_state = self.get_new_state(model, state, initial_state)
 
-        # Set the temps back to the original values, get tempered posterior
-        self.proposal.temperature_control.betas = current_state.betas.copy()
-
-        # Update the parameters, update the state. TODO: Fix blobs?
-        new_initial_state = State(
-            state.branches_coords, log_prob=logl, log_prior=logp, blobs=state.blobs, inds=state.branches_inds
-        ) # I create a new initial state that all are accepted
-
-        states_path = [current_state, new_initial_state]  # This is the path of states that we need to track
+        states_path = [initial_state, new_initial_state]  # This is the path of states that we need to track
 
         # Start DR loop. Check if all accepted (extreme case). Then stop.
         # TODO: As currently implemented, it proposes and computes the model for all temps and walkers
@@ -175,7 +177,9 @@ class DelayedRejection(Move):
             )
             state = self.update(state, update_state, accepted)
 
-            states_path.append(state) # Add this state to the path
+            new_state = self.get_new_state(model, state, initial_state)
+
+            states_path.append(new_state) # Add this new state to the path
             
             print(" - Iter {}: Accepted = {}/{}".format(driter, np.sum(accepted), np.prod(accepted.shape)))    
             driter += 1 # Increase iteration
