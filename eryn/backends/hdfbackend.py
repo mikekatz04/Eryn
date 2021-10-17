@@ -495,7 +495,14 @@ class HDFBackend(Backend):
             g = f[self.name]
             iteration = g.attrs["iteration"]
 
-            for key in ["rj", "ntemps", "nwalkers"]:
+            for key in [
+                "rj",
+                "ntemps",
+                "nwalkers",
+                "nbranches",
+                "branch names",
+                "ndims",
+            ]:
                 if not hasattr(self, key):
                     setattr(self, key, g.attrs[key])
 
