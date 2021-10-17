@@ -1062,7 +1062,7 @@ class PlotContainer:
         # TODO: add options
 
         for plot_i in self.which_plots:
-            getattr(self, plot_i)(info=info, pdf=pdf)
+            getattr(self, "generate_" + plot_i)(info=info, pdf=pdf)
 
         # self.generate_xchange_acceptance_rate(info=info, pdf=pdf)
 
