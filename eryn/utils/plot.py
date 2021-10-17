@@ -33,6 +33,9 @@ class PlotContainer:
         info_keys (list, optional): List of ``str`` indicating which keys from
             the information dictionary provided by the backend are of interest
             for diagnostics. (default: ``None``)
+        which_plots (list, optional): List of ``str``indicating which plot generating
+            functions to use. Options are the associated class methods that start
+            with ``generate``. (default: ``["info_page", "corner"]``)
 
     """
 
@@ -44,6 +47,7 @@ class PlotContainer:
         corner_kwargs={},
         parameter_transforms=None,
         info_keys=None,
+        which_plots=["info_page", "corner"],
     ):
 
         self.backend = backend
@@ -67,6 +71,7 @@ class PlotContainer:
             self.corner_kwargs[key] = self.corner_kwargs.get(key, default)
 
         self.info_keys = info_keys
+        self.which_plots = which_plots
 
     def transform(self, info):
         """Transform the samples in the infromation dictionary
@@ -1055,16 +1060,10 @@ class PlotContainer:
 
         # TODO: We will probably need to save to PNG. The PDFs are too heavy for large data
         # TODO: add options
-        self.generate_info_page(info=info, pdf=pdf)
-        self.generate_corner(info=info, pdf=pdf)
-        self.generate_parameter_chains(info=info, pdf=pdf)
-        self.generate_parameter_chains_per_temperature(info=info, pdf=pdf)
-        self.generate_parameter_chains_per_temperature_per_walker(info=info, pdf=pdf)
-        self.generate_posterior_chains(info=info, pdf=pdf)
-        self.generate_temperature_chains(info=info, pdf=pdf)
-        self.generate_leaves_chains(info=info, pdf=pdf)
-        self.generate_k_per_temperature_chains(info=info, pdf=pdf)
-        self.generate_k_per_tree_chains(info=info, pdf=pdf)
+
+        for plot_i in self.which_plots:
+            getattr(self, plot_i)(info=info, pdf=pdf)
+
         # self.generate_xchange_acceptance_rate(info=info, pdf=pdf)
 
         # close file if created here
