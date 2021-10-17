@@ -500,7 +500,7 @@ class HDFBackend(Backend):
                 "ntemps",
                 "nwalkers",
                 "nbranches",
-                "branch names",
+                "branch_names",
                 "ndims",
             ]:
                 if not hasattr(self, key):
