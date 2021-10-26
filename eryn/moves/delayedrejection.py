@@ -37,7 +37,7 @@ class DelayedRejection(Move):
                 self.temperature_control.compute_log_posterior_tempered
             )
 
-    def calculate_log_acceptance_ratio(self, stateslist, prev_logP):
+    def calculate_log_acceptance_ratio(self, stateslist, prev_logP, model):
         """Calcuate the delayed rejection acceptace ratio. 
 
         Args: 
@@ -51,15 +51,15 @@ class DelayedRejection(Move):
 
         driter = len(stateslist) - 1  # The stage we're in, elements in trypath - 1
         
-        loga1 = 1.0  # Init
-        loga2 = 1.0  
+        loga1 = 0.0  # Init
+        loga2 = 0.0  
 
         # recursively compute past alphas
         for kk in range(0, driter - 1):
-            prevla1,_,_ = self.calculate_log_acceptance_ratio(stateslist[0:(kk + 2)], prev_logP)
+            prevla1,_,_ = self.calculate_log_acceptance_ratio(stateslist[0:(kk + 2)], prev_logP, model)
             prevla1[prevla1>=0] = 0.0 # Ensure we do not get NaNs # TODO: Check if correct
             loga1 = loga1 + np.log(1 - np.exp(prevla1))
-            prevla2,_,_ = self.calculate_log_acceptance_ratio(stateslist[driter:driter - kk - 2:-1], prev_logP)
+            prevla2,_,_ = self.calculate_log_acceptance_ratio(stateslist[driter:driter - kk - 2:-1], prev_logP, model)
             prevla2[prevla2>=0] = 0.0
             loga2 = loga2 + np.log(1 - np.exp(prevla2))
             
@@ -67,8 +67,10 @@ class DelayedRejection(Move):
                 logalpha = np.ones((ntemps, nwalkers))
                 return logalpha, stateslist[0].log_prob, stateslist[0].log_prior # TODO: check if index 0 is the correct
 
-        logl = stateslist[-1].log_prob
-        logp = stateslist[-1].log_prior
+        logp = model.compute_log_prior_fn(stateslist[-1].branches_coords, inds=stateslist[-1].branches_inds)
+        logl, _ = model.compute_log_prob_fn(
+                    stateslist[-1].branches_coords, inds=stateslist[-1].branches_inds, logp=logp # compute logp and fill -inf to accepted (-inf points are skipped)
+        )
 
         # Compute the logposterior for all
         logP = self.compute_log_posterior(logl, logp)
@@ -84,12 +86,13 @@ class DelayedRejection(Move):
     # TODO: This assumes a Gaussian proposal. We need to think how to make it work with the factors?
     def get_log_proposal_ratio_for_iter(self, iq, statespath):
         """
-        Gaussian nth stage log proposal ratio. After the third
-        iteration, it does not remain symmetric.
+        Gaussian nth stage log proposal ratio. Since it's symmetric, after the third
+        iteration, it depends only on the first, i-th and (i-1)th points.
         """
         stage = len(statespath) - 1 - 1  # - 1, i
         zq    = 0.0  # Not too deep into the iterations = symmetric
-        if stage != iq:  
+        if stage != iq:
+            # breakpoint()
             for model in statespath[0].branches_coords:
                 x1, x2, x3, x4 = self.get_state_coords(iq, stage, statespath, model)
                 invCmat = self.proposal.all_proposal[model].invscale
@@ -113,8 +116,8 @@ class DelayedRejection(Move):
         """
         self.proposal.temperature_control.betas = np.zeros_like(state.betas)
         new_state, _ = self.proposal.propose(model, state) # Propose for all walkers and temps, get posterior and prior
-        logl     = new_state.log_prob
-        logp     = new_state.log_prior
+        logl = new_state.log_prob
+        logp = new_state.log_prior
 
         # Set the temps back to the original values, get tempered posterior
         self.proposal.temperature_control.betas = first_state.betas.copy()
@@ -161,7 +164,7 @@ class DelayedRejection(Move):
         # TODO: We should try to reduce the computation to those only rejected. Probably through state.branches_inds
         while (driter < self.max_iter) and not (np.sum(accepted) == np.prod(accepted.shape)):         
             
-            logalpha, logl, logp = self.calculate_log_acceptance_ratio(states_path, prev_logP) 
+            logalpha, logl, logp = self.calculate_log_acceptance_ratio(states_path, prev_logP, model) 
 
             accepted[rejind] = logalpha[rejind] > np.log(model.random.rand(ntemps, nwalkers)[rejind])
 
