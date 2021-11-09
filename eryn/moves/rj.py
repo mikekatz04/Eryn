@@ -158,10 +158,11 @@ class ReversibleJump(Move):
                         # choose which to remove
                         ind_change = model.random.choice(inds_true)
                         # add indexes into inds
-                        inds_for_change[name]["-1"][decrease_i] = np.array(
-                            [t, w, ind_change], dtype=int
-                        )
-                        decrease_i += 1
+                        if inds_for_change[name]["-1"].shape[0] > 0:
+                            inds_for_change[name]["-1"][decrease_i] = np.array(
+                                [t, w, ind_change], dtype=int
+                            )
+                            decrease_i += 1
                         # do not care currently about what we do with discarded coords, they just sit in the state
 
         # propose new sources and coordinates
