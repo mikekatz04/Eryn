@@ -311,7 +311,7 @@ class EnsembleSampler(object):
             if self.has_reversible_jump:
                 if isinstance(nleaves_min, int):
                     self.nleaves_min = [nleaves_min for _ in range(self.nbranches)]
-                elif isinstance(nleave_min, list):
+                elif isinstance(nleaves_min, list):
                     self.nleaves_min = nleaves_min
                 else:
                     raise ValueError(
