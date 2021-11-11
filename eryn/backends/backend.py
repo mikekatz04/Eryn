@@ -75,6 +75,7 @@ class Backend(object):
         truth=None,
         branch_names=None,
         rj=False,
+        **info,
     ):
         """Clear the state of the chain and empty the backend
 
@@ -94,6 +95,8 @@ class Backend(object):
                 (default: ``None``)
             rj (bool, optional): If True, reversible-jump techniques are used.
                 (default: ``False``)
+            **info (dict, optional): Any other key-value pairs to be added
+                as attributes to the backend.
 
         """
 
@@ -105,7 +108,12 @@ class Backend(object):
             truth=truth,
             branch_names=branch_names,
             rj=rj,
+            info=info,
         )
+
+        # load info into class
+        for key, value in info.items():
+            setattr(self, key, value)
 
         # store all information to guide data storage
         self.nwalkers = int(nwalkers)
@@ -810,7 +818,11 @@ class Backend(object):
             out_info["ac_burn"] = int(2 * np.max(list(tau.values())))
             out_info["ac_thin"] = int(0.5 * np.min(list(tau.values())))
         except Exception as e:
-            print("Failed to calculate the autocorrelation length. Will not output this piece of information. \n\n Actual error: [{}]".format(e))
+            print(
+                "Failed to calculate the autocorrelation length. Will not output this piece of information. \n\n Actual error: [{}]".format(
+                    e
+                )
+            )
             out_info["ac_thin"] = 1
             out_info["ac_burn"] = 1
 

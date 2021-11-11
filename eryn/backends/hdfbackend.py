@@ -139,6 +139,7 @@ class HDFBackend(Backend):
         truth=[],
         branch_names=None,
         rj=False,
+        **info,
     ):
         """Clear the state of the chain and empty the backend
 
@@ -170,7 +171,9 @@ class HDFBackend(Backend):
                 ntemps=ntemps,
                 truth=truth,
                 branch_names=branch_names,
+                info=info,
             )
+
             self.nwalkers = int(nwalkers)  # trees
             self.ntemps = int(ntemps)
             self.rj = rj
@@ -226,6 +229,11 @@ class HDFBackend(Backend):
             g.attrs["has_blobs"] = False
             g.attrs["rj"] = rj
             g.attrs["iteration"] = 0
+
+            # load info into class
+            for key, value in info.items():
+                setattr(self, key, value)
+                g.attrs[key] = value
 
             try:
                 g.attrs["truth"] = truth
