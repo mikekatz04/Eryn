@@ -159,6 +159,8 @@ class HDFBackend(Backend):
                 (default: ``None``)
             rj (bool, optional): If True, reversible-jump techniques are used.
                 (default: ``False``)
+            **info (dict, optional): Any other key-value pairs to be added
+                as attributes to the backend. These are also added to the HDF5 file.
 
         """
         with self.open("a") as f:
