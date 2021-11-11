@@ -88,6 +88,9 @@ class EnsembleSampler(object):
             move from this list (optionally with weights) for each proposal.
             If ``True``, it defaults to :class:`PriorGenerate`.
             (default: ``None``)
+        dr_moves (bool, optional): If ``None`` ot ``False``, delayed rejection when proposing "birth"
+            of new components/models will be switched off for this run. Requires ``rj_moves`` set to ``True``.
+            (default: ``None``)
         args (optional): A list of extra positional arguments for
             ``log_prob_fn``. ``log_prob_fn`` will be called with the sequence
             ``log_prob_fn(p, *args, **kwargs)``.
@@ -164,6 +167,8 @@ class EnsembleSampler(object):
         pool=None,
         moves=None,
         rj_moves=None,
+        dr_moves=None,
+        dr_max_iter=5,
         args=None,
         kwargs=None,
         backend=None,
@@ -311,7 +316,7 @@ class EnsembleSampler(object):
             if self.has_reversible_jump:
                 if isinstance(nleaves_min, int):
                     self.nleaves_min = [nleaves_min for _ in range(self.nbranches)]
-                elif isinstance(nleave_min, list):
+                elif isinstance(nleaves_min, list):
                     self.nleaves_min = nleaves_min
                 else:
                     raise ValueError(
@@ -324,6 +329,9 @@ class EnsembleSampler(object):
                     self.priors,
                     self.nleaves_max,
                     self.nleaves_min,
+                    self._moves[0], # TODO: check if necessary  
+                    dr=dr_moves,
+                    dr_max_iter=dr_max_iter,
                     tune=False,
                     temperature_control=self.temperature_control,
                 )
