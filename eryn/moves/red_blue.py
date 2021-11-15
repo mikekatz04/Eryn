@@ -14,7 +14,7 @@ class RedBlueMove(Move, ABC):
     An abstract red-blue ensemble move with parallelization as described in
     `Foreman-Mackey et al. (2013) <https://arxiv.org/abs/1202.3665>`_.
 
-    # TODO: think about this for reversible jump. 
+    # TODO: think about this for reversible jump.
 
     Args:
         nsplits (int, optional): The number of sub-ensembles to use. Each
@@ -177,6 +177,11 @@ class RedBlueMove(Move, ABC):
 
             # Compute the lnprobs of the proposed position.
             logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds, logp=logp)
+
+            # catch and warn about nans
+            if np.any(np.isnan(logl)):
+                logl[np.isnan(logl)] = -np.inf
+                warnings.warn("Getting Nan in likelihood computation.")
 
             logP = self.compute_log_posterior(logl, logp)
 
