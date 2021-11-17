@@ -26,7 +26,7 @@ class StretchMove(RedBlueMove):
         self.a = a
         super(StretchMove, self).__init__(**kwargs)
 
-    def get_proposal(self, s_all, c_all, random, inds=None):
+    def get_proposal(self, s_all, c_all, random, inds_s=None, inds_c=None):
         """Generate stretch proposal
 
         # TODO: add log proposal from ptemcee
@@ -37,10 +37,12 @@ class StretchMove(RedBlueMove):
             c_all (dict): Keys are ``branch_names`` and values are lists. These
                 lists contain all the complement array values.
             random (object): Random state object.
-            inds (dict, optional): Keys are ``branch_names`` and values are
+            inds_s (dict, optional): Keys are ``branch_names`` and values are
                 np.ndarray[nwalkers, nleaves_max] that indicate which leaves
-                are currently being used. This is used to determine dimension of
-                proposal for detailed balance factors. (default: ``None``)
+                are currently being used in :code:`s_all`. (default: ``None``)
+            inds_c (dict, optional): Keys are ``branch_names`` and values are
+                np.ndarray[nwalkers, nleaves_max] that indicate which leaves
+                are currently being used in :code:`s_all`. (default: ``None``)
 
         Returns:
             tuple: First entry is new positions. Second entry is detailed balance factors.
@@ -55,11 +57,12 @@ class StretchMove(RedBlueMove):
             s = s_all[name]
             c = np.concatenate(c, axis=0)
             Ns, Nc = len(s), len(c)
+
             # gets rid of any values of exactly zero
-            if inds is None:
+            if inds_s is None:
                 ndim_temp = s_all[name].shape[-1] * s_all[name].shape[-2]
             else:
-                ndim_temp = inds[name].sum(axis=(1)) * s_all[name].shape[-1]
+                ndim_temp = inds_s[name].sum(axis=(1)) * s_all[name].shape[-1]
             if i == 0:
                 ndim = ndim_temp
                 Ns_check = Ns
@@ -70,17 +73,30 @@ class StretchMove(RedBlueMove):
                     raise ValueError("Different number of walkers across models.")
             rint = random.randint(Nc, size=(Ns,))
 
-            if self.periodic is not None:
-                diff = self.periodic.distance(s, c[rint], names=[name])[name]
+            # check dimensioality comparison between s and c
+            nleaves_s = inds_s[name].sum(axis=(1))
+            nleaves_max = inds_s[name].shape[1]
+            nleaves_c_rint = inds_c[name].sum(axis=(1))[rint]
+            c_rint = c[rint]
+            c_inds_rint = inds_c[name][rint]
+
+            # same_num first
+            temp = np.zeros_like(s)  # s.copy()
+            for j in range(len(s)):
+                c_temp_inds = np.random.choice(
+                    np.arange(nleaves_max)[c_inds_rint[j].astype(bool)],
+                    int(nleaves_s[j]),
+                    replace=True,
+                )
+
+                temp[j, inds_s[name][j].astype(bool)] = c_rint[j][c_temp_inds]
+
+            if self.periodic is not None and self.a != 1.0:
+                diff = self.periodic.distance(s, temp, names=[name])[name]
             else:
-                diff = c[rint] - s
+                diff = temp - s
 
-            temp = c[rint] - (diff) * zz[:, None, None]
-
-            if self.periodic is not None:
-                temp = self.periodic.wrap(temp, names=[name])[name]
-
-            newpos[name] = temp
+            newpos[name] = temp - (diff) * zz[:, None, None]
 
         # proper factors
         factors = (ndim - 1.0) * np.log(zz)

@@ -251,6 +251,20 @@ class HDFBackend(Backend):
                 compression_opts=self.compression_opts,
             )
 
+            g.create_dataset(
+                "in_model_swaps_accepted",
+                data=np.zeros((ntemps - 1,)),
+                compression=self.compression,
+                compression_opts=self.compression_opts,
+            )
+
+            g.create_dataset(
+                "rj_swaps_accepted",
+                data=np.zeros((ntemps - 1,)),
+                compression=self.compression,
+                compression_opts=self.compression_opts,
+            )
+
             if self.rj:
                 g.create_dataset(
                     "rj_accepted",
@@ -427,6 +441,16 @@ class HDFBackend(Backend):
             return f[self.name]["rj_accepted"][...]
 
     @property
+    def in_model_swaps_accepted(self):
+        with self.open() as f:
+            return f[self.name]["in_model_swaps_accepted"][...]
+
+    @property
+    def rj_swaps_accepted(self):
+        with self.open() as f:
+            return f[self.name]["rj_swaps_accepted"][...]
+
+    @property
     def random_state(self):
         with self.open() as f:
             elements = [
@@ -486,7 +510,14 @@ class HDFBackend(Backend):
                         )
                 g.attrs["has_blobs"] = True
 
-    def save_step(self, state, accepted, rj_accepted=None):
+    def save_step(
+        self,
+        state,
+        accepted,
+        rj_accepted=None,
+        in_model_swaps_accepted=None,
+        rj_swaps_accepted=None,
+    ):
         """Save a step to the backend
 
         Args:
@@ -516,7 +547,13 @@ class HDFBackend(Backend):
                 if not hasattr(self, key):
                     setattr(self, key, g.attrs[key])
 
-            self._check(state, accepted, rj_accepted=rj_accepted)
+            self._check(
+                state,
+                accepted,
+                rj_accepted=rj_accepted,
+                in_model_swaps_accepted=in_model_swaps_accepted,
+                rj_swaps_accepted=rj_swaps_accepted,
+            )
 
             for name, model in state.branches.items():
                 g["inds"][name][iteration] = model.inds
@@ -535,8 +572,12 @@ class HDFBackend(Backend):
             if state.betas is not None:
                 g["betas"][self.iteration, :] = state.betas
             g["accepted"][:] += accepted
+            if in_model_swaps_accepted is not None:
+                g["in_model_swaps_accepted"][:] += in_model_swaps_accepted
             if self.rj:
                 g["rj_accepted"][:] += rj_accepted
+                if rj_swaps_accepted is not None:
+                    g["rj_swaps_accepted"][:] += rj_swaps_accepted
 
             for i, v in enumerate(state.random_state):
                 g.attrs["random_state_{0}".format(i)] = v

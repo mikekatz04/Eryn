@@ -168,10 +168,13 @@ class Backend(object):
 
         # setup all the holder arrays
         self.accepted = np.zeros((self.ntemps, self.nwalkers), dtype=self.dtype)
+        self.in_model_swaps_accepted = np.zeros((self.ntemps - 1,), dtype=self.dtype)
         if self.rj:
             self.rj_accepted = np.zeros((self.ntemps, self.nwalkers), dtype=self.dtype)
+            self.rj_swaps_accepted = np.zeros((self.ntemps - 1,), dtype=self.dtype)
         else:
             self.rj_accepted = None
+            self.rj_swaps_accepted = None
 
         # chains are stored in dictionaries
         self.chain = {
@@ -657,7 +660,14 @@ class Backend(object):
             else:
                 self.blobs = np.concatenate((self.blobs, a), axis=0)
 
-    def _check(self, state, accepted, rj_accepted=None):
+    def _check(
+        self,
+        state,
+        accepted,
+        rj_accepted=None,
+        in_model_swaps_accepted=None,
+        rj_swaps_accepted=None,
+    ):
         """Check all the information going in is okay."""
         self._check_blobs(state.blobs)
         self._check_rj_accepted(rj_accepted)
@@ -714,16 +724,35 @@ class Backend(object):
                 "invalid acceptance size; expected {0}".format(ntemps, nwalkers)
             )
 
+        if in_model_swaps_accepted is not None and in_model_swaps_accepted.shape != (
+            ntemps - 1,
+        ):
+            raise ValueError(
+                "invalid in_model_swaps_accepted size; expected {0}".format(ntemps - 1)
+            )
         if self.rj:
             if rj_accepted.shape != (ntemps, nwalkers,):
                 raise ValueError(
                     "invalid rj acceptance size; expected {0}".format(ntemps, nwalkers)
                 )
+            if rj_swaps_accepted is not None and rj_swaps_accepted.shape != (
+                ntemps - 1,
+            ):
+                raise ValueError(
+                    "invalid rj_swaps_accepted size; expected {0}".format(ntemps - 1)
+                )
 
         if state.betas is not None and state.betas.shape != (ntemps,):
             raise ValueError("invalid beta size; expected {0}".format(ntemps))
 
-    def save_step(self, state, accepted, rj_accepted=None):
+    def save_step(
+        self,
+        state,
+        accepted,
+        rj_accepted=None,
+        in_model_swaps_accepted=None,
+        rj_swaps_accepted=None,
+    ):
         """Save a step to the backend
 
         Args:
@@ -738,7 +767,13 @@ class Backend(object):
 
         """
         # check to make sure all information in the state is okay
-        self._check(state, accepted, rj_accepted=rj_accepted)
+        self._check(
+            state,
+            accepted,
+            rj_accepted=rj_accepted,
+            in_model_swaps_accepted=in_model_swaps_accepted,
+            rj_swaps_accepted=rj_swaps_accepted,
+        )
 
         # save the coordinates and inds
         for key, model in state.branches.items():
@@ -760,10 +795,19 @@ class Backend(object):
             self.blobs[self.iteration, :] = state.blobs
         if state.betas is not None:
             self.betas[self.iteration, :] = state.betas
+        if in_model_swaps_accepted is not None:
+            self.in_model_swaps_accepted[self.iteration, :] = in_model_swaps_accepted
+        if rj_swaps_accepted is not None:
+            self.rj_swaps_accepted[self.iteration, :] = rj_swaps_accepted
 
         self.accepted += accepted
+
+        if in_model_swaps_accepted is not None:
+            self.in_model_swaps_accepted += in_model_swaps_accepted
         if self.rj:
             self.rj_accepted += rj_accepted
+            if rj_swaps_accepted is not None:
+                self.rj_swaps_accepted += rj_swaps_accepted
 
         self.random_state = state.random_state
         self.iteration += 1

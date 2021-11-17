@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8">
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>Utilities &mdash; Eryn 0.0.1 documentation</title>
   
@@ -13,15 +13,10 @@
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
 
   
   
-
   
-  
-
   
 
   
@@ -31,11 +26,13 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -57,7 +54,7 @@
           
 
           
-            <a href="../index.html" class="icon icon-home"> Eryn
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> Eryn
           
 
           
@@ -146,8 +143,6 @@
 
 
 
-
-
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -159,7 +154,7 @@
     
       <li class="wy-breadcrumbs-aside">
         
-          
+            
             <a href="../_sources/user/utils.rst.txt" rel="nofollow"> View page source</a>
           
         
@@ -170,10 +165,10 @@
   
   <div class="rst-breadcrumbs-buttons" role="navigation" aria-label="breadcrumb navigation">
       
-        <a href="../tutorial/Eryn_tutorial.html" class="btn btn-neutral float-right" title="Getting Started with Eryn" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../tutorial/Eryn_tutorial.html" class="btn btn-neutral float-right" title="Getting Started with Eryn" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="prior.html" class="btn btn-neutral float-left" title="Priors" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="prior.html" class="btn btn-neutral float-left" title="Priors" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
   </div>
   
@@ -212,8 +207,8 @@
 <div class="section" id="periodic-container">
 <h2>Periodic Container<a class="headerlink" href="#periodic-container" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
-<dt class="sig sig-object py" id="eryn.utils.PeriodicContainer">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.utils.</span></span><span class="sig-name descname"><span class="pre">PeriodicContainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">periodic</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PeriodicContainer" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.utils.PeriodicContainer">
+<em class="property">class </em><code class="sig-prename descclassname">eryn.utils.</code><code class="sig-name descname">PeriodicContainer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">periodic</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PeriodicContainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Perform operations for periodic parameters</p>
 <dl class="field-list simple">
@@ -224,8 +219,8 @@ indexes and values their associated period.</p>
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.utils.PeriodicContainer.distance">
-<span class="sig-name descname"><span class="pre">distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PeriodicContainer.distance" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.utils.PeriodicContainer.distance">
+<code class="sig-name descname">distance</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">p1</span></em>, <em class="sig-param"><span class="n">p2</span></em>, <em class="sig-param"><span class="n">names</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PeriodicContainer.distance" title="Permalink to this definition">¶</a></dt>
 <dd><p>Move from p1 to p2 with periodic distance control</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -244,8 +239,8 @@ periods associated with each branch. (default: <code class="docutils literal not
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.utils.PeriodicContainer.wrap">
-<span class="sig-name descname"><span class="pre">wrap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PeriodicContainer.wrap" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.utils.PeriodicContainer.wrap">
+<code class="sig-name descname">wrap</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">p</span></em>, <em class="sig-param"><span class="n">names</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PeriodicContainer.wrap" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wrap p with periodic distance control</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -266,8 +261,8 @@ periods associated with each branch. (default: <code class="docutils literal not
 <div class="section" id="plotcontainer">
 <h2>PlotContainer<a class="headerlink" href="#plotcontainer" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
-<dt class="sig sig-object py" id="eryn.utils.PlotContainer">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.utils.</span></span><span class="sig-name descname"><span class="pre">PlotContainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'output'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin_chain_by_ac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corner_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameter_transforms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PlotContainer" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.utils.PlotContainer">
+<em class="property">class </em><code class="sig-prename descclassname">eryn.utils.</code><code class="sig-name descname">PlotContainer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fp</span><span class="o">=</span><span class="default_value">'output'</span></em>, <em class="sig-param"><span class="n">backend</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">thin_chain_by_ac</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">corner_kwargs</span><span class="o">=</span><span class="default_value">{}</span></em>, <em class="sig-param"><span class="n">parameter_transforms</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">info_keys</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">which_plots</span><span class="o">=</span><span class="default_value">['info_page', 'corner']</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PlotContainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Automatic plotting and diagnostic information</p>
 <p>This class directs creation of plots. It can be used after MCMC
@@ -292,12 +287,15 @@ object used to convert parameters to desired values for plotting.
 <li><p><strong>info_keys</strong> (<em>list</em><em>, </em><em>optional</em>) – List of <code class="docutils literal notranslate"><span class="pre">str</span></code> indicating which keys from
 the information dictionary provided by the backend are of interest
 for diagnostics. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>which_plots</strong> (<em>list</em><em>, </em><em>optional</em>) – List of <code class="docutils literal notranslate"><span class="pre">str``indicating</span> <span class="pre">which</span> <span class="pre">plot</span> <span class="pre">generating</span>
+<span class="pre">functions</span> <span class="pre">to</span> <span class="pre">use.</span> <span class="pre">Options</span> <span class="pre">are</span> <span class="pre">the</span> <span class="pre">associated</span> <span class="pre">class</span> <span class="pre">methods</span> <span class="pre">that</span> <span class="pre">start</span>
+<span class="pre">with</span> <span class="pre">``generate</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">[&quot;info_page&quot;,</span> <span class="pre">&quot;corner&quot;]</span></code>)</p></li>
 </ul>
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.utils.PlotContainer.transform">
-<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">info</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PlotContainer.transform" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.utils.PlotContainer.transform">
+<code class="sig-name descname">transform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">info</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PlotContainer.transform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform the samples in the infromation dictionary</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -307,8 +305,8 @@ for diagnostics. (default: <code class="docutils literal notranslate"><span clas
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.utils.PlotContainer.add_backend">
-<span class="sig-name descname"><span class="pre">add_backend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backend</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PlotContainer.add_backend" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.utils.PlotContainer.add_backend">
+<code class="sig-name descname">add_backend</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">backend</span></em>, <em class="sig-param"><span class="n">custom_backend</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PlotContainer.add_backend" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a backend after initialization</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -324,8 +322,8 @@ this should be True. (default: <code class="docutils literal notranslate"><span 
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.utils.PlotContainer.generate_corner">
-<span class="sig-name descname"><span class="pre">generate_corner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">burn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pdf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">corner_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PlotContainer.generate_corner" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.utils.PlotContainer.generate_corner">
+<code class="sig-name descname">generate_corner</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">burn</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">pdf</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">info</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">corner_kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PlotContainer.generate_corner" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build a corner plot</p>
 <p>This function builds a corner plot to be added to a pdf.</p>
 <dl class="field-list simple">
@@ -357,8 +355,266 @@ the <code class="docutils literal notranslate"><span class="pre">self.corner_kwa
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.utils.PlotContainer.generate_info_page">
-<span class="sig-name descname"><span class="pre">generate_info_page</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">burn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pdf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PlotContainer.generate_info_page" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.utils.PlotContainer.generate_parameter_chains">
+<code class="sig-name descname">generate_parameter_chains</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">burn</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">pdf</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">labels</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">info</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PlotContainer.generate_parameter_chains" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate plots of the chains of the cold chain.</p>
+<p>This function builds plots of the MCMC traces to be added to a pdf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>burn</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of samples to burn. If
+<code class="docutils literal notranslate"><span class="pre">self.thin_chain_by_ac</span> <span class="pre">==</span> <span class="pre">True</span></code>, then this is overridden.
+(default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
+<li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of samples to burn. If
+<code class="docutils literal notranslate"><span class="pre">self.thin_chain_by_ac</span> <span class="pre">==</span> <span class="pre">True</span></code>, then this is overridden.
+(default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
+<li><p><strong>pdf</strong> (<em>object</em><em>, </em><em>optional</em>) – <p>An open PdfPages object
+(<a class="reference external" href="https://matplotlib.org/stable/gallery/misc/multipage_pdf.html">see her for an example</a>).
+It will not be closed by this function. If not provided, a new pdf
+will be opened, added to, then closed.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – If not providing <code class="docutils literal notranslate"><span class="pre">pdf</span></code> kwarg, <code class="docutils literal notranslate"><span class="pre">name</span></code> will be
+the name of the pdf document that is created and saved.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>labels</strong> (<em>str</em><em>, </em><em>opitional</em>) – A list of the parameter names to be shown
+as the y-labes of the trace plots.</p></li>
+<li><p><strong>info</strong> (<em>dict</em><em>, </em><em>optional</em>) – Information dictionary from the backend. If not
+provided, it will be retrieved from the backend.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="eryn.utils.PlotContainer.generate_parameter_chains_per_temperature">
+<code class="sig-name descname">generate_parameter_chains_per_temperature</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">burn</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">pdf</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">labels</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">info</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PlotContainer.generate_parameter_chains_per_temperature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate plots of the chains per temperature.</p>
+<p>This function builds plots of the MCMC traces to be added to a pdf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>burn</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of samples to burn. If
+<code class="docutils literal notranslate"><span class="pre">self.thin_chain_by_ac</span> <span class="pre">==</span> <span class="pre">True</span></code>, then this is overridden.
+(default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
+<li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of samples to burn. If
+<code class="docutils literal notranslate"><span class="pre">self.thin_chain_by_ac</span> <span class="pre">==</span> <span class="pre">True</span></code>, then this is overridden.
+(default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
+<li><p><strong>pdf</strong> (<em>object</em><em>, </em><em>optional</em>) – <p>An open PdfPages object
+(<a class="reference external" href="https://matplotlib.org/stable/gallery/misc/multipage_pdf.html">see her for an example</a>).
+It will not be closed by this function. If not provided, a new pdf
+will be opened, added to, then closed.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – If not providing <code class="docutils literal notranslate"><span class="pre">pdf</span></code> kwarg, <code class="docutils literal notranslate"><span class="pre">name</span></code> will be
+the name of the pdf document that is created and saved.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>labels</strong> (<em>str</em><em>, </em><em>opitional</em>) – A list of the parameter names to be shown
+as the y-labes of the trace plots.</p></li>
+<li><p><strong>info</strong> (<em>dict</em><em>, </em><em>optional</em>) – Information dictionary from the backend. If not
+provided, it will be retrieved from the backend.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="eryn.utils.PlotContainer.generate_parameter_chains_per_temperature_per_walker">
+<code class="sig-name descname">generate_parameter_chains_per_temperature_per_walker</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">burn</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">pdf</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">labels</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">info</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PlotContainer.generate_parameter_chains_per_temperature_per_walker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate plots of the chains per temperature per walker.</p>
+<p>This function builds plots of the MCMC traces to be added to a pdf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>burn</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of samples to burn. If
+<code class="docutils literal notranslate"><span class="pre">self.thin_chain_by_ac</span> <span class="pre">==</span> <span class="pre">True</span></code>, then this is overridden.
+(default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
+<li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of samples to burn. If
+<code class="docutils literal notranslate"><span class="pre">self.thin_chain_by_ac</span> <span class="pre">==</span> <span class="pre">True</span></code>, then this is overridden.
+(default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
+<li><p><strong>pdf</strong> (<em>object</em><em>, </em><em>optional</em>) – <p>An open PdfPages object
+(<a class="reference external" href="https://matplotlib.org/stable/gallery/misc/multipage_pdf.html">see her for an example</a>).
+It will not be closed by this function. If not provided, a new pdf
+will be opened, added to, then closed.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – If not providing <code class="docutils literal notranslate"><span class="pre">pdf</span></code> kwarg, <code class="docutils literal notranslate"><span class="pre">name</span></code> will be
+the name of the pdf document that is created and saved.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>labels</strong> (<em>str</em><em>, </em><em>opitional</em>) – A list of the parameter names to be shown
+as the y-labes of the trace plots.</p></li>
+<li><p><strong>info</strong> (<em>dict</em><em>, </em><em>optional</em>) – Information dictionary from the backend. If not
+provided, it will be retrieved from the backend.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="eryn.utils.PlotContainer.generate_posterior_chains">
+<code class="sig-name descname">generate_posterior_chains</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">burn</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">pdf</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">info</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PlotContainer.generate_posterior_chains" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate plots of the posterior chains per temperature.</p>
+<p>This function builds plots of the MCMC traces to be added to a pdf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>burn</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of samples to burn. If
+<code class="docutils literal notranslate"><span class="pre">self.thin_chain_by_ac</span> <span class="pre">==</span> <span class="pre">True</span></code>, then this is overridden.
+(default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
+<li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of samples to burn. If
+<code class="docutils literal notranslate"><span class="pre">self.thin_chain_by_ac</span> <span class="pre">==</span> <span class="pre">True</span></code>, then this is overridden.
+(default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
+<li><p><strong>pdf</strong> (<em>object</em><em>, </em><em>optional</em>) – <p>An open PdfPages object
+(<a class="reference external" href="https://matplotlib.org/stable/gallery/misc/multipage_pdf.html">see her for an example</a>).
+It will not be closed by this function. If not provided, a new pdf
+will be opened, added to, then closed.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – If not providing <code class="docutils literal notranslate"><span class="pre">pdf</span></code> kwarg, <code class="docutils literal notranslate"><span class="pre">name</span></code> will be
+the name of the pdf document that is created and saved.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>info</strong> (<em>dict</em><em>, </em><em>optional</em>) – Information dictionary from the backend. If not
+provided, it will be retrieved from the backend.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="eryn.utils.PlotContainer.generate_temperature_chains">
+<code class="sig-name descname">generate_temperature_chains</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">pdf</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">info</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">onefig</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PlotContainer.generate_temperature_chains" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate plots of the temperature chains.</p>
+<p>This function builds plots of the MCMC traces to be added to a pdf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>burn</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of samples to burn. If
+<code class="docutils literal notranslate"><span class="pre">self.thin_chain_by_ac</span> <span class="pre">==</span> <span class="pre">True</span></code>, then this is overridden.
+(default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
+<li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of samples to burn. If
+<code class="docutils literal notranslate"><span class="pre">self.thin_chain_by_ac</span> <span class="pre">==</span> <span class="pre">True</span></code>, then this is overridden.
+(default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
+<li><p><strong>pdf</strong> (<em>object</em><em>, </em><em>optional</em>) – <p>An open PdfPages object
+(<a class="reference external" href="https://matplotlib.org/stable/gallery/misc/multipage_pdf.html">see her for an example</a>).
+It will not be closed by this function. If not provided, a new pdf
+will be opened, added to, then closed.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – If not providing <code class="docutils literal notranslate"><span class="pre">pdf</span></code> kwarg, <code class="docutils literal notranslate"><span class="pre">name</span></code> will be
+the name of the pdf document that is created and saved.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>info</strong> (<em>dict</em><em>, </em><em>optional</em>) – Information dictionary from the backend. If not
+provided, it will be retrieved from the backend.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>onefig</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to plot all chains in one figure
+(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="eryn.utils.PlotContainer.generate_leaves_chains">
+<code class="sig-name descname">generate_leaves_chains</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">burn</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">pdf</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">labels</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">info</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PlotContainer.generate_leaves_chains" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate plots of the chains per leaf for the cold chain.</p>
+<p>This function builds plots of the MCMC traces to be added to a pdf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>burn</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of samples to burn. If
+<code class="docutils literal notranslate"><span class="pre">self.thin_chain_by_ac</span> <span class="pre">==</span> <span class="pre">True</span></code>, then this is overridden.
+(default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
+<li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of samples to burn. If
+<code class="docutils literal notranslate"><span class="pre">self.thin_chain_by_ac</span> <span class="pre">==</span> <span class="pre">True</span></code>, then this is overridden.
+(default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
+<li><p><strong>pdf</strong> (<em>object</em><em>, </em><em>optional</em>) – <p>An open PdfPages object
+(<a class="reference external" href="https://matplotlib.org/stable/gallery/misc/multipage_pdf.html">see her for an example</a>).
+It will not be closed by this function. If not provided, a new pdf
+will be opened, added to, then closed.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – If not providing <code class="docutils literal notranslate"><span class="pre">pdf</span></code> kwarg, <code class="docutils literal notranslate"><span class="pre">name</span></code> will be
+the name of the pdf document that is created and saved.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>labels</strong> (<em>str</em><em>, </em><em>opitional</em>) – A list of the parameter names to be shown
+as the y-labes of the trace plots.</p></li>
+<li><p><strong>info</strong> (<em>dict</em><em>, </em><em>optional</em>) – Information dictionary from the backend. If not
+provided, it will be retrieved from the backend.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="eryn.utils.PlotContainer.generate_k_per_temperature_chains">
+<code class="sig-name descname">generate_k_per_temperature_chains</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">pdf</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">info</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PlotContainer.generate_k_per_temperature_chains" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate plots of the k chains.</p>
+<p>This function builds plots of the MCMC traces to be added to a pdf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>burn</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of samples to burn. If
+<code class="docutils literal notranslate"><span class="pre">self.thin_chain_by_ac</span> <span class="pre">==</span> <span class="pre">True</span></code>, then this is overridden.
+(default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
+<li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of samples to burn. If
+<code class="docutils literal notranslate"><span class="pre">self.thin_chain_by_ac</span> <span class="pre">==</span> <span class="pre">True</span></code>, then this is overridden.
+(default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
+<li><p><strong>pdf</strong> (<em>object</em><em>, </em><em>optional</em>) – <p>An open PdfPages object
+(<a class="reference external" href="https://matplotlib.org/stable/gallery/misc/multipage_pdf.html">see her for an example</a>).
+It will not be closed by this function. If not provided, a new pdf
+will be opened, added to, then closed.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – If not providing <code class="docutils literal notranslate"><span class="pre">pdf</span></code> kwarg, <code class="docutils literal notranslate"><span class="pre">name</span></code> will be
+the name of the pdf document that is created and saved.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>info</strong> (<em>dict</em><em>, </em><em>optional</em>) – Information dictionary from the backend. If not
+provided, it will be retrieved from the backend.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="eryn.utils.PlotContainer.generate_k_per_tree_chains">
+<code class="sig-name descname">generate_k_per_tree_chains</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">pdf</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">info</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PlotContainer.generate_k_per_tree_chains" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate plots of the k chains per type of model.</p>
+<p>This function builds plots of the MCMC traces to be added to a pdf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>burn</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of samples to burn. If
+<code class="docutils literal notranslate"><span class="pre">self.thin_chain_by_ac</span> <span class="pre">==</span> <span class="pre">True</span></code>, then this is overridden.
+(default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
+<li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of samples to burn. If
+<code class="docutils literal notranslate"><span class="pre">self.thin_chain_by_ac</span> <span class="pre">==</span> <span class="pre">True</span></code>, then this is overridden.
+(default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
+<li><p><strong>pdf</strong> (<em>object</em><em>, </em><em>optional</em>) – <p>An open PdfPages object
+(<a class="reference external" href="https://matplotlib.org/stable/gallery/misc/multipage_pdf.html">see her for an example</a>).
+It will not be closed by this function. If not provided, a new pdf
+will be opened, added to, then closed.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – If not providing <code class="docutils literal notranslate"><span class="pre">pdf</span></code> kwarg, <code class="docutils literal notranslate"><span class="pre">name</span></code> will be
+the name of the pdf document that is created and saved.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>info</strong> (<em>dict</em><em>, </em><em>optional</em>) – Information dictionary from the backend. If not
+provided, it will be retrieved from the backend.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="eryn.utils.PlotContainer.generate_info_page">
+<code class="sig-name descname">generate_info_page</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">burn</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">pdf</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">info</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PlotContainer.generate_info_page" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build an info page</p>
 <p>This function puts an info page in a pdf.</p>
 <dl class="field-list simple">
@@ -388,8 +644,8 @@ provided, it will be retrieved from the backend.
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.utils.PlotContainer.generate_plot_info">
-<span class="sig-name descname"><span class="pre">generate_plot_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">burn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pdf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PlotContainer.generate_plot_info" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.utils.PlotContainer.generate_plot_info">
+<code class="sig-name descname">generate_plot_info</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">burn</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">pdf</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">info</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PlotContainer.generate_plot_info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build an info page</p>
 <p>This function puts an info page in a pdf.</p>
 <dl class="field-list simple">
@@ -424,8 +680,8 @@ provided, it will be retrieved from the backend.
 <div class="section" id="transformcontainer">
 <h2>TransformContainer<a class="headerlink" href="#transformcontainer" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
-<dt class="sig sig-object py" id="eryn.utils.TransformContainer">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.utils.</span></span><span class="sig-name descname"><span class="pre">TransformContainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameter_transforms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.TransformContainer" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.utils.TransformContainer">
+<em class="property">class </em><code class="sig-prename descclassname">eryn.utils.</code><code class="sig-name descname">TransformContainer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">parameter_transforms</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fill_dict</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.TransformContainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Container for helpful transformations</p>
 <dl class="field-list simple">
@@ -451,13 +707,13 @@ for filling. (default: <code class="docutils literal notranslate"><span class="p
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.utils.TransformContainer.transform_base_parameters">
-<span class="sig-name descname"><span class="pre">transform_base_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_transpose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.TransformContainer.transform_base_parameters" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.utils.TransformContainer.transform_base_parameters">
+<code class="sig-name descname">transform_base_parameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em>, <em class="sig-param"><span class="n">copy</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">return_transpose</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.TransformContainer.transform_base_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform the parameters</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>params</strong> (<em>np.ndarray</em><em>[</em><em>...</em><em>, </em><em>ndim</em><em>]</em>) – Array with coordinates. This array is
+<li><p><strong>params</strong> (<em>np.ndarray</em><em>[</em><em>..</em><em>, </em><em>ndim</em><em>]</em>) – Array with coordinates. This array is
 transformed according to the <code class="docutils literal notranslate"><span class="pre">self.base_transforms</span></code> dictionary.</p></li>
 <li><p><strong>copy</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, copy the input array.
 (default: <code class="docutils literal notranslate"><span class="pre">True</span></code>)</p></li>
@@ -469,25 +725,25 @@ array. (default: <code class="docutils literal notranslate"><span class="pre">Fa
 <dd class="field-even"><p>Transformed <code class="docutils literal notranslate"><span class="pre">params</span></code> array.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>np.ndarray[…, ndim]</p>
+<dd class="field-odd"><p>np.ndarray[.., ndim]</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.utils.TransformContainer.fill_values">
-<span class="sig-name descname"><span class="pre">fill_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.TransformContainer.fill_values" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.utils.TransformContainer.fill_values">
+<code class="sig-name descname">fill_values</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.TransformContainer.fill_values" title="Permalink to this definition">¶</a></dt>
 <dd><p>fill fixed parameters</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>params</strong> (<em>np.ndarray</em><em>[</em><em>...</em><em>, </em><em>ndim</em><em>]</em>) – Array with coordinates. This array is
+<dd class="field-odd"><p><strong>params</strong> (<em>np.ndarray</em><em>[</em><em>..</em><em>, </em><em>ndim</em><em>]</em>) – Array with coordinates. This array is
 filled with values according to the <code class="docutils literal notranslate"><span class="pre">self.fill_dict</span></code> dictionary.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>Filled <code class="docutils literal notranslate"><span class="pre">params</span></code> array.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>np.ndarray[…, ndim_full]</p>
+<dd class="field-odd"><p>np.ndarray[.., ndim_full]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -502,29 +758,37 @@ filled with values according to the <code class="docutils literal notranslate"><
            
           </div>
           <footer>
+  
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="../tutorial/Eryn_tutorial.html" class="btn btn-neutral float-right" title="Getting Started with Eryn" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="prior.html" class="btn btn-neutral float-left" title="Priors" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+      
+        <a href="../tutorial/Eryn_tutorial.html" class="btn btn-neutral float-right" title="Getting Started with Eryn" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="prior.html" class="btn btn-neutral float-left" title="Priors" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
     </div>
+  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, Michael Katz and Nikos Karnesis.
+        
+        &copy; Copyright 2021, Michael Katz and Nikos Karnesis
 
     </p>
   </div>
     
     
     
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
+
         </div>
       </div>
 

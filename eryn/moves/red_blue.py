@@ -2,6 +2,7 @@
 from abc import ABC
 from copy import deepcopy
 import numpy as np
+import warnings
 
 from ..state import State
 from .move import Move
@@ -34,18 +35,39 @@ class RedBlueMove(Move, ABC):
             Metropolis-Hastings step. If you want to do this and suppress the
             error, set ``live_dangerously = True``. Thanks goes (once again)
             to @dstndstn for this wonderful terminology.
+        gibbs_sampling_leaves_per (int, optional): Number of individual leaves
+            to sample over during Gibbs Sampling. ``None`` means there will be
+            no Gibbs sampling. Currently, if you specify anything other than ``None``,
+            it will split up different branches automatically and then Gibbs sample
+            over each branch indivudally. Default is ``None``.
 
     ``kwargs`` are passed to :class:`Move` class.
 
     """
 
     def __init__(
-        self, nsplits=2, randomize_split=True, live_dangerously=False, **kwargs
+        self,
+        nsplits=2,
+        randomize_split=True,
+        gibbs_sampling_leaves_per=None,
+        live_dangerously=False,
+        **kwargs
     ):
         super(RedBlueMove, self).__init__(**kwargs)
         self.nsplits = int(nsplits)
         self.live_dangerously = live_dangerously
         self.randomize_split = randomize_split
+
+        if gibbs_sampling_leaves_per is not None:
+            if (
+                not isinstance(gibbs_sampling_leaves_per, int)
+                or gibbs_sampling_leaves_per < 1
+            ):
+                raise ValueError(
+                    "gibbs_sampling_leaves_per must be an integer greater than zero."
+                )
+
+        self.gibbs_sampling_leaves_per = gibbs_sampling_leaves_per
 
     def setup(self, coords):
         """Any setup necessary for the proposal"""
@@ -103,6 +125,7 @@ class RedBlueMove(Move, ABC):
                 "dimensions."
             )
 
+        # TODO: deal with more intensive acceptance fractions
         # Run any move-specific setup.
         self.setup(state.branches)
 
@@ -113,100 +136,168 @@ class RedBlueMove(Move, ABC):
         if self.randomize_split:
             [np.random.shuffle(x) for x in inds]
 
-        for split in range(self.nsplits):
-            S1 = inds == split
-            nwalkers_here = np.sum(S1[0])
+        if self.gibbs_sampling_leaves_per is not None:
+            # setup for gibbs sampling
+            gibbs_splits = []
+            for name, branch in state.branches.items():
+                nleaves_max_here = branch.nleaves.max()
+                num_each = np.arange(0, nleaves_max_here)
 
-            q = {
-                name: np.zeros((ntemps, nwalkers_here, branch.nleaves_max, branch.ndim))
-                for name, branch in state.branches.items()
-            }
-            factors = np.zeros((ntemps, nwalkers_here))
-
-            # Get the two halves of the ensemble.
-            for t in range(ntemps):
-                sets = {
-                    key: [
-                        state.branches[key].coords[t, inds[t] == j]
-                        for j in range(self.nsplits)
-                    ]
-                    for key in state.branches
-                }
-                s = {key: sets[key][split] for key in sets}
-                c = {key: sets[key][:split] + sets[key][split + 1 :] for key in sets}
-
-                # Get the move-specific proposal.
-                temp_inds = {
-                    name: state.branches_inds[name][t, inds[t] == split]
-                    for name in state.branches_inds
-                }
-
-                q_temp, factors_temp = self.get_proposal(
-                    s, c, model.random, inds=temp_inds
+                split_inds = np.arange(
+                    self.gibbs_sampling_leaves_per,
+                    nleaves_max_here,
+                    self.gibbs_sampling_leaves_per,
                 )
+
+                num_each_splits = np.split(num_each, split_inds)
+                for each in num_each_splits:
+                    gibbs_splits.append([name, each, nleaves_max_here])
+
+        else:
+            gibbs_splits = [None]
+
+        for gs in gibbs_splits:
+            accepted_here = np.zeros((ntemps, nwalkers), dtype=bool)
+            for split in range(self.nsplits):
+                S1 = inds == split
+                nwalkers_here = np.sum(S1[0])
+
+                q = {
+                    name: np.zeros(
+                        (ntemps, nwalkers_here, branch.nleaves_max, branch.ndim)
+                    )
+                    for name, branch in state.branches.items()
+                }
+                factors = np.zeros((ntemps, nwalkers_here))
+
+                # Get the two halves of the ensemble.
+                for t in range(ntemps):
+                    sets = {
+                        key: [
+                            state.branches[key].coords[t, inds[t] == j]
+                            for j in range(self.nsplits)
+                        ]
+                        for key in state.branches
+                    }
+                    s = {key: sets[key][split] for key in sets}
+                    c = {
+                        key: sets[key][:split] + sets[key][split + 1 :] for key in sets
+                    }
+
+                    # Get the move-specific proposal.
+                    # Get the move-specific proposal.
+                    temp_inds_s = {
+                        name: state.branches_inds[name][t, inds[t] == split]
+                        for name in state.branches_inds
+                    }
+
+                    temp_inds_c = {
+                        name: state.branches_inds[name][t, inds[t] != split]
+                        for name in state.branches_inds
+                    }
+
+                    q_temp, factors_temp = self.get_proposal(
+                        s, c, model.random, inds_s=temp_inds_s, inds_c=temp_inds_c
+                    )
+                    for name in q:
+                        q[name][t] = q_temp[name]
+
+                    factors[t] = factors_temp
+
+                all_inds_shaped = all_inds[S1].reshape(ntemps, nwalkers_here)
+
+                new_inds = {
+                    name: np.take_along_axis(
+                        state.branches[name].inds, all_inds_shaped[:, :, None], axis=1
+                    )
+                    for name in state.branches
+                }
+                temp_coords = {
+                    name: np.take_along_axis(
+                        state.branches[name].coords,
+                        all_inds_shaped[:, :, None, None],
+                        axis=1,
+                    )
+                    for name in state.branches
+                }
+
+                # fix values in q that are not actually being tested here
+                # new_inds_adjust is used temporarily for this
+                new_inds_adjust = deepcopy(new_inds)
+                if gs is not None:
+                    # TODO: adjust to not one model at a time?
+                    # adjust new inds for gibbs sampling
+                    name_keep, inds_keep, nleaves_max_here = gs
+                    keep_arr = np.zeros_like(new_inds_adjust[name], dtype=bool)
+                    for name in new_inds_adjust:
+                        if name != name_keep:
+                            # not using any of these
+                            new_inds_adjust[name] = False
+
+                        else:
+                            inds_1 = np.cumsum(new_inds_adjust[name], axis=2) * (
+                                new_inds_adjust[name] == True
+                            )
+
+                            for ii in inds_keep:
+                                keep_inds = np.where(inds_1 == (ii + 1))
+                                keep_arr[keep_inds] = True
+
+                            new_inds_adjust[name] = keep_arr.copy()
+
                 for name in q:
-                    q[name][t] = q_temp[name]
+                    q[name] = q[name] * (
+                        new_inds_adjust[name][:, :, :, None]
+                    ) + temp_coords[name] * (~new_inds_adjust[name][:, :, :, None])
 
-                factors[t] = factors_temp
+                # Compute prior of the proposed position
+                logp = model.compute_log_prior_fn(q, inds=new_inds)
 
-            all_inds_shaped = all_inds[S1].reshape(ntemps, nwalkers_here)
+                # set logp for walkers with no leaves that are being tested
+                # in this gibbs run
+                logp[np.where(np.sum(keep_arr, axis=-1) == 0)] = -np.inf
 
-            new_inds = {
-                name: np.take_along_axis(
-                    state.branches[name].inds, all_inds_shaped[:, :, None], axis=1
+                # Compute the lnprobs of the proposed position.
+                logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds, logp=logp)
+
+                # catch and warn about nans
+                if np.any(np.isnan(logl)):
+                    logl[np.isnan(logl)] = -1e300
+                    warnings.warn("Getting Nan in likelihood computation.")
+
+                logP = self.compute_log_posterior(logl, logp)
+
+                prev_logl = np.take_along_axis(state.log_prob, all_inds_shaped, axis=1)
+
+                prev_logp = np.take_along_axis(state.log_prior, all_inds_shaped, axis=1)
+
+                # TODO: check about prior = - inf
+                # takes care of tempering
+                prev_logP = self.compute_log_posterior(prev_logl, prev_logp)
+
+                # TODO: think about factors in tempering
+                lnpdiff = factors + logP - prev_logP
+
+                keep = lnpdiff > np.log(model.random.rand(ntemps, nwalkers_here))
+
+                # if gibbs sampling, this will say it is accepted if
+                # any of the gibbs proposals were accepted
+                np.put_along_axis(
+                    accepted_here, all_inds_shaped, keep, axis=1,
                 )
-                for name in state.branches
-            }
-            temp_coords = {
-                name: np.take_along_axis(
-                    state.branches[name].coords,
-                    all_inds_shaped[:, :, None, None],
-                    axis=1,
+
+                # readout for total
+                accepted = (accepted.astype(int) + accepted_here.astype(int)).astype(
+                    bool
                 )
-                for name in state.branches
-            }
 
-            # fix values in q that are not actually being teseted here
-            for name in q:
-                q[name] = q[name] * (new_inds[name][:, :, :, None]) + temp_coords[
-                    name
-                ] * (~new_inds[name][:, :, :, None])
+                new_state = State(
+                    q, log_prob=logl, log_prior=logp, blobs=new_blobs, inds=new_inds
+                )
 
-            # Compute prior of the proposed position
-            logp = model.compute_log_prior_fn(q, inds=new_inds)
-
-            # Compute the lnprobs of the proposed position.
-            logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds, logp=logp)
-
-            # catch and warn about nans
-            if np.any(np.isnan(logl)):
-                logl[np.isnan(logl)] = -np.inf
-                warnings.warn("Getting Nan in likelihood computation.")
-
-            logP = self.compute_log_posterior(logl, logp)
-
-            prev_logl = np.take_along_axis(state.log_prob, all_inds_shaped, axis=1)
-
-            prev_logp = np.take_along_axis(state.log_prior, all_inds_shaped, axis=1)
-
-            # TODO: check about prior = - inf
-            # takes care of tempering
-            prev_logP = self.compute_log_posterior(prev_logl, prev_logp)
-
-            # TODO: think about factors in tempering
-            lnpdiff = factors + logP - prev_logP
-
-            keep = lnpdiff > np.log(model.random.rand(ntemps, nwalkers_here))
-
-            np.put_along_axis(
-                accepted, all_inds_shaped, keep, axis=1,
-            )
-
-            new_state = State(
-                q, log_prob=logl, log_prior=logp, blobs=new_blobs, inds=new_inds
-            )
-
-            state = self.update(state, new_state, accepted, subset=all_inds_shaped)
+                state = self.update(
+                    state, new_state, accepted_here, subset=all_inds_shaped
+                )
 
         if self.temperature_control is not None:
             state, accepted = self.temperature_control.temper_comps(state, accepted)

@@ -329,7 +329,7 @@ class EnsembleSampler(object):
                     self.priors,
                     self.nleaves_max,
                     self.nleaves_min,
-                    self._moves[0], # TODO: check if necessary  
+                    self._moves[0],  # TODO: check if necessary
                     dr=dr_moves,
                     dr_max_iter=dr_max_iter,
                     tune=False,
@@ -643,6 +643,11 @@ class EnsembleSampler(object):
 
                     # Propose (in model)
                     state, accepted = move.propose(model, state)
+                    if self.ntemps > 1:
+                        in_model_swaps = move.temperature_control.swaps_accepted
+                    else:
+                        in_model_swaps = None
+
                     state.random_state = self.random_state
 
                     if tune:
@@ -655,6 +660,11 @@ class EnsembleSampler(object):
 
                         # Propose (Between models)
                         state, rj_accepted = rj_move.propose(model, state)
+                        if self.ntemps > 1:
+                            rj_swaps = rj_move.temperature_control.swaps_accepted
+                        else:
+                            rj_swaps = None
+
                         state.random_state = self.random_state
 
                         if tune:
@@ -665,7 +675,13 @@ class EnsembleSampler(object):
 
                     # Save the new step
                     if store and (i + 1) % checkpoint_step == 0:
-                        self.backend.save_step(state, accepted, rj_accepted=rj_accepted)
+                        self.backend.save_step(
+                            state,
+                            accepted,
+                            rj_accepted=rj_accepted,
+                            in_model_swaps_accepted=in_model_swaps,
+                            rj_swaps_accepted=rj_swaps,
+                        )
 
                     pbar.update(1)
                     i += 1
@@ -883,6 +899,9 @@ class EnsembleSampler(object):
             # if no prior values are added, compute_prior
             if logp is None:
                 logp = self.compute_log_prior(coords, inds=inds)
+
+            if np.all(np.isinf(logp)):
+                return np.full_like(logp, -1e300), None
 
             # do not run log likelihood where logp = -inf
             inds_copy = deepcopy(inds)

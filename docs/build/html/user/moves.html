@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8">
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>Moves &mdash; Eryn 0.0.1 documentation</title>
   
@@ -13,15 +13,10 @@
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
 
   
   
-
   
-  
-
   
 
   
@@ -31,13 +26,13 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "document", "processHtmlClass": "math|output_area"}}</script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -59,7 +54,7 @@
           
 
           
-            <a href="../index.html" class="icon icon-home"> Eryn
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> Eryn
           
 
           
@@ -161,8 +156,6 @@
 
 
 
-
-
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -174,7 +167,7 @@
     
       <li class="wy-breadcrumbs-aside">
         
-          
+            
             <a href="../_sources/user/moves.rst.txt" rel="nofollow"> View page source</a>
           
         
@@ -185,10 +178,10 @@
   
   <div class="rst-breadcrumbs-buttons" role="navigation" aria-label="breadcrumb navigation">
       
-        <a href="prior.html" class="btn btn-neutral float-right" title="Priors" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="prior.html" class="btn btn-neutral float-right" title="Priors" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="backend.html" class="btn btn-neutral float-left" title="Backends" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="backend.html" class="btn btn-neutral float-left" title="Backends" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
   </div>
   
@@ -227,8 +220,8 @@
 <div class="section" id="move-parent-class">
 <h2>Move Parent Class<a class="headerlink" href="#move-parent-class" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
-<dt class="sig sig-object py" id="eryn.moves.Move">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">Move</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temperature_control</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.Move" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.Move">
+<em class="property">class </em><code class="sig-prename descclassname">eryn.moves.</code><code class="sig-name descname">Move</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">temperature_control</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">periodic</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.Move" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Parent class for proposals or “moves”</p>
 <dl class="field-list simple">
@@ -239,8 +232,8 @@ to moves so that all proposals can share and use temperature settings.
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.Move.compute_log_posterior_basic">
-<span class="sig-name descname"><span class="pre">compute_log_posterior_basic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.Move.compute_log_posterior_basic" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.Move.compute_log_posterior_basic">
+<code class="sig-name descname">compute_log_posterior_basic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">logl</span></em>, <em class="sig-param"><span class="n">logp</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.Move.compute_log_posterior_basic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the log of posterior</p>
 <p><span class="math notranslate nohighlight">\(\log{P} = \log{L} + \log{p}\)</span></p>
 <p>This method is to mesh with the tempered log posterior computation.</p>
@@ -261,8 +254,8 @@ to moves so that all proposals can share and use temperature settings.
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.Move.tune">
-<span class="sig-name descname"><span class="pre">tune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.Move.tune" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.Move.tune">
+<code class="sig-name descname">tune</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span></em>, <em class="sig-param"><span class="n">accepted</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.Move.tune" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tune a proposal</p>
 <p>This is a place holder for tuning.</p>
 <dl class="field-list simple">
@@ -277,8 +270,8 @@ through proposal.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.Move.update">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">old_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.Move.update" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.Move.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">old_state</span></em>, <em class="sig-param"><span class="n">new_state</span></em>, <em class="sig-param"><span class="n">accepted</span></em>, <em class="sig-param"><span class="n">subset</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.Move.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update a given subset of the ensemble with an accepted proposal</p>
 <p>This class was updated from <code class="docutils literal notranslate"><span class="pre">emcee</span></code> to handle the added structure
 necessary for global fitting.</p>
@@ -315,15 +308,15 @@ primary ensemble in a <a class="reference internal" href="#eryn.moves.RedBlueMov
 <div class="section" id="mh-parent-class">
 <h3>MH Parent Class<a class="headerlink" href="#mh-parent-class" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
-<dt class="sig sig-object py" id="eryn.moves.MHMove">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">MHMove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#eryn.moves.Move" title="eryn.moves.move.Move"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.move.Move</span></code></a></p>
+<dt id="eryn.moves.MHMove">
+<em class="property">class </em><code class="sig-prename descclassname">eryn.moves.</code><code class="sig-name descname">MHMove</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.move.Move</span></code></p>
 <p>A general Metropolis-Hastings proposal</p>
 <p>Concrete implementations can be made by providing a <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> method.
 For standard Gaussian Metropolis moves, <code class="xref py py-class docutils literal notranslate"><span class="pre">moves.GaussianMove</span></code> can be used.</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.MHMove.get_proposal">
-<span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove.get_proposal" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.MHMove.get_proposal">
+<code class="sig-name descname">get_proposal</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">branches_coords</span></em>, <em class="sig-param"><span class="n">branches_inds</span></em>, <em class="sig-param"><span class="n">random</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove.get_proposal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get proposal from distribution for MH proposal</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -344,8 +337,8 @@ leaves are currently being used.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.MHMove.propose">
-<span class="sig-name descname"><span class="pre">propose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove.propose" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.MHMove.propose">
+<code class="sig-name descname">propose</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">state</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove.propose" title="Permalink to this definition">¶</a></dt>
 <dd><p>Use the move to generate a proposal and compute the acceptance</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -364,8 +357,8 @@ leaves are currently being used.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.MHMove.compute_log_posterior_basic">
-<span class="sig-name descname"><span class="pre">compute_log_posterior_basic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove.compute_log_posterior_basic" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.MHMove.compute_log_posterior_basic">
+<code class="sig-name descname">compute_log_posterior_basic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">logl</span></em>, <em class="sig-param"><span class="n">logp</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove.compute_log_posterior_basic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the log of posterior</p>
 <p><span class="math notranslate nohighlight">\(\log{P} = \log{L} + \log{p}\)</span></p>
 <p>This method is to mesh with the tempered log posterior computation.</p>
@@ -386,8 +379,8 @@ leaves are currently being used.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.MHMove.tune">
-<span class="sig-name descname"><span class="pre">tune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove.tune" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.MHMove.tune">
+<code class="sig-name descname">tune</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span></em>, <em class="sig-param"><span class="n">accepted</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove.tune" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tune a proposal</p>
 <p>This is a place holder for tuning.</p>
 <dl class="field-list simple">
@@ -402,8 +395,8 @@ through proposal.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.MHMove.update">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">old_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove.update" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.MHMove.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">old_state</span></em>, <em class="sig-param"><span class="n">new_state</span></em>, <em class="sig-param"><span class="n">accepted</span></em>, <em class="sig-param"><span class="n">subset</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update a given subset of the ensemble with an accepted proposal</p>
 <p>This class was updated from <code class="docutils literal notranslate"><span class="pre">emcee</span></code> to handle the added structure
 necessary for global fitting.</p>
@@ -438,9 +431,9 @@ primary ensemble in a <a class="reference internal" href="#eryn.moves.RedBlueMov
 <div class="section" id="implemented-mh-moves">
 <h3>Implemented MH Moves<a class="headerlink" href="#implemented-mh-moves" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
-<dt class="sig sig-object py" id="eryn.moves.GaussianMove">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">GaussianMove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cov_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vector'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GaussianMove" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#eryn.moves.MHMove" title="eryn.moves.mh.MHMove"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.mh.MHMove</span></code></a></p>
+<dt id="eryn.moves.GaussianMove">
+<em class="property">class </em><code class="sig-prename descclassname">eryn.moves.</code><code class="sig-name descname">GaussianMove</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cov_all</span></em>, <em class="sig-param"><span class="n">mode</span><span class="o">=</span><span class="default_value">'vector'</span></em>, <em class="sig-param"><span class="n">factor</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GaussianMove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.mh.MHMove</span></code></p>
 <p>A Metropolis step with a Gaussian proposal function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -466,8 +459,8 @@ the <code class="docutils literal notranslate"><span class="pre">&quot;vector&qu
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.GaussianMove.get_proposal">
-<span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GaussianMove.get_proposal" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.GaussianMove.get_proposal">
+<code class="sig-name descname">get_proposal</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">branches_coords</span></em>, <em class="sig-param"><span class="n">branches_inds</span></em>, <em class="sig-param"><span class="n">random</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GaussianMove.get_proposal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get proposal from Gaussian distribution</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -485,8 +478,8 @@ leaves are currently being used.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.GaussianMove.compute_log_posterior_basic">
-<span class="sig-name descname"><span class="pre">compute_log_posterior_basic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GaussianMove.compute_log_posterior_basic" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.GaussianMove.compute_log_posterior_basic">
+<code class="sig-name descname">compute_log_posterior_basic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">logl</span></em>, <em class="sig-param"><span class="n">logp</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GaussianMove.compute_log_posterior_basic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the log of posterior</p>
 <p><span class="math notranslate nohighlight">\(\log{P} = \log{L} + \log{p}\)</span></p>
 <p>This method is to mesh with the tempered log posterior computation.</p>
@@ -507,8 +500,8 @@ leaves are currently being used.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.GaussianMove.propose">
-<span class="sig-name descname"><span class="pre">propose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GaussianMove.propose" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.GaussianMove.propose">
+<code class="sig-name descname">propose</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">state</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GaussianMove.propose" title="Permalink to this definition">¶</a></dt>
 <dd><p>Use the move to generate a proposal and compute the acceptance</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -527,8 +520,8 @@ leaves are currently being used.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.GaussianMove.tune">
-<span class="sig-name descname"><span class="pre">tune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GaussianMove.tune" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.GaussianMove.tune">
+<code class="sig-name descname">tune</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span></em>, <em class="sig-param"><span class="n">accepted</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GaussianMove.tune" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tune a proposal</p>
 <p>This is a place holder for tuning.</p>
 <dl class="field-list simple">
@@ -543,8 +536,8 @@ through proposal.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.GaussianMove.update">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">old_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GaussianMove.update" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.GaussianMove.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">old_state</span></em>, <em class="sig-param"><span class="n">new_state</span></em>, <em class="sig-param"><span class="n">accepted</span></em>, <em class="sig-param"><span class="n">subset</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GaussianMove.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update a given subset of the ensemble with an accepted proposal</p>
 <p>This class was updated from <code class="docutils literal notranslate"><span class="pre">emcee</span></code> to handle the added structure
 necessary for global fitting.</p>
@@ -582,9 +575,9 @@ primary ensemble in a <a class="reference internal" href="#eryn.moves.RedBlueMov
 <div class="section" id="red-blue-parent-class">
 <h3>Red-Blue Parent Class<a class="headerlink" href="#red-blue-parent-class" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
-<dt class="sig sig-object py" id="eryn.moves.RedBlueMove">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">RedBlueMove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nsplits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">randomize_split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">live_dangerously</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#eryn.moves.Move" title="eryn.moves.move.Move"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.move.Move</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<dt id="eryn.moves.RedBlueMove">
+<em class="property">class </em><code class="sig-prename descclassname">eryn.moves.</code><code class="sig-name descname">RedBlueMove</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nsplits</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">randomize_split</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">gibbs_sampling_leaves_per</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">live_dangerously</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.move.Move</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
 <p>An abstract red-blue ensemble move with parallelization as described in
 <a class="reference external" href="https://arxiv.org/abs/1202.3665">Foreman-Mackey et al. (2013)</a>.</p>
 <p># TODO: think about this for reversible jump.</p>
@@ -606,19 +599,24 @@ switching between the stretch move and, for example, a
 Metropolis-Hastings step. If you want to do this and suppress the
 error, set <code class="docutils literal notranslate"><span class="pre">live_dangerously</span> <span class="pre">=</span> <span class="pre">True</span></code>. Thanks goes (once again)
 to &#64;dstndstn for this wonderful terminology.</p></li>
+<li><p><strong>gibbs_sampling_leaves_per</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of individual leaves
+to sample over during Gibbs Sampling. <code class="docutils literal notranslate"><span class="pre">None</span></code> means there will be
+no Gibbs sampling. Currently, if you specify anything other than <code class="docutils literal notranslate"><span class="pre">None</span></code>,
+it will split up different branches automatically and then Gibbs sample
+over each branch indivudally. Default is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
 </ul>
 </dd>
 </dl>
 <p><code class="docutils literal notranslate"><span class="pre">kwargs</span></code> are passed to <a class="reference internal" href="#eryn.moves.Move" title="eryn.moves.Move"><code class="xref py py-class docutils literal notranslate"><span class="pre">Move</span></code></a> class.</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.RedBlueMove.setup">
-<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.setup" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.RedBlueMove.setup">
+<code class="sig-name descname">setup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">coords</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.setup" title="Permalink to this definition">¶</a></dt>
 <dd><p>Any setup necessary for the proposal</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.RedBlueMove.get_proposal">
-<em class="property"><span class="pre">classmethod</span> </em><span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">complement</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.get_proposal" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.RedBlueMove.get_proposal">
+<em class="property">classmethod </em><code class="sig-name descname">get_proposal</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sample</span></em>, <em class="sig-param"><span class="n">complement</span></em>, <em class="sig-param"><span class="n">random</span></em>, <em class="sig-param"><span class="n">inds</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.get_proposal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make a proposal</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -653,8 +651,8 @@ in the numerator. -log of factors if in the denominator.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.RedBlueMove.propose">
-<span class="sig-name descname"><span class="pre">propose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.propose" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.RedBlueMove.propose">
+<code class="sig-name descname">propose</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">state</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.propose" title="Permalink to this definition">¶</a></dt>
 <dd><p>Use the move to generate a proposal and compute the acceptance</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -673,8 +671,8 @@ in the numerator. -log of factors if in the denominator.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.RedBlueMove.compute_log_posterior_basic">
-<span class="sig-name descname"><span class="pre">compute_log_posterior_basic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.compute_log_posterior_basic" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.RedBlueMove.compute_log_posterior_basic">
+<code class="sig-name descname">compute_log_posterior_basic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">logl</span></em>, <em class="sig-param"><span class="n">logp</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.compute_log_posterior_basic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the log of posterior</p>
 <p><span class="math notranslate nohighlight">\(\log{P} = \log{L} + \log{p}\)</span></p>
 <p>This method is to mesh with the tempered log posterior computation.</p>
@@ -695,8 +693,8 @@ in the numerator. -log of factors if in the denominator.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.RedBlueMove.tune">
-<span class="sig-name descname"><span class="pre">tune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.tune" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.RedBlueMove.tune">
+<code class="sig-name descname">tune</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span></em>, <em class="sig-param"><span class="n">accepted</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.tune" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tune a proposal</p>
 <p>This is a place holder for tuning.</p>
 <dl class="field-list simple">
@@ -711,8 +709,8 @@ through proposal.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.RedBlueMove.update">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">old_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.update" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.RedBlueMove.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">old_state</span></em>, <em class="sig-param"><span class="n">new_state</span></em>, <em class="sig-param"><span class="n">accepted</span></em>, <em class="sig-param"><span class="n">subset</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update a given subset of the ensemble with an accepted proposal</p>
 <p>This class was updated from <code class="docutils literal notranslate"><span class="pre">emcee</span></code> to handle the added structure
 necessary for global fitting.</p>
@@ -747,9 +745,9 @@ primary ensemble in a <a class="reference internal" href="#eryn.moves.RedBlueMov
 <div class="section" id="implemented-red-blue-moves">
 <h3>Implemented Red-Blue Moves<a class="headerlink" href="#implemented-red-blue-moves" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
-<dt class="sig sig-object py" id="eryn.moves.StretchMove">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">StretchMove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#eryn.moves.RedBlueMove" title="eryn.moves.red_blue.RedBlueMove"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.red_blue.RedBlueMove</span></code></a></p>
+<dt id="eryn.moves.StretchMove">
+<em class="property">class </em><code class="sig-prename descclassname">eryn.moves.</code><code class="sig-name descname">StretchMove</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a</span><span class="o">=</span><span class="default_value">2.0</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.red_blue.RedBlueMove</span></code></p>
 <p>Affine-Invariant Proposal</p>
 <p>A <a class="reference external" href="https://msp.org/camcos/2010/5-1/p04.xhtml">Goodman &amp; Weare (2010)</a> “stretch move” with
 parallelization as described in <a class="reference external" href="https://arxiv.org/abs/1202.3665">Foreman-Mackey et al. (2013)</a>.</p>
@@ -759,8 +757,8 @@ parallelization as described in <a class="reference external" href="https://arxi
 </dd>
 </dl>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="eryn.moves.StretchMove.a">
-<span class="sig-name descname"><span class="pre">a</span></span><a class="headerlink" href="#eryn.moves.StretchMove.a" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.StretchMove.a">
+<code class="sig-name descname">a</code><a class="headerlink" href="#eryn.moves.StretchMove.a" title="Permalink to this definition">¶</a></dt>
 <dd><p>The stretch scale parameter.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -770,8 +768,8 @@ parallelization as described in <a class="reference external" href="https://arxi
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.StretchMove.get_proposal">
-<span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove.get_proposal" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.StretchMove.get_proposal">
+<code class="sig-name descname">get_proposal</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">s_all</span></em>, <em class="sig-param"><span class="n">c_all</span></em>, <em class="sig-param"><span class="n">random</span></em>, <em class="sig-param"><span class="n">inds_s</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">inds_c</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove.get_proposal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate stretch proposal</p>
 <p># TODO: add log proposal from ptemcee</p>
 <dl class="field-list simple">
@@ -782,10 +780,12 @@ for which a proposal is to be generated.</p></li>
 <li><p><strong>c_all</strong> (<em>dict</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are lists. These
 lists contain all the complement array values.</p></li>
 <li><p><strong>random</strong> (<em>object</em>) – Random state object.</p></li>
-<li><p><strong>inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are
+<li><p><strong>inds_s</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are
 np.ndarray[nwalkers, nleaves_max] that indicate which leaves
-are currently being used. This is used to determine dimension of
-proposal for detailed balance factors. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+are currently being used in <code class="code docutils literal notranslate"><span class="pre">s_all</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>inds_c</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are
+np.ndarray[nwalkers, nleaves_max] that indicate which leaves
+are currently being used in <code class="code docutils literal notranslate"><span class="pre">s_all</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -801,8 +801,8 @@ proposal for detailed balance factors. (default: <code class="docutils literal n
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.StretchMove.compute_log_posterior_basic">
-<span class="sig-name descname"><span class="pre">compute_log_posterior_basic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove.compute_log_posterior_basic" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.StretchMove.compute_log_posterior_basic">
+<code class="sig-name descname">compute_log_posterior_basic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">logl</span></em>, <em class="sig-param"><span class="n">logp</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove.compute_log_posterior_basic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the log of posterior</p>
 <p><span class="math notranslate nohighlight">\(\log{P} = \log{L} + \log{p}\)</span></p>
 <p>This method is to mesh with the tempered log posterior computation.</p>
@@ -823,8 +823,8 @@ proposal for detailed balance factors. (default: <code class="docutils literal n
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.StretchMove.propose">
-<span class="sig-name descname"><span class="pre">propose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove.propose" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.StretchMove.propose">
+<code class="sig-name descname">propose</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">state</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove.propose" title="Permalink to this definition">¶</a></dt>
 <dd><p>Use the move to generate a proposal and compute the acceptance</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -843,14 +843,14 @@ proposal for detailed balance factors. (default: <code class="docutils literal n
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.StretchMove.setup">
-<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove.setup" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.StretchMove.setup">
+<code class="sig-name descname">setup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">coords</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove.setup" title="Permalink to this definition">¶</a></dt>
 <dd><p>Any setup necessary for the proposal</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.StretchMove.tune">
-<span class="sig-name descname"><span class="pre">tune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove.tune" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.StretchMove.tune">
+<code class="sig-name descname">tune</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span></em>, <em class="sig-param"><span class="n">accepted</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove.tune" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tune a proposal</p>
 <p>This is a place holder for tuning.</p>
 <dl class="field-list simple">
@@ -865,8 +865,8 @@ through proposal.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.StretchMove.update">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">old_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove.update" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.StretchMove.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">old_state</span></em>, <em class="sig-param"><span class="n">new_state</span></em>, <em class="sig-param"><span class="n">accepted</span></em>, <em class="sig-param"><span class="n">subset</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update a given subset of the ensemble with an accepted proposal</p>
 <p>This class was updated from <code class="docutils literal notranslate"><span class="pre">emcee</span></code> to handle the added structure
 necessary for global fitting.</p>
@@ -904,9 +904,9 @@ primary ensemble in a <a class="reference internal" href="#eryn.moves.RedBlueMov
 <div class="section" id="reversible-jump-parent-class">
 <h3>Reversible Jump Parent Class<a class="headerlink" href="#reversible-jump-parent-class" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
-<dt class="sig sig-object py" id="eryn.moves.ReversibleJump">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">ReversibleJump</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tune</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJump" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#eryn.moves.Move" title="eryn.moves.move.Move"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.move.Move</span></code></a></p>
+<dt id="eryn.moves.ReversibleJump">
+<em class="property">class </em><code class="sig-prename descclassname">eryn.moves.</code><code class="sig-name descname">ReversibleJump</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">max_k</span></em>, <em class="sig-param"><span class="n">min_k</span></em>, <em class="sig-param"><span class="n">proposal</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">dr</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">dr_max_iter</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">tune</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJump" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.move.Move</span></code></p>
 <p>An abstract reversible jump move from # TODO: add citations.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -918,8 +918,8 @@ primary ensemble in a <a class="reference internal" href="#eryn.moves.RedBlueMov
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.ReversibleJump.tune">
-<span class="sig-name descname"><span class="pre">tune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJump.tune" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.ReversibleJump.tune">
+<code class="sig-name descname">tune</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span></em>, <em class="sig-param"><span class="n">accepted</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJump.tune" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tune a proposal</p>
 <p>This is a place holder for tuning.</p>
 <dl class="field-list simple">
@@ -934,8 +934,8 @@ through proposal.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.ReversibleJump.get_proposal">
-<span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_inds_for_change</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJump.get_proposal" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.ReversibleJump.get_proposal">
+<code class="sig-name descname">get_proposal</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">all_coords</span></em>, <em class="sig-param"><span class="n">all_inds</span></em>, <em class="sig-param"><span class="n">all_inds_for_change</span></em>, <em class="sig-param"><span class="n">random</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJump.get_proposal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make a proposal</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -982,28 +982,8 @@ in the numerator. -log of factors if in the denominator.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.ReversibleJump.propose">
-<span class="sig-name descname"><span class="pre">propose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJump.propose" title="Permalink to this definition">¶</a></dt>
-<dd><p>Use the move to generate a proposal and compute the acceptance</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>model</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.model.Model</span></code>) – Carrier of sampler information.</p></li>
-<li><p><strong>state</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code>) – Current state of the sampler.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>State of sampler after proposal is complete.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.ReversibleJump.compute_log_posterior_basic">
-<span class="sig-name descname"><span class="pre">compute_log_posterior_basic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJump.compute_log_posterior_basic" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.ReversibleJump.compute_log_posterior_basic">
+<code class="sig-name descname">compute_log_posterior_basic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">logl</span></em>, <em class="sig-param"><span class="n">logp</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJump.compute_log_posterior_basic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the log of posterior</p>
 <p><span class="math notranslate nohighlight">\(\log{P} = \log{L} + \log{p}\)</span></p>
 <p>This method is to mesh with the tempered log posterior computation.</p>
@@ -1024,8 +1004,28 @@ in the numerator. -log of factors if in the denominator.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.ReversibleJump.update">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">old_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJump.update" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.ReversibleJump.propose">
+<code class="sig-name descname">propose</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">state</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJump.propose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use the move to generate a proposal and compute the acceptance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.model.Model</span></code>) – Carrier of sampler information.</p></li>
+<li><p><strong>state</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code>) – Current state of the sampler.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>State of sampler after proposal is complete.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="eryn.moves.ReversibleJump.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">old_state</span></em>, <em class="sig-param"><span class="n">new_state</span></em>, <em class="sig-param"><span class="n">accepted</span></em>, <em class="sig-param"><span class="n">subset</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJump.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update a given subset of the ensemble with an accepted proposal</p>
 <p>This class was updated from <code class="docutils literal notranslate"><span class="pre">emcee</span></code> to handle the added structure
 necessary for global fitting.</p>
@@ -1060,9 +1060,9 @@ primary ensemble in a <a class="reference internal" href="#eryn.moves.RedBlueMov
 <div class="section" id="implemented-reversible-jump-moves">
 <h3>Implemented Reversible Jump Moves<a class="headerlink" href="#implemented-reversible-jump-moves" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
-<dt class="sig sig-object py" id="eryn.moves.PriorGenerate">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">PriorGenerate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">priors</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.PriorGenerate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#eryn.moves.ReversibleJump" title="eryn.moves.rj.ReversibleJump"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.rj.ReversibleJump</span></code></a></p>
+<dt id="eryn.moves.PriorGenerate">
+<em class="property">class </em><code class="sig-prename descclassname">eryn.moves.</code><code class="sig-name descname">PriorGenerate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">priors</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.PriorGenerate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.rj.ReversibleJump</span></code></p>
 <p>Generate Revesible-Jump proposals from prior</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1071,8 +1071,8 @@ and <code class="docutils literal notranslate"><span class="pre">rvs</span></cod
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.PriorGenerate.get_proposal">
-<span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_inds_for_change</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.PriorGenerate.get_proposal" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.PriorGenerate.get_proposal">
+<code class="sig-name descname">get_proposal</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">all_coords</span></em>, <em class="sig-param"><span class="n">all_inds</span></em>, <em class="sig-param"><span class="n">all_inds_for_change</span></em>, <em class="sig-param"><span class="n">random</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.PriorGenerate.get_proposal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make a proposal</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1116,8 +1116,8 @@ in the numerator. -log of factors if in the denominator.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.PriorGenerate.compute_log_posterior_basic">
-<span class="sig-name descname"><span class="pre">compute_log_posterior_basic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.PriorGenerate.compute_log_posterior_basic" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.PriorGenerate.compute_log_posterior_basic">
+<code class="sig-name descname">compute_log_posterior_basic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">logl</span></em>, <em class="sig-param"><span class="n">logp</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.PriorGenerate.compute_log_posterior_basic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the log of posterior</p>
 <p><span class="math notranslate nohighlight">\(\log{P} = \log{L} + \log{p}\)</span></p>
 <p>This method is to mesh with the tempered log posterior computation.</p>
@@ -1138,8 +1138,8 @@ in the numerator. -log of factors if in the denominator.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.PriorGenerate.propose">
-<span class="sig-name descname"><span class="pre">propose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.PriorGenerate.propose" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.PriorGenerate.propose">
+<code class="sig-name descname">propose</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">state</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.PriorGenerate.propose" title="Permalink to this definition">¶</a></dt>
 <dd><p>Use the move to generate a proposal and compute the acceptance</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1158,8 +1158,8 @@ in the numerator. -log of factors if in the denominator.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.PriorGenerate.tune">
-<span class="sig-name descname"><span class="pre">tune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.PriorGenerate.tune" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.PriorGenerate.tune">
+<code class="sig-name descname">tune</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span></em>, <em class="sig-param"><span class="n">accepted</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.PriorGenerate.tune" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tune a proposal</p>
 <p>This is a place holder for tuning.</p>
 <dl class="field-list simple">
@@ -1174,8 +1174,8 @@ through proposal.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.PriorGenerate.update">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">old_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.PriorGenerate.update" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.moves.PriorGenerate.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">old_state</span></em>, <em class="sig-param"><span class="n">new_state</span></em>, <em class="sig-param"><span class="n">accepted</span></em>, <em class="sig-param"><span class="n">subset</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.PriorGenerate.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update a given subset of the ensemble with an accepted proposal</p>
 <p>This class was updated from <code class="docutils literal notranslate"><span class="pre">emcee</span></code> to handle the added structure
 necessary for global fitting.</p>
@@ -1215,29 +1215,37 @@ primary ensemble in a <a class="reference internal" href="#eryn.moves.RedBlueMov
            
           </div>
           <footer>
+  
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="prior.html" class="btn btn-neutral float-right" title="Priors" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="backend.html" class="btn btn-neutral float-left" title="Backends" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+      
+        <a href="prior.html" class="btn btn-neutral float-right" title="Priors" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="backend.html" class="btn btn-neutral float-left" title="Backends" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
     </div>
+  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, Michael Katz and Nikos Karnesis.
+        
+        &copy; Copyright 2021, Michael Katz and Nikos Karnesis
 
     </p>
   </div>
     
     
     
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
+
         </div>
       </div>
 

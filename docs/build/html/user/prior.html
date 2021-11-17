@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8">
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>Priors &mdash; Eryn 0.0.1 documentation</title>
   
@@ -13,15 +13,10 @@
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
 
   
   
-
   
-  
-
   
 
   
@@ -31,11 +26,13 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -57,7 +54,7 @@
           
 
           
-            <a href="../index.html" class="icon icon-home"> Eryn
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> Eryn
           
 
           
@@ -145,8 +142,6 @@
 
 
 
-
-
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -158,7 +153,7 @@
     
       <li class="wy-breadcrumbs-aside">
         
-          
+            
             <a href="../_sources/user/prior.rst.txt" rel="nofollow"> View page source</a>
           
         
@@ -169,10 +164,10 @@
   
   <div class="rst-breadcrumbs-buttons" role="navigation" aria-label="breadcrumb navigation">
       
-        <a href="utils.html" class="btn btn-neutral float-right" title="Utilities" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="utils.html" class="btn btn-neutral float-right" title="Utilities" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="moves.html" class="btn btn-neutral float-left" title="Moves" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="moves.html" class="btn btn-neutral float-left" title="Moves" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
   </div>
   
@@ -211,8 +206,8 @@
 <div class="section" id="prior-container">
 <h2>Prior Container<a class="headerlink" href="#prior-container" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
-<dt class="sig sig-object py" id="eryn.prior.PriorContainer">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.prior.</span></span><span class="sig-name descname"><span class="pre">PriorContainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">priors_in</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.PriorContainer" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.prior.PriorContainer">
+<em class="property">class </em><code class="sig-prename descclassname">eryn.prior.</code><code class="sig-name descname">PriorContainer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">priors_in</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.PriorContainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Container for holding and generating prior info</p>
 <dl class="field-list simple">
@@ -223,8 +218,8 @@ probability distributions with <code class="docutils literal notranslate"><span 
 </dd>
 </dl>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="eryn.prior.PriorContainer.priors_in">
-<span class="sig-name descname"><span class="pre">priors_in</span></span><a class="headerlink" href="#eryn.prior.PriorContainer.priors_in" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.prior.PriorContainer.priors_in">
+<code class="sig-name descname">priors_in</code><a class="headerlink" href="#eryn.prior.PriorContainer.priors_in" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dictionary with keys as int or tuple of int
 describing which parameters the prior takes. Values are
 probability distributions with <code class="docutils literal notranslate"><span class="pre">logpdf</span></code> and <code class="docutils literal notranslate"><span class="pre">rvs</span></code> methods.</p>
@@ -236,8 +231,8 @@ probability distributions with <code class="docutils literal notranslate"><span 
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="eryn.prior.PriorContainer.priors">
-<span class="sig-name descname"><span class="pre">priors</span></span><a class="headerlink" href="#eryn.prior.PriorContainer.priors" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.prior.PriorContainer.priors">
+<code class="sig-name descname">priors</code><a class="headerlink" href="#eryn.prior.PriorContainer.priors" title="Permalink to this definition">¶</a></dt>
 <dd><p>list of indexes and their associated distributions arranged
 in a list.</p>
 <dl class="field-list simple">
@@ -248,8 +243,8 @@ in a list.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="eryn.prior.PriorContainer.ndim">
-<span class="sig-name descname"><span class="pre">ndim</span></span><a class="headerlink" href="#eryn.prior.PriorContainer.ndim" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.prior.PriorContainer.ndim">
+<code class="sig-name descname">ndim</code><a class="headerlink" href="#eryn.prior.PriorContainer.ndim" title="Permalink to this definition">¶</a></dt>
 <dd><p>Full dimensionality.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -264,8 +259,8 @@ in a list.</p>
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.prior.PriorContainer.logpdf">
-<span class="sig-name descname"><span class="pre">logpdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.PriorContainer.logpdf" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.prior.PriorContainer.logpdf">
+<code class="sig-name descname">logpdf</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">groups</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.PriorContainer.logpdf" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get logpdf by summing logpdf of individual distributions</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -281,8 +276,8 @@ in a list.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.prior.PriorContainer.rvs">
-<span class="sig-name descname"><span class="pre">rvs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.PriorContainer.rvs" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.prior.PriorContainer.rvs">
+<code class="sig-name descname">rvs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">size</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.PriorContainer.rvs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate random values according to prior distribution</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -307,8 +302,8 @@ sources from prior distributions.</p>
 <div class="section" id="available-probability-distributions">
 <h2>Available Probability Distributions<a class="headerlink" href="#available-probability-distributions" title="Permalink to this headline">¶</a></h2>
 <dl class="py function">
-<dt class="sig sig-object py" id="eryn.prior.uniform_dist">
-<span class="sig-prename descclassname"><span class="pre">eryn.prior.</span></span><span class="sig-name descname"><span class="pre">uniform_dist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.uniform_dist" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.prior.uniform_dist">
+<code class="sig-prename descclassname">eryn.prior.</code><code class="sig-name descname">uniform_dist</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">min</span></em>, <em class="sig-param"><span class="n">max</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.uniform_dist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate uniform distribution between <code class="docutils literal notranslate"><span class="pre">min</span></code> and <code class="docutils literal notranslate"><span class="pre">max</span></code></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -331,8 +326,8 @@ sources from prior distributions.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="eryn.prior.log_uniform">
-<span class="sig-prename descclassname"><span class="pre">eryn.prior.</span></span><span class="sig-name descname"><span class="pre">log_uniform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.log_uniform" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.prior.log_uniform">
+<code class="sig-prename descclassname">eryn.prior.</code><code class="sig-name descname">log_uniform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">min</span></em>, <em class="sig-param"><span class="n">max</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.log_uniform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate log-uniform distribution between <code class="docutils literal notranslate"><span class="pre">min</span></code> and <code class="docutils literal notranslate"><span class="pre">max</span></code></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -362,29 +357,37 @@ sources from prior distributions.</p>
            
           </div>
           <footer>
+  
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="utils.html" class="btn btn-neutral float-right" title="Utilities" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="moves.html" class="btn btn-neutral float-left" title="Moves" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+      
+        <a href="utils.html" class="btn btn-neutral float-right" title="Utilities" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="moves.html" class="btn btn-neutral float-left" title="Moves" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
     </div>
+  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, Michael Katz and Nikos Karnesis.
+        
+        &copy; Copyright 2021, Michael Katz and Nikos Karnesis
 
     </p>
   </div>
     
     
     
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
+
         </div>
       </div>
 

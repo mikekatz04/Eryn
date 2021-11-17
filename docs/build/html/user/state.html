@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8">
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>State &mdash; Eryn 0.0.1 documentation</title>
   
@@ -13,15 +13,10 @@
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
 
   
   
-
   
-  
-
   
 
   
@@ -31,11 +26,13 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -57,7 +54,7 @@
           
 
           
-            <a href="../index.html" class="icon icon-home"> Eryn
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> Eryn
           
 
           
@@ -141,8 +138,6 @@
 
 
 
-
-
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -154,7 +149,7 @@
     
       <li class="wy-breadcrumbs-aside">
         
-          
+            
             <a href="../_sources/user/state.rst.txt" rel="nofollow"> View page source</a>
           
         
@@ -165,10 +160,10 @@
   
   <div class="rst-breadcrumbs-buttons" role="navigation" aria-label="breadcrumb navigation">
       
-        <a href="backend.html" class="btn btn-neutral float-right" title="Backends" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="backend.html" class="btn btn-neutral float-right" title="Backends" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="ensemble.html" class="btn btn-neutral float-left" title="Ensemble" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ensemble.html" class="btn btn-neutral float-left" title="Ensemble" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
   </div>
   
@@ -205,8 +200,8 @@
 <h1>State<a class="headerlink" href="#state" title="Permalink to this headline">¶</a></h1>
 <p>The <a class="reference internal" href="#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.State</span></code></a> carries the information around for all walkers at a given step.</p>
 <dl class="py class">
-<dt class="sig sig-object py" id="eryn.state.State">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.state.</span></span><span class="sig-name descname"><span class="pre">State</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_prob</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.state.State" title="Permalink to this definition">¶</a></dt>
+<dt id="eryn.state.State">
+<em class="property">class </em><code class="sig-prename descclassname">eryn.state.</code><code class="sig-name descname">State</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">coords</span></em>, <em class="sig-param"><span class="n">inds</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">log_prob</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">log_prior</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">betas</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">blobs</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">random_state</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">copy</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.state.State" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>The state of the ensemble during an MCMC run</p>
 <p>For backwards compatibility, this will unpack into <code class="docutils literal notranslate"><span class="pre">coords,</span> <span class="pre">log_prob,</span>
@@ -249,15 +244,15 @@ Input should be <code class="docutils literal notranslate"><span class="pre">Non
 <dd class="field-even"><p><strong>ValueError</strong> – Dimensions of inputs or input types are incorrect.</p>
 </dd>
 </dl>
-<dl class="py property">
-<dt class="sig sig-object py" id="eryn.state.State.branches_inds">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">branches_inds</span></span><a class="headerlink" href="#eryn.state.State.branches_inds" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt id="eryn.state.State.branches_inds">
+<em class="property">property </em><code class="sig-name descname">branches_inds</code><a class="headerlink" href="#eryn.state.State.branches_inds" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the <code class="docutils literal notranslate"><span class="pre">inds</span></code> from all branch objects returned as a dictionary with <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> as keys.</p>
 </dd></dl>
 
-<dl class="py property">
-<dt class="sig sig-object py" id="eryn.state.State.branches_coords">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">branches_coords</span></span><a class="headerlink" href="#eryn.state.State.branches_coords" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt id="eryn.state.State.branches_coords">
+<em class="property">property </em><code class="sig-name descname">branches_coords</code><a class="headerlink" href="#eryn.state.State.branches_coords" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the <code class="docutils literal notranslate"><span class="pre">coords</span></code> from all branch objects returned as a dictionary with <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> as keys.</p>
 </dd></dl>
 
@@ -270,29 +265,37 @@ Input should be <code class="docutils literal notranslate"><span class="pre">Non
            
           </div>
           <footer>
+  
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="backend.html" class="btn btn-neutral float-right" title="Backends" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="ensemble.html" class="btn btn-neutral float-left" title="Ensemble" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+      
+        <a href="backend.html" class="btn btn-neutral float-right" title="Backends" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="ensemble.html" class="btn btn-neutral float-left" title="Ensemble" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
     </div>
+  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, Michael Katz and Nikos Karnesis.
+        
+        &copy; Copyright 2021, Michael Katz and Nikos Karnesis
 
     </p>
   </div>
     
     
     
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
+
         </div>
       </div>
 
