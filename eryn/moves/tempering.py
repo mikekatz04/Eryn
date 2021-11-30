@@ -209,11 +209,13 @@ class TemperatureControl(object):
                     )
 
                 # A compromise for building a temperature ladder for the case of rj.
-                # We start by assuming that the dimensionality will be defined by the number of 
-                # components. We take that maximum divided by two, and multiply it with the higher 
+                # We start by assuming that the dimensionality will be defined by the number of
+                # components. We take that maximum divided by two, and multiply it with the higher
                 # dimensional component.
                 if sum(nleaves_max) > 1:
-                    betas = make_ladder(int( max(ndim) * sum(nleaves_max) / 2), ntemps=ntemps, Tmax=Tmax)
+                    betas = make_ladder(
+                        int(max(ndim) * sum(nleaves_max) / 2), ntemps=ntemps, Tmax=Tmax
+                    )
                 else:
                     betas = make_ladder(ndim[0], ntemps=ntemps, Tmax=Tmax)
 

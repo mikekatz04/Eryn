@@ -255,7 +255,8 @@ class RedBlueMove(Move, ABC):
 
                 # set logp for walkers with no leaves that are being tested
                 # in this gibbs run
-                logp[np.where(np.sum(keep_arr, axis=-1) == 0)] = -np.inf
+                if gs is not None:
+                    logp[np.where(np.sum(keep_arr, axis=-1) == 0)] = -np.inf
 
                 # Compute the lnprobs of the proposed position.
                 logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds, logp=logp)

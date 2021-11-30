@@ -506,6 +506,35 @@ class EnsembleSampler(object):
         d["pool"] = None
         return d
 
+    def get_model(self):
+        """Get ``Model`` object from sampler
+
+        The model object is used to pass necessary information to the
+        proposals. This method can be used to retrieve the ``model`` used
+        in the sampler from outside the sampler.
+
+        Returns:
+            :class:`Model`: ``Model`` object used by sampler.
+
+            
+        """
+        # Set up a wrapper around the relevant model functions
+        if self.pool is not None:
+            map_fn = self.pool.map
+        else:
+            map_fn = map
+
+        # setup model framework for passing necessary items
+        model = Model(
+            self.log_prob_fn,
+            self.compute_log_prob,
+            self.compute_log_prior,
+            self.temperature_control,
+            map_fn,
+            self._random,
+        )
+        return model
+
     def sample(
         self,
         initial_state,
@@ -616,21 +645,7 @@ class EnsembleSampler(object):
         if store:
             self.backend.grow(iterations, state.blobs)
 
-        # Set up a wrapper around the relevant model functions
-        if self.pool is not None:
-            map_fn = self.pool.map
-        else:
-            map_fn = map
-
-        # setup model framework for passing necessary items
-        model = Model(
-            self.log_prob_fn,
-            self.compute_log_prob,
-            self.compute_log_prior,
-            self.temperature_control,
-            map_fn,
-            self._random,
-        )
+        model = self.get_model()
 
         # Inject the progress bar
         total = None if iterations is None else iterations * yield_step
@@ -672,6 +687,7 @@ class EnsembleSampler(object):
 
                     else:
                         rj_accepted = None
+                        rj_swaps = None
 
                     # Save the new step
                     if store and (i + 1) % checkpoint_step == 0:

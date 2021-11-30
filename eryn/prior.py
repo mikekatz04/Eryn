@@ -72,6 +72,7 @@ class PriorContainer:
         ValueError: Missing parameters or incorrect index keys.
 
     """
+
     def __init__(self, priors_in):
 
         # copy to have
@@ -134,6 +135,11 @@ class PriorContainer:
     def rvs(self, size=1):
         """Generate random values according to prior distribution
 
+        The user will have to be careful if there are prior functions that
+        do not have an ``rvs`` method. This means that generated points may lay
+        inside the prior of all input priors that have ``rvs`` methods, but
+        outside the prior if priors without the ``rvs`` method are included.
+
         Args:
             size (int or tuple of ints, optional): Output size for number of generated
                 sources from prior distributions.
@@ -160,6 +166,9 @@ class PriorContainer:
         # setup output and loop through priors
         out = np.zeros(size + (self.ndim,))
         for i, (inds, prior_i) in enumerate(self.priors):
+            # guard against extra prior functions without rvs methods
+            if not hasattr(prior_i, "rvs"):
+                continue
             # combines outer dimensions with indices of interest
             inds_in = out_inds + (inds,)
             # allows for proper adding of quantities to out array
@@ -169,18 +178,16 @@ class PriorContainer:
         return out
 
 
-
 class UniformTorch(torch.distributions.uniform.Uniform):
-    '''
+    """
        For testing Likelihood Ratio.
-    '''
+    """
+
     def __init__(self, lower, upper):
         super(UniformTorch, self).__init__(lower, upper)
 
     def log_prob(self, sample):
         return super(UniformTorch, self).log_prob(sample).mean()
-
-
 
 
 if __name__ == "__main__":
