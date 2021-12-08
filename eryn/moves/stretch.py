@@ -98,6 +98,9 @@ class StretchMove(RedBlueMove):
 
             newpos[name] = temp - (diff) * zz[:, None, None]
 
+            if self.periodic is not None:
+                newpos[name] = self.periodic.wrap(newpos[name], names=[name])[name]
+
         # proper factors
         factors = (ndim - 1.0) * np.log(zz)
         return newpos, factors
