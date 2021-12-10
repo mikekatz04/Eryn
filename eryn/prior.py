@@ -52,6 +52,70 @@ def log_uniform(min, max):
     return dist
 
 
+class MappedUniformDistribution:
+    """Maps uniform distribution to zero to 1.
+
+    This is a modified uniform distribution that maps
+    the input values to a range from zero to 1 by using ``min`` and
+    ``max`` values input by user. This ensures the log of the prior value
+    from this distribution is zero if the value is between ``min`` and ``max``.
+    and ``-np.inf`` if it is outside that range.
+
+    Args:
+        min (double): Minimum in the log-uniform distribution
+        max (double): Maximum in the log-uniform distribution
+
+    Raises:
+        ValueError: If ``min`` is greater than ``max``.
+
+
+    """
+
+    def __init__(self, min, max):
+        self.min, self.max = min, max
+        self.diff = self.max - self.min
+        if self.min > self.max:
+            raise ValueError("min must be less than max.")
+
+        self.dist = uniform_dist(0.0, 1.0)
+
+    def logpdf(self, x):
+        """Get the log of the pdf value for this distribution.
+
+        Args:
+            x (double np.ndarray):
+                Input parameters to get prior values.
+
+        Returns:
+            np.ndarray: Associated logpdf values of the input.
+
+        """
+        temp = 1.0 - (self.max - x) / self.diff
+        return self.dist.logpdf(temp)
+
+    def rvs(self, size=1):
+        """Get the log of the pdf value for this distribution.
+
+        Args:
+            size (int or tuple of ints, optional): Output size for number of generated
+                sources from prior distributions.
+
+        Returns:
+            np.ndarray: Generated values.
+
+        """
+        # adjust size if int
+        if isinstance(size, int):
+            size = (size,)
+
+        elif not isinstance(size, tuple):
+            raise ValueError("Size must be int or tuple of ints.")
+
+        temp = self.dist.rvs(size=size)
+
+        return self.max + (temp - 1.0) * self.diff
+
+
 class PriorContainer:
     """Container for holding and generating prior info
 

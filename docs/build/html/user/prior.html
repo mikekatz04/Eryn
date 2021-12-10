@@ -279,6 +279,10 @@ in a list.</p>
 <dt id="eryn.prior.PriorContainer.rvs">
 <code class="sig-name descname">rvs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">size</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.PriorContainer.rvs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate random values according to prior distribution</p>
+<p>The user will have to be careful if there are prior functions that
+do not have an <code class="docutils literal notranslate"><span class="pre">rvs</span></code> method. This means that generated points may lay
+inside the prior of all input priors that have <code class="docutils literal notranslate"><span class="pre">rvs</span></code> methods, but
+outside the prior if priors without the <code class="docutils literal notranslate"><span class="pre">rvs</span></code> method are included.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>size</strong> (<em>int</em><em> or </em><em>tuple of ints</em><em>, </em><em>optional</em>) – Output size for number of generated
@@ -347,6 +351,64 @@ sources from prior distributions.</p>
 <dd class="field-odd"><p>scipy distribution object</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="eryn.prior.MappedUniformDistribution">
+<em class="property">class </em><code class="sig-prename descclassname">eryn.prior.</code><code class="sig-name descname">MappedUniformDistribution</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">min</span></em>, <em class="sig-param"><span class="n">max</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.MappedUniformDistribution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Maps uniform distribution to zero to 1.</p>
+<p>This is a modified uniform distribution that maps
+the input values to a range from zero to 1 by using <code class="docutils literal notranslate"><span class="pre">min</span></code> and
+<code class="docutils literal notranslate"><span class="pre">max</span></code> values input by user. This ensures the log of the prior value
+from this distribution is zero if the value is between <code class="docutils literal notranslate"><span class="pre">min</span></code> and <code class="docutils literal notranslate"><span class="pre">max</span></code>.
+and <code class="docutils literal notranslate"><span class="pre">-np.inf</span></code> if it is outside that range.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>min</strong> (<em>double</em>) – Minimum in the log-uniform distribution</p></li>
+<li><p><strong>max</strong> (<em>double</em>) – Maximum in the log-uniform distribution</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">min</span></code> is greater than <code class="docutils literal notranslate"><span class="pre">max</span></code>.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="eryn.prior.MappedUniformDistribution.logpdf">
+<code class="sig-name descname">logpdf</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.MappedUniformDistribution.logpdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the log of the pdf value for this distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>double np.ndarray</em>) – Input parameters to get prior values.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Associated logpdf values of the input.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="eryn.prior.MappedUniformDistribution.rvs">
+<code class="sig-name descname">rvs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">size</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.MappedUniformDistribution.rvs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the log of the pdf value for this distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>size</strong> (<em>int</em><em> or </em><em>tuple of ints</em><em>, </em><em>optional</em>) – Output size for number of generated
+sources from prior distributions.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Generated values.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </div>
