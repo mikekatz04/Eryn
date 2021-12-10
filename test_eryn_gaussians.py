@@ -203,6 +203,7 @@ ensemble = EnsembleSampler(
     provide_groups=True,
     moves=moves,
     plot_iterations=-1,
+    fill_zero_leaves_val=-1e5,
     rj_moves=True,
     backend="test_out.h5",
 )

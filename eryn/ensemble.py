@@ -145,6 +145,11 @@ class EnsembleSampler(object):
         info (dict, optional): Key and value pairs reprenting any information
             the user wants to add to the backend if the user is not inputing
             their own backend.
+        fill_zero_leaves_val (double, optional): When there are zero leaves in a
+            given walker (across all branches), fill the likelihood value with
+            ``fill_zero_leaves_val``. If wanting to keep zero leaves as a possible
+            model, this should be set to the value of the contribution to the Likelihood
+            from the data. (Default: ``-1e300``).
         verbose (int, optional): # TODO
 
     Raises:
@@ -188,12 +193,14 @@ class EnsembleSampler(object):
         stopping_iterations=-1,
         info={},
         branch_names=None,
+        fill_zero_leaves_val=-1e300,
         verbose=False,
     ):
 
         # TODO: check non-vectorized
 
         self.provide_groups = provide_groups
+        self.fill_zero_leaves_val = fill_zero_leaves_val
 
         # store default branch names if not given
         if branch_names is None:
@@ -432,7 +439,11 @@ class EnsembleSampler(object):
         # Do a little bit of _magic_ to make the likelihood call with
         # ``args`` and ``kwargs`` pickleable.
         self.log_prob_fn = _FunctionWrapper(
-            log_prob_fn, args, kwargs, provide_groups=self.provide_groups
+            log_prob_fn,
+            args,
+            kwargs,
+            provide_groups=self.provide_groups,
+            fill_zero_leaves_val=self.fill_zero_leaves_val,
         )
 
         self.all_walkers = self.nwalkers * self.ntemps
@@ -516,7 +527,7 @@ class EnsembleSampler(object):
         Returns:
             :class:`Model`: ``Model`` object used by sampler.
 
-            
+
         """
         # Set up a wrapper around the relevant model functions
         if self.pool is not None:
@@ -1060,11 +1071,14 @@ class _FunctionWrapper(object):
 
     """
 
-    def __init__(self, f, args, kwargs, provide_groups=True):
+    def __init__(
+        self, f, args, kwargs, provide_groups=True, fill_zero_leaves_val=-1e300
+    ):
         self.f = f
         self.args = [] if args is None else args
         self.kwargs = {} if kwargs is None else kwargs
         self.provide_groups = provide_groups
+        self.fill_zero_leaves_val = fill_zero_leaves_val
 
     def __call__(self, x, inds=None):
         try:
@@ -1104,8 +1118,11 @@ class _FunctionWrapper(object):
 
             # -1e300 because -np.inf screws up state acceptance transfer in proposals
             ll = np.full(nwalkers_all, -1e300)
+            inds_fix_zeros = np.delete(np.arange(nwalkers_all), unique_groups)
+
             if out.ndim == 2:
                 ll[unique_groups] = out[:, 0]
+                ll[inds_fix_zeros] = self.fill_zero_leaves_val
                 blobs_out = np.zeros((nwalkers_all, out.shape[1] - 1))
                 blobs_out[unique_groups] = out[:, 1:]
                 return [
@@ -1113,7 +1130,9 @@ class _FunctionWrapper(object):
                     blobs_out.reshape(ntemps, nwalkers, -1),
                 ]
             else:
+                breakpoint()
                 ll[unique_groups] = out
+                ll[inds_fix_zeros] = self.fill_zero_leaves_val
                 return ll.reshape(ntemps, nwalkers)
 
         except:  # pragma: no cover
