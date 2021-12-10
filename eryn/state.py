@@ -69,11 +69,6 @@ class Branch(object):
         """Number of leaves for each walker"""
         # get number of leaves in each walker by summing inds along last axis
         nleaves = np.sum(self.inds, axis=-1)
-
-        if np.any(nleaves <= 0):
-            # TODO: fix this (?) for non-nested models
-            raise ValueError("Number of leaves <= 0 not allowed.")
-
         return nleaves
 
 

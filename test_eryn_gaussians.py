@@ -128,16 +128,18 @@ inds = {
 
 inds["gauss"][:, :, :3] = True
 
+inds["gauss"][0, 0, :] = False
+
 # inds = {
 #    name: np.full((ntemps, nwalkers, nleaf), True, dtype=bool)
 #    for nleaf, name in zip(nleaves_max, branch_names)
 # }
 
-for name, inds_temp in inds.items():
-    inds_fix = np.where(np.sum(inds_temp, axis=-1) == 0)
+# for name, inds_temp in inds.items():
+#    inds_fix = np.where(np.sum(inds_temp, axis=-1) == 0)
 
-    for ind1, ind2 in zip(inds_fix[0], inds_fix[1]):
-        inds_temp[ind1, ind2, 0] = True
+#    for ind1, ind2 in zip(inds_fix[0], inds_fix[1]):
+#        inds_temp[ind1, ind2, 0] = True
 
 groups = {
     name: np.arange(coords[name].shape[0] * coords[name].shape[1]).reshape(
@@ -197,6 +199,7 @@ ensemble = EnsembleSampler(
     nbranches=len(branch_names),
     branch_names=branch_names,
     nleaves_max=nleaves_max,
+    nleaves_min=0,
     provide_groups=True,
     moves=moves,
     plot_iterations=-1,
