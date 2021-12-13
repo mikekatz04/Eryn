@@ -795,10 +795,6 @@ class Backend(object):
             self.blobs[self.iteration, :] = state.blobs
         if state.betas is not None:
             self.betas[self.iteration, :] = state.betas
-        if in_model_swaps_accepted is not None:
-            self.in_model_swaps_accepted[self.iteration, :] = in_model_swaps_accepted
-        if rj_swaps_accepted is not None:
-            self.rj_swaps_accepted[self.iteration, :] = rj_swaps_accepted
 
         self.accepted += accepted
 
