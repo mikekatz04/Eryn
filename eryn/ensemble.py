@@ -1130,7 +1130,6 @@ class _FunctionWrapper(object):
                     blobs_out.reshape(ntemps, nwalkers, -1),
                 ]
             else:
-                breakpoint()
                 ll[unique_groups] = out
                 ll[inds_fix_zeros] = self.fill_zero_leaves_val
                 return ll.reshape(ntemps, nwalkers)
