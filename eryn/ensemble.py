@@ -1092,14 +1092,20 @@ class _FunctionWrapper(object):
             # determine groupings from inds
             groups = groups_from_inds(inds)
 
-            ll_groups = {}
-            temp_unique_groups = []
-            for key, group in groups.items():
-                unique_groups, inverse = np.unique(group, return_inverse=True)
-                ll_groups[key] = np.arange(len(unique_groups))[inverse]
-                temp_unique_groups.append(unique_groups)
+            # need to map group inds properly
+            # this is the unique group indexes
+            unique_groups = np.unique(
+                np.concatenate([groups_i for groups_i in groups.values()])
+            )
 
-            unique_groups = np.unique(np.concatenate(temp_unique_groups))
+            # this is the map to those indexes tha tis used in the likelihood
+            groups_in = np.arange(len(unique_groups))
+
+            ll_groups = {}
+            for key, group in groups.items():
+                temp_unique_groups, inverse = np.unique(group, return_inverse=True)
+                keep_groups = groups_in[np.in1d(unique_groups, temp_unique_groups)]
+                ll_groups[key] = keep_groups[inverse]
 
             for i, (name, coords) in enumerate(x.items()):
                 ntemps, nwalkers, nleaves_max, ndim = coords.shape
@@ -1130,7 +1136,10 @@ class _FunctionWrapper(object):
                     blobs_out.reshape(ntemps, nwalkers, -1),
                 ]
             else:
-                ll[unique_groups] = out
+                try:
+                    ll[unique_groups] = out
+                except ValueError:
+                    breakpoint()
                 ll[inds_fix_zeros] = self.fill_zero_leaves_val
                 return ll.reshape(ntemps, nwalkers)
 
