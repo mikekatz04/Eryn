@@ -204,7 +204,6 @@ class ReversibleJump(Move):
             # numerator term so -ln
             edge_factors[inds_max] -= np.log(1 / 2.0)
 
-        breakpoint()
         factors += edge_factors
 
         # Compute prior of the proposed position
