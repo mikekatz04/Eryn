@@ -164,7 +164,7 @@ class ReversibleJump(Move):
                         # ]
 
                     # removing
-                    else:
+                    elif change_tw == -1:
                         # change_tw == -1
                         # find which leavs are used
                         inds_true = np.where(inds_tw == True)[0]
@@ -177,6 +177,9 @@ class ReversibleJump(Move):
                             )
                             decrease_i += 1
                         # do not care currently about what we do with discarded coords, they just sit in the state
+                    # model component number not changing
+                    else:
+                        pass
 
         # propose new sources and coordinates
         q, new_inds, factors = self.get_proposal(
@@ -201,6 +204,7 @@ class ReversibleJump(Move):
             # numerator term so -ln
             edge_factors[inds_max] -= np.log(1 / 2.0)
 
+        breakpoint()
         factors += edge_factors
 
         # Compute prior of the proposed position
