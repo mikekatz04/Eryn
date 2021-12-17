@@ -842,9 +842,6 @@ class EnsembleSampler(object):
             # get group information from the inds dict
             groups = groups_from_inds(inds)
 
-            # number of groups
-            num_groups = groups[list(groups.keys())[0]].max() + 1
-
             for i, (name, coords_i) in enumerate(coords.items()):
                 x_in[name] = coords_i[inds[name]]
 
@@ -853,7 +850,7 @@ class EnsembleSampler(object):
                 prior_out_temp = self.priors[name].logpdf(x_in[name])
 
                 # arrange prior values by groups
-                for i in range(num_groups):
+                for i in np.unique(groups[name]):
                     inds_temp = np.where(groups[name] == i)[0]
                     num_in_group = len(inds_temp)
                     # check = (prior_out_temp[inds_temp].sum() / num_in_group)
@@ -1098,7 +1095,7 @@ class _FunctionWrapper(object):
                 np.concatenate([groups_i for groups_i in groups.values()])
             )
 
-            # this is the map to those indexes tha tis used in the likelihood
+            # this is the map to those indexes that are used in the likelihood
             groups_in = np.arange(len(unique_groups))
 
             ll_groups = {}
