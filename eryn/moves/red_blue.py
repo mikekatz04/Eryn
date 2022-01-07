@@ -271,6 +271,8 @@ class RedBlueMove(Move, ABC):
                 else:
                     new_branch_supps = None
 
+                # TODO: add supplimental prepare step
+                
                 if state.supplimental is not None:
                     # TODO: should there be a copy?
                     new_supps = np.take_along_axis(state.supplimental, all_inds_shaped, axis=1)
