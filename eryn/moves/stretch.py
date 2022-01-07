@@ -26,7 +26,7 @@ class StretchMove(RedBlueMove):
         self.a = a
         super(StretchMove, self).__init__(**kwargs)
 
-    def get_proposal(self, s_all, c_all, random, inds_s=None, inds_c=None):
+    def get_proposal(self, s_all, c_all, random, inds_s=None, inds_c=None, **kwargs):
         """Generate stretch proposal
 
         # TODO: add log proposal from ptemcee

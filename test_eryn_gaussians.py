@@ -1,4 +1,4 @@
-from eryn.state import State
+from eryn.state import State, BranchSupplimental
 from eryn.backends import Backend, HDFBackend
 from eryn.ensemble import EnsembleSampler
 from eryn.prior import uniform_dist
@@ -15,7 +15,7 @@ def gaussian_flat(x, a, b, c):
     return f_x
 
 
-def log_prob_fn(x1, group1, t, data, inds=None, fill_inds=[], fill_values=None):
+def log_prob_fn(x1, group1, supps, branches_supps, t, data, inds=None, fill_inds=[], fill_values=None):
 
     # gauss
     if len(fill_inds) > 0:
@@ -39,6 +39,9 @@ def log_prob_fn(x1, group1, t, data, inds=None, fill_inds=[], fill_values=None):
 
     gauss_out = gaussian(t, a, b, c)
 
+    for i, gauss_out_i in enumerate(gauss_out):
+        branches_supps["templates"][i][:] = gauss_out_i[:]
+
     num_groups = group1.max() + 1
 
     template = np.zeros((num_groups, len(t)))
@@ -46,6 +49,8 @@ def log_prob_fn(x1, group1, t, data, inds=None, fill_inds=[], fill_values=None):
         inds1 = np.where(group1 == i)
 
         template[i] += gauss_out[inds1].sum(axis=0)
+        supps["data_streams"][i][:] = template[i]
+
     # breakpoint()
     ll = -0.5 * np.sum(((template - data) / sigma) ** 2, axis=-1)  #  / len(t)
     return ll
@@ -86,7 +91,7 @@ import matplotlib.pyplot as plt
 
 plt.plot(t, y, label="data", color="lightskyblue")
 plt.plot(t, injection, label="injection", color="crimson")
-plt.show()
+#plt.show()
 plt.close()
 
 priors = {
@@ -152,21 +157,38 @@ groups = {
     name: np.repeat(groups[name], coords[name].shape[2], axis=-1) for name in groups
 }
 
-coords_in = {name: coords[name][inds[name]] for name in coords}
-groups_in = {name: groups[name][inds[name]] for name in groups}
-
-log_prob = log_prob_fn(
-    coords_in["gauss"], groups_in["gauss"], t, y, fill_inds=[], fill_values=None,
-)
-
-log_prob = log_prob.reshape(ntemps, nwalkers)
 betas = np.linspace(1.0, 0.0, ntemps)
 
 blobs = None  # np.random.randn(ntemps, nwalkers, 3)
 
-state = State(coords, log_prob=log_prob, betas=betas, blobs=blobs, inds=inds)
+# check = log_prob_fn_wrap(means[None, None, :], means, cov)
+obj_contained_shape = (ntemps, nwalkers, nleaves_max[0], num)
+obj_contained = np.zeros(obj_contained_shape)
+fisher_shape = (ntemps, nwalkers, nleaves_max[0], 10, 10)
+fisher_contained = np.zeros(fisher_shape)
 
-state2 = State(state)
+data_shape = (ntemps, nwalkers, num)
+data_test_in = np.zeros(data_shape)
+
+in_dict = {"templates": obj_contained, "fisher": fisher_contained}
+branch_supplimental = {"gauss": BranchSupplimental(in_dict, obj_contained_shape=obj_contained_shape[:3])}
+
+supplimental_in_dict = {"data_streams": data_test_in}
+supplimental = BranchSupplimental(supplimental_in_dict, obj_contained_shape=data_shape[:2])
+
+coords_in = {name: coords[name][inds[name]] for name in coords}
+groups_in = {name: groups[name][inds[name]] for name in groups}
+branch_supplimental_in = {name: branch_supplimental[name][inds[name]] for name in branch_supplimental}
+
+log_prob = log_prob_fn(
+    coords_in["gauss"], groups_in["gauss"], supplimental.flat, branch_supplimental_in["gauss"], t, y, fill_inds=[], fill_values=None,
+)
+
+log_prob = log_prob.reshape(ntemps, nwalkers)
+
+state = State(coords, log_prob=log_prob, betas=betas, blobs=blobs, inds=inds, branch_supplimental=branch_supplimental, supplimental=supplimental)
+
+#state2 = State(state)
 
 backend = None  # HDFBackend('test_out.h5')
 """
@@ -201,6 +223,7 @@ ensemble = EnsembleSampler(
     nleaves_max=nleaves_max,
     nleaves_min=0,
     provide_groups=True,
+    provide_supplimental=True,
     moves=moves,
     plot_iterations=-1,
     fill_zero_leaves_val=-1e5,
@@ -226,7 +249,7 @@ import matplotlib.pyplot as plt
 check = ensemble.get_chain()["gauss"][:, 0, :, :, 1].flatten()
 check = check[check != 0.0]
 plt.hist(check, bins=30)
-plt.show()
+#plt.show()
 
 plt.close()
 

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from eryn.state import BranchSupplimental
 import numpy as np
 
 __all__ = ["Move"]
@@ -140,6 +141,52 @@ class Move(object):
             )
             for name in new_inds
         ]
+
+        # check for branches_supplimental
+        run_branches_supplimental = False
+        for name, value in old_state.branches_supplimental.items():
+            if value is not None:
+                run_branches_supplimental = True
+
+        if run_branches_supplimental:
+            # branch_supplimental
+            temp_change_branch_supplimental = {}
+            for name in old_state.branches:
+                if old_state.branches[name].branch_supplimental is not None:
+                    old_branch_supplimental = old_state.branches[name].branch_supplimental.take_along_axis(subset[:, :, None], axis=1)
+                    new_branch_supplimental = new_state.branches[name].branch_supplimental[:]
+
+                    temp_change_branch_supplimental[name] = BranchSupplimental(
+                        {key:
+                        new_branch_supplimental[key] * (accepted_temp[:, :, None])
+                        + old_branch_supplimental[key] * (~accepted_temp[:, :, None])
+                        for key in old_branch_supplimental
+                        }, obj_contained_shape=new_state.branches_supplimental[name].shape, copy=True
+                    )
+
+                else:
+                    temp_change_branch_supplimental[name] = None
+
+             # TODO: check Nones
+
+            [
+                old_state.branches[name].branch_supplimental.put_along_axis(
+                    subset[:, :, None],
+                    temp_change_inds[name],
+                    axis=1,
+                )
+                for name in new_inds if temp_change_branch_supplimental[name] is not None
+            ]
+
+        if old_state.supplimental is not None:
+            # suppliment
+            old_suppliment = old_state.supplimental.take_along_axis(subset, axis=1)
+            new_suppliment = new_state.supplimental[:]
+            temp_change_suppliment = {name: new_suppliment[name] * (accepted_temp) + old_suppliment[name] * (
+                ~accepted_temp
+            ) for name in old_suppliment}
+
+            old_state.supplimental.put_along_axis(subset, temp_change_suppliment, axis=1)
 
         # coords
         old_coords = {

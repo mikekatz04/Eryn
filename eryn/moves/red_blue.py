@@ -170,6 +170,7 @@ class RedBlueMove(Move, ABC):
                     )
                     for name in state.branches
                 }
+
                 temp_coords = {
                     name: np.take_along_axis(
                         state.branches[name].coords,
@@ -210,8 +211,6 @@ class RedBlueMove(Move, ABC):
                     for name, branch in state.branches.items()
                 }
                 factors = np.zeros((ntemps, nwalkers_here))
-
-                # Get the two halves of the ensemble.
                 for t in range(ntemps):
                     sets = {
                         key: [
@@ -261,8 +260,25 @@ class RedBlueMove(Move, ABC):
                 if gs is not None:
                     logp[np.where(np.sum(keep_arr, axis=-1) == 0)] = -np.inf
 
+                # setup supplimental information
+                if state.branches_supplimental is not None:
+                    new_branch_supps = {
+                        name: np.take_along_axis(
+                            state.branches[name].inds, all_inds_shaped[:, :, None], axis=1
+                        )
+                        for name in state.branches
+                    }
+                else:
+                    new_branch_supps = None
+
+                if state.supplimental is not None:
+                    # TODO: should there be a copy?
+                    new_supps = np.take_along_axis(state.supplimental, all_inds_shaped, axis=1)
+                else:
+                    new_supps = None
+
                 # Compute the lnprobs of the proposed position.
-                logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds, logp=logp)
+                logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
 
                 # catch and warn about nans
                 if np.any(np.isnan(logl)):
@@ -296,7 +312,7 @@ class RedBlueMove(Move, ABC):
                 )
 
                 new_state = State(
-                    q, log_prob=logl, log_prior=logp, blobs=new_blobs, inds=new_inds
+                    q, log_prob=logl, log_prior=logp, blobs=new_blobs, inds=new_inds, supplimental=new_supps, branch_supplimental=new_branch_supps
                 )
 
                 state = self.update(
