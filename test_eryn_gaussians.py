@@ -56,6 +56,9 @@ def log_prob_fn(x1, group1, supps, branches_supps, t, data, inds=None, fill_inds
     return ll
 
 
+def adjust_supps_pre_logl(q, inds=None, logp=None, supps=None, branch_supps=None):
+    return
+
 nwalkers = 50
 ntemps = 10
 # nbranches = 2
@@ -209,7 +212,7 @@ cov = {"gauss": np.diag(np.ones(3)) * factor}
 # backend.grow(100, blobs)
 from eryn.moves import GaussianMove
 
-moves = GaussianMove(cov)
+moves = GaussianMove(cov, adjust_supps_pre_logl_func=adjust_supps_pre_logl)
 
 ensemble = EnsembleSampler(
     nwalkers,

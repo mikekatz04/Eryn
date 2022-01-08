@@ -4,7 +4,7 @@ from copy import deepcopy
 import numpy as np
 import warnings
 
-from ..state import State
+from ..state import BranchSupplimental, State
 from .move import Move
 
 __all__ = ["RedBlueMove"]
@@ -263,21 +263,30 @@ class RedBlueMove(Move, ABC):
                 # setup supplimental information
                 if state.branches_supplimental is not None:
                     new_branch_supps = {
-                        name: np.take_along_axis(
-                            state.branches[name].inds, all_inds_shaped[:, :, None], axis=1
+                        name: state.branches[name].branch_supplimental.take_along_axis(
+                            all_inds_shaped[:, :, None], axis=1
                         )
                         for name in state.branches
                     }
+                    new_branch_supps = {name: BranchSupplimental(new_branch_supps[name], obj_contained_shape=new_inds[name].shape, copy=False) for name in new_branch_supps}
+
                 else:
                     new_branch_supps = None
 
                 # TODO: add supplimental prepare step
-                
+
                 if state.supplimental is not None:
                     # TODO: should there be a copy?
-                    new_supps = np.take_along_axis(state.supplimental, all_inds_shaped, axis=1)
+                    new_supps = BranchSupplimental(state.supplimental.take_along_axis(all_inds_shaped, axis=1), obj_contained_shape=(ntemps, nwalkers), copy=False)
+
                 else:
                     new_supps = None
+
+                if (new_branch_supps is not None or new_supps is not None) and self.adjust_supps_pre_logl_func is not None:
+                    new_supps_in = new_branch_supps[:] if new_supps is not None else None
+                    new_branch_supps_in = {name: new_branch_supps[name][:] for name in new_branch_supps}  if new_branch_supps is not None else None
+
+                    self.adjust_supps_pre_logl_func(q, inds=new_inds, logp=logp, supps=new_supps_in, branch_supps=new_branch_supps_in, new_inds_adjust=new_inds_adjust)
 
                 # Compute the lnprobs of the proposed position.
                 logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)

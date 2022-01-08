@@ -14,12 +14,14 @@ class Move(object):
             This object controls the tempering. It is passes to the parent class
             to moves so that all proposals can share and use temperature settings.
             (default: ``None``)
+        # TODO: update
 
     """
 
-    def __init__(self, temperature_control=None, periodic=None):
+    def __init__(self, temperature_control=None, periodic=None, adjust_supps_pre_logl_func=None):
         self.temperature_control = temperature_control
         self.periodic = periodic
+        self.adjust_supps_pre_logl_func = adjust_supps_pre_logl_func
 
     @property
     def temperature_control(self):
@@ -156,23 +158,26 @@ class Move(object):
                     old_branch_supplimental = old_state.branches[name].branch_supplimental.take_along_axis(subset[:, :, None], axis=1)
                     new_branch_supplimental = new_state.branches[name].branch_supplimental[:]
 
-                    temp_change_branch_supplimental[name] = BranchSupplimental(
-                        {key:
-                        new_branch_supplimental[key] * (accepted_temp[:, :, None])
-                        + old_branch_supplimental[key] * (~accepted_temp[:, :, None])
-                        for key in old_branch_supplimental
-                        }, obj_contained_shape=new_state.branches_supplimental[name].shape, copy=True
-                    )
+                    tmp = {}
+                    for key in old_branch_supplimental:
+                        accepted_temp_here = accepted_temp.copy()
+                        if new_branch_supplimental[key].dtype.name != "object":
+                            for _ in range(new_branch_supplimental[key].ndim - accepted_temp_here.ndim):
+                                accepted_temp_here = np.expand_dims(accepted_temp_here, (-1,))
+
+                        tmp[key] = (new_branch_supplimental[key] * (accepted_temp_here)
+                                    + old_branch_supplimental[key] * (~accepted_temp_here))
+
+                    temp_change_branch_supplimental[name] = BranchSupplimental(tmp, obj_contained_shape=new_state.branches_supplimental[name].shape, copy=True)
 
                 else:
                     temp_change_branch_supplimental[name] = None
-
+            
              # TODO: check Nones
-
             [
                 old_state.branches[name].branch_supplimental.put_along_axis(
                     subset[:, :, None],
-                    temp_change_inds[name],
+                    temp_change_branch_supplimental[name][:],
                     axis=1,
                 )
                 for name in new_inds if temp_change_branch_supplimental[name] is not None
@@ -182,10 +187,17 @@ class Move(object):
             # suppliment
             old_suppliment = old_state.supplimental.take_along_axis(subset, axis=1)
             new_suppliment = new_state.supplimental[:]
-            temp_change_suppliment = {name: new_suppliment[name] * (accepted_temp) + old_suppliment[name] * (
-                ~accepted_temp
-            ) for name in old_suppliment}
+            
+            accepted_temp_here = accepted_temp.copy()
 
+            temp_change_suppliment = {}
+            for name in old_suppliment:
+                if old_suppliment[name].dtype.name != "object":
+                    for _ in range(old_suppliment[name].ndim - accepted_temp_here.ndim):
+                        accepted_temp_here = np.expand_dims(accepted_temp_here, (-1,))
+                temp_change_suppliment[name] = new_suppliment[name] * (accepted_temp_here) + old_suppliment[name] * (
+                    ~accepted_temp_here
+                )
             old_state.supplimental.put_along_axis(subset, temp_change_suppliment, axis=1)
 
         # coords
@@ -234,3 +246,6 @@ class Move(object):
             )
 
         return old_state
+
+
+

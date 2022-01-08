@@ -42,32 +42,38 @@ class BranchSupplimental(object):
             elif obj_contained_shape is None:
                 raise ValueError("If obj_contained is not an already built object array, obj_contained_shape cannot be None.")
 
+            
             else:
                 self.ndim = ndim =  len(obj_contained_shape)
-                self.holder[name] = np.empty(obj_contained_shape, dtype=object)
-                if len(obj_contained) != obj_contained_shape[0]:
-                    raise ValueError("Shapes of obj_contained does not match obj_contained_shape along axis 0.")
-
-                if ndim > 1:
-                    for i in range(obj_contained_shape[0]):
-                        if len(obj_contained[i]) != obj_contained_shape[1]:
-                                raise ValueError("Shapes of obj_contained does not match obj_contained_sha along axis 1.")
-
-                        if ndim > 2:
-                            for j in range(obj_contained_shape[1]):
-                                if len(obj_contained[i][j]) != obj_contained_shape[2]:
-                                    raise ValueError("Shapes of obj_contained does not match obj_contained_shape along axis 2.")
-                                
-                                for k in range(obj_contained_shape[2]):
-                                    # TODO: copy?
-                                    self.holder[name][i, j, k] = obj_contained[i][j][k]
-                        else:
-                            for j in range(obj_contained_shape[1]):
-                                self.holder[name][i, j] = obj_contained[i][j]
+                
+                if isinstance(obj_contained, np.ndarray):
+                    self.holder[name] = obj_contained.copy()
 
                 else:
-                    for i in range(obj_contained_shape[0]):
-                        self.holder[name][i] = obj_contained[i]
+                    self.holder[name] = np.empty(obj_contained_shape, dtype=object)
+                    if len(obj_contained) != obj_contained_shape[0]:
+                        raise ValueError("Shapes of obj_contained does not match obj_contained_shape along axis 0.")
+
+                    if ndim > 1:
+                        for i in range(obj_contained_shape[0]):
+                            if len(obj_contained[i]) != obj_contained_shape[1]:
+                                    raise ValueError("Shapes of obj_contained does not match obj_contained_sha along axis 1.")
+
+                            if ndim > 2:
+                                for j in range(obj_contained_shape[1]):
+                                    if len(obj_contained[i][j]) != obj_contained_shape[2]:
+                                        raise ValueError("Shapes of obj_contained does not match obj_contained_shape along axis 2.")
+                                    
+                                    for k in range(obj_contained_shape[2]):
+                                        # TODO: copy?
+                                        self.holder[name][i, j, k] = obj_contained[i][j][k]
+                            else:
+                                for j in range(obj_contained_shape[1]):
+                                    self.holder[name][i, j] = obj_contained[i][j]
+
+                    else:
+                        for i in range(obj_contained_shape[0]):
+                            self.holder[name][i] = obj_contained[i]
 
         self.shape = obj_contained_shape
         self.ndim = len(self.shape)
@@ -77,18 +83,43 @@ class BranchSupplimental(object):
 
     def __setitem__(self, tmp, new_value):
         for name, values in self.holder.items():
+            if name not in new_value:
+                continue
             self.holder[name][tmp] = new_value[name]
 
     def take_along_axis(self, indices, axis):
-        return {name: np.take_along_axis(values, indices, axis) for name, values in self.holder.items()}
-
-    def put_along_axis(self, indices, values, axis):
+        out = {}
+        
         for name, values in self.holder.items():
-            np.put_along_axis(self.holder[name], indices, values, axis)
+            indices_temp = indices.copy()
+            if isinstance(values, np.ndarray) and values.dtype.name != "object":
+                for _ in range(values.ndim - indices_temp.ndim):
+                    indices_temp = np.expand_dims(indices_temp, (-1,))
+            try:
+                out[name] = np.take_along_axis(values, indices_temp, axis)
+            except (ValueError, IndexError) as e:
+                breakpoint()
+        return out
+
+    def put_along_axis(self, indices, values_in, axis):
+        for name, values in self.holder.items():
+            if name not in values_in:
+                continue
+            indices_temp = indices.copy()
+            if isinstance(values, np.ndarray) and values.dtype.name != "object":
+                for _ in range(values.ndim - indices_temp.ndim):
+                    indices_temp = np.expand_dims(indices_temp, (-1,))
+            np.put_along_axis(self.holder[name], indices_temp, values_in[name], axis)
 
     @property
     def flat(self):
-        return {name: values.flatten() for name, values in self.holder.items()}
+        out = {}
+        for name, values in self.holder.items():
+            if isinstance(values, np.ndarray) and values.dtype.name != "object":
+                out[name] = values.reshape(-1, values.shape[-1])
+            else:
+                out[name] = values.flatten()
+        return out
 
 
 class Branch(object):

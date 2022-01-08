@@ -73,6 +73,10 @@ class MHMove(Move):
 
         # Compute prior of the proposed position
         logp = model.compute_log_prior_fn(q, inds=state.branches_inds)
+
+        if new_branch_supps is not None or new_supps is not None:
+            self.adjust_supps_pre_logl_func(q, inds=state.branches_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
+
         # Compute the lnprobs of the proposed position.
         # Can adjust supplimentals in place
         logl, new_blobs = model.compute_log_prob_fn(
