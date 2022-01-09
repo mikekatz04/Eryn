@@ -25,8 +25,20 @@ def atleast_4d(x):
 class BranchSupplimental(object):
     def __init__(self, obj_info: dict, obj_contained_shape=None, copy=False):  # obj_contained, obj_contained_shape):
 
-        dc = deepcopy if copy else (lambda x: x)
         self.holder = {}
+        self.shape = None
+        self.add_objects(obj_info, obj_contained_shape=obj_contained_shape, copy=copy)
+
+    def add_objects(self, obj_info: dict, obj_contained_shape=None, copy=False):
+
+        if self.shape is not None and obj_contained_shape is not None:
+            if self.shape != obj_contained_shape:
+                raise ValueError(f"Shape of input object ({obj_contained_shape}) not equivalent to established shape ({self.shape}).")
+        elif obj_contained_shape is None and self.shape is not None:
+            obj_contained_shape = self.shape
+        
+        dc = deepcopy if copy else (lambda x: x)
+        
         for name, obj_contained in obj_info.items():
             # TODO: add cupy
             if obj_contained.dtype.name == "object":
@@ -75,8 +87,25 @@ class BranchSupplimental(object):
                         for i in range(obj_contained_shape[0]):
                             self.holder[name][i] = obj_contained[i]
 
-        self.shape = obj_contained_shape
-        self.ndim = len(self.shape)
+        if self.shape is None:
+            self.shape = obj_contained_shape
+            self.ndim = len(self.shape)
+
+    def remove_objects(self, names):
+        if not isinstance(names, list):
+            if not isinstance(names, str):
+                raise ValueError("names must be a string or list of strings.")
+                
+            names = [names]
+        for name in names:
+            self.holder.pop(name)
+
+    @property
+    def contained_objects(self):
+        return list(self.holder.keys())
+    
+    def __contains__(self, name: str):
+        return (name in self.holder)
             
     def __getitem__(self, tmp):
         return {name: values[tmp] for name, values in self.holder.items()}
@@ -110,6 +139,8 @@ class BranchSupplimental(object):
                 for _ in range(values.ndim - indices_temp.ndim):
                     indices_temp = np.expand_dims(indices_temp, (-1,))
             np.put_along_axis(self.holder[name], indices_temp, values_in[name], axis)
+
+    
 
     @property
     def flat(self):

@@ -135,6 +135,7 @@ class ReversibleJump(Move):
             inds_for_change[name]["-1"] = np.zeros((num_decreases, 3), dtype=int)
 
             # TODO: not loop ? Is it necessary?
+            # TODO: might be able to subtract new inds from old inds type of thing
             # fill the inds_for_change
             increase_i = 0
             decrease_i = 0
@@ -207,22 +208,34 @@ class ReversibleJump(Move):
         factors += edge_factors
 
         # setup supplimental information
-        if state.branches_supplimental is not None:
-            new_branch_supps = deepcopy(state.branches_supplimental)
-        else:
-            new_branch_supps = None
 
         if state.supplimental is not None:
             # TODO: should there be a copy?
             new_supps = deepcopy(state.supplimental)
+            
         else:   
             new_supps = None
-        
+
+        if state.branches_supplimental is not None:
+            new_branch_supps = deepcopy(state.branches_supplimental)
+            for name in new_branch_supps:
+                indicator_inds = (new_inds[name].astype(int) - state.branches_inds[name].astype(int)) > 0
+                new_branch_supps[name].add_objects({"inds_keep": indicator_inds})
+
+        else:
+            new_branch_supps = None
+            if new_supps is not None:
+                new_branch_supps = {}
+                for name in new_branch_supps:
+                    indicator_inds = (new_inds[name].astype(int) - state.branches_inds[name].astype(int)) > 0
+                    new_branch_supps[name] = BranchSupplimental({"inds_keep": indicator_inds}, obj_contained_shape=new_inds[name].shape, copy=False)
+
         # Compute prior of the proposed position
         logp = model.compute_log_prior_fn(q, inds=new_inds)
 
-        if (new_branch_supps is not None or new_supps is not None) and self.adjust_supps_pre_logl_func is not None:
-            self.adjust_supps_pre_logl_func(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
+        
+        #if (new_branch_supps is not None or new_supps is not None) and self.adjust_supps_pre_logl_func is not None:
+        #    self.adjust_supps_pre_logl_func(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
 
         # Compute the lnprobs of the proposed position.
         logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
