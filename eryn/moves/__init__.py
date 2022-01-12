@@ -11,7 +11,8 @@ from .stretch import StretchMove
 from .walk import WalkMove
 from .tempering import TemperatureControl
 from .rj import ReversibleJump
-from .priorgenrj import PriorGenerate
+from .priorgenrj import PriorGenerateRJ
+from .priorgen import PriorGenerate
 
 __all__ = [
     "Move",
@@ -22,6 +23,7 @@ __all__ = [
     "WalkMove",
     "KDEMove",
     "DEMove",
+    "PriorGenerateRJ",
     "PriorGenerate",
     "TemperatureControl",
     "ReversibleJump",

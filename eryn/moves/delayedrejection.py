@@ -75,55 +75,75 @@ class DelayedRejection(Move):
         logP = self.compute_log_posterior(logl, logp)
 
         logprop_density_ratio = 0.0
-        for kk in range(driter):
-            logprop_density_ratio += self.get_log_proposal_ratio_for_iter(kk, stateslist)
+        # for kk in range(driter):
+        #     logprop_density_ratio += self.get_log_proposal_ratio_for_iter(kk, stateslist)
 
-        logalpha = logP - prev_logP + loga2 - loga1 + logprop_density_ratio
+        logalpha = logP - prev_logP + loga2 - loga1 - logprop_density_ratio
 
         return logalpha, logl, logp
 
-    # TODO: This assumes a Gaussian proposal. We need to think how to make it work with the factors?
-    def get_log_proposal_ratio_for_iter(self, iq, statespath):
-        """
-        Gaussian nth stage log proposal ratio. Since it's symmetric, after the third
-        iteration, it depends only on the first, i-th and (i-1)th points.
-        """
-        stage = len(statespath) - 1 - 1  # - 1, i
-        zq    = 0.0  # Not too deep into the iterations = symmetric
-        if stage != iq:
-            # breakpoint()
-            for model in statespath[0].branches_coords:
-                x1, x2, x3, x4 = self.get_state_coords(iq, stage, statespath, model)
-                invCmat = self.proposal.all_proposal[model].invscale
-                # TODO: Check if this does it right across dimensions. A: It does not. I need to think about it more
-                zq += -0.5*((np.linalg.norm(np.dot(x4-x3, invCmat)))**2 - (np.linalg.norm(np.dot(x2-x1, invCmat)))**2)
-                # zq = 0.0
-        return zq
+    # # TODO: This assumes a Gaussian proposal. We need to think how to make it work with the factors?
+    # def get_log_proposal_ratio_for_iter(self, iq, statespath):
+    #     """
+    #     Gaussian nth stage log proposal ratio. Since it's symmetric, after the third
+    #     iteration, it depends only on the first, i-th and (i-1)th points.
+    #     """
+    #     stage = len(statespath) - 2
+    #     ntemps, nwalkers, _, _ = statespath[0].branches[list(statespath[0].branches.keys())[0]].shape
+    #     zq = np.zeros((ntemps, nwalkers))  # Not too deep into the iterations = symmetric
 
-    def get_state_coords(self, iq, stage, statespath, m):
-        """
-        Extract coordinates from states for the given path.
-        """
-        x1 = statespath[0].branches_coords[m]
-        x2 = statespath[iq + 1].branches_coords[m]  
-        x3 = statespath[stage + 1].branches_coords[m]
-        x4 = statespath[stage - iq].branches_coords[m]
-        return x1, x2, x3, x4
+    #     for m in statespath[0].branches:
+    #         _, _, nmodelsmax, _ = statespath[0].branches[m].shape
+    #         if stage != iq:
+    #             x1, x2, x3, x4 = self.get_state_coords(iq, stage, statespath, m)
+    #             invCmat = self.proposal.all_proposal[m].invscale
+    #             # TODO: Vecrtorize, optimize               
+    #             for t in range(ntemps):
+    #                 for w in range(nwalkers): 
+    #                     for nm in range(nmodelsmax):
+    #                         c1 = x2[t,w,nm,:]-x1[t,w,nm,:]
+    #                         c2 = x4[t,w,nm,:]-x3[t,w,nm,:]
+    #                         # print('i=', t,w,nm, ' z=', zq[t,w] )
+    #                         # breakpoint()
+    #                         zq[t,w] += -0.5*((np.linalg.norm(np.dot(c2, invCmat)))**2 - (np.linalg.norm(np.dot(c1, invCmat)))**2)
+    #             # zq = 0.0
+    #     return zq
+
+    # def get_state_coords(self, iq, stage, statespath, m):
+    #     """
+    #     Extract coordinates from states for the given path.
+    #     """
+    #     x1 = statespath[0].branches_coords[m]
+    #     x2 = statespath[iq + 1].branches_coords[m]  
+    #     x3 = statespath[stage + 1].branches_coords[m]
+    #     x4 = statespath[stage - iq].branches_coords[m]
+    #     return x1, x2, x3, x4
 
     def get_new_state(self, model, state, first_state, rj_inds):
         """ A utility function to propose new points
         """
-        self.proposal.temperature_control.betas = np.zeros_like(state.betas)
-        new_state, _ = self.proposal.propose(model, state) # Propose for all walkers and temps, get posterior and prior
-        logl = new_state.log_prob
-        logp = new_state.log_prior
+        # self.proposal.temperature_control.betas = np.zeros_like(state.betas)
+        # new_state, _ = self.proposal.propose(model, state) # Propose for all walkers and temps, get posterior and prior
+        
+        qn, inds, _ = self.proposal.get_proposal(state.branches_coords, rj_inds)
+        
+        # Compute prior of the proposed position
+        logp = model.compute_log_prior_fn(qn, inds=rj_inds)
+        # Compute the lnprobs of the proposed position. 
+        logl, new_blobs = model.compute_log_prob_fn(qn, inds=rj_inds, logp=logp)
+        
+        # new_state = State(q, log_prob=logl, log_prior=logp, blobs=None, inds=new_inds)
+        # state = self.update(state, new_state, accepted)
 
-        # Set the temps back to the original values, get tempered posterior
-        self.proposal.temperature_control.betas = first_state.betas.copy()
+        # logl = new_state.log_prob
+        # logp = new_state.log_prior
+
+        # # Set the temps back to the original values, get tempered posterior
+        # self.proposal.temperature_control.betas = first_state.betas.copy()
 
         # Update the parameters, update the state. TODO: Fix blobs?
         new_state = State(
-            state.branches_coords, log_prob=logl, log_prior=logp, blobs=state.blobs, inds=rj_inds
+            state.branches_coords, log_prob=logl, log_prior=logp, blobs=new_blobs, inds=rj_inds
         ) # I create a new initial state that all are accepted
         return new_state
 
@@ -189,7 +209,7 @@ class DelayedRejection(Move):
 
             states_path.append(new_state) # Add this new state to the path
             
-            # print(" - Iter {}: Accepted = {}/{}".format(driter, np.sum(accepted), np.prod(accepted.shape)))    
+            print(" - Iter {}: Accepted = {}/{}".format(driter, np.sum(accepted), np.prod(accepted.shape)))    
             driter += 1 # Increase iteration
         
         if self.temperature_control is not None:

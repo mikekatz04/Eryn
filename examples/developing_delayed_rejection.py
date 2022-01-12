@@ -200,6 +200,8 @@ state = State(coords, log_prob=log_prob, log_prior=logp, betas=betas, blobs=blob
 
 state, accepted = drmoves.propose(model, state)
 
+state, accepted = drmoves.propose(accepted, model, state, new_inds, factors)
+
 print('end')
 breakpoint()
 

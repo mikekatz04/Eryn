@@ -2,13 +2,13 @@
 
 import numpy as np
 
-from .rj import ReversibleJump
+from .move import Move
 from ..prior import PriorContainer
 
-__all__ = ["PriorGenerateRJ"]
+__all__ = ["PriorGenerate"]
 
-class PriorGenerateRJ(ReversibleJump):
-    """Generate Revesible-Jump proposals from prior
+class PriorGenerate(Move):
+    """Generate proposals from prior
 
     Args:
         priors (object): :class:`PriorContainer` object that has ``logpdf``
@@ -22,10 +22,9 @@ class PriorGenerateRJ(ReversibleJump):
             if not isinstance(priors[key], PriorContainer):
                 raise ValueError("Priors need to be eryn.priors.PriorContainer object.")
         self.priors = priors
+        super(PriorGenerate, self).__init__(*args, **kwargs)
 
-        super(PriorGenerateRJ, self).__init__(*args, **kwargs)
-
-    def get_proposal(self, all_coords, all_inds, all_inds_for_change, random):
+    def get_proposal(self, all_coords, all_inds):
         """Make a proposal
 
         Args:
@@ -35,15 +34,6 @@ class PriorGenerateRJ(ReversibleJump):
             all_inds (dict): Keys are ``branch_names``. Values are
                 np.ndarray[ntemps, nwalkers, nleaves_max]. These are the boolean
                 arrays marking which leaves are currently used within each walker.
-            all_inds_for_change (dict): Keys are ``branch_names``. Values are
-                dictionaries. These dictionaries have keys ``"+1"`` and ``"-1"``,
-                indicating waklkers that are adding or removing a leafm respectively.
-                The values for these dicts are ``int`` np.ndarray[..., 3]. The "..." indicates
-                the number of walkers in all temperatures that fall under either adding
-                or removing a leaf. The second dimension, 3, is the indexes into
-                the three-dimensional arrays within ``all_inds`` of the specific leaf
-                that is being added or removed from those leaves currently considered.
-            random (object): Current random state of the sampler.
 
         Returns:
             tuple: Tuple containing proposal information.
@@ -58,48 +48,32 @@ class PriorGenerateRJ(ReversibleJump):
                 in the numerator. -log of factors if in the denominator.
 
         """
-        q = {}
+        q        = {}
+        factors  = {}
         new_inds = {}
-        factors = {}
 
-        for i, (name, coords, inds, inds_for_change) in enumerate(
+        for i, (name, coords, inds) in enumerate(
             zip(
                 all_coords.keys(),
                 all_coords.values(),
                 all_inds.values(),
-                all_inds_for_change.values(),
             )
         ):
-            ntemps, nwalkers, nleaves_max, ndim = coords.shape
-            new_inds[name] = inds.copy()
+            ntemps, nwalkers, _, _ = coords.shape
             q[name] = coords.copy()
+            new_inds[name] = inds.copy()
 
             if i == 0:
                 factors = np.zeros((ntemps, nwalkers))
 
-            # adjust inds
-
-            # adjust deaths from True -> False
-            inds_here = tuple(inds_for_change["-1"].T)
-            new_inds[name][inds_here] = False
-
-            # factor is +log q()
-            current_priors = self.priors[name]
-            factors[inds_here[:2]] += +1 * current_priors.logpdf(q[name][inds_here])
-
-            # adjust births from False -> True
-            inds_here = tuple(inds_for_change["+1"].T)
-            new_inds[name][inds_here] = True
-
             # add coordinates for new leaves
-            current_priors = self.priors[name]
-            inds_here = tuple(inds_for_change["+1"].T)
+            current_priors  = self.priors[name]
+            inds_here       = np.where(inds == True)
             num_inds_change = len(inds_here[0])
-
-            # TODO: Add the possibility of drawing from other distributions than priors (new class)
+            # Draw
             q[name][inds_here] = current_priors.rvs(size=num_inds_change)
 
             # factor is -log q()
-            factors[inds_here[:2]] += -1 * current_priors.logpdf(q[name][inds_here])
-    
-        return q, new_inds, factors
+            factors[inds_here[:2]] += +1 * current_priors.logpdf(q[name][inds_here])
+
+        return q, inds, factors

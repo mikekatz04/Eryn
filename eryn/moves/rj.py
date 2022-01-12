@@ -5,6 +5,7 @@ import numpy as np
 from ..state import State
 from .move import Move
 from .delayedrejection import DelayedRejection
+from .priorgen import PriorGenerate
 
 __all__ = ["RedBlueMove"]
 
@@ -21,7 +22,7 @@ class ReversibleJump(Move):
     """
 
     def __init__(
-        self, max_k, min_k, proposal=None, dr=None, dr_max_iter=5, tune=False, **kwargs
+        self, max_k, min_k, dr_proposal=None, dr=None, dr_max_iter=5, tune=False, **kwargs
     ):
         super(ReversibleJump, self).__init__(**kwargs)
 
@@ -33,17 +34,20 @@ class ReversibleJump(Move):
 
         self.max_k = max_k
         self.min_k = min_k
-        self.tune = tune
-        self.dr = dr
+        self.tune  = tune
+        self.dr    = dr
 
         # Decide if DR is desirable. TODO: Now it uses the prior generator, we need to
         # think carefully if we want to use the in-model sampling proposal
         if self.dr:
             if self.dr is True:
-                if proposal is None:
-                    raise ValueError("If dr==True, must provide proposal kwarg.")
 
-                self.dr = DelayedRejection(proposal, max_iter=dr_max_iter)
+                if dr_proposal is None: # If no proposal is given, we use the prior to generate samples
+                    dr_proposal = PriorGenerate(
+                    self.priors,
+                    temperature_control=self.temperature_control)
+
+                self.dr = DelayedRejection(dr_proposal, max_iter=dr_max_iter)
 
         # TODO: add stuff here if needed like prob of birth / death
 
