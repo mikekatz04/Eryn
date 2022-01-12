@@ -85,7 +85,7 @@ class PriorGenerate(ReversibleJump):
 
             # factor is +log q()
             current_priors = self.priors[name]
-            factors[inds_here[:2]] += -1 * current_priors.logpdf(q[name][inds_here])
+            factors[inds_here[:2]] += +1 * current_priors.logpdf(q[name][inds_here])
 
             # adjust births from False -> True
             inds_here = tuple(inds_for_change["+1"].T)
@@ -100,6 +100,6 @@ class PriorGenerate(ReversibleJump):
             q[name][inds_here] = current_priors.rvs(size=num_inds_change)
 
             # factor is -log q()
-            factors[inds_here[:2]] += +1 * current_priors.logpdf(q[name][inds_here])
+            factors[inds_here[:2]] += -1 * current_priors.logpdf(q[name][inds_here])
 
         return q, new_inds, factors
