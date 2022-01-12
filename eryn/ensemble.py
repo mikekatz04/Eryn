@@ -1148,6 +1148,8 @@ class _FunctionWrapper(object):
 
                 args_in.append(groups_in)
 
+            args_in += self.args
+
             kwargs_in = self.kwargs.copy()
             if self.provide_supplimental:
                 if supps is not None:

@@ -15,7 +15,7 @@ def gaussian_flat(x, a, b, c):
     return f_x
 
 
-def log_prob_fn(x1, group1, supps, branches_supps, t, data, inds=None, fill_inds=[], fill_values=None):
+def log_prob_fn(x1, group1, t, data, supps=None, branch_supps=None, inds=None, fill_inds=[], fill_values=None):
 
     # gauss
     if len(fill_inds) > 0:
@@ -40,7 +40,8 @@ def log_prob_fn(x1, group1, supps, branches_supps, t, data, inds=None, fill_inds
     gauss_out = gaussian(t, a, b, c)
 
     for i, gauss_out_i in enumerate(gauss_out):
-        branches_supps["templates"][i][:] = gauss_out_i[:]
+        if branch_supps is not None:
+            branch_supps["templates"][i][:] = gauss_out_i[:]
 
     num_groups = group1.max() + 1
 
@@ -49,7 +50,11 @@ def log_prob_fn(x1, group1, supps, branches_supps, t, data, inds=None, fill_inds
         inds1 = np.where(group1 == i)
 
         template[i] += gauss_out[inds1].sum(axis=0)
-        supps["data_streams"][i][:] = template[i]
+        if supps is not None:
+            try:    
+                supps["data_streams"][i][:] = template[i]
+            except IndexError:
+                breakpoint()
 
     # breakpoint()
     ll = -0.5 * np.sum(((template - data) / sigma) ** 2, axis=-1)  #  / len(t)
@@ -184,7 +189,7 @@ groups_in = {name: groups[name][inds[name]] for name in groups}
 branch_supplimental_in = {name: branch_supplimental[name][inds[name]] for name in branch_supplimental}
 
 log_prob = log_prob_fn(
-    coords_in["gauss"], groups_in["gauss"], supplimental.flat, branch_supplimental_in["gauss"], t, y, fill_inds=[], fill_values=None,
+    coords_in["gauss"], groups_in["gauss"], t, y, fill_inds=[], fill_values=None, supps=supplimental.flat, branch_supps=branch_supplimental_in["gauss"],
 )
 
 log_prob = log_prob.reshape(ntemps, nwalkers)
