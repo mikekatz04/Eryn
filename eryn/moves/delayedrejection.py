@@ -36,7 +36,7 @@ class DelayedRejection(Move):
                 self.temperature_control.compute_log_posterior_tempered
             )
 
-    def calculate_log_acceptance_ratio(self, stateslist, prev_logP, model, rj_inds):
+    def dr_scheme(self, state, states_path, alpha_0, accepted, prev_logP, model, ntemps, nwalkers, inds=None, dr_iter=0):
         """Calcuate the delayed rejection acceptace ratio. 
 
         Args: 
@@ -45,109 +45,84 @@ class DelayedRejection(Move):
         Returns:
             logalpha: a numpy array containing the acceptance ratios per temperature and walker.
         """
-        # Check to make sure that the dimensions match.
-        ntemps, nwalkers, _, _ = stateslist[0].branches[list(stateslist[0].branches.keys())[0]].shape
 
-        driter = len(stateslist) - 1  # The stage we're in, elements in trypath - 1
-        
-        loga1 = 0.0  # Init
-        loga2 = 0.0  
+        # Get the chains that were rejected
+        rejected = ~accepted # Get the rejected points
 
-        # recursively compute past alphas
-        for kk in range(0, driter - 1):
-            prevla1,_,_ = self.calculate_log_acceptance_ratio(stateslist[0:(kk + 2)], prev_logP, model, rj_inds)
-            prevla1[prevla1>=0] = 0.0 # Ensure we do not get NaNs # TODO: Check if correct
-            loga1 = loga1 + np.log(1 - np.exp(prevla1))
-            prevla2,_,_ = self.calculate_log_acceptance_ratio(stateslist[driter:driter - kk - 2:-1], prev_logP, model, rj_inds)
-            prevla2[prevla2>=0] = 0.0
-            loga2 = loga2 + np.log(1 - np.exp(prevla2))
-            
-            if np.all(loga2 == 1.0): 
-                logalpha = np.ones((ntemps, nwalkers))
-                return logalpha, stateslist[0].log_prob, stateslist[0].log_prior # TODO: check if index 0 is the correct
+        # Draw a uniform random for the previously rejected points
+        randU = model.random.rand(ntemps, nwalkers) # [rejected]
 
-        logp = model.compute_log_prior_fn(stateslist[-1].branches_coords, inds=rj_inds) # inds=stateslist[-1].branches_inds
-        logl, _ = model.compute_log_prob_fn(
-                    stateslist[-1].branches_coords, inds=rj_inds, logp=logp # compute logp and fill -inf to accepted (-inf points are skipped)
-        )
+        # Propose a new point 
+        new_state = self.get_new_state(model, state, inds) # Get a new state
+
+        # Compute log-likelihood and log-prior
+        logp = model.compute_log_prior_fn(new_state.branches_coords, inds=inds) # inds=stateslist[-1].branches_inds
+        logl, _ = model.compute_log_prob_fn(new_state.branches_coords, inds=inds, logp=logp) # compute logp and fill -inf to accepted (-inf points are skipped)
 
         # Compute the logposterior for all
         logP = self.compute_log_posterior(logl, logp)
 
-        logprop_density_ratio = 0.0
-        # for kk in range(driter):
-        #     logprop_density_ratio += self.get_log_proposal_ratio_for_iter(kk, stateslist)
+        # Placeholder for asymmetric proposals
+        logproposal_density_ratio = 0.0
 
-        logalpha = logP - prev_logP + loga2 - loga1 - logprop_density_ratio
+        # Compute the acceptance ratio
+        lndiff  = logP - prev_logP - logproposal_density_ratio
+        alpha_1 = np.exp(lndiff)
+        alpha_1[alpha_1 > 1.0] = 1.0 # np.min((1, alpha))
 
-        return logalpha, logl, logp
+        # update delayed rejection alpha
+        dr_alpha = np.exp( lndiff + np.log(1.0 - alpha_1) - np.log(1.0 - alpha_0) )
+        dr_alpha[dr_alpha > 1.0] = 1.0 # np.min((1., dr_alpha ))
 
-    # # TODO: This assumes a Gaussian proposal. We need to think how to make it work with the factors?
-    # def get_log_proposal_ratio_for_iter(self, iq, statespath):
-    #     """
-    #     Gaussian nth stage log proposal ratio. Since it's symmetric, after the third
-    #     iteration, it depends only on the first, i-th and (i-1)th points.
-    #     """
-    #     stage = len(statespath) - 2
-    #     ntemps, nwalkers, _, _ = statespath[0].branches[list(statespath[0].branches.keys())[0]].shape
-    #     zq = np.zeros((ntemps, nwalkers))  # Not too deep into the iterations = symmetric
+        dr_alpha = np.nan_to_num(dr_alpha) # Automatically reject NaNs
 
-    #     for m in statespath[0].branches:
-    #         _, _, nmodelsmax, _ = statespath[0].branches[m].shape
-    #         if stage != iq:
-    #             x1, x2, x3, x4 = self.get_state_coords(iq, stage, statespath, m)
-    #             invCmat = self.proposal.all_proposal[m].invscale
-    #             # TODO: Vecrtorize, optimize               
-    #             for t in range(ntemps):
-    #                 for w in range(nwalkers): 
-    #                     for nm in range(nmodelsmax):
-    #                         c1 = x2[t,w,nm,:]-x1[t,w,nm,:]
-    #                         c2 = x4[t,w,nm,:]-x3[t,w,nm,:]
-    #                         # print('i=', t,w,nm, ' z=', zq[t,w] )
-    #                         # breakpoint()
-    #                         zq[t,w] += -0.5*((np.linalg.norm(np.dot(c2, invCmat)))**2 - (np.linalg.norm(np.dot(c1, invCmat)))**2)
-    #             # zq = 0.0
-    #     return zq
+        new_accepted = deepcopy(accepted)
 
-    # def get_state_coords(self, iq, stage, statespath, m):
-    #     """
-    #     Extract coordinates from states for the given path.
-    #     """
-    #     x1 = statespath[0].branches_coords[m]
-    #     x2 = statespath[iq + 1].branches_coords[m]  
-    #     x3 = statespath[stage + 1].branches_coords[m]
-    #     x4 = statespath[stage - iq].branches_coords[m]
-    #     return x1, x2, x3, x4
+        # Compute the acceptance probability for the rejected points only
+        new_accepted[rejected] = np.logical_or(dr_alpha >= 1.0, randU < dr_alpha)[rejected]
 
-    def get_new_state(self, model, state, first_state, rj_inds):
+        # print(" - Iter {}: Accepted = {}/{}".format(dr_iter, np.sum(new_accepted[rejected]), np.prod(new_accepted.shape)-np.sum(accepted))) 
+
+        # Update state with the new accepted points
+        new_state = self.update(state, new_state, new_accepted)
+        breakpoint()
+        # Create a new state where we keep the rejected points in order to perform DR
+        # TODO: Check that when I propose a new state I do it only for the rejected +1 proposals
+        new_accepted_flipped = deepcopy(new_accepted)
+        new_accepted_flipped[rejected] = ~new_accepted_flipped[rejected]
+        updated_state_keep_rejected = self.update(state, new_state, new_accepted_flipped)
+    
+        # Continue with theDR loop. Check if all accepted (extreme case). Then stop.
+        if dr_iter <= self.max_iter and not (np.sum(new_accepted) == np.prod(new_accepted.shape)):
+            dr_iter += 1
+            states_path.append(updated_state_keep_rejected)
+            new_state, new_accepted = self.dr_scheme(state, states_path, dr_alpha, new_accepted, \
+                                                    prev_logP, model, ntemps, nwalkers, dr_iter=dr_iter, inds=inds)
+
+        return new_state, new_accepted
+
+
+    def get_new_state(self, model, state, inds_to_use):
         """ A utility function to propose new points
         """
-        # self.proposal.temperature_control.betas = np.zeros_like(state.betas)
-        # new_state, _ = self.proposal.propose(model, state) # Propose for all walkers and temps, get posterior and prior
-        
-        qn, inds, _ = self.proposal.get_proposal(state.branches_coords, rj_inds)
-        
+        # TODO: Isntead of state.branches inds I was using rejected. Is it necessary to calculate all?
+        if inds_to_use is None:
+            inds_to_use = state.branches_inds
+
+        qn, inds, _ = self.proposal.get_proposal(state.branches_coords, inds_to_use)
+
         # Compute prior of the proposed position
-        logp = model.compute_log_prior_fn(qn, inds=rj_inds)
+        logp = model.compute_log_prior_fn(qn, inds=inds_to_use)
         # Compute the lnprobs of the proposed position. 
-        logl, new_blobs = model.compute_log_prob_fn(qn, inds=rj_inds, logp=logp)
-        
-        # new_state = State(q, log_prob=logl, log_prior=logp, blobs=None, inds=new_inds)
-        # state = self.update(state, new_state, accepted)
+        logl, new_blobs = model.compute_log_prob_fn(qn, inds=inds_to_use, logp=logp)
 
-        # logl = new_state.log_prob
-        # logp = new_state.log_prior
-
-        # # Set the temps back to the original values, get tempered posterior
-        # self.proposal.temperature_control.betas = first_state.betas.copy()
-
-        # Update the parameters, update the state. TODO: Fix blobs?
+        # Update the parameters, update the state. TODO: Fix blobs? 
         new_state = State(
-            state.branches_coords, log_prob=logl, log_prior=logp, blobs=new_blobs, inds=rj_inds
+            qn, log_prob=logl, log_prior=logp, blobs=new_blobs, inds=inds_to_use
         ) # I create a new initial state that all are accepted
         return new_state
 
-    def propose(self, accepted, model, state, rj_inds, factors):
+    def propose(self, log_diff_0, accepted, model, state, plus_one_rj_inds, factors):
         """Use the move to generate a proposal and compute the acceptance
 
         Args:
@@ -167,52 +142,26 @@ class DelayedRejection(Move):
         # Check to make sure that the dimensions match.
         ntemps, nwalkers, _, _ = state.branches[list(state.branches.keys())[0]].shape
 
-        initial_state = deepcopy(state)     # Get the current state and save it
-
         # Get the old coords and posterior values
         prev_logl = state.log_prob
         prev_logp = state.log_prior
         prev_logP = self.compute_log_posterior(prev_logl, prev_logp) # takes care of tempering
-
-        # Initialize TODO: Maybe a smarter way to do it?
-        rejind   = ~accepted # Get the rejected points
-        logalpha = np.full((ntemps, nwalkers), -np.inf) 
-        driter   = 1 
-
-        new_state = self.get_new_state(model, state, initial_state, rj_inds)
-
-        states_path = [initial_state, new_state]  # This is the path of states that we need to track
-        loga1 = np.zeros((ntemps, nwalkers, self.max_iter), dtype=bool) # Placeholder to keep the forward calculations -> speed it up a little
         
-        # Start DR loop. Check if all accepted (extreme case). Then stop.
-        # TODO: As currently implemented, it proposes and computes the model for all temps and walkers
-        # TODO: We should try to reduce the computation to those only rejected. Probably through state.branches_inds
-        while (driter < self.max_iter) and not (np.sum(accepted) == np.prod(accepted.shape)):         
-            
-            logalpha, logl, logp = self.calculate_log_acceptance_ratio(states_path, prev_logP, model, rj_inds) 
+        # Initialize 
+        alpha_0  = np.exp(log_diff_0)
+        alpha_0[alpha_0 > 1.0] = 1.0 # np.min((1.0, diff_0)) 
 
-            accepted[rejind] = logalpha[rejind] > np.log(model.random.rand(ntemps, nwalkers)[rejind])
+        # Check to make sure that the dimensions match.
+        ntemps, nwalkers, _, _ = state.branches[list(state.branches.keys())[0]].shape
 
-            rejind = ~accepted # Update the indeces of rejected points (by excluding newly accepted ones)
-            
-            # Switch for remaining rejected cases
-            prev_logl[rejind] = logl[rejind]
-            prev_logp[rejind] = logp[rejind]
+        # Create a given path
+        states_path = [state]
 
-            # Update the parameters, update the state. TODO: Fix blobs?
-            update_state = State(
-                state.branches_coords, log_prob=prev_logl, log_prior=prev_logp, blobs=state.blobs, inds=state.branches_inds
-            )
-            state = self.update(state, update_state, accepted)
+        # print(" - Before DR: Accepted = {}/{}".format(np.sum(accepted), np.prod(accepted.shape))) 
 
-            new_state = self.get_new_state(model, state, initial_state, rj_inds)
-
-            states_path.append(new_state) # Add this new state to the path
-            
-            print(" - Iter {}: Accepted = {}/{}".format(driter, np.sum(accepted), np.prod(accepted.shape)))    
-            driter += 1 # Increase iteration
+        out_state, accepted = self.dr_scheme(state, states_path, alpha_0, accepted, prev_logP, model, ntemps, nwalkers, inds=plus_one_rj_inds)       
         
         if self.temperature_control is not None:
             state, accepted = self.temperature_control.temper_comps(state, accepted)
 
-        return state, accepted
+        return out_state, accepted
