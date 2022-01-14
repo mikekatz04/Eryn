@@ -242,9 +242,8 @@ class ReversibleJump(Move):
             #     # We need the a) rejected points, b) the model,
             #     # c) the current state, d) the indices where we had +1 (True),
             #     # and the e) factors.
-            #     # breakpoint()
             state, accepted = self.dr.propose(
-                accepted, model, state, new_inds, factors
+                lnpdiff, accepted, model, state, new_inds, factors
             )  # model, state
 
         if self.temperature_control is not None:

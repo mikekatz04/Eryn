@@ -74,6 +74,6 @@ class PriorGenerate(Move):
             q[name][inds_here] = current_priors.rvs(size=num_inds_change)
 
             # factor is -log q()
-            factors[inds_here[:2]] += +1 * current_priors.logpdf(q[name][inds_here])
+            # factors[inds_here[:2]] += +1 * current_priors.logpdf(q[name][inds_here])
 
-        return q, inds, factors
+        return q, inds, np.zeros((ntemps, nwalkers))
