@@ -24,7 +24,7 @@ class PriorGenerate(Move):
         self.priors = priors
         super(PriorGenerate, self).__init__(*args, **kwargs)
 
-    def get_proposal(self, all_coords, all_inds):
+    def get_proposal(self, all_coords, inds=None):
         """Make a proposal
 
         Args:
@@ -51,6 +51,9 @@ class PriorGenerate(Move):
         q        = {}
         factors  = {}
         new_inds = {}
+        all_inds = inds
+        if all_inds is None:
+            all_inds = {name: np.ones(coords.shape[:-1], dtype=bool) for name, coords in all_coords}
 
         for i, (name, coords, inds) in enumerate(
             zip(
