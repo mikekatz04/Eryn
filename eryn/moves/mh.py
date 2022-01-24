@@ -60,7 +60,7 @@ class MHMove(Move):
         )
 
         # setup supplimental information
-        if state.branches_supplimental is not None:
+        if not np.all(np.asarray(list(state.branches_supplimental.values())) == None):
             new_branch_supps = deepcopy(state.branches_supplimental)
         else:
             new_branch_supps = None

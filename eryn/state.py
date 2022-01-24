@@ -41,7 +41,7 @@ class BranchSupplimental(object):
         
         for name, obj_contained in obj_info.items():
             # TODO: add cupy
-            if obj_contained.dtype.name == "object":
+            if isinstance(obj_contained, np.ndarray) and obj_contained.dtype.name == "object":
                 # TODO: need to copy?
                 self.holder[name] = dc(obj_contained)
                 if obj_contained_shape is None:
@@ -95,7 +95,7 @@ class BranchSupplimental(object):
         if not isinstance(names, list):
             if not isinstance(names, str):
                 raise ValueError("names must be a string or list of strings.")
-                
+
             names = [names]
         for name in names:
             self.holder.pop(name)

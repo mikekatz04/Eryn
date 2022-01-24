@@ -271,7 +271,7 @@ class RedBlueMove(Move, ABC):
                         new_supps = BranchSupplimental({"inds_change": new_inds_adjust}, obj_contained_shape=(ntemps, nwalkers), copy=False)
 
                 # default for removing inds info from supp
-                if state.branches_supplimental is not None:
+                if not np.all(np.asarray(list(state.branches_supplimental.values())) == None):
                     new_branch_supps = {
                         name: state.branches[name].branch_supplimental.take_along_axis(
                             all_inds_shaped[:, :, None], axis=1
@@ -295,7 +295,7 @@ class RedBlueMove(Move, ABC):
                 # Compute the lnprobs of the proposed position.
                 logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
                     
-                if (new_branch_supps is not None or new_supps is not None):
+                if not np.all(np.asarray(list(new_branch_supps.values())) == None) or new_supps is not None:
                     if new_branch_supps is not None:
                         for name in new_branch_supps:
                             new_branch_supps[name].remove_objects("inds_keep")
