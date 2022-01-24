@@ -164,6 +164,7 @@ class EnsembleSampler(object):
         log_prob_fn,
         priors,
         provide_groups=False,  # TODO: improve this
+        provide_supplimental=False,  # TODO: improve this
         tempering_kwargs={},
         nbranches=1,
         nleaves_max=1,
@@ -200,6 +201,7 @@ class EnsembleSampler(object):
         # TODO: check non-vectorized
 
         self.provide_groups = provide_groups
+        self.provide_supplimental = provide_supplimental
         self.fill_zero_leaves_val = fill_zero_leaves_val
 
         # store default branch names if not given
@@ -443,6 +445,7 @@ class EnsembleSampler(object):
             args,
             kwargs,
             provide_groups=self.provide_groups,
+            provide_supplimental=provide_supplimental,
             fill_zero_leaves_val=self.fill_zero_leaves_val,
         )
 
@@ -875,7 +878,7 @@ class EnsembleSampler(object):
 
             return prior_out
 
-    def compute_log_prob(self, coords, inds=None, logp=None):
+    def compute_log_prob(self, coords, inds=None, logp=None, supps=None, branch_supps=None):
         """Calculate the vector of log-likelihood for the walkers
 
         Args:
@@ -933,7 +936,10 @@ class EnsembleSampler(object):
             for key in inds_copy:
                 inds_copy[key][inds_bad] = False
 
-            results = self.log_prob_fn(p, inds=inds_copy)
+                if branch_supps is not None:
+                    branch_supps[key][inds_bad] = {"inds_keep": False}
+
+            results = self.log_prob_fn(p, inds=inds_copy, supps=supps, branch_supps=branch_supps)
             if not isinstance(results, list):
                 results = [results]
         else:
@@ -1069,18 +1075,26 @@ class _FunctionWrapper(object):
     """
 
     def __init__(
-        self, f, args, kwargs, provide_groups=True, fill_zero_leaves_val=-1e300
+        self, f, args, kwargs, provide_groups=False, provide_supplimental=False, fill_zero_leaves_val=-1e300
     ):
         self.f = f
         self.args = [] if args is None else args
         self.kwargs = {} if kwargs is None else kwargs
         self.provide_groups = provide_groups
+        self.provide_supplimental = provide_supplimental
         self.fill_zero_leaves_val = fill_zero_leaves_val
 
-    def __call__(self, x, inds=None):
+    def __call__(self, x, inds=None, supps=None, branch_supps=None):
         try:
             # take information out of dict and spread to x1..xn
             x_in = {}
+            if self.provide_supplimental:
+                if supps is None and branch_supps is None:
+                    raise ValueError("supps and branch_supps are both None. If self.provide_supplimental is True, must provide some supplimental information.")
+                if branch_supps is not None:
+                    branch_supps_in = {}
+                    
+
             if inds is None:
                 inds = {
                     name: np.full(x[name].shape[:-1], True, dtype=bool) for name in x
@@ -1108,17 +1122,59 @@ class _FunctionWrapper(object):
                 ntemps, nwalkers, nleaves_max, ndim = coords.shape
                 nwalkers_all = ntemps * nwalkers
                 x_in[name] = coords[inds[name]]
+                
+                if self.provide_supplimental:
+                    if branch_supps is not None:
+                        branch_supps_in[name] = branch_supps[name][inds[name]]
 
+            if self.provide_supplimental:
+                if supps is not None:
+                    temp = supps.flat
+                    supps_in = {name: values[keep_groups] for name, values in temp.items()}
+
+            args_in = []
+            
+            params_in = list(x_in.values()) 
+            
+            if len(params_in) == 1:
+                params_in = params_in[0]
+
+            args_in.append(params_in)
+            
             if self.provide_groups:
-                args_in = list(x_in.values()) + list(ll_groups.values())
+                groups_in = list(ll_groups.values())
+                if len(groups_in) == 1:
+                    groups_in = groups_in[0]
 
-            else:
-                args_in = list(x_in.values())
+                args_in.append(groups_in)
 
-            args_in += list(self.args)
+            kwargs_in = self.kwargs.copy()
+            if self.provide_supplimental:
+                if supps is not None:
+                    kwargs_in["supps"] = supps_in
+                if branch_supps is not None:
+                    branch_supps_in_2 = list(branch_supps_in.values())
+                    if len(branch_supps_in_2) == 1:
+                        branch_supps_in_2 = branch_supps_in_2[0]
+                    kwargs_in["branch_supps"] = branch_supps_in_2
 
-            out = self.f(*args_in, **self.kwargs)
+            # TODO: this may have pickle issue with multiprocessing (kwargs_in)
+            out = self.f(*args_in, **kwargs_in)
 
+            if self.provide_supplimental:
+                if branch_supps is not None:
+                    for name in branch_supps:
+                        # TODO: better way to do this? limit to 
+                        if "inds_keep" in branch_supps[name]:
+                            inds_back = branch_supps[name][:]["inds_keep"]
+                            inds_back2 = branch_supps_in[name]["inds_keep"]
+                        else:
+                            inds_back = inds[name]
+                            inds_back2 = slice(None)
+                        try:
+                            branch_supps[name][inds_back] = {key: branch_supps_in_2[key][inds_back2] for key in branch_supps_in_2}
+                        except ValueError:
+                            breakpoint()
             # -1e300 because -np.inf screws up state acceptance transfer in proposals
             ll = np.full(nwalkers_all, -1e300)
             inds_fix_zeros = np.delete(np.arange(nwalkers_all), unique_groups)

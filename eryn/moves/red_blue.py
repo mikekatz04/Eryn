@@ -4,7 +4,7 @@ from copy import deepcopy
 import numpy as np
 import warnings
 
-from ..state import State
+from ..state import BranchSupplimental, State
 from .move import Move
 
 __all__ = ["RedBlueMove"]
@@ -170,6 +170,7 @@ class RedBlueMove(Move, ABC):
                     )
                     for name in state.branches
                 }
+
                 temp_coords = {
                     name: np.take_along_axis(
                         state.branches[name].coords,
@@ -210,8 +211,6 @@ class RedBlueMove(Move, ABC):
                     for name, branch in state.branches.items()
                 }
                 factors = np.zeros((ntemps, nwalkers_here))
-
-                # Get the two halves of the ensemble.
                 for t in range(ntemps):
                     sets = {
                         key: [
@@ -261,8 +260,47 @@ class RedBlueMove(Move, ABC):
                 if gs is not None:
                     logp[np.where(np.sum(keep_arr, axis=-1) == 0)] = -np.inf
 
+                # setup supplimental information
+                if state.supplimental is not None:
+                    # TODO: should there be a copy?
+                    new_supps = BranchSupplimental(state.supplimental.take_along_axis(all_inds_shaped, axis=1), obj_contained_shape=(ntemps, nwalkers), copy=False)
+
+                else:
+                    new_supps = None
+                    if new_branch_supps is not None:
+                        new_supps = BranchSupplimental({"inds_change": new_inds_adjust}, obj_contained_shape=(ntemps, nwalkers), copy=False)
+
+                # default for removing inds info from supp
+                if state.branches_supplimental is not None:
+                    new_branch_supps = {
+                        name: state.branches[name].branch_supplimental.take_along_axis(
+                            all_inds_shaped[:, :, None], axis=1
+                        )
+                        for name in state.branches
+                    }
+                    
+                    new_branch_supps = {name: BranchSupplimental(new_branch_supps[name], obj_contained_shape=new_inds[name].shape, copy=False) for name in new_branch_supps}
+                    for name in new_branch_supps:
+                        new_branch_supps[name].add_objects({"inds_keep": new_inds_adjust[name]})
+
+                else:
+                    new_branch_supps = None
+                    if new_supps is not None:
+                        new_branch_supps = {name: BranchSupplimental({"inds_keep": new_inds_adjust[name]}, obj_contained_shape=new_inds[name].shape, copy=False) for name in new_branch_supps}
+
+                # TODO: add supplimental prepare step
+                #if (new_branch_supps is not None or new_supps is not None) and self.adjust_supps_pre_logl_func is not None:
+                #    self.adjust_supps_pre_logl_func(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps, inds_keep=new_inds_adjust)
+
                 # Compute the lnprobs of the proposed position.
-                logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds, logp=logp)
+                logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
+                    
+                if (new_branch_supps is not None or new_supps is not None):
+                    if new_branch_supps is not None:
+                        for name in new_branch_supps:
+                            new_branch_supps[name].remove_objects("inds_keep")
+                    elif new_supps is not None:
+                        del new_branch_supps
 
                 # catch and warn about nans
                 if np.any(np.isnan(logl)):
@@ -296,7 +334,7 @@ class RedBlueMove(Move, ABC):
                 )
 
                 new_state = State(
-                    q, log_prob=logl, log_prior=logp, blobs=new_blobs, inds=new_inds
+                    q, log_prob=logl, log_prior=logp, blobs=new_blobs, inds=new_inds, supplimental=new_supps, branch_supplimental=new_branch_supps
                 )
 
                 state = self.update(

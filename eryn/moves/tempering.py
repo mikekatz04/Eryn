@@ -2,6 +2,7 @@
 
 import numpy as np
 from ..state import State
+from copy import deepcopy
 
 __all__ = ["TemperatureControl"]
 
@@ -254,7 +255,7 @@ class TemperatureControl(object):
 
         return loglT
 
-    def temperature_swaps(self, x, logP, logl, logp, inds=None, blobs=None):
+    def temperature_swaps(self, x, logP, logl, logp, inds=None, blobs=None, supps=None, branch_supps=None):
         """
         Perform parallel-tempering temperature swaps on the state in ``x`` with associated ``logP`` and ``logl``.
         """
@@ -282,17 +283,23 @@ class TemperatureControl(object):
             x_temp = {name: np.copy(x[name]) for name in x}
             if inds is not None:
                 inds_temp = {name: np.copy(inds[name]) for name in inds}
-
+            if branch_supps is not None:
+                branch_supps_temp = {name: deepcopy(branch_supps[name]) for name in branch_supps}
+            
             logl_temp = np.copy(logl[i, iperm[sel]])
             logp_temp = np.copy(logp[i, iperm[sel]])
             logP_temp = np.copy(logP[i, iperm[sel]])
             if blobs is not None:
                 blobs_temp = np.copy(blobs[i, iperm[sel]])
+            if supps is not None:
+                supps_temp = deepcopy(supps[i, iperm[sel]])
 
             for name in x:
                 x[name][i, iperm[sel], :, :] = x[name][i - 1, i1perm[sel], :, :]
                 if inds is not None:
                     inds[name][i, iperm[sel], :] = inds[name][i - 1, i1perm[sel], :]
+                if branch_supps[name] is not None:
+                    branch_supps[name][i, iperm[sel], :] = branch_supps[name][i - 1, i1perm[sel], :]
 
             logl[i, iperm[sel]] = logl[i - 1, i1perm[sel]]
             logp[i, iperm[sel]] = logp[i - 1, i1perm[sel]]
@@ -301,11 +308,17 @@ class TemperatureControl(object):
             )
             if blobs is not None:
                 blobs[i, iperm[sel]] = blobs[i - 1, i1perm[sel]]
+            if supps is not None:
+                supps[i, iperm[sel]] = supps[i - 1, i1perm[sel]]
 
             for name in x:
                 x[name][i - 1, i1perm[sel], :, :] = x_temp[name][i, iperm[sel], :, :]
                 if inds is not None:
                     inds[name][i - 1, i1perm[sel], :] = inds_temp[name][
+                        i, iperm[sel], :
+                    ]
+                if branch_supps[name] is not None:
+                    branch_supps[name][i - 1, i1perm[sel], :] = branch_supps_temp[name][
                         i, iperm[sel], :
                     ]
 
@@ -315,8 +328,10 @@ class TemperatureControl(object):
 
             if blobs is not None:
                 blobs[i - 1, i1perm[sel]] = blobs_temp
+            if supps is not None:
+                supps[i - 1, i1perm[sel]] = supps_temp
 
-        return x, logP, logl, logp, inds, blobs
+        return (x, logP, logl, logp, inds, blobs, supps, branch_supps)
 
     def _get_ladder_adjustment(self, time, betas0, ratios):
         """
@@ -344,13 +359,15 @@ class TemperatureControl(object):
         logl = state.log_prob
         logp = state.log_prior
         logP = self.compute_log_posterior_tempered(logl, logp)
-        x, logP, logl, logp, inds, blobs = self.temperature_swaps(
+        x, logP, logl, logp, inds, blobs, supps, branch_supps = self.temperature_swaps(
             state.branches_coords,
             logP.copy(),
             logl.copy(),
             logp.copy(),
             inds=state.branches_inds,
             blobs=state.blobs,
+            supps=state.supplimental,
+            branch_supps=state.branches_supplimental,
         )
 
         ratios = self.swaps_accepted / self.swaps_proposed
@@ -367,6 +384,8 @@ class TemperatureControl(object):
             blobs=blobs,
             inds=inds,
             betas=self.betas,
+            supplimental=supps,
+            branch_supplimental=branch_supps,
             random_state=state.random_state,
         )
 
