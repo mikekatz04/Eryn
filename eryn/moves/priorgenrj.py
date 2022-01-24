@@ -101,5 +101,5 @@ class PriorGenerateRJ(ReversibleJump):
 
             # factor is -log q()
             factors[inds_here[:2]] += -1 * current_priors.logpdf(q[name][inds_here])
-    
+
         return q, new_inds, factors

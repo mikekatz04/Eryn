@@ -243,7 +243,7 @@ class ReversibleJump(Move):
             #     # c) the current state, d) the indices where we had +1 (True),
             #     # and the e) factors.
             state, accepted = self.dr.propose(
-                lnpdiff, accepted, model, state, new_inds, factors
+                lnpdiff, accepted, model, state, new_inds, inds_for_change, factors
             )  # model, state
 
         if self.temperature_control is not None:

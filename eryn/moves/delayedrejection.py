@@ -36,7 +36,7 @@ class DelayedRejection(Move):
                 self.temperature_control.compute_log_posterior_tempered
             )
 
-    def dr_scheme(self, state, states_path, alpha_0, accepted, prev_logP, model, ntemps, nwalkers, inds=None, dr_iter=0):
+    def dr_scheme(self, state, states_path, alpha_0, accepted, prev_logP, model, ntemps, nwalkers, inds_for_change, inds=None, dr_iter=0):
         """Calcuate the delayed rejection acceptace ratio. 
 
         Args: 
@@ -47,13 +47,21 @@ class DelayedRejection(Move):
         """
 
         # Get the chains that were rejected
-        rejected = ~accepted # Get the rejected points
+        rejected = ~accepted # Get the rejected points 
+        
+        # Find inds that satisfy rejected & at least one tree has proposed +1. TODO: Make it more efficient?
+        plus_one_rej_inds = dict()
+        for name in inds_for_change:
+            plus_one_inds = inds_for_change[name]['+1'][:,:2]
+            plus_one_rej_inds[name] = plus_one_inds[rejected[(plus_one_inds[:,0],plus_one_inds[:,1])]]
 
+        # plus_one_inds['gauss']['+1'][:,:2]
+        # accepted[(la[:,0],la[:,1])] --- accepted: la[accepted[(la[:,0],la[:,1])]]
         # Draw a uniform random for the previously rejected points
         randU = model.random.rand(ntemps, nwalkers) # [rejected]
 
         # Propose a new point 
-        new_state = self.get_new_state(model, state, inds) # Get a new state
+        new_state = self.get_new_state(model, states_path[-1], inds) # Get a new state
 
         # Compute log-likelihood and log-prior
         logp = model.compute_log_prior_fn(new_state.branches_coords, inds=inds) # inds=stateslist[-1].branches_inds
@@ -77,11 +85,12 @@ class DelayedRejection(Move):
         dr_alpha = np.nan_to_num(dr_alpha) # Automatically reject NaNs
 
         new_accepted = deepcopy(accepted)
-
         # Compute the acceptance probability for the rejected points only
-        new_accepted[rejected] = np.logical_or(dr_alpha >= 1.0, randU < dr_alpha)[rejected]
-
-        # print(" - Iter {}: Accepted = {}/{}".format(dr_iter, np.sum(new_accepted[rejected]), np.prod(new_accepted.shape)-np.sum(accepted))) 
+        # new_accepted[rejected] = np.logical_or(dr_alpha >= 1.0, randU < dr_alpha)[rejected]
+        for name in inds_for_change:
+            new_accepted[plus_one_rej_inds[name][:,0],plus_one_rej_inds[name][:,1]] = \
+                np.logical_or(dr_alpha >= 1.0, randU < dr_alpha)[plus_one_rej_inds[name][:,0],plus_one_rej_inds[name][:,1]]
+        
 
         # Update state with the new accepted points
         new_state = self.update(state, new_state, new_accepted)
@@ -92,6 +101,8 @@ class DelayedRejection(Move):
         new_accepted_flipped[rejected] = ~new_accepted_flipped[rejected]
         updated_state_keep_rejected = self.update(state, new_state, new_accepted_flipped)
     
+        print(" - Iter {}: Accepted = {}/{}".format(dr_iter, np.sum(new_accepted[rejected]), np.prod(new_accepted.shape)-np.sum(accepted))) 
+
         # Continue with theDR loop. Check if all accepted (extreme case). Then stop.
         if dr_iter <= self.max_iter and not (np.sum(new_accepted) == np.prod(new_accepted.shape)):
             dr_iter += 1
@@ -122,7 +133,7 @@ class DelayedRejection(Move):
         ) # I create a new initial state that all are accepted
         return new_state
 
-    def propose(self, log_diff_0, accepted, model, state, plus_one_rj_inds, factors):
+    def propose(self, log_diff_0, accepted, model, state, inds, inds_for_change, factors):
         """Use the move to generate a proposal and compute the acceptance
 
         Args:
@@ -159,7 +170,7 @@ class DelayedRejection(Move):
 
         # print(" - Before DR: Accepted = {}/{}".format(np.sum(accepted), np.prod(accepted.shape))) 
 
-        out_state, accepted = self.dr_scheme(state, states_path, alpha_0, accepted, prev_logP, model, ntemps, nwalkers, inds=plus_one_rj_inds)       
+        out_state, accepted = self.dr_scheme(state, states_path, alpha_0, accepted, prev_logP, model, ntemps, nwalkers, inds_for_change, inds=inds)       
         
         if self.temperature_control is not None:
             state, accepted = self.temperature_control.temper_comps(state, accepted)
