@@ -216,7 +216,7 @@ class ReversibleJump(Move):
         else:   
             new_supps = None
 
-        if state.branches_supplimental is not None:
+        if not np.all(np.asarray(list(state.branches_supplimental.values())) == None):
             new_branch_supps = deepcopy(state.branches_supplimental)
             for name in new_branch_supps:
                 indicator_inds = (new_inds[name].astype(int) - state.branches_inds[name].astype(int)) > 0
