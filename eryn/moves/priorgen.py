@@ -24,7 +24,7 @@ class PriorGenerate(Move):
         self.priors = priors
         super(PriorGenerate, self).__init__(*args, **kwargs)
 
-    def get_proposal(self, all_coords, inds=None):
+    def get_proposal(self, all_coords, inds, random):
         """Make a proposal
 
         Args:
@@ -79,4 +79,4 @@ class PriorGenerate(Move):
             # factor is -log q()
             # factors[inds_here[:2]] += +1 * current_priors.logpdf(q[name][inds_here])
 
-        return q, inds, np.zeros((ntemps, nwalkers))
+        return q, np.zeros((ntemps, nwalkers))

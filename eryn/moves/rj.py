@@ -22,7 +22,7 @@ class ReversibleJump(Move):
     """
 
     def __init__(
-        self, max_k, min_k, dr_proposal=None, dr=None, dr_max_iter=5, tune=False, **kwargs
+        self, max_k, min_k, dr=None, dr_max_iter=5, tune=False, **kwargs
     ):
         super(ReversibleJump, self).__init__(**kwargs)
 
@@ -39,16 +39,15 @@ class ReversibleJump(Move):
 
         # Decide if DR is desirable. TODO: Now it uses the prior generator, we need to
         # think carefully if we want to use the in-model sampling proposal
-        if self.dr:
+        if self.dr is not None:
             if self.dr is True:
-
-                if dr_proposal is None: # If no proposal is given, we use the prior to generate samples
-                    dr_proposal = PriorGenerate(
-                    self.priors,
-                    temperature_control=self.temperature_control)
-
-                self.dr = DelayedRejection(dr_proposal, max_iter=dr_max_iter)
-
+                dr_proposal = PriorGenerate(
+                self.priors,
+                temperature_control=self.temperature_control)
+            else:
+                dr_proposal = self.dr
+                
+        self.dr = DelayedRejection(dr_proposal, max_iter=dr_max_iter)
         # TODO: add stuff here if needed like prob of birth / death
 
     def setup(self, coords):

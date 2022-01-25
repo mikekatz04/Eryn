@@ -338,7 +338,6 @@ class EnsembleSampler(object):
                     self.priors,
                     self.nleaves_max,
                     self.nleaves_min,
-                    None,  # TODO: We currently generate from prior. Otherwise we need a PDF function. Before we used "self._moves[0]"
                     dr=dr_moves,
                     dr_max_iter=dr_max_iter,
                     tune=False,

@@ -97,7 +97,7 @@ class DelayedRejection(Move):
     def get_new_state(self, model, state, keep):
         """ A utility function to propose new points
         """
-        qn, _, _ = self.proposal.get_proposal(state.branches_coords, inds=state.branches_inds)
+        qn, _ = self.proposal.get_proposal(state.branches_coords, state.branches_inds, model.random)
 
         # Compute prior of the proposed position
         logp = model.compute_log_prior_fn(qn, inds=state.branches_inds)
