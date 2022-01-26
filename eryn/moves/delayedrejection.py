@@ -101,7 +101,7 @@ class DelayedRejection(Move):
 
         # Compute prior of the proposed position
         logp = model.compute_log_prior_fn(qn, inds=state.branches_inds)
-        logp[~keep] = -np.inf
+        logp[~keep] = -np.inf # This trick help us compute only the indeces of interest
 
         # Compute the lnprobs of the proposed position. 
         logl, new_blobs = model.compute_log_prob_fn(qn, inds=state.branches_inds, logp=logp)
@@ -135,11 +135,6 @@ class DelayedRejection(Move):
         alpha_0  = np.exp(log_diff_0)
         alpha_0[alpha_0 > 1.0] = 1.0 # np.min((1.0, alpha_0)) 
         new_state.supplimental = BranchSupplimental({"past_alpha": alpha_0}, obj_contained_shape=(ntemps, nwalkers))
-        
-        # Get the old coords and posterior values
-        prev_logl = state.log_prob
-        prev_logp = state.log_prior
-        prev_logP = self.compute_log_posterior(prev_logl, prev_logp) # takes care of tempering
         
         # Check to make sure that the dimensions match.
         ntemps, nwalkers, _, _ = state.branches[list(state.branches.keys())[0]].shape
