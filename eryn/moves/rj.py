@@ -39,16 +39,18 @@ class ReversibleJump(Move):
 
         # Decide if DR is desirable. TODO: Now it uses the prior generator, we need to
         # think carefully if we want to use the in-model sampling proposal
-        if self.dr is not None:
-            if self.dr is True:
+        if self.dr is not None and self.dr is not False:
+            if self.dr is True: # Check if it's a boolean, then we just generate 
+                                # from prior (kills the purpose, but yields "healther" chains)
                 dr_proposal = PriorGenerate(
                 self.priors,
                 temperature_control=self.temperature_control)
             else:
+                # Otherwise pass given input
                 dr_proposal = self.dr
                 
-        self.dr = DelayedRejection(dr_proposal, max_iter=dr_max_iter)
-        # TODO: add stuff here if needed like prob of birth / death
+            self.dr = DelayedRejection(dr_proposal, max_iter=dr_max_iter)
+            # TODO: add stuff here if needed like prob of birth / death
 
     def setup(self, coords):
         pass

@@ -29,7 +29,16 @@ class DelayedRejectionContainer:
 
 class DelayedRejection(Move):
     r"""
-    Delayed Rejection
+    Delayed Rejection scheme assuming symmetric and non-adaptive proposal distribution.
+    We apply the DR algorithm only on the cases where we have rejected a +1 proposal for 
+    a given Reversible Jump proposal and branch. 
+
+    Refernces:
+
+    Tierney L and Mira A, Stat. Med. 18 2507 (1999)  
+    Haario et al, Stat. Comput. 16:339-354 (2006)
+    Mira A, Metron - International Journal of Statistics, vol. LIX, issue 3-4, 231-241 (2001)
+    M. Trias, et al, https://arxiv.org/abs/0904.2207
 
     """
 
@@ -55,7 +64,7 @@ class DelayedRejection(Move):
         old_new_state = State(new_state, copy=True)
 
         # Propose a new point 
-        new_state = self.get_new_state(model, new_state, keep_rejected) # Get a new state
+        new_state, log_proposal_ratio = self.get_new_state(model, new_state, keep_rejected) # Get a new state
 
         # Compute log-likelihood and log-prior
         logp = new_state.log_prior
@@ -71,11 +80,8 @@ class DelayedRejection(Move):
         # Compute the logposterior for all
         prev_logP = self.compute_log_posterior(prev_logl, prev_logp)
 
-        # Placeholder for asymmetric proposals
-        logproposal_density_ratio = 0.0
-
         # Compute the acceptance ratio
-        lndiff  = logP - prev_logP - logproposal_density_ratio
+        lndiff  = logP - prev_logP + log_proposal_ratio
         alpha_1 = np.exp(lndiff)
         alpha_1[alpha_1 > 1.0] = 1.0 # np.min((1, alpha))
 
@@ -97,7 +103,7 @@ class DelayedRejection(Move):
     def get_new_state(self, model, state, keep):
         """ A utility function to propose new points
         """
-        qn, _ = self.proposal.get_proposal(state.branches_coords, state.branches_inds, model.random)
+        qn, factors = self.proposal.get_proposal(state.branches_coords, state.branches_inds, model.random)
 
         # Compute prior of the proposed position
         logp = model.compute_log_prior_fn(qn, inds=state.branches_inds)
@@ -110,7 +116,7 @@ class DelayedRejection(Move):
         new_state = State(
             qn, log_prob=logl, log_prior=logp, blobs=new_blobs, inds=state.branches_inds, supplimental=state.supplimental
         ) # I create a new initial state that all are accepted
-        return new_state
+        return new_state, factors
 
     def propose(self, log_diff_0, accepted, model, state, new_state, inds, inds_for_change, factors):
         """Use the move to generate a proposal and compute the acceptance
