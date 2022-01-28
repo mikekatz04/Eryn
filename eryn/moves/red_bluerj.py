@@ -7,7 +7,7 @@ import warnings
 from ..state import BranchSupplimental, State
 from .move import Move
 
-__all__ = ["RedBlueMove"]
+__all__ = ["RedBlueMoveRJ"]
 
 
 class RedBlueMoveRJ(Move, ABC):

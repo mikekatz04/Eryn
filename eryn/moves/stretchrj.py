@@ -4,7 +4,7 @@ import numpy as np
 
 from .red_bluerj import RedBlueMoveRJ
 
-__all__ = ["StretchMove"]
+__all__ = ["StretchMoveRJ"]
 
 
 class StretchMoveRJ(RedBlueMoveRJ):
