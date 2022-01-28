@@ -1,18 +1,16 @@
-# -*- coding: utf-8 -*-
+s# -*- coding: utf-8 -*-
 from abc import ABC
 from copy import deepcopy
-from curses import keyname
 import numpy as np
 import warnings
 
 from ..state import BranchSupplimental, State
 from .move import Move
 
-
-
 __all__ = ["RedBlueMove"]
 
-class RedBlueMove(Move, ABC):
+
+class RedBlueMoveRJ(Move, ABC):
     """
     An abstract red-blue ensemble move with parallelization as described in
     `Foreman-Mackey et al. (2013) <https://arxiv.org/abs/1202.3665>`_.
@@ -55,7 +53,7 @@ class RedBlueMove(Move, ABC):
         live_dangerously=False,
         **kwargs
     ):
-        super(RedBlueMove, self).__init__(**kwargs)
+        super(RedBlueMoveRJ, self).__init__(**kwargs)
         self.nsplits = int(nsplits)
         self.live_dangerously = live_dangerously
         self.randomize_split = randomize_split
@@ -162,11 +160,9 @@ class RedBlueMove(Move, ABC):
             accepted_here = np.zeros((ntemps, nwalkers), dtype=bool)
             for split in range(self.nsplits):
                 S1 = inds == split
-                num_total_here = np.sum(inds == split)
                 nwalkers_here = np.sum(S1[0])
 
                 all_inds_shaped = all_inds[S1].reshape(ntemps, nwalkers_here)
-                fixed_inds_shaped = all_inds[~S1].reshape(ntemps, nwalkers_here)
 
                 new_inds = {
                     name: np.take_along_axis(
@@ -208,48 +204,48 @@ class RedBlueMove(Move, ABC):
 
                             new_inds_adjust[name] = keep_arr.copy()
 
-                sets = {
-                    key: [
-                        np.take_along_axis(
-                        state.branches[key].coords,
-                        all_inds[inds == j].reshape(ntemps, nwalkers_here)[:, :, None, None],
-                        axis=1,
+                q = {
+                    name: np.zeros(
+                        (ntemps, nwalkers_here, branch.nleaves_max, branch.ndim)
                     )
-                        for j in range(self.nsplits)
-                    ]
-                    for key in state.branches
+                    for name, branch in state.branches.items()
                 }
+                factors = np.zeros((ntemps, nwalkers_here))
+                for t in range(ntemps):
+                    sets = {
+                        key: [
+                            state.branches[key].coords[t, inds[t] == j]
+                            for j in range(self.nsplits)
+                        ]
+                        for key in state.branches
+                    }
+                    s = {key: sets[key][split] for key in sets}
+                    c = {
+                        key: sets[key][:split] + sets[key][split + 1 :] for key in sets
+                    }
 
-                s = {key: sets[key][split] for key in sets}
-                c = {
-                    key: sets[key][:split] + sets[key][split + 1 :] for key in sets
-                }
+                    # Get the move-specific proposal.
+                    # Get the move-specific proposal.
 
-                # Get the move-specific proposal.
-                # Get the move-specific proposal.
+                    # need to trick stretch proposal into using the dimenionality associated
+                    # with Gibbs sampling if it is being used
 
-                # need to trick stretch proposal into using the dimenionality associated
-                # with Gibbs sampling if it is being used
-                
-                temp_inds_s = {
-                    name: new_inds_adjust[name][:].reshape((ntemps, -1,) + state.branches[name].coords.shape[2:3]) for name in new_inds_adjust
-                }
+                    temp_inds_s = {
+                        name: new_inds_adjust[name][t] for name in new_inds_adjust
+                    }
 
-                temp_inds_c = {
-                    name: np.take_along_axis(
-                        state.branches[name].inds, all_inds[inds != split].reshape(ntemps, -1, 1), axis=1
+                    temp_inds_c = {
+                        name: state.branches_inds[name][t, inds[t] != split]
+                        for name in state.branches_inds
+                    }
+
+                    q_temp, factors_temp = self.get_proposal(
+                        s, c, model.random, inds_s=temp_inds_s, inds_c=temp_inds_c
                     )
-                    for name in state.branches_inds
-                }
+                    for name in q:
+                        q[name][t] = q_temp[name]
 
-                q_temp, factors_temp = self.get_proposal(
-                    s, c, model.random, inds_s=temp_inds_s, inds_c=temp_inds_c
-                )
-                q = {}
-                for name in q_temp:
-                    q[name] = q_temp[name]  # TODO: take this out? .reshape((ntemps, -1,) + state.branches[name].coords.shape[2:])
-
-                factors = factors_temp.reshape((ntemps, -1,))
+                    factors[t] = factors_temp
 
                 for name in q:
                     q[name] = q[name] * (
@@ -302,7 +298,7 @@ class RedBlueMove(Move, ABC):
                         for name in new_branch_supps:
                             new_branch_supps[name].remove_objects("inds_keep")
                     elif new_supps is not None:
-                        pass  # del new_branch_supps
+                        del new_branch_supps
 
                 # catch and warn about nans
                 if np.any(np.isnan(logl)):
@@ -348,4 +344,3 @@ class RedBlueMove(Move, ABC):
 
         # make accepted move specific ?
         return state, accepted
-

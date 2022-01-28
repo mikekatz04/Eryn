@@ -7,7 +7,7 @@ from .red_blue import RedBlueMove
 __all__ = ["StretchMove"]
 
 
-class StretchMove(RedBlueMove):
+class StretchMoveRJ(RedBlueMoveRJ):
     """Affine-Invariant Proposal
 
     A `Goodman & Weare (2010)
@@ -24,7 +24,7 @@ class StretchMove(RedBlueMove):
 
     def __init__(self, a=2.0, **kwargs):
         self.a = a
-        super(StretchMove, self).__init__(**kwargs)
+        super(StretchMoveRJ, self).__init__(**kwargs)
 
     def get_proposal(self, s_all, c_all, random, inds_s=None, inds_c=None, **kwargs):
         """Generate stretch proposal
@@ -55,45 +55,52 @@ class StretchMove(RedBlueMove):
         for i, name in enumerate(s_all):
             c = c_all[name]
             s = s_all[name]
-            ntemps, nwalkers, nleaves_max, ndim_here = s.shape
-            c = np.concatenate(c, axis=1)
+            c = np.concatenate(c, axis=0)
+            Ns, Nc = len(s), len(c)
 
-            Ns, Nc = s.shape[1], c.shape[1]
             # gets rid of any values of exactly zero
             if inds_s is None:
                 ndim_temp = s_all[name].shape[-1] * s_all[name].shape[-2]
             else:
-                ndim_temp = inds_s[name].sum(axis=(2)) * s_all[name].shape[-1]
-            
+                ndim_temp = inds_s[name].sum(axis=(1)) * s_all[name].shape[-1]
             if i == 0:
                 ndim = ndim_temp
                 Ns_check = Ns
-                zz = ((self.a - 1.0) * random.rand(ntemps, Ns) + 1) ** 2.0 / self.a
+                zz = ((self.a - 1.0) * random.rand(Ns) + 1) ** 2.0 / self.a
             else:
                 ndim += ndim_temp
                 if Ns_check != Ns:
                     raise ValueError("Different number of walkers across models.")
+            rint = random.randint(Nc, size=(Ns,))
 
-            rint = random.randint(Nc, size=(ntemps, Ns,))
-            c_temp = np.take_along_axis(c, rint[:, :, None, None], axis=1)
+            # check dimensioality comparison between s and c
+            nleaves_s = inds_s[name].sum(axis=(1))
+            nleaves_max = inds_s[name].shape[1]
+            nleaves_c_rint = inds_c[name].sum(axis=(1))[rint]
+            c_rint = c[rint]
+            c_inds_rint = inds_c[name][rint]
 
-            if self.periodic is not None:
-                diff = self.periodic.distance(
-                    s.reshape(ntemps * nwalkers, nleaves_max, ndim_here), 
-                    c_temp.reshape(ntemps * nwalkers, nleaves_max, ndim_here), 
-                    names=[name]
-                )[name].reshape(ntemps, nwalkers, nleaves_max, ndim_here)
+            # same_num first
+            temp = np.zeros_like(s)  # s.copy()
+            for j in range(len(s)):
+                c_temp_inds = np.random.choice(
+                    np.arange(nleaves_max)[c_inds_rint[j].astype(bool)],
+                    int(nleaves_s[j]),
+                    replace=True,
+                )
+
+                temp[j, inds_s[name][j].astype(bool)] = c_rint[j][c_temp_inds]
+
+            if self.periodic is not None and self.a != 1.0:
+                diff = self.periodic.distance(s, temp, names=[name])[name]
             else:
-                diff = c_temp - s
+                diff = temp - s
 
-            temp = c_temp - (diff) * zz[:, :, None, None]
+            newpos[name] = temp - (diff) * zz[:, None, None]
 
             if self.periodic is not None:
-                temp = self.periodic.wrap(temp.reshape(ntemps * nwalkers, nleaves_max, ndim_here), names=[name])[name].reshape(ntemps, nwalkers, nleaves_max, ndim_here)
-
-            newpos[name] = temp
+                newpos[name] = self.periodic.wrap(newpos[name], names=[name])[name]
 
         # proper factors
         factors = (ndim - 1.0) * np.log(zz)
         return newpos, factors
-
