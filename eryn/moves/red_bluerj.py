@@ -1,4 +1,4 @@
-s# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from abc import ABC
 from copy import deepcopy
 import numpy as np

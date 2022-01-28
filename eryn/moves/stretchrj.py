@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from .red_blue import RedBlueMove
+from .red_bluerj import RedBlueMoveRJ
 
 __all__ = ["StretchMove"]
 

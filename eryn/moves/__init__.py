@@ -7,7 +7,9 @@ from .kde import KDEMove
 from .mh import MHMove
 from .move import Move
 from .red_blue import RedBlueMove
+from .red_bluerj import RedBlueMoveRJ
 from .stretch import StretchMove
+from .stretchrj import StretchMoveRJ
 from .walk import WalkMove
 from .tempering import TemperatureControl
 from .rj import ReversibleJump

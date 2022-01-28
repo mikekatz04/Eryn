@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from abc import ABC
 from copy import deepcopy
-from curses import keyname
 import numpy as np
 import warnings
 
