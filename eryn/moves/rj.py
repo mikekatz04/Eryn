@@ -184,7 +184,7 @@ class ReversibleJump(Move):
 
         # propose new sources and coordinates
         q, new_inds, factors = self.get_proposal(
-            state.branches_coords, state.branches_inds, inds_for_change, model.random,
+            state.branches_coords, state.branches_inds, inds_for_change, model.random, branch_supps=state.branches_supplimental
         )
 
         # TODO: check this
