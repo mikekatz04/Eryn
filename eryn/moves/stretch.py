@@ -26,6 +26,11 @@ class StretchMove(RedBlueMove):
         self.a = a
         super(StretchMove, self).__init__(**kwargs)
 
+    def adjust_factors(self, factors, ndims_old, ndims_new):
+        # adjusts in place
+        logzz = factors / (ndims_old - 1.0) 
+        factors[:] = logzz * (ndims_new - 1.0)
+
     def get_proposal(self, s_all, c_all, random, inds_s=None, inds_c=None, **kwargs):
         """Generate stretch proposal
 
