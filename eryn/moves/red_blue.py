@@ -248,6 +248,17 @@ class RedBlueMove(Move, ABC):
                 for name in q_temp:
                     q[name] = q_temp[name]  # TODO: take this out? .reshape((ntemps, -1,) + state.branches[name].coords.shape[2:])
 
+                if "model_indicator" in q:
+                    model_indicator = model.log_prob_fn.f.map_fn(q["model_indicator"].squeeze())
+                    unique_model_indicators = np.unique(model_indicator)
+                    model_names = list(q.keys())
+                    model_names.remove("model_indicator")
+                    assert model_indicator.dtype == int
+                    assert len(unique_model_indicators) <= len(model_names)
+
+                    for i in unique_model_indicators:
+                        new_inds_adjust[model_names[i]][model_indicator != i] = False
+
                 factors = factors_temp.reshape((ntemps, -1,))
 
                 for name in q:
