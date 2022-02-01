@@ -2,6 +2,10 @@
 
 from eryn.state import BranchSupplimental
 import numpy as np
+try:
+    import cupy as xp
+except ModuleNotFoundError:
+    import numpy as xp
 
 __all__ = ["Move"]
 
@@ -165,8 +169,13 @@ class Move(object):
                             for _ in range(new_branch_supplimental[key].ndim - accepted_temp_here.ndim):
                                 accepted_temp_here = np.expand_dims(accepted_temp_here, (-1,))
 
-                        tmp[key] = (new_branch_supplimental[key] * (accepted_temp_here)
-                                    + old_branch_supplimental[key] * (~accepted_temp_here))
+                        try:
+                            tmp[key] = (new_branch_supplimental[key] * (accepted_temp_here)
+                                        + old_branch_supplimental[key] * (~accepted_temp_here))
+                        except TypeError:
+                            # for gpus
+                            tmp[key] = (new_branch_supplimental[key] * (xp.asarray(accepted_temp_here))
+                                        + old_branch_supplimental[key] * (xp.asarray(~accepted_temp_here)))
 
                     temp_change_branch_supplimental[name] = BranchSupplimental(tmp, obj_contained_shape=new_state.branches_supplimental[name].shape, copy=True)
 
@@ -195,9 +204,15 @@ class Move(object):
                 if old_suppliment[name].dtype.name != "object":
                     for _ in range(old_suppliment[name].ndim - accepted_temp_here.ndim):
                         accepted_temp_here = np.expand_dims(accepted_temp_here, (-1,))
-                temp_change_suppliment[name] = new_suppliment[name] * (accepted_temp_here) + old_suppliment[name] * (
-                    ~accepted_temp_here
-                )
+                try:
+                    # TODO: cleanup?
+                    temp_change_suppliment[name] = new_suppliment[name] * (accepted_temp_here) + old_suppliment[name] * (
+                        ~accepted_temp_here
+                    )
+                except TypeError:
+                    temp_change_suppliment[name] = new_suppliment[name] * (xp.asarray(accepted_temp_here)) + old_suppliment[name] * (
+                        xp.asarray(~accepted_temp_here)
+                    )
             old_state.supplimental.put_along_axis(subset, temp_change_suppliment, axis=1)
 
         # coords

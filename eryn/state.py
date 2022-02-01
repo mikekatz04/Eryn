@@ -2,6 +2,12 @@
 
 from copy import deepcopy
 
+try:
+    import cupy as xp
+
+except ModuleNotFoundError:
+    import numpy as np
+
 import numpy as np
 
 __all__ = ["State"]
@@ -58,7 +64,8 @@ class BranchSupplimental(object):
             else:
                 self.ndim = ndim =  len(obj_contained_shape)
                 
-                if isinstance(obj_contained, np.ndarray):
+                # xp for GPU
+                if isinstance(obj_contained, np.ndarray) or isinstance(obj_contained, xp.ndarray):
                     self.holder[name] = obj_contained.copy()
 
                 else:
@@ -114,6 +121,7 @@ class BranchSupplimental(object):
         for name, values in self.holder.items():
             if name not in new_value:
                 continue
+            
             self.holder[name][tmp] = new_value[name]
 
     def take_along_axis(self, indices, axis):
@@ -121,11 +129,18 @@ class BranchSupplimental(object):
         
         for name, values in self.holder.items():
             indices_temp = indices.copy()
-            if isinstance(values, np.ndarray) and values.dtype.name != "object":
+            if (isinstance(values, np.ndarray) and values.dtype.name != "object") or isinstance(values, xp.ndarray):
                 for _ in range(values.ndim - indices_temp.ndim):
-                    indices_temp = np.expand_dims(indices_temp, (-1,))
+                    try:
+                        indices_temp = np.expand_dims(np.asarray(indices_temp), (-1,))
+                    except TypeError:
+                        indices_temp = xp.expand_dims(xp.asarray(indices_temp), (-1,))
             try:
                 out[name] = np.take_along_axis(values, indices_temp, axis)
+
+            except TypeError:
+                out[name] = xp.take_along_axis(values, indices_temp, axis)
+
             except (ValueError, IndexError) as e:
                 breakpoint()
         return out
@@ -135,18 +150,29 @@ class BranchSupplimental(object):
             if name not in values_in:
                 continue
             indices_temp = indices.copy()
-            if isinstance(values, np.ndarray) and values.dtype.name != "object":
+            if (isinstance(values, np.ndarray) and values.dtype.name != "object") or isinstance(values, xp.ndarray):
                 for _ in range(values.ndim - indices_temp.ndim):
-                    indices_temp = np.expand_dims(indices_temp, (-1,))
-            np.put_along_axis(self.holder[name], indices_temp, values_in[name], axis)
+                    try:
+                        indices_temp = np.expand_dims(np.asarray(indices_temp), (-1,))
+                    except TypeError:
+                        indices_temp = xp.expand_dims(xp.asarray(indices_temp), (-1,))
 
-    
+            try:
+                inds0 = np.repeat(np.arange(len(indices_temp))[:, None], indices_temp.shape[1], axis=1)
+            except TypeError:
+                inds0 = xp.repeat(np.arange(len(indices_temp))[:, None], indices_temp.shape[1], axis=1)
+            #self.xp.put_along_axis(self.holder[name], indices_temp, values_in[name], axis)
+            # because cupy does not have put_along_axis
+            try:
+                self.holder[name][(inds0.flatten(), indices_temp.flatten())] = values_in[name].reshape((-1,) + values_in[name].shape[2:])
+            except ValueError:
+                breakpoint()
 
     @property
     def flat(self):
         out = {}
         for name, values in self.holder.items():
-            if isinstance(values, np.ndarray) and values.dtype.name != "object":
+            if (isinstance(values, np.ndarray) and values.dtype.name != "object") or isinstance(values, xp.ndarray):
                 out[name] = values.reshape(-1, values.shape[-1])
             else:
                 out[name] = values.flatten()
