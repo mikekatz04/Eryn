@@ -44,12 +44,13 @@ class ProductSpaceLikelihood(object):
             map_fn = np.round
         self.map_fn = map_fn
 
-    def __call__(self, x, *args1, **kwargs1):
+    def __call__(self, x, groups, *args1, **kwargs1):
         # kwargs1 will overwrite kwargs2
         # args1 will add before args 2
         # last parameter is the model index
-
-        model_indicator = self.map_fn(x[-1][:, 0])
+        # do not actually need groups, 
+        # but using provide_groups=True is useful
+        model_indicator = self.map_fn(x[-1][:, 0]).astype(int)
 
         unique_indicators = np.unique(model_indicator)
 
@@ -57,7 +58,7 @@ class ProductSpaceLikelihood(object):
         for i in unique_indicators:
             likelihood_fn = self.likelihoods[i]
             inds_model = np.where(model_indicator == i)
-            x_input = x[i][inds_model]
+            x_input = x[i]  # [inds_model]
             args2 = self.args_list[i]
             kwargs2 = self.kwargs_list[i]
 

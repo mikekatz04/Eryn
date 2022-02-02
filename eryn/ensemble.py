@@ -776,6 +776,9 @@ class EnsembleSampler(object):
             if self.verbose:
                 print("Finish burn")
 
+        if nsteps == 0:
+            return initial_state
+            
         results = None
 
         i = 0
@@ -833,14 +836,15 @@ class EnsembleSampler(object):
         ntemps, nwalkers, _, _ = coords[list(coords.keys())[0]].shape
 
         # take information out of dict and spread to x1..xn
+        if inds is None:
+            # default use all sources
+            inds = {
+                name: np.full(coords[name].shape[:-1], True, dtype=bool)
+                for name in coords
+            }
+
         x_in = {}
         if self.provide_groups:
-            if inds is None:
-                # default use all sources
-                inds = {
-                    name: np.full(coords[name].shape[:-1], True, dtype=bool)
-                    for name in coords
-                }
 
             # get group information from the inds dict
             groups = groups_from_inds(inds)
@@ -871,7 +875,7 @@ class EnsembleSampler(object):
 
             prior_out = np.zeros((ntemps, nwalkers))
             for name in x_in:
-                prior_out_temp = self.priors[name].logpdf(x_in[name])
+                prior_out_temp = self.priors[name].logpdf(x_in[name]) * inds[name].flatten()
                 prior_out += prior_out_temp.reshape(ntemps, nwalkers, nleaves_max).sum(
                     axis=-1
                 )

@@ -14,6 +14,7 @@ from .walk import WalkMove
 from .tempering import TemperatureControl
 from .rj import ReversibleJump
 from .priorgenrj import PriorGenerate
+from .productspacemove import ProductSpaceMove
 
 __all__ = [
     "Move",

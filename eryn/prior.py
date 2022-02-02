@@ -191,7 +191,11 @@ class PriorContainer:
         # sum the logs (assumes parameters are independent)
         for i, (inds, prior_i) in enumerate(self.priors):
             vals_in = x[:, inds].squeeze()
-            temp = prior_i.logpdf(vals_in)
+            if hasattr(prior_i, "logpdf"):
+                temp = prior_i.logpdf(vals_in)
+            else:
+                temp = prior_i.logpmf(vals_in)
+                
             prior_vals += temp
 
         return prior_vals

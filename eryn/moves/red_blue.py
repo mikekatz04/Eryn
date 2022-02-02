@@ -251,7 +251,13 @@ class RedBlueMove(Move, ABC):
                 factors = factors_temp.reshape((ntemps, -1,))
 
                 if "model_indicator" in q:
-                    model_indicator = model.log_prob_fn.f.map_fn(q["model_indicator"].squeeze())
+                    model_indicator = np.take_along_axis(state.branches["model_indicator"].coords, all_inds_shaped[:, :, None, None], axis=1)
+
+                    # reset all model_indicators in q
+                    q["model_indicator"][:] = model_indicator.copy()
+                    
+                    model_indicator = model_indicator.squeeze().astype(int)
+                    
                     unique_model_indicators = np.unique(model_indicator)
                     model_names = list(q.keys())
                     model_names.remove("model_indicator")
@@ -262,12 +268,14 @@ class RedBlueMove(Move, ABC):
                     for i in unique_model_indicators:
                         new_inds_adjust[model_names[i]][model_indicator != i] = False
 
+                    new_inds_adjust["model_indicator"][:] = False
+
                     # adjust factors
                     if hasattr(self, "adjust_factors"):
                         ndims = np.asarray([q[key].shape[-1] for key in model_names])
                         # +1 is for the update of the model indicator
                         ndims_old = np.full_like(factors, ndims.sum() + 1)
-                        ndims_new = ndims[model_indicator] + 1
+                        ndims_new = ndims[model_indicator]
                         self.adjust_factors(factors, ndims_old, ndims_new)
 
                 for name in q:
@@ -277,7 +285,7 @@ class RedBlueMove(Move, ABC):
 
                 # Compute prior of the proposed position
                 logp = model.compute_log_prior_fn(q, inds=new_inds)
-
+               
                 # set logp for walkers with no leaves that are being tested
                 # in this gibbs run
                 if gs is not None:
