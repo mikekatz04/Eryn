@@ -105,7 +105,6 @@ class ProductSpaceMove(Move):
         model_indicator = state.branches["model_indicator"].coords.astype(int).squeeze().copy()
         unique_model_indicators = np.unique(model_indicator)
         
-        breakpoint()
         factors = np.zeros((ntemps, nwalkers))
         model_indicator_temp = model_indicator.copy()
         if self.random_change:
