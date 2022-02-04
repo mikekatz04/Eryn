@@ -567,6 +567,7 @@ class HDFBackend(Backend):
                 g["chain"][name][self.iteration] = coords_in
 
             g["log_prob"][iteration, :] = state.log_prob
+            g["log_prior"][iteration, :] = state.log_prior
             if state.blobs is not None:
                 g["blobs"][iteration, :] = state.blobs
             if state.betas is not None:
