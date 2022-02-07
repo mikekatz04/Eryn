@@ -176,7 +176,12 @@ class ProductSpaceMove(Move):
                     new_branch_supps[name] = BranchSupplimental({"inds_keep": indicator_inds}, obj_contained_shape=new_inds[name].shape, copy=False)
 
         # Compute prior of the proposed position
-        logp = model.compute_log_prior_fn(q, inds=new_inds)
+        # need to adjust so that all models are included
+        new_inds_adjust = deepcopy(new_inds)
+        for name in new_inds:
+            new_inds_adjust[name][:] = True
+
+        logp = model.compute_log_prior_fn(q, inds=new_inds_adjust)
         
         #if (new_branch_supps is not None or new_supps is not None) and self.adjust_supps_pre_logl_func is not None:
         #    self.adjust_supps_pre_logl_func(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)

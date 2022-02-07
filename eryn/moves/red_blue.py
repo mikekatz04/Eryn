@@ -250,6 +250,7 @@ class RedBlueMove(Move, ABC):
 
                 factors = factors_temp.reshape((ntemps, -1,))
 
+                new_inds_prior = deepcopy(new_inds)
                 if "model_indicator" in q:
                     model_indicator = np.take_along_axis(state.branches["model_indicator"].coords, all_inds_shaped[:, :, None, None], axis=1)
 
@@ -277,14 +278,18 @@ class RedBlueMove(Move, ABC):
                         ndims_old = np.full_like(factors, ndims.sum() + 1)
                         ndims_new = ndims[model_indicator]
                         self.adjust_factors(factors, ndims_old, ndims_new)
-
+                    
+                    for name in new_inds_prior:
+                        new_inds_prior[name][:] = True
+                    
                 for name in q:
                     q[name] = q[name] * (
                         new_inds_adjust[name][:, :, :, None]
                     ) + temp_coords[name] * (~new_inds_adjust[name][:, :, :, None])
 
                 # Compute prior of the proposed position
-                logp = model.compute_log_prior_fn(q, inds=new_inds)
+                # new_inds_prior is adjusted if product-space is used
+                logp = model.compute_log_prior_fn(q, inds=new_inds_prior)
                
                 # set logp for walkers with no leaves that are being tested
                 # in this gibbs run
