@@ -200,6 +200,36 @@ class PriorContainer:
 
         return prior_vals
 
+    def ppf(self, x, groups=None):
+        """Get logpdf by summing logpdf of individual distributions
+
+        Args:
+            x (double np.ndarray[number of tested sources, ndim]):
+                Input parameters to get prior values.
+
+        Returns:
+            np.ndarray[number of tested sources]: Prior values.
+
+        """
+
+        if groups is not None:
+            raise NotImplementedError
+
+        # TODO: check if mutliple index prior will work
+        out_vals = np.zeros_like(x)
+
+        # sum the logs (assumes parameters are independent)
+        for i, (inds, prior_i) in enumerate(self.priors):
+            if len(inds) > 1:
+                raise NotImplementedError
+
+            vals_in = x[:, inds].squeeze()
+            temp = prior_i.ppf(vals_in)
+            
+            out_vals[:, inds[0]] = temp
+
+        return out_vals
+
     def rvs(self, size=1):
         """Generate random values according to prior distribution
 
