@@ -216,6 +216,8 @@ class PriorContainer:
             raise NotImplementedError
 
         # TODO: check if mutliple index prior will work
+        is_1d = x.ndim == 1
+        x = np.atleast_2d(x)
         out_vals = np.zeros_like(x)
 
         # sum the logs (assumes parameters are independent)
@@ -228,6 +230,8 @@ class PriorContainer:
             
             out_vals[:, inds[0]] = temp
 
+        if is_1d:
+            return out_vals.squeeze()
         return out_vals
 
     def rvs(self, size=1):
