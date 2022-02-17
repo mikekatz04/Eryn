@@ -22,15 +22,19 @@ class ProductSpaceMove(Move):
     """
 
     def __init__(
-        self, max_k, min_k, random_change=True, tune=False, **kwargs
+        self, max_k, min_k, random_change=True, remove_current_indicator=True, p=None, tune=False, **kwargs
     ):
         super(ProductSpaceMove, self).__init__(**kwargs)
 
         self.max_k = max_k
         self.min_k = min_k
         self.possible_models = list(np.arange(min_k, max_k + 1))
-        self.random_change = random_change
+        self.p = np.asarray(p)
+        if self.p is not None:
+            assert len(self.p) == len(self.possible_models)
+            assert self.p.sum() == 1.0
 
+        self.random_change = random_change
         
     def setup(self, coords):
         pass
@@ -104,6 +108,9 @@ class ProductSpaceMove(Move):
 
         model_indicator = state.branches["model_indicator"].coords.astype(int).squeeze().copy()
         unique_model_indicators = np.unique(model_indicator)
+
+        if model_indicator.ndim == 1:
+            model_indicator = model_indicator[None, :]
         
         factors = np.zeros((ntemps, nwalkers))
         model_indicator_temp = model_indicator.copy()
@@ -111,9 +118,18 @@ class ProductSpaceMove(Move):
             for indicator in unique_model_indicators:
                 inds_keep = np.where(model_indicator_temp == indicator)
                 temp_inds = self.possible_models.copy()
-                temp_inds.remove(indicator)
-                new_model_indicator = model.random.choice(temp_inds, len(inds_keep[0]), replace=True)
-                model_indicator[inds_keep] = new_model_indicator 
+                if self.p is None:
+                    temp_inds.remove(indicator)
+
+                new_model_indicator = model.random.choice(temp_inds, len(inds_keep[0]), replace=True, p=self.p)
+                model_indicator[inds_keep] = new_model_indicator
+                if self.p is not None:
+                    # probability to go to old model
+                    q_numerator = self.p[model_indicator_temp[inds_keep]]
+                    # probability to go to new model
+                    q_denominator = self.p[new_model_indicator]
+                    factors[inds_keep] = np.log(q_numerator) - np.log(q_denominator)
+
 
         else:
             for indicator in unique_model_indicators:
@@ -147,7 +163,7 @@ class ProductSpaceMove(Move):
         assert len(unique_model_indicators) <= len(model_names)
 
         # adjust indices
-        for i in unique_model_indicators:
+        for i in self.possible_models:
             new_inds[model_names[i]][model_indicator != i] = False
 
         # propose new sources and coordinates
@@ -207,9 +223,12 @@ class ProductSpaceMove(Move):
 
         # TODO: deal with blobs
         new_state = State(q, log_prob=logl, log_prior=logp, blobs=None, inds=new_inds, supplimental=new_supps, branch_supplimental=new_branch_supps)
+        if np.any(new_state.branches_inds["base"] & new_state.branches_inds["third"]):
+            breakpoint()
         state = self.update(state, new_state, accepted)
 
         if self.temperature_control is not None:
             state, accepted = self.temperature_control.temper_comps(state, accepted)
 
+        
         return state, accepted

@@ -259,6 +259,9 @@ class RedBlueMove(Move, ABC):
                     
                     model_indicator = model_indicator.squeeze().astype(int)
                     
+                    if model_indicator.ndim == 1:
+                        model_indicator = model_indicator[None, :]
+
                     unique_model_indicators = np.unique(model_indicator)
                     model_names = list(q.keys())
                     model_names.remove("model_indicator")
@@ -267,7 +270,7 @@ class RedBlueMove(Move, ABC):
 
                     # adjust indices
                     for i in unique_model_indicators:
-                        new_inds_adjust[model_names[i]][model_indicator != i] = False
+                        new_inds_adjust[model_names[i]][(model_indicator != i)] = False
 
                     new_inds_adjust["model_indicator"][:] = False
 
