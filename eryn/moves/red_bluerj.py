@@ -186,23 +186,23 @@ class RedBlueMoveRJ(Move, ABC):
                 if gs is not None:
                     # TODO: adjust to not one model at a time?
                     # adjust new inds for gibbs sampling
-                    name_keep, inds_keep, nleaves_max_here = gs
-                    keep_arr = np.zeros_like(new_inds_adjust[name], dtype=bool)
+                    name_keep, inds_keep_gs, nleaves_max_here = gs
                     for name in new_inds_adjust:
                         if name != name_keep:
                             # not using any of these
-                            new_inds_adjust[name] = False
+                            new_inds_adjust[name][:] = False
 
                         else:
+                            keep_arr = np.zeros_like(new_inds_adjust[name], dtype=bool)
                             inds_1 = np.cumsum(new_inds_adjust[name], axis=2) * (
                                 new_inds_adjust[name] == True
                             )
 
-                            for ii in inds_keep:
+                            for ii in inds_keep_gs:
                                 keep_inds = np.where(inds_1 == (ii + 1))
                                 keep_arr[keep_inds] = True
 
-                            new_inds_adjust[name] = keep_arr.copy()
+                            new_inds_adjust[name][:] = keep_arr.copy()
 
                 q = {
                     name: np.zeros(
@@ -229,7 +229,6 @@ class RedBlueMoveRJ(Move, ABC):
 
                     # need to trick stretch proposal into using the dimenionality associated
                     # with Gibbs sampling if it is being used
-
                     temp_inds_s = {
                         name: new_inds_adjust[name][t] for name in new_inds_adjust
                     }
@@ -270,16 +269,21 @@ class RedBlueMoveRJ(Move, ABC):
 
                 # default for removing inds info from supp
                 if not np.all(np.asarray(list(state.branches_supplimental.values())) == None):
-                    new_branch_supps = {
-                        name: state.branches[name].branch_supplimental.take_along_axis(
-                            all_inds_shaped[:, :, None], axis=1
-                        )
-                        for name in state.branches
-                    }
-                    
-                    new_branch_supps = {name: BranchSupplimental(new_branch_supps[name], obj_contained_shape=new_inds[name].shape, copy=False) for name in new_branch_supps}
+                    new_branch_supps = {}
+                    for name in state.branches:
+                        if state.branches_supplimental[name] is not None:
+                            new_branch_supps[name] = state.branches[name].branch_supplimental.take_along_axis(
+                                all_inds_shaped[:, :, None], axis=1
+                            )
+                        else:
+                            new_branch_supps[name] = None
+
                     for name in new_branch_supps:
-                        new_branch_supps[name].add_objects({"inds_keep": new_inds_adjust[name]})
+                        if new_branch_supps[name] is not None:
+                            new_branch_supps[name] = BranchSupplimental(new_branch_supps[name], obj_contained_shape=new_inds[name].shape, copy=False)
+                    for name in new_branch_supps:
+                        if new_branch_supps[name] is not None:
+                            new_branch_supps[name].add_objects({"inds_keep": new_inds_adjust[name]})
 
                 else:
                     new_branch_supps = None
@@ -292,11 +296,12 @@ class RedBlueMoveRJ(Move, ABC):
 
                 # Compute the lnprobs of the proposed position.
                 logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
-                    
+
                 if (new_branch_supps is not None and not np.all(np.asarray(list(new_branch_supps.values())) == None)) or new_supps is not None:
                     if new_branch_supps is not None:
                         for name in new_branch_supps:
-                            new_branch_supps[name].remove_objects("inds_keep")
+                            if new_branch_supps[name] is not None:
+                                new_branch_supps[name].remove_objects("inds_keep")
                     elif new_supps is not None:
                         del new_branch_supps
 

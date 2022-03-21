@@ -442,11 +442,11 @@ class Backend(object):
         """
         return self.get_value("betas", **kwargs)
 
-    def get_last_sample(self):
-        """Access the most recent sample in the chain
+    def get_a_sample(self, it):
+        """Access a sample in the chain
 
         Returns:
-            State: :class:`eryn.state.State` object containing the last sample from the chain.
+            State: :class:`eryn.state.State` object containing the sample from the chain.
 
         """
         if (not self.initialized) or self.iteration <= 0:
@@ -455,7 +455,6 @@ class Backend(object):
                 "'store == True' before accessing the "
                 "results"
             )
-        it = self.iteration
 
         # check for blobs
         blobs = self.get_blobs(discard=it - 1)
@@ -463,7 +462,7 @@ class Backend(object):
             blobs = blobs[0]
 
         # fill a State with quantities from the last sample in the chain
-        last_sample = State(
+        sample = State(
             {name: temp[0] for name, temp in self.get_chain(discard=it - 1).items()},
             log_prob=self.get_log_prob(discard=it - 1)[0],
             log_prior=self.get_log_prior(discard=it - 1)[0],
@@ -473,7 +472,17 @@ class Backend(object):
             blobs=blobs,
             random_state=self.random_state,
         )
+        return sample
 
+    def get_last_sample(self):
+        """Access the most recent sample in the chain
+
+        Returns:
+            State: :class:`eryn.state.State` object containing the last sample from the chain.
+
+        """
+        it = self.iteration
+        last_sample = self.get_a_sample(it)
         return last_sample
 
     def get_autocorr_time(

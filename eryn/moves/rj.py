@@ -113,6 +113,9 @@ class ReversibleJump(Move):
 
         # TODO: do we want an probability that the model count will not change?
         inds_for_change = {}
+
+        assert len(self.min_k) == len(self.max_k)
+        assert len(state.branches.keys()) == len(self.max_k)
         for (name, branch), min_k, max_k in zip(
             state.branches.items(), self.min_k, self.max_k
         ):
@@ -219,16 +222,18 @@ class ReversibleJump(Move):
         if not np.all(np.asarray(list(state.branches_supplimental.values())) == None):
             new_branch_supps = deepcopy(state.branches_supplimental)
             for name in new_branch_supps:
-                indicator_inds = (new_inds[name].astype(int) - state.branches_inds[name].astype(int)) > 0
-                new_branch_supps[name].add_objects({"inds_keep": indicator_inds})
+                if new_branch_supps[name] is not None:
+                    indicator_inds = (new_inds[name].astype(int) - state.branches_inds[name].astype(int)) > 0
+                    new_branch_supps[name].add_objects({"inds_keep": indicator_inds})
 
         else:
             new_branch_supps = None
             if new_supps is not None:
                 new_branch_supps = {}
                 for name in new_branch_supps:
-                    indicator_inds = (new_inds[name].astype(int) - state.branches_inds[name].astype(int)) > 0
-                    new_branch_supps[name] = BranchSupplimental({"inds_keep": indicator_inds}, obj_contained_shape=new_inds[name].shape, copy=False)
+                    if new_branch_supps[name] is not None:
+                        indicator_inds = (new_inds[name].astype(int) - state.branches_inds[name].astype(int)) > 0
+                        new_branch_supps[name] = BranchSupplimental({"inds_keep": indicator_inds}, obj_contained_shape=new_inds[name].shape, copy=False)
 
         # Compute prior of the proposed position
         logp = model.compute_log_prior_fn(q, inds=new_inds)

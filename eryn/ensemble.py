@@ -940,7 +940,7 @@ class EnsembleSampler(object):
             for key in inds_copy:
                 inds_copy[key][inds_bad] = False
 
-                if branch_supps is not None:
+                if branch_supps is not None and branch_supps[key] is not None:
                     branch_supps[key][inds_bad] = {"inds_keep": False}
 
             results = self.log_prob_fn(p, inds=inds_copy, supps=supps, branch_supps=branch_supps)
@@ -1128,7 +1128,7 @@ class _FunctionWrapper(object):
                 x_in[name] = coords[inds[name]]
                 
                 if self.provide_supplimental:
-                    if branch_supps is not None:
+                    if branch_supps is not None and branch_supps[name] is not None:
                         branch_supps_in[name] = branch_supps[name][inds[name]]
 
             if self.provide_supplimental:
@@ -1161,26 +1161,31 @@ class _FunctionWrapper(object):
                 if branch_supps is not None:
                     branch_supps_in_2 = list(branch_supps_in.values())
                     if len(branch_supps_in_2) == 1:
-                        branch_supps_in_2 = branch_supps_in_2[0]
-                    kwargs_in["branch_supps"] = branch_supps_in_2
+                        kwargs_in["branch_supps"] = branch_supps_in_2
 
+                    elif len(branch_supps_in_2) == 1:
+                        kwargs_in["branch_supps"] = branch_supps_in_2[0]
+                    
             # TODO: this may have pickle issue with multiprocessing (kwargs_in)
             out = self.f(*args_in, **kwargs_in)
 
             if self.provide_supplimental:
                 if branch_supps is not None:
-                    for name in branch_supps:
-                        # TODO: better way to do this? limit to 
-                        if "inds_keep" in branch_supps[name]:
-                            inds_back = branch_supps[name][:]["inds_keep"]
-                            inds_back2 = branch_supps_in[name]["inds_keep"]
-                        else:
-                            inds_back = inds[name]
-                            inds_back2 = slice(None)
-                        try:
-                            branch_supps[name][inds_back] = {key: branch_supps_in_2[key][inds_back2] for key in branch_supps_in_2}
-                        except ValueError:
-                            breakpoint()
+                    for name_i, name in enumerate(branch_supps):
+                        if branch_supps[name] is not None:
+                            # TODO: better way to do this? limit to 
+                            if "inds_keep" in branch_supps[name]:
+                                inds_back = branch_supps[name][:]["inds_keep"]
+                                inds_back2 = branch_supps_in[name]["inds_keep"]
+                            else:
+                                inds_back = inds[name]
+                                inds_back2 = slice(None)
+                            try:
+                                branch_supps[name][inds_back] = {key: branch_supps_in_2[name_i][key][inds_back2] for key in branch_supps_in_2[name_i]}
+                            except ValueError:
+                                breakpoint()
+                                branch_supps[name][inds_back] = {key: branch_supps_in_2[name_i][key][inds_back2] for key in branch_supps_in_2[name_i]}
+                                
             # -1e300 because -np.inf screws up state acceptance transfer in proposals
             ll = np.full(nwalkers_all, -1e300)
             inds_fix_zeros = np.delete(np.arange(nwalkers_all), unique_groups)

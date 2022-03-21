@@ -18,7 +18,7 @@ class MHMove(Move):
 
     def __init__(self, **kwargs):
 
-        super(MHMove, self).__init__(**kwargs)
+        Move.__init__(self, **kwargs)
         # TODO: check ndim stuff
 
     def get_proposal(self, branches_coords, branches_inds, random):
@@ -54,11 +54,6 @@ class MHMove(Move):
         # Check to make sure that the dimensions match.
         ntemps, nwalkers, _, _ = state.branches[list(state.branches.keys())[0]].shape
 
-        # Get the move-specific proposal.
-        q, factors = self.get_proposal(
-            state.branches_coords, state.branches_inds, model.random
-        )
-
         # setup supplimental information
         if not np.all(np.asarray(list(state.branches_supplimental.values())) == None):
             new_branch_supps = deepcopy(state.branches_supplimental)
@@ -71,17 +66,27 @@ class MHMove(Move):
         else:   
             new_supps = None
 
+        # Get the move-specific proposal.
+        q, factors = self.get_proposal(
+            state.branches_coords, state.branches_inds, model.random, supps=new_supps, branch_supps=new_branch_supps
+        )
+
         # Compute prior of the proposed position
         logp = model.compute_log_prior_fn(q, inds=state.branches_inds)
 
-        if new_branch_supps is not None or new_supps is not None:
-            self.adjust_supps_pre_logl_func(q, inds=state.branches_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
+        #if new_branch_supps is not None or new_supps is not None:
+        #   self.adjust_supps_pre_logl_func(q, inds=state.branches_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
 
         # Compute the lnprobs of the proposed position.
         # Can adjust supplimentals in place
         logl, new_blobs = model.compute_log_prob_fn(
             q, inds=state.branches_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps
         )
+
+        if new_branch_supps is not None:
+            for key, value in new_branch_supps.items():
+                if isinstance(value, dict) and "inds_keep" in value:
+                    del value["inds_keep"]
 
         logP = self.compute_log_posterior(logl, logp)
 
