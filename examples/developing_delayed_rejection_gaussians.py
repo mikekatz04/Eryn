@@ -165,8 +165,8 @@ cov    = {"gauss": np.diag(np.ones(3)) * factor,
           "noise": np.diag(np.ones(1)) * factor}
 moves  = GaussianMove(cov)
 
-usedr = False
-# usedr = GaussianMove(cov)
+# usedr = False
+usedr = GaussianMove(cov)
 dr_miter = 5
 
 if usedr:
