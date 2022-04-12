@@ -1020,6 +1020,22 @@ class EnsembleSampler(object):
         else:
             return None
 
+    @property
+    def swap_acceptance_fraction(self):
+        """The fraction of proposed steps that were accepted"""
+        # print(self.backend.iteration) # np.sum(self.backend.accepted)
+        # breakpoint()
+        return self.backend.in_model_swaps_accepted / float(self.backend.iteration)
+
+    @property
+    def rj_swap_acceptance_fraction(self):
+        """The fraction of proposed reversible jump steps that were accepted"""
+        if self.has_reversible_jump:
+            # print(self.backend.iteration, np.sum(self.backend.rj_accepted))
+            return self.backend.rj_swaps_accepted / float(self.backend.iteration)
+        else:
+            return None
+
     def get_chain(self, **kwargs):
         return self.get_value("chain", **kwargs)
 
