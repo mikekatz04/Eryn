@@ -99,9 +99,11 @@ class ReversibleJump(Move):
             :class:`State`: State of sampler after proposal is complete.
 
         """
-        # TODO: check stretch proposaln works here?
-        # Check that the dimensions are compatible.
-        ndim_total = 0
+
+        # TODO: keep this?
+        # this exposes anywhere in the proposal class to this information
+        self.current_state = state
+        self.current_model = model
 
         # Run any move-specific setup.
         self.setup(state.branches)
@@ -190,6 +192,11 @@ class ReversibleJump(Move):
             state.branches_coords, state.branches_inds, inds_for_change, model.random, branch_supps=state.branches_supplimental
         )
 
+        if "inds_here" in q:
+            temp_transfer_info = {name: q.pop(name) for name in ["ll", "lp", "inds_here"]}
+        else:
+            temp_transfer_info = {}
+
         # TODO: check this
         edge_factors = np.zeros((ntemps, nwalkers))
         # get factors for edges
@@ -238,12 +245,23 @@ class ReversibleJump(Move):
         # Compute prior of the proposed position
         logp = model.compute_log_prior_fn(q, inds=new_inds)
 
+        # pass ll values from special likelihoods in the proposal
+        # prevent ll values from being run again
+        #if "inds_here" in temp_transfer_info:
+        #    logp_keep = logp[temp_transfer_info["inds_here"]]
+        #    logp[temp_transfer_info["inds_here"]] = -np.inf
         
         #if (new_branch_supps is not None or new_supps is not None) and self.adjust_supps_pre_logl_func is not None:
         #    self.adjust_supps_pre_logl_func(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
 
         # Compute the lnprobs of the proposed position.
         logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
+
+        # pass ll values from special likelihoods in the proposal
+        # put int he correct values
+        #if "inds_here" in temp_transfer_info:
+        #    logp[temp_transfer_info["inds_here"]] = logp_keep
+        #    logl[temp_transfer_info["inds_here"]] = temp_transfer_info["ll"]
 
         logP = self.compute_log_posterior(logl, logp)
 
@@ -261,6 +279,8 @@ class ReversibleJump(Move):
 
         accepted = lnpdiff > np.log(model.random.rand(ntemps, nwalkers))
 
+        #if np.any(accepted[0]):
+        #    breakpoint()
         # TODO: deal with blobs
         new_state = State(q, log_prob=logl, log_prior=logp, blobs=None, inds=new_inds, supplimental=new_supps, branch_supplimental=new_branch_supps)
         state = self.update(state, new_state, accepted)

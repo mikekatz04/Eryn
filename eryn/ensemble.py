@@ -237,39 +237,7 @@ class EnsembleSampler(object):
         self.vectorize = vectorize
         self.blobs_dtype = blobs_dtype
 
-        if isinstance(priors, dict):
-            test = priors[list(priors.keys())[0]]
-            if isinstance(test, dict):
-                # check all dists
-                for name, priors_temp in priors.items():
-                    for ind, dist in priors_temp.items():
-                        if not hasattr(dist, "logpdf"):
-                            raise ValueError(
-                                "Distribution for model {0} and index {1} does not have logpdf method.".format(
-                                    name, ind
-                                )
-                            )
-                self.priors = {
-                    name: PriorContainer(priors_temp)
-                    for name, priors_temp in priors.items()
-                }
-
-            elif isinstance(test, PriorContainer):
-                self.priors = priors
-
-            elif hasattr(test, "logpdf"):
-                self.priors = {"model_0": PriorContainer(priors)}
-
-            else:
-                raise ValueError(
-                    "priors dictionary items must be dictionaries with prior information or instances of the PriorContainer class."
-                )
-
-        elif isinstance(priors, PriorContainer):
-            self.priors = {"model_0": priors}
-
-        else:
-            raise ValueError("Priors must be a dictionary.")
+        self.priors = priors
 
         # set basic variables for sampling settings
         self.ndims = ndims  # interpeted as ndim_max
@@ -498,6 +466,48 @@ class EnsembleSampler(object):
             self._random.set_state(state)
         except:
             pass
+
+    @property 
+    def priors(self):
+        return self._priors
+
+    @priors.setter
+    def priors(self, priors):
+        if isinstance(priors, dict):
+            test = priors[list(priors.keys())[0]]
+            if isinstance(test, dict):
+                # check all dists
+                for name, priors_temp in priors.items():
+                    for ind, dist in priors_temp.items():
+                        if not hasattr(dist, "logpdf"):
+                            raise ValueError(
+                                "Distribution for model {0} and index {1} does not have logpdf method.".format(
+                                    name, ind
+                                )
+                            )
+                self._priors = {
+                    name: PriorContainer(priors_temp)
+                    for name, priors_temp in priors.items()
+                }
+
+            elif isinstance(test, PriorContainer):
+                self._priors = priors
+
+            elif hasattr(test, "logpdf"):
+                self._priors = {"model_0": PriorContainer(priors)}
+
+            else:
+                raise ValueError(
+                    "priors dictionary items must be dictionaries with prior information or instances of the PriorContainer class."
+                )
+
+        elif isinstance(priors, PriorContainer):
+            self._priors = {"model_0": priors}
+
+        else:
+            raise ValueError("Priors must be a dictionary.")
+
+        return
 
     @property
     def iteration(self):
