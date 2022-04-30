@@ -15,6 +15,7 @@ from .tempering import TemperatureControl
 from .rj import ReversibleJump
 from .priorgenrj import PriorGenerate
 from .productspacemove import ProductSpaceMove
+from .multipletry import MultipleTryMove
 
 __all__ = [
     "Move",
