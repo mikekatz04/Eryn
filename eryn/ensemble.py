@@ -1171,10 +1171,10 @@ class _FunctionWrapper(object):
                 if branch_supps is not None:
                     branch_supps_in_2 = list(branch_supps_in.values())
                     if len(branch_supps_in_2) == 1:
-                        kwargs_in["branch_supps"] = branch_supps_in_2
-
-                    elif len(branch_supps_in_2) == 1:
                         kwargs_in["branch_supps"] = branch_supps_in_2[0]
+
+                    else:
+                        kwargs_in["branch_supps"] = branch_supps_in_2
                     
             # TODO: this may have pickle issue with multiprocessing (kwargs_in)
             out = self.f(*args_in, **kwargs_in)

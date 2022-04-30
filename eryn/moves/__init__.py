@@ -16,6 +16,8 @@ from .rj import ReversibleJump
 from .priorgenrj import PriorGenerate
 from .productspacemove import ProductSpaceMove
 from .multipletry import MultipleTryMove
+from .group import GroupMove
+from .groupstretch import GroupStretchMove
 
 __all__ = [
     "Move",
