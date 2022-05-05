@@ -5,7 +5,7 @@ from copy import deepcopy
 try:
     import cupy as xp
 
-except ModuleNotFoundError:
+except (ModuleNotFoundError, ImportError) as e:
     import numpy as np
 
 import numpy as np
