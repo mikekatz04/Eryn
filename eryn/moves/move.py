@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from eryn.state import BranchSupplimental
+from ..state import BranchSupplimental
 import numpy as np
 try:
     import cupy as xp

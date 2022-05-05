@@ -9,7 +9,7 @@ try:
     import cupy as xp
 
     gpu_available = True
-except ModuleNotFoundError:
+except (ModuleNotFoundError, ImportError):
     import numpy as xp
 
     gpu_available = False
