@@ -4,7 +4,7 @@ from eryn.state import BranchSupplimental
 import numpy as np
 try:
     import cupy as xp
-except ModuleNotFoundError:
+except (ModuleNotFoundError, ImportError):
     import numpy as xp
 
 __all__ = ["Move"]
