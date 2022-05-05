@@ -22,10 +22,11 @@ class Move(object):
 
     """
 
-    def __init__(self, temperature_control=None, periodic=None, adjust_supps_pre_logl_func=None):
+    def __init__(self, temperature_control=None, periodic=None, adjust_supps_pre_logl_func=None, skip_supp_names=[]):
         self.temperature_control = temperature_control
         self.periodic = periodic
         self.adjust_supps_pre_logl_func = adjust_supps_pre_logl_func
+        self.skip_supp_names = skip_supp_names
 
     @property
     def temperature_control(self):
@@ -159,11 +160,13 @@ class Move(object):
             temp_change_branch_supplimental = {}
             for name in old_state.branches:
                 if old_state.branches[name].branch_supplimental is not None:
-                    old_branch_supplimental = old_state.branches[name].branch_supplimental.take_along_axis(subset[:, :, None], axis=1)
+                    old_branch_supplimental = old_state.branches[name].branch_supplimental.take_along_axis(subset[:, :, None], axis=1, skip_names=self.skip_supp_names)
                     new_branch_supplimental = new_state.branches[name].branch_supplimental[:]
 
                     tmp = {}
                     for key in old_branch_supplimental:
+                        if key in self.skip_supp_names:
+                            continue
                         accepted_temp_here = accepted_temp.copy()
                         if new_branch_supplimental[key].dtype.name != "object":
                             for _ in range(new_branch_supplimental[key].ndim - accepted_temp_here.ndim):
@@ -201,6 +204,8 @@ class Move(object):
 
             temp_change_suppliment = {}
             for name in old_suppliment:
+                if name in self.skip_supp_names:
+                    continue
                 if old_suppliment[name].dtype.name != "object":
                     for _ in range(old_suppliment[name].ndim - accepted_temp_here.ndim):
                         accepted_temp_here = np.expand_dims(accepted_temp_here, (-1,))
@@ -214,7 +219,7 @@ class Move(object):
                         xp.asarray(~accepted_temp_here)
                     )
             old_state.supplimental.put_along_axis(subset, temp_change_suppliment, axis=1)
-
+        
         # coords
         old_coords = {
             name: np.take_along_axis(branch.coords, subset[:, :, None, None], axis=1)

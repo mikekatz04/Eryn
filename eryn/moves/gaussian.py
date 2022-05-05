@@ -62,7 +62,7 @@ class GaussianMove(MHMove):
 
         super(GaussianMove, self).__init__(**kwargs)
 
-    def get_proposal(self, branches_coords, branches_inds, random):
+    def get_proposal(self, branches_coords, branches_inds, random, **kwargs):
         """Get proposal from Gaussian distribution
 
         Args:

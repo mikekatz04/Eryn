@@ -124,10 +124,13 @@ class BranchSupplimental(object):
             
             self.holder[name][tmp] = new_value[name]
 
-    def take_along_axis(self, indices, axis):
+    def take_along_axis(self, indices, axis, skip_names=[]):
         out = {}
         
         for name, values in self.holder.items():
+            if name in skip_names:
+                continue
+
             indices_temp = indices.copy()
             if (isinstance(values, np.ndarray) and values.dtype.name != "object") or isinstance(values, xp.ndarray):
                 for _ in range(values.ndim - indices_temp.ndim):
@@ -173,7 +176,7 @@ class BranchSupplimental(object):
         out = {}
         for name, values in self.holder.items():
             if (isinstance(values, np.ndarray) and values.dtype.name != "object") or isinstance(values, xp.ndarray):
-                out[name] = values.reshape(-1, values.shape[-1])
+                out[name] = values.reshape((-1,) + values.shape[2:])
             else:
                 out[name] = values.flatten()
         return out

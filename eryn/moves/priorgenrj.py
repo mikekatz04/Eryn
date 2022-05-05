@@ -16,7 +16,6 @@ class PriorGenerate(ReversibleJump):
             and ``rvs`` methods.
 
     """
-
     def __init__(self, priors, *args, **kwargs):
 
         for key in priors:
@@ -25,7 +24,7 @@ class PriorGenerate(ReversibleJump):
         self.priors = priors
         super(PriorGenerate, self).__init__(*args, **kwargs)
 
-    def get_proposal(self, all_coords, all_inds, all_inds_for_change, random):
+    def get_proposal(self, all_coords, all_inds, all_inds_for_change, random, **kwargs):
         """Make a proposal
 
         Args:

@@ -123,6 +123,10 @@ class GroupMove(Move, ABC):
             :class:`State`: State of sampler after proposal is complete.
 
         """
+
+        import time
+
+        #st = time.perf_counter()
         # Check that the dimensions are compatible.
         ndim_total = 0
         for branch in state.branches.values():
@@ -132,10 +136,10 @@ class GroupMove(Move, ABC):
         # TODO: deal with more intensive acceptance fractions
         # Run any move-specific setup.
         self.setup(state.branches)
-
+        
         # Split the ensemble in half and iterate over these two halves.
         accepted = np.zeros((ntemps, nwalkers), dtype=bool)
-
+        
         if self.gibbs_sampling_leaves_per is not None:
             # setup for gibbs sampling
             gibbs_splits = []
@@ -156,6 +160,9 @@ class GroupMove(Move, ABC):
         else:
             gibbs_splits = [None]
 
+        #et = time.perf_counter()
+        #print("start", et - st)
+        #st = time.perf_counter()
         for gs in gibbs_splits:
 
             if gs is None:
@@ -212,6 +219,8 @@ class GroupMove(Move, ABC):
             factors[factors_inds] = factors_temp
 
             new_inds_prior = deepcopy(new_inds)
+            
+            """
             # product space
             if "model_indicator" in q:
                 model_indicator = np.take_along_axis(state.branches["model_indicator"].coords, all_inds_shaped[:, :, None, None], axis=1)
@@ -246,7 +255,7 @@ class GroupMove(Move, ABC):
                 
                 for name in new_inds_prior:
                     new_inds_prior[name][:] = True
-                
+            """
             for name in q:
                 q[name] = q[name] * (
                     new_inds_adjust[name][:, :, :, None]
@@ -279,9 +288,10 @@ class GroupMove(Move, ABC):
             #if (new_branch_supps is not None or new_supps is not None) and self.adjust_supps_pre_logl_func is not None:
             #    self.adjust_supps_pre_logl_func(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps, inds_keep=new_inds_adjust)
 
+            
             # Compute the lnprobs of the proposed position.
             logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
-
+            
             if (new_branch_supps is not None and not np.all(np.asarray(list(new_branch_supps.values())) == None)) or new_supps is not None:
                 if new_branch_supps is not None:
                     for name in new_branch_supps:
@@ -317,7 +327,7 @@ class GroupMove(Move, ABC):
             accepted = (accepted.astype(int) + accepted_here.astype(int)).astype(
                 bool
             )
-
+            
             new_state = State(
                 q, log_prob=logl, log_prior=logp, blobs=new_blobs, inds=new_inds, supplimental=new_supps, branch_supplimental=new_branch_supps
             )
@@ -326,9 +336,15 @@ class GroupMove(Move, ABC):
                 state, new_state, accepted_here
             )
 
+        #et = time.perf_counter()
+        #print("gibbs3", et - st)
+        #st = time.perf_counter()
         if self.temperature_control is not None:
             state, accepted = self.temperature_control.temper_comps(state, accepted)
 
+        #et = time.perf_counter()
+        #print("temper", et - st)
         # make accepted move specific ?
+        #breakpoint()
         return state, accepted
 
