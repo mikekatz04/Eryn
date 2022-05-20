@@ -5,6 +5,7 @@ from copy import deepcopy
 from ..state import State
 from .move import Move
 from .delayedrejection import DelayedRejection
+from .priorgen import PriorGenerate
 
 __all__ = ["ReversibleJump"]
 
@@ -21,7 +22,7 @@ class ReversibleJump(Move):
     """
 
     def __init__(
-        self, max_k, min_k, proposal=None, dr=None, dr_max_iter=5, tune=False, **kwargs
+        self, max_k, min_k, dr=None, dr_max_iter=5, tune=False, **kwargs
     ):
         super(ReversibleJump, self).__init__(**kwargs)
 
@@ -33,19 +34,23 @@ class ReversibleJump(Move):
 
         self.max_k = max_k
         self.min_k = min_k
-        self.tune = tune
-        self.dr = dr
+        self.tune  = tune
+        self.dr    = dr
 
         # Decide if DR is desirable. TODO: Now it uses the prior generator, we need to
         # think carefully if we want to use the in-model sampling proposal
-        if self.dr:
-            if self.dr is True:
-                if proposal is None:
-                    raise ValueError("If dr==True, must provide proposal kwarg.")
-
-                self.dr = DelayedRejection(proposal, max_iter=dr_max_iter)
-
-        # TODO: add stuff here if needed like prob of birth / death
+        if self.dr is not None and self.dr is not False:
+            if self.dr is True: # Check if it's a boolean, then we just generate 
+                                # from prior (kills the purpose, but yields "healther" chains)
+                dr_proposal = PriorGenerate(
+                self.priors,
+                temperature_control=self.temperature_control)
+            else:
+                # Otherwise pass given input
+                dr_proposal = self.dr
+                
+            self.dr = DelayedRejection(dr_proposal, max_iter=dr_max_iter)
+            # TODO: add stuff here if needed like prob of birth / death
 
     def setup(self, coords):
         pass
@@ -213,6 +218,16 @@ class ReversibleJump(Move):
             # fix proposal asymmetry at top of k range
             inds_max = np.where(nleaves == max_k)
             # numerator term so -ln
+            edge_factors[inds_max] += np.log(1 / 2.0)
+
+            # fix proposal asymmetry at bottom of k range (kmin + 1)
+            inds_min = np.where(nleaves == min_k + 1)
+            # numerator term so +ln
+            edge_factors[inds_min] -= np.log(1 / 2.0)
+
+            # fix proposal asymmetry at top of k range (kmax - 1)
+            inds_max = np.where(nleaves == max_k - 1)
+            # numerator term so -ln
             edge_factors[inds_max] -= np.log(1 / 2.0)
 
         factors += edge_factors
@@ -292,9 +307,8 @@ class ReversibleJump(Move):
             #     # We need the a) rejected points, b) the model,
             #     # c) the current state, d) the indices where we had +1 (True),
             #     # and the e) factors.
-            #     # breakpoint()
             state, accepted = self.dr.propose(
-                accepted, model, state, new_inds, factors
+                lnpdiff, accepted, model, state, new_state, new_inds, inds_for_change, factors
             )  # model, state
 
         if self.temperature_control is not None:

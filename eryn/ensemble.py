@@ -8,7 +8,7 @@ from copy import deepcopy
 
 from .backends import Backend, HDFBackend
 from .model import Model
-from .moves import StretchMove, TemperatureControl, PriorGenerate, GaussianMove
+from .moves import StretchMove, TemperatureControl, PriorGenerateRJ, GaussianMove
 from .pbar import get_progress_bar
 from .state import State
 from .prior import PriorContainer
@@ -83,10 +83,10 @@ class EnsembleSampler(object):
             (default: ``None``)
         rj_moves (optional): If ``None`` ot ``False``, reversible jump will not be included in the run.
             This can be a single move object, a list of moves,
-            or a "weighted" list of the form ``[(eryn.moves.PriorGenerate(),
+            or a "weighted" list of the form ``[(eryn.moves.PriorGenerateRJ(),
             0.1), ...]``. When running, the sampler will randomly select a
             move from this list (optionally with weights) for each proposal.
-            If ``True``, it defaults to :class:`PriorGenerate`.
+            If ``True``, it defaults to :class:`PriorGenerateRJ`.
             (default: ``None``)
         dr_moves (bool, optional): If ``None`` ot ``False``, delayed rejection when proposing "birth"
             of new components/models will be switched off for this run. Requires ``rj_moves`` set to ``True``.
@@ -308,11 +308,10 @@ class EnsembleSampler(object):
 
                 assert len(self.nleaves_min) == self.nbranches
 
-                rj_move = PriorGenerate(
+                rj_move = PriorGenerateRJ(
                     self.priors,
                     self.nleaves_max,
                     self.nleaves_min,
-                    self._moves[0],  # TODO: check if necessary
                     dr=dr_moves,
                     dr_max_iter=dr_max_iter,
                     tune=False,
@@ -1046,6 +1045,22 @@ class EnsembleSampler(object):
         """The fraction of proposed reversible jump steps that were accepted"""
         if self.has_reversible_jump:
             return self.backend.rj_accepted / float(self.backend.iteration)
+        else:
+            return None
+
+    @property
+    def swap_acceptance_fraction(self):
+        """The fraction of proposed steps that were accepted"""
+        # print(self.backend.iteration) # np.sum(self.backend.accepted)
+        # breakpoint()
+        return self.backend.in_model_swaps_accepted / float(self.backend.iteration)
+
+    @property
+    def rj_swap_acceptance_fraction(self):
+        """The fraction of proposed reversible jump steps that were accepted"""
+        if self.has_reversible_jump:
+            # print(self.backend.iteration, np.sum(self.backend.rj_accepted))
+            return self.backend.rj_swaps_accepted / float(self.backend.iteration)
         else:
             return None
 

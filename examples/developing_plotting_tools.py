@@ -161,8 +161,8 @@ factor = 0.0001
 cov    = {"gauss": np.diag(np.ones(3)) * factor}
 moves  = GaussianMove(cov)
 
-nsteps = 4000
-burnin = 1000
+nsteps = 400
+burnin = 100
 
 ensemble = EnsembleSampler(
     nwalkers,
@@ -170,7 +170,7 @@ ensemble = EnsembleSampler(
     log_prob_fn,
     priors,
     args=[t, y],
-    tempering_kwargs=dict(betas=betas, stop_adaptation=-1),
+    tempering_kwargs=dict(betas=betas, stop_adaptation=-1), # dict(ntemps=ntemps),
     nbranches=len(branch_names),
     branch_names=branch_names,
     nleaves_max=nleaves_max,
@@ -182,7 +182,14 @@ ensemble = EnsembleSampler(
 
 ensemble.run_mcmc(state, nsteps, burn=burnin, progress=True, thin_by=1)
 
-check = ensemble.backend.get_autocorr_time(average=True, all_temps=True)
+mcmcchains = ensemble.get_chain()
+
+print(mcmcchains.keys(), mcmcchains['gauss'])
+
+# (400, 10, 20, 10, 3)
+# (nsamples, ntemps, nwalkers, modelmax, ndim)
+
+# breakpoint()
 
 plot = PlotContainer(backend=ensemble.backend)
 
