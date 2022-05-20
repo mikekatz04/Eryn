@@ -264,6 +264,12 @@ class GroupMove(Move, ABC):
             # Compute prior of the proposed position
             # new_inds_prior is adjusted if product-space is used
             logp = model.compute_log_prior_fn(q, inds=new_inds_prior)
+
+            if (np.any(np.abs(q["gb"][:, :, :, 4]) > 1.0) or np.any(np.abs(q["gb"][:, :, :, 7]) > 1.0)):
+                if np.any(~np.isinf(logp[np.where(np.abs(q["gb"][:, :, :, 4]) > 1.0)[:2]])):
+                    breakpoint()
+                if np.any(~np.isinf(logp[np.where(np.abs(q["gb"][:, :, :, 7]) > 1.0)[:2]])):
+                    breakpoint()
             
             # set logp for walkers with no leaves that are being tested
             # in this gibbs run

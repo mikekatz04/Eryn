@@ -456,18 +456,19 @@ class Backend(object):
                 "results"
             )
 
+        thin = self.iteration - it if it != self.iteration else 1
         # check for blobs
-        blobs = self.get_blobs(discard=it - 1)
+        blobs = self.get_blobs(discard=it - 1, thin=thin)
         if blobs is not None:
             blobs = blobs[0]
 
         # fill a State with quantities from the last sample in the chain
         sample = State(
-            {name: temp[0] for name, temp in self.get_chain(discard=it - 1).items()},
-            log_prob=self.get_log_prob(discard=it - 1)[0],
-            log_prior=self.get_log_prior(discard=it - 1)[0],
+            {name: temp[0] for name, temp in self.get_chain(discard=it - 1, thin=thin).items()},
+            log_prob=self.get_log_prob(discard=it - 1, thin=thin)[0],
+            log_prior=self.get_log_prior(discard=it - 1, thin=thin)[0],
             inds={
-                name: temp[0] for name, temp in self.get_inds(discard=it - 1).items()
+                name: temp[0] for name, temp in self.get_inds(discard=it - 1, thin=thin).items()
             },
             blobs=blobs,
             random_state=self.random_state,

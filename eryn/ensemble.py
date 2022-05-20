@@ -195,6 +195,8 @@ class EnsembleSampler(object):
         info={},
         branch_names=None,
         fill_zero_leaves_val=-1e300,
+        num_repeats_in_model=1,
+        num_repeats_rj=1,
         verbose=False,
     ):
 
@@ -203,6 +205,8 @@ class EnsembleSampler(object):
         self.provide_groups = provide_groups
         self.provide_supplimental = provide_supplimental
         self.fill_zero_leaves_val = fill_zero_leaves_val
+        self.num_repeats_in_model = num_repeats_in_model
+        self.num_repeats_rj = num_repeats_rj
 
         # store default branch names if not given
         if branch_names is None:
@@ -287,7 +291,9 @@ class EnsembleSampler(object):
         self._weights /= np.sum(self._weights)
 
         # parse the reversible jump move schedule
-        if isinstance(rj_moves, bool):
+        if rj_moves is None:
+            self.has_reversible_jump = False
+        elif isinstance(rj_moves, bool):
             self.has_reversible_jump = rj_moves
             # TODO: deal with tuning
             if self.has_reversible_jump:
@@ -325,7 +331,11 @@ class EnsembleSampler(object):
                 self._rj_weights = np.ones(len(rj_moves))
 
         else:
-            self.has_reversible_jump = False
+            self.has_reversible_jump = True
+            # TODO: fix error catch here
+            self._rj_moves = [rj_moves]
+            self._rj_weights = [1.0]
+            
 
         # adjust rj weights properly
         if self.has_reversible_jump:
@@ -677,37 +687,41 @@ class EnsembleSampler(object):
             i = 0
             for _ in count() if iterations is None else range(iterations):
                 for _ in range(yield_step):
-                    # Choose a random move
-                    move = self._random.choice(self._moves, p=self._weights)
+                    # in model moves
+                    for repeat in range(self.num_repeats_in_model):
+                            
+                        # Choose a random move
+                        move = self._random.choice(self._moves, p=self._weights)
 
-                    # Propose (in model)
-                    state, accepted = move.propose(model, state)
-                    if self.ntemps > 1:
-                        in_model_swaps = move.temperature_control.swaps_accepted
-                    else:
-                        in_model_swaps = None
-
-                    state.random_state = self.random_state
-
-                    if tune:
-                        move.tune(state, accepted)
-
-                    if self.has_reversible_jump:
-                        rj_move = self._random.choice(
-                            self._rj_moves, p=self._rj_weights
-                        )
-
-                        # Propose (Between models)
-                        state, rj_accepted = rj_move.propose(model, state)
+                        # Propose (in model)
+                        state, accepted = move.propose(model, state)
                         if self.ntemps > 1:
-                            rj_swaps = rj_move.temperature_control.swaps_accepted
+                            in_model_swaps = move.temperature_control.swaps_accepted
                         else:
-                            rj_swaps = None
+                            in_model_swaps = None
 
                         state.random_state = self.random_state
 
                         if tune:
-                            rj_move.tune(state, rj_accepted)
+                            move.tune(state, accepted)
+
+                    if self.has_reversible_jump:
+                        for repeat in range(self.num_repeats_rj):
+                            rj_move = self._random.choice(
+                                self._rj_moves, p=self._rj_weights
+                            )
+
+                            # Propose (Between models)
+                            state, rj_accepted = rj_move.propose(model, state)
+                            if self.ntemps > 1:
+                                rj_swaps = rj_move.temperature_control.swaps_accepted
+                            else:
+                                rj_swaps = None
+
+                            state.random_state = self.random_state
+
+                            if tune:
+                                rj_move.tune(state, rj_accepted)
 
                     else:
                         rj_accepted = None

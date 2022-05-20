@@ -118,6 +118,7 @@ class MultipleTryMove:
             else:
                 logP = ll
 
+            
             log_importance_weights = logP - log_proposal_pdf
 
             log_sum_weights = logsumexp(log_importance_weights, axis=-1)
