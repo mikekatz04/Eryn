@@ -712,10 +712,13 @@ class EnsembleSampler(object):
 
                             # Propose (Between models)
                             state, rj_accepted = rj_move.propose(model, state)
-                            if self.ntemps > 1:
-                                rj_swaps = rj_move.temperature_control.swaps_accepted
-                            else:
-                                rj_swaps = None
+
+                            # Again commenting out this section: We do not control temperature on RJ moves
+                            # if self.ntemps > 1:
+                            #     rj_swaps = rj_move.temperature_control.swaps_accepted
+                            # else:
+                            #     rj_swaps = None
+                            rj_swaps = None
 
                             state.random_state = self.random_state
 
