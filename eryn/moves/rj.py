@@ -311,7 +311,10 @@ class ReversibleJump(Move):
                 lnpdiff, accepted, model, state, new_state, new_inds, inds_for_change, factors
             )  # model, state
 
-        if self.temperature_control is not None:
-            state, accepted = self.temperature_control.temper_comps(state, accepted)
+        # If RJ is true we control only on the in-model step, so no need to do it here as well
+        # In most cases, RJ proposal is has small acceptance rate, so in the end we end up 
+        # switching back what was swapped in the previous in-model step.
+        # if self.temperature_control is not None:
+        #     state, accepted = self.temperature_control.temper_comps(state, accepted)
 
         return state, accepted
