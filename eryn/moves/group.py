@@ -163,7 +163,7 @@ class GroupMove(Move, ABC):
         #et = time.perf_counter()
         #print("start", et - st)
         #st = time.perf_counter()
-        for gs in gibbs_splits:
+        for gs_i, gs in enumerate(gibbs_splits):
 
             if gs is None:
                 raise NotImplementedError
@@ -333,7 +333,7 @@ class GroupMove(Move, ABC):
             accepted = (accepted.astype(int) + accepted_here.astype(int)).astype(
                 bool
             )
-            
+
             new_state = State(
                 q, log_prob=logl, log_prior=logp, blobs=new_blobs, inds=new_inds, supplimental=new_supps, branch_supplimental=new_branch_supps
             )
