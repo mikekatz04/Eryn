@@ -22,7 +22,7 @@ class ReversibleJump(Move):
     """
 
     def __init__(
-        self, max_k, min_k, dr=None, dr_max_iter=5, tune=False, **kwargs
+        self, max_k, min_k, dr=None, dr_max_iter=5, tune=False, fix_change=None, **kwargs
     ):
         super(ReversibleJump, self).__init__(**kwargs)
 
@@ -36,6 +36,9 @@ class ReversibleJump(Move):
         self.min_k = min_k
         self.tune  = tune
         self.dr    = dr
+        self.fix_change = fix_change
+        if self.fix_change not in [None, +1, -1]:
+            raise ValueError("fix_change must be None, +1, or -1.")
 
         # Decide if DR is desirable. TODO: Now it uses the prior generator, we need to
         # think carefully if we want to use the in-model sampling proposal
@@ -113,6 +116,11 @@ class ReversibleJump(Move):
         # Run any move-specific setup.
         self.setup(state.branches)
 
+        ll_before = model.compute_log_prob_fn(state.branches_coords, inds=state.branches_inds, supps=state.supplimental, branch_supps=state.branches_supplimental)
+
+        if not np.allclose(ll_before[0], state.log_prob):
+            breakpoint()
+
         ntemps, nwalkers, _, _ = state.branches[list(state.branches.keys())[0]].shape
 
         # Split the ensemble in half and iterate over these two halves.
@@ -126,9 +134,16 @@ class ReversibleJump(Move):
         for (name, branch), min_k, max_k in zip(
             state.branches.items(), self.min_k, self.max_k
         ):
+
+            if min_k == max_k:
+                continue
+
             nleaves = branch.nleaves
             # choose whether to add or remove
-            change = model.random.choice([-1, +1], size=nleaves.shape)
+            if self.fix_change is None:
+                change = model.random.choice([-1, +1], size=nleaves.shape)
+            else:
+                change = np.full(nleaves.shape, self.fix_change)
 
             # fix edge cases
             change = (
@@ -194,8 +209,14 @@ class ReversibleJump(Move):
 
         # propose new sources and coordinates
         q, new_inds, factors = self.get_proposal(
-            state.branches_coords, state.branches_inds, inds_for_change, model.random, branch_supps=state.branches_supplimental
+            state.branches_coords, state.branches_inds, inds_for_change, model.random, branch_supps=state.branches_supplimental, supps=state.supplimental
         )
+
+        for name, branch in state.branches.items():
+            if name not in q:
+                q[name] = state.branches[name].coords[:].copy()
+            if name not in new_inds:
+                new_inds[name] = state.branches[name].inds[:].copy()
 
         if "inds_here" in q:
             temp_transfer_info = {name: q.pop(name) for name in ["ll", "lp", "inds_here"]}
@@ -209,6 +230,10 @@ class ReversibleJump(Move):
             state.branches.items(), self.min_k, self.max_k
         ):
             nleaves = branch.nleaves
+
+            # do not work on sources with fixed source count
+            if min_k == max_k:
+                continue
 
             # fix proposal asymmetry at bottom of k range
             inds_min = np.where(nleaves == min_k)
@@ -242,6 +267,7 @@ class ReversibleJump(Move):
             new_supps = None
 
         if not np.all(np.asarray(list(state.branches_supplimental.values())) == None):
+            # TODO: remove this?
             new_branch_supps = deepcopy(state.branches_supplimental)
             for name in new_branch_supps:
                 if new_branch_supps[name] is not None:
@@ -257,26 +283,44 @@ class ReversibleJump(Move):
                         indicator_inds = (new_inds[name].astype(int) - state.branches_inds[name].astype(int)) > 0
                         new_branch_supps[name] = BranchSupplimental({"inds_keep": indicator_inds}, obj_contained_shape=new_inds[name].shape, copy=False)
 
+        if hasattr(self, "new_supps_for_transfer"):
+            #logp = self.lp_for_transfer.reshape(ntemps, nwalkers)
+            new_supps = self.new_supps_for_transfer
+            
+        if hasattr(self, "new_branch_supps_for_transfer"):
+            #logp = self.lp_for_transfer.reshape(ntemps, nwalkers)
+            new_branch_supps = self.new_branch_supps_for_transfer
+
+        # TODO: adjust this setup
         # Compute prior of the proposed position
-        logp = model.compute_log_prior_fn(q, inds=new_inds)
+        if hasattr(self, "ll_for_transfer"):
+            #logp = self.lp_for_transfer.reshape(ntemps, nwalkers)
+            logp = model.compute_log_prior_fn(q, inds=new_inds)
+            logl = self.ll_for_transfer.reshape(ntemps, nwalkers)
+            loglcheck, new_blobs = model.compute_log_prob_fn(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
+            if not np.all(np.abs(logl[logl != -1e300] - loglcheck[logl != -1e300]) < 1e-5):
+                breakpoint()
+            
+        else:
+            logp = model.compute_log_prior_fn(q, inds=new_inds)
 
-        # pass ll values from special likelihoods in the proposal
-        # prevent ll values from being run again
-        #if "inds_here" in temp_transfer_info:
-        #    logp_keep = logp[temp_transfer_info["inds_here"]]
-        #    logp[temp_transfer_info["inds_here"]] = -np.inf
-        
-        #if (new_branch_supps is not None or new_supps is not None) and self.adjust_supps_pre_logl_func is not None:
-        #    self.adjust_supps_pre_logl_func(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
+            # pass ll values from special likelihoods in the proposal
+            # prevent ll values from being run again
+            #if "inds_here" in temp_transfer_info:
+            #    logp_keep = logp[temp_transfer_info["inds_here"]]
+            #    logp[temp_transfer_info["inds_here"]] = -np.inf
+            
+            #if (new_branch_supps is not None or new_supps is not None) and self.adjust_supps_pre_logl_func is not None:
+            #    self.adjust_supps_pre_logl_func(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
 
-        # Compute the lnprobs of the proposed position.
-        logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
+            # Compute the lnprobs of the proposed position.
+            logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
 
-        # pass ll values from special likelihoods in the proposal
-        # put int he correct values
-        #if "inds_here" in temp_transfer_info:
-        #    logp[temp_transfer_info["inds_here"]] = logp_keep
-        #    logl[temp_transfer_info["inds_here"]] = temp_transfer_info["ll"]
+            # pass ll values from special likelihoods in the proposal
+            # put int he correct values
+            #if "inds_here" in temp_transfer_info:
+            #    logp[temp_transfer_info["inds_here"]] = logp_keep
+            #    logl[temp_transfer_info["inds_here"]] = temp_transfer_info["ll"]
 
         logP = self.compute_log_posterior(logl, logp)
 
@@ -294,8 +338,6 @@ class ReversibleJump(Move):
 
         accepted = lnpdiff > np.log(model.random.rand(ntemps, nwalkers))
 
-        #if np.any(accepted[0]):
-        #    breakpoint()
         # TODO: deal with blobs
         new_state = State(q, log_prob=logl, log_prior=logp, blobs=None, inds=new_inds, supplimental=new_supps, branch_supplimental=new_branch_supps)
         state = self.update(state, new_state, accepted)
@@ -314,7 +356,9 @@ class ReversibleJump(Move):
         # If RJ is true we control only on the in-model step, so no need to do it here as well
         # In most cases, RJ proposal is has small acceptance rate, so in the end we end up 
         # switching back what was swapped in the previous in-model step.
-        # if self.temperature_control is not None:
-        #     state, accepted = self.temperature_control.temper_comps(state, accepted)
-
+        # TODO: MLK: I think we should allow for swapping but no adaptation. 
+        if self.temperature_control is not None:
+             state, accepted = self.temperature_control.temper_comps(state, accepted, adapt=False)
+        if np.any(state.log_prob > 1e10):
+            breakpoint()
         return state, accepted

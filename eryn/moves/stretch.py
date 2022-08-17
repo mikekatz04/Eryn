@@ -98,7 +98,9 @@ class StretchMove(RedBlueMove):
 
             newpos[name] = temp
 
+        self.zz = zz
         # proper factors
+
         factors = (ndim - 1.0) * np.log(zz)
         return newpos, factors
 

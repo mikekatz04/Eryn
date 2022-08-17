@@ -19,6 +19,7 @@ from .productspacemove import ProductSpaceMove
 from .multipletry import MultipleTryMove
 from .group import GroupMove
 from .groupstretch import GroupStretchMove
+from .combine import CombineMove
 
 __all__ = [
     "Move",
@@ -34,4 +35,5 @@ __all__ = [
     "TemperatureControl",
     "ReversibleJump",
     "DESnookerMove",
+    "CombineMove",
 ]

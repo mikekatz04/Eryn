@@ -1170,8 +1170,11 @@ class _FunctionWrapper(object):
                 x_in[name] = coords[inds[name]]
                 
                 if self.provide_supplimental:
-                    if branch_supps is not None and branch_supps[name] is not None:
-                        branch_supps_in[name] = branch_supps[name][inds[name]]
+                    if branch_supps is not None:  #  and 
+                        if branch_supps[name] is not None:
+                            branch_supps_in[name] = branch_supps[name][inds[name]]
+                        else:
+                            branch_supps_in[name] = None
 
             if self.provide_supplimental:
                 if supps is not None:

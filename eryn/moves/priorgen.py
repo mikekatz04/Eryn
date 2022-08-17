@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-
-from .move import Move
+from .move import MHMove
 from ..prior import PriorContainer
 
 __all__ = ["PriorGenerate"]
 
-class PriorGenerate(Move):
+class PriorGenerate(MHMove):
     """Generate proposals from prior
 
     Args:
@@ -24,7 +23,7 @@ class PriorGenerate(Move):
         self.priors = priors
         super(PriorGenerate, self).__init__(*args, **kwargs)
 
-    def get_proposal(self, all_coords, inds, random):
+    def get_proposal(self, all_coords, inds, random, **kwargs):
         """Make a proposal
 
         Args:

@@ -173,6 +173,7 @@ class HDFBackend(Backend):
                 ntemps=ntemps,
                 truth=truth,
                 branch_names=branch_names,
+                rj=rj,
                 info=info,
             )
 

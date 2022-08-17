@@ -244,12 +244,16 @@ class TemperatureControl(object):
         Here, we find a singularity that demands more careful attention; we allow the likelihood to dominate the
         temperature, since wandering outside the likelihood support causes a discontinuity.
         """
+        if logl.ndim == 1:
+            assert betas is not None
+            loglT = logl * betas
 
-        if betas is None:
-            betas = self.betas
+        else:
+            if betas is None:
+                betas = self.betas
 
-        with np.errstate(invalid="ignore"):
-            loglT = logl * betas[:, None]
+            with np.errstate(invalid="ignore"):
+                loglT = logl * betas[:, None]
 
         loglT[np.isnan(loglT)] = -np.inf
 
@@ -283,8 +287,8 @@ class TemperatureControl(object):
             x_temp = {name: np.copy(x[name]) for name in x}
             if inds is not None:
                 inds_temp = {name: np.copy(inds[name]) for name in inds}
-            if branch_supps is not None:
-                branch_supps_temp = {name: deepcopy(branch_supps[name]) for name in branch_supps}
+            #if branch_supps is not None:
+            #    branch_supps_temp = {name: deepcopy(branch_supps[name]) for name in branch_supps}
             
             logl_temp = np.copy(logl[i, iperm[sel]])
             logp_temp = np.copy(logp[i, iperm[sel]])
@@ -299,8 +303,20 @@ class TemperatureControl(object):
                 if inds is not None:
                     inds[name][i, iperm[sel], :] = inds[name][i - 1, i1perm[sel], :]
                 if branch_supps[name] is not None:
-                    branch_supps[name][i, iperm[sel], :] = branch_supps[name][i - 1, i1perm[sel], :]
+                    inds_i = np.where(inds[name][i][iperm[sel]])
+                    walker_inds_i = iperm[sel][inds_i[0]]
+                    leaf_inds_i = inds_i[1]
+                    temp_inds_i = np.full_like(leaf_inds_i, i)
 
+                    inds_i1 = np.where(inds[name][i - 1][i1perm[sel]])
+                    walker_inds_i1 = i1perm[sel][inds_i1[0]]
+                    leaf_inds_i1 = inds_i1[1]
+                    temp_inds_i1 = np.full_like(leaf_inds_i1, i - 1)
+                    for name2 in branch_supps[name].holder:
+                        bring_back_branch_supps = branch_supps[name].holder[name2][(temp_inds_i, walker_inds_i, leaf_inds_i)].copy()
+                        branch_supps[name].holder[name2][(temp_inds_i, walker_inds_i, leaf_inds_i)] = branch_supps[name].holder[name2][(temp_inds_i1, walker_inds_i1, leaf_inds_i1)]
+                        branch_supps[name].holder[name2][(temp_inds_i1, walker_inds_i1, leaf_inds_i1)] = bring_back_branch_supps
+                    
             logl[i, iperm[sel]] = logl[i - 1, i1perm[sel]]
             logp[i, iperm[sel]] = logp[i - 1, i1perm[sel]]
             logP[i, iperm[sel]] = (
@@ -317,10 +333,10 @@ class TemperatureControl(object):
                     inds[name][i - 1, i1perm[sel], :] = inds_temp[name][
                         i, iperm[sel], :
                     ]
-                if branch_supps[name] is not None:
-                    branch_supps[name][i - 1, i1perm[sel], :] = branch_supps_temp[name][
-                        i, iperm[sel], :
-                    ]
+                #if branch_supps[name] is not None:
+                #    branch_supps[name][i - 1, i1perm[sel], :] = branch_supps_temp[name][
+                #        i, iperm[sel], :
+                #    ]
 
             logl[i - 1, i1perm[sel]] = logl_temp
             logp[i - 1, i1perm[sel]] = logp_temp
@@ -355,7 +371,7 @@ class TemperatureControl(object):
         # Don't mutate the ladder here; let the client code do that.
         return betas - betas0
 
-    def temper_comps(self, state, accepted):
+    def temper_comps(self, state, accepted, adapt=True):
         logl = state.log_prob
         logp = state.log_prior
         logP = self.compute_log_posterior_tempered(logl, logp)
@@ -372,10 +388,13 @@ class TemperatureControl(object):
 
         ratios = self.swaps_accepted / self.swaps_proposed
 
-        if self.adaptive and self.ntemps > 1:
+        if adapt and self.adaptive and self.ntemps > 1:
             if self.stop_adaptation < 0 or self.time < self.stop_adaptation:
                 dbetas = self._get_ladder_adjustment(self.time, self.betas, ratios)
                 self.betas += dbetas
+
+            # only increase time if it is adaptive. 
+            self.time += 1
 
         new_state = State(
             x,
@@ -388,7 +407,5 @@ class TemperatureControl(object):
             branch_supplimental=branch_supps,
             random_state=state.random_state,
         )
-
-        self.time += 1
 
         return new_state, accepted
