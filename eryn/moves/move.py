@@ -22,11 +22,12 @@ class Move(object):
 
     """
 
-    def __init__(self, temperature_control=None, periodic=None, adjust_supps_pre_logl_func=None, skip_supp_names=[]):
+    def __init__(self, temperature_control=None, periodic=None, adjust_supps_pre_logl_func=None, skip_supp_names=[], prevent_swaps=False):
         self.temperature_control = temperature_control
         self.periodic = periodic
         self.adjust_supps_pre_logl_func = adjust_supps_pre_logl_func
         self.skip_supp_names = skip_supp_names
+        self.prevent_swaps = prevent_swaps
 
     @property
     def temperature_control(self):

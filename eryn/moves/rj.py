@@ -357,7 +357,7 @@ class ReversibleJump(Move):
         # In most cases, RJ proposal is has small acceptance rate, so in the end we end up 
         # switching back what was swapped in the previous in-model step.
         # TODO: MLK: I think we should allow for swapping but no adaptation. 
-        if self.temperature_control is not None:
+        if self.temperature_control is not None and not self.prevent_swaps:
              state, accepted = self.temperature_control.temper_comps(state, accepted, adapt=False)
         if np.any(state.log_prob > 1e10):
             breakpoint()

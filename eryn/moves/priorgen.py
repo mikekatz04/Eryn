@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from .move import MHMove
+from .mh import MHMove
 from ..prior import PriorContainer
 
 __all__ = ["PriorGenerate"]

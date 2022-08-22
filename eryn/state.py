@@ -369,6 +369,10 @@ class State(object):
         """Get the ``branch.supplimental`` from all branch objects returned as a dictionary with ``branch_names`` as keys."""
         return {name: branch.branch_supplimental for name, branch in self.branches.items()}
 
+    def copy_into_self(self, state_to_copy):
+        for name in state_to_copy.__slots__:
+            setattr(self, name, getattr(state_to_copy, name))
+
     """
     # TODO
     def __repr__(self):
