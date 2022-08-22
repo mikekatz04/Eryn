@@ -48,12 +48,19 @@ class CombineMove(Move):
         if self.verbose:
             iterator = tqdm.tqdm(iterator)
 
+        accepted_out = None
         for i, move in iterator:
             if isinstance(move, tuple):
                 move = move[0]
             state, accepted = move.propose(model, state)
+
+            if accepted_out is None:
+                accepted_out = accepted.copy()
+            else:
+                accepted_out += accepted
+
             if self.accepted[i] is None:
                 self.accepted[i] = accepted.astype(int)
             else:
                 self.accepted[i] += accepted.astype(int)
-        return state, accepted
+        return state, accepted_out

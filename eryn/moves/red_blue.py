@@ -126,6 +126,11 @@ class RedBlueMove(Move, ABC):
                 "dimensions."
             )
 
+        if self.proposal_branch_names is not None:
+            proposal_branch_names = self.proposal_branch_names
+        else:
+            proposal_branch_names = list(state.branches.keys)
+
         # TODO: deal with more intensive acceptance fractions
         # Run any move-specific setup.
         self.setup(state.branches)
@@ -190,6 +195,9 @@ class RedBlueMove(Move, ABC):
                     # TODO: adjust to not one model at a time?
                     # adjust new inds for gibbs sampling
                     name_keep, inds_keep, nleaves_max_here = gs
+                    if name_keep not in proposal_branch_names:
+                        continue
+
                     keep_arr = np.zeros_like(new_inds_adjust[name], dtype=bool)
                     for name in new_inds_adjust:
                         if name != name_keep:
@@ -289,6 +297,14 @@ class RedBlueMove(Move, ABC):
                     q[name] = q[name] * (
                         new_inds_adjust[name][:, :, :, None]
                     ) + temp_coords[name] * (~new_inds_adjust[name][:, :, :, None])
+
+                # add back coordinates for branches not tested here
+                # according to proposal_branch_names
+                for name in state.branches:
+                    if name in q:
+                        continue
+                    else:
+                        q[name] = temp_coords[name]
 
                 # Compute prior of the proposed position
                 # new_inds_prior is adjusted if product-space is used

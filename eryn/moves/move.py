@@ -22,12 +22,18 @@ class Move(object):
 
     """
 
-    def __init__(self, temperature_control=None, periodic=None, adjust_supps_pre_logl_func=None, skip_supp_names=[], prevent_swaps=False):
+    def __init__(self, temperature_control=None, periodic=None, adjust_supps_pre_logl_func=None, skip_supp_names=[], prevent_swaps=False, proposal_branch_names=None):
         self.temperature_control = temperature_control
         self.periodic = periodic
         self.adjust_supps_pre_logl_func = adjust_supps_pre_logl_func
         self.skip_supp_names = skip_supp_names
         self.prevent_swaps = prevent_swaps
+        self.proposal_branch_names = proposal_branch_names
+        if self.proposal_branch_names is not None:
+            if isinstance(self.proposal_branch_names, str):
+                self.proposal_branch_names = [self.proposal_branch_names]
+            elif not isinstance(self.proposal_branch_names, list):
+                raise ValueError("proposal_branch_names must be string or list of str.")
 
     @property
     def temperature_control(self):

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from multiprocessing.sharedctypes import Value
 import numpy as np
 from copy import deepcopy
 from ..state import State
@@ -134,9 +135,14 @@ class ReversibleJump(Move):
         for (name, branch), min_k, max_k in zip(
             state.branches.items(), self.min_k, self.max_k
         ):
+            if self.proposal_branch_names is not None and name not in self.proposal_branch_names:
+                # skip this one
+                continue 
 
             if min_k == max_k:
                 continue
+            elif min_k > max_k:
+                raise ValueError("min_k is greater than max_k. Not allowed.")
 
             nleaves = branch.nleaves
             # choose whether to add or remove

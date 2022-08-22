@@ -71,6 +71,12 @@ class MHMove(Move):
             state.branches_coords, state.branches_inds, model.random, supps=new_supps, branch_supps=new_branch_supps
         )
 
+        if self.proposal_branch_names is not None:
+            # return all branches not tested back to 
+            for name in state.branches:
+                if  name not in self.proposal_branch_names:
+                    q[name][:] = state.branches_coords[name][:]
+
         # Compute prior of the proposed position
         logp = model.compute_log_prior_fn(q, inds=state.branches_inds)
 
