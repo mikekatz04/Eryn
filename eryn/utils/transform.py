@@ -1,3 +1,9 @@
+try:
+    import cupy as xp
+    
+except ModuleNotFoundError:
+    pass
+
 import numpy as np
 
 
@@ -25,7 +31,7 @@ class TransformContainer:
     """
 
     def __init__(self, parameter_transforms=None, fill_dict=None):
-
+            
         self.original_parameter_transforms = parameter_transforms
         if parameter_transforms is not None:
             # differentiate between single and multi parameter transformations
@@ -67,10 +73,11 @@ class TransformContainer:
             self.fill_dict["test_inds"] = np.delete(
                 np.arange(self.fill_dict["ndim_full"]), self.fill_dict["fill_inds"]
             )
+
         else:
             self.fill_dict = None
 
-    def transform_base_parameters(self, params, copy=True, return_transpose=False):
+    def transform_base_parameters(self, params, copy=True, return_transpose=False, xp=None):
         """Transform the parameters
 
         Args:
@@ -85,6 +92,8 @@ class TransformContainer:
             np.ndarray[..., ndim]: Transformed ``params`` array.
 
         """
+        if xp is None:
+            xp = np
 
         if self.base_transforms is not None:
             params_temp = params.copy() if copy else params
@@ -111,7 +120,7 @@ class TransformContainer:
             else:
                 return params
 
-    def fill_values(self, params):
+    def fill_values(self, params, xp=None):
         """fill fixed parameters
 
         Args:
@@ -123,44 +132,49 @@ class TransformContainer:
 
         """
         if self.fill_dict is not None:
+            if xp is None:
+                xp = np
+            
             # get shape
             shape = params.shape
 
             # setup new array to fill
-            params_filled = np.zeros(shape[:-1] + (self.fill_dict["ndim_full"],))
-
+            params_filled = xp.zeros(shape[:-1] + (self.fill_dict["ndim_full"],))
+            test_inds = xp.asarray(self.fill_dict["test_inds"])
             # special indexing to properly fill array with params
             indexing_test_inds = tuple([slice(0, temp) for temp in shape[:-1]]) + (
-                self.fill_dict["test_inds"],
+                test_inds,
             )
 
             # fill values directly from params array
             params_filled[indexing_test_inds] = params
 
+            fill_inds = xp.asarray(self.fill_dict["fill_inds"])
             # special indexing to fill fill_values
             indexing_fill_inds = tuple([slice(0, temp) for temp in shape[:-1]]) + (
-                self.fill_dict["fill_inds"],
+                fill_inds,
             )
 
             # add fill_values at fill_inds
-            params_filled[indexing_fill_inds] = self.fill_dict["fill_values"]
+            params_filled[indexing_fill_inds] = xp.asarray(self.fill_dict["fill_values"])
 
             return params_filled
 
         else:
             return params
 
-    def both_transforms(self, params, copy=True, return_transpose=False, reverse=False):
-
+    def both_transforms(self, params, copy=True, return_transpose=False, reverse=False, xp=None):
+        if xp is None:
+            xp = np
         if reverse:
             temp = self.transform_base_parameters(
-                params, copy=copy, return_transpose=return_transpose
+                params, copy=copy, return_transpose=return_transpose, xp=xp
             )
-            temp = self.fill_values(temp)
+            temp = self.fill_values(temp, xp=xp)
 
         else:
-            temp = self.fill_values(params)
+            temp = self.fill_values(params, xp=xp)
             temp = self.transform_base_parameters(
-                temp, copy=copy, return_transpose=return_transpose
+                temp, copy=copy, return_transpose=return_transpose, xp=xp
             )
         return temp

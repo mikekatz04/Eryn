@@ -129,7 +129,7 @@ class RedBlueMove(Move, ABC):
         if self.proposal_branch_names is not None:
             proposal_branch_names = self.proposal_branch_names
         else:
-            proposal_branch_names = list(state.branches.keys)
+            proposal_branch_names = list(state.branches.keys())
 
         # TODO: deal with more intensive acceptance fractions
         # Run any move-specific setup.

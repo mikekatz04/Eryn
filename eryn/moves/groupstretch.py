@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+try:
+    import cupy as xp
+except ModuleNotFoundError:
+    pass
 
 import numpy as np
 
@@ -22,8 +26,19 @@ class GroupStretchMove(GroupMove):
         a (double): The stretch scale parameter.
     """
 
-    def __init__(self, a=2.0, **kwargs):
+    def __init__(self, a=2.0, use_gpu=False, return_gpu=False, random_seed=None, **kwargs):
         self.a = a
+        if use_gpu:
+            self.xp = xp
+        else:
+            self.xp = np
+
+        if random_seed is not None:
+            self.xp.random.seed(random_seed)
+
+        self.use_gpu = use_gpu
+        self.return_gpu = return_gpu
+
         super(GroupStretchMove, self).__init__(**kwargs)
 
     def adjust_factors(self, factors, ndims_old, ndims_new):
@@ -56,22 +71,25 @@ class GroupStretchMove(GroupMove):
             ValueError: Issues with dimensionality.
 
         """
+        random_number_generator = random if not self.use_gpu else self.xp.random
+
         newpos = {}
         for i, name in enumerate(s_all):
             if i > 0:
+                # TODO: check?
                 raise NotImplementedError
 
-            c = c_all[name]
-            s = s_all[name]
+            c = self.xp.asarray(c_all[name])
+            s = self.xp.asarray(s_all[name])
 
             nwalkers, ndim_here = s.shape
 
             Ns, Nc = nwalkers, c.shape[-2]
             
             ndim = ndim_here
-            zz = ((self.a - 1.0) * random.rand(nwalkers) + 1) ** 2.0 / self.a
+            zz = ((self.a - 1.0) * random_number_generator.rand(nwalkers) + 1) ** 2.0 / self.a
 
-            rint = random.randint(Nc, size=(nwalkers,))
+            rint = random_number_generator.randint(Nc, size=(nwalkers,))
 
             c_temp = np.take_along_axis(c, rint[:, None, None], axis=1)[:, 0, :]
 
@@ -92,6 +110,6 @@ class GroupStretchMove(GroupMove):
             newpos[name] = temp
 
         # proper factors
-        factors = (ndim - 1.0) * np.log(zz)
+        factors = (ndim - 1.0) * self.xp.log(zz)
         return newpos, factors
 

@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+try:
+    import cupy as xp
+except ModuleNotFoundError:
+    pass
 
 import numpy as np
 
@@ -22,8 +26,18 @@ class StretchMove(RedBlueMove):
         a (double): The stretch scale parameter.
     """
 
-    def __init__(self, a=2.0, **kwargs):
+    def __init__(self, a=2.0, use_gpu=False, return_gpu=False, random_seed=None, **kwargs):
         self.a = a
+        if use_gpu:
+            self.xp = xp
+        else:
+            self.xp = np
+
+        if random_seed is not None:
+            self.xp.random.seed(random_seed)
+
+        self.use_gpu = use_gpu
+        self.return_gpu = return_gpu
         super(StretchMove, self).__init__(**kwargs)
 
     def adjust_factors(self, factors, ndims_old, ndims_new):
@@ -56,13 +70,18 @@ class StretchMove(RedBlueMove):
             ValueError: Issues with dimensionality.
 
         """
+        
+        random_number_generator = random if not self.use_gpu else self.xp.random
+
         newpos = {}
         for i, name in enumerate(s_all):
-            c = c_all[name]
-            s = s_all[name]
+            s = self.xp.asarray(s_all[name])
+        
+            c = [self.xp.asarray(c_tmp) for c_tmp in c_all[name]]
+        
             ntemps, nwalkers, nleaves_max, ndim_here = s.shape
-            c = np.concatenate(c, axis=1)
-
+            c = self.xp.concatenate(c, axis=1)
+        
             Ns, Nc = s.shape[1], c.shape[1]
             # gets rid of any values of exactly zero
             if inds_s is None:
@@ -73,14 +92,14 @@ class StretchMove(RedBlueMove):
             if i == 0:
                 ndim = ndim_temp
                 Ns_check = Ns
-                zz = ((self.a - 1.0) * random.rand(ntemps, Ns) + 1) ** 2.0 / self.a
+                zz = ((self.a - 1.0) * random_number_generator.rand(ntemps, Ns) + 1) ** 2.0 / self.a
             else:
                 ndim += ndim_temp
                 if Ns_check != Ns:
                     raise ValueError("Different number of walkers across models.")
 
-            rint = random.randint(Nc, size=(ntemps, Ns,))
-            c_temp = np.take_along_axis(c, rint[:, :, None, None], axis=1)
+            rint = random_number_generator.randint(Nc, size=(ntemps, Ns,))
+            c_temp = self.xp.take_along_axis(c, rint[:, :, None, None], axis=1)
 
             if self.periodic is not None:
                 diff = self.periodic.distance(
@@ -96,11 +115,16 @@ class StretchMove(RedBlueMove):
             if self.periodic is not None:
                 temp = self.periodic.wrap(temp.reshape(ntemps * nwalkers, nleaves_max, ndim_here), names=[name])[name].reshape(ntemps, nwalkers, nleaves_max, ndim_here)
 
+            if self.use_gpu and not self.return_gpu:
+                temp = temp.get()
             newpos[name] = temp
 
         self.zz = zz
         # proper factors
 
-        factors = (ndim - 1.0) * np.log(zz)
+        factors = (ndim - 1.0) * self.xp.log(zz)
+        if self.use_gpu and not self.return_gpu:
+            factors = factors.get()
+        
         return newpos, factors
 
