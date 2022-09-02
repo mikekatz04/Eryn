@@ -1,7 +1,7 @@
 try:
     import cupy as xp
     
-except ModuleNotFoundError:
+except (ModuleNotFoundError, ImportError) as e:
     pass
 
 import numpy as np
