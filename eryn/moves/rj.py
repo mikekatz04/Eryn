@@ -213,9 +213,16 @@ class ReversibleJump(Move):
                     else:
                         pass
 
+        coords_propose_in = {key: state.branches_coords[key] for key in inds_for_change}
+        inds_propose_in = {key: state.branches_inds[key] for key in inds_for_change}
+        branches_supp_propose_in =  {key: state.branches_supplimental[key] for key in inds_for_change}
+
+        if len(list(coords_propose_in.keys())) == 0:
+            raise ValueError("Right now, no models are getting a reversible jump proposal. Check min_k and max_k or do not use rj proposal.")
+            
         # propose new sources and coordinates
         q, new_inds, factors = self.get_proposal(
-            state.branches_coords, state.branches_inds, inds_for_change, model.random, branch_supps=state.branches_supplimental, supps=state.supplimental
+            coords_propose_in, inds_propose_in, inds_for_change, model.random, branch_supps=branches_supp_propose_in, supps=state.supplimental
         )
 
         for name, branch in state.branches.items():

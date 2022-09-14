@@ -59,7 +59,6 @@ class PriorGenerateRJ(ReversibleJump):
         """
         q = {}
         new_inds = {}
-        factors = {}
 
         for i, (name, coords, inds, inds_for_change) in enumerate(
             zip(
