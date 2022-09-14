@@ -277,7 +277,8 @@ class GroupMove(Move, ABC):
                 new_branch_supps = deepcopy(state.branches_supplimental)
                 #new_branch_supps = {name: BranchSupplimental(new_branch_supps[name], obj_contained_shape=new_inds[name].shape, copy=False) for name in new_branch_supps}
                 for name in new_branch_supps:
-                    new_branch_supps[name].add_objects({"inds_keep": new_inds_adjust[name]})
+                    if new_branch_supps[name] is not None:
+                        new_branch_supps[name].add_objects({"inds_keep": new_inds_adjust[name]})
 
             else:
                 new_branch_supps = None
