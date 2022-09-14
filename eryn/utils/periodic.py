@@ -1,9 +1,10 @@
+from ast import Import
 import numpy as np
 
 try:
     import cupy as xp
 
-except ModuleNotFoundError:
+except (ModuleNotFoundError, ImportError) as e:
     pass
 
 
