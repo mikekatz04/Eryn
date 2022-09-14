@@ -42,6 +42,18 @@ class CombineMove(Move):
             move.temperature_control = temperature_control
         self._temperature_control = temperature_control
 
+    @property
+    def periodic(self):
+        return self._periodic
+
+    @periodic.setter
+    def periodic(self, periodic):
+        for i, move in enumerate(self.moves):
+            if isinstance(move, tuple):
+                move = move[0]
+            move.periodic = periodic
+        self._periodic = periodic
+
     def propose(self, model, state):
         # TODO: add probabilistic draw just like outside
         iterator = enumerate(self.moves)

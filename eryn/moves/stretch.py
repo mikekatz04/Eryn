@@ -105,7 +105,8 @@ class StretchMove(RedBlueMove):
                 diff = self.periodic.distance(
                     s.reshape(ntemps * nwalkers, nleaves_max, ndim_here), 
                     c_temp.reshape(ntemps * nwalkers, nleaves_max, ndim_here), 
-                    names=[name]
+                    names=[name],
+                    xp=self.xp
                 )[name].reshape(ntemps, nwalkers, nleaves_max, ndim_here)
             else:
                 diff = c_temp - s
@@ -113,12 +114,14 @@ class StretchMove(RedBlueMove):
             temp = c_temp - (diff) * zz[:, :, None, None]
 
             if self.periodic is not None:
-                temp = self.periodic.wrap(temp.reshape(ntemps * nwalkers, nleaves_max, ndim_here), names=[name])[name].reshape(ntemps, nwalkers, nleaves_max, ndim_here)
+                temp = self.periodic.wrap(temp.reshape(ntemps * nwalkers, nleaves_max, ndim_here), names=[name], xp=self.xp)[name].reshape(ntemps, nwalkers, nleaves_max, ndim_here)
 
             if self.use_gpu and not self.return_gpu:
                 temp = temp.get()
             newpos[name] = temp
 
+        self.diff = diff
+        self.temp = temp
         self.zz = zz
         # proper factors
 

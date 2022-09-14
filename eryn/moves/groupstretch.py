@@ -97,7 +97,8 @@ class GroupStretchMove(GroupMove):
                 diff = self.periodic.distance(
                     s.reshape(nwalkers, 1, ndim_here), 
                     c_temp.reshape(nwalkers, 1, ndim_here), 
-                    names=[name]
+                    names=[name],
+                    xp=self.xp
                 )[name].reshape(nwalkers, ndim_here)
             else:
                 diff = c_temp - s
@@ -105,7 +106,7 @@ class GroupStretchMove(GroupMove):
             temp = c_temp - (diff) * zz[:, None]
 
             if self.periodic is not None:
-                temp = self.periodic.wrap(temp.reshape(nwalkers, 1, ndim_here), names=[name])[name].reshape(nwalkers, ndim_here)
+                temp = self.periodic.wrap(temp.reshape(nwalkers, 1, ndim_here), names=[name], xp=self.xp)[name].reshape(nwalkers, ndim_here)
 
             newpos[name] = temp
 

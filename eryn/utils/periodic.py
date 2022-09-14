@@ -1,5 +1,11 @@
 import numpy as np
 
+try:
+    import cupy as xp
+
+except ModuleNotFoundError:
+    pass
+
 
 class PeriodicContainer:
     """Perform operations for periodic parameters
@@ -37,7 +43,7 @@ class PeriodicContainer:
 
         return names
 
-    def distance(self, p1, p2, names=None):
+    def distance(self, p1, p2, names=None, xp=None):
         """Move from p1 to p2 with periodic distance control
 
         Args:
@@ -52,26 +58,28 @@ class PeriodicContainer:
 
 
         """
+        if xp is None:
+            xp = np
 
         names = self._check_names(names)
 
         # setup p1 and p2
-        if isinstance(p1, np.ndarray) or isinstance(p2, np.ndarray):
+        if isinstance(p1, xp.ndarray) or isinstance(p2, xp.ndarray):
             if len(names) > 1:
                 raise ValueError(
-                    "If providing p1 or p2 as np.ndarray, names must be a single string or length-1 list."
+                    "If providing p1 or p2 as xp.ndarray, names must be a single string or length-1 list."
                 )
 
-            if isinstance(p1, np.ndarray):
-                p1 = {names[0]: np.atleast_3d(p1)}
+            if isinstance(p1, xp.ndarray):
+                p1 = {names[0]: xp.atleast_3d(p1)}
 
-            if isinstance(p2, np.ndarray):
-                p2 = {names[0]: np.atleast_3d(p2)}
+            if isinstance(p2, xp.ndarray):
+                p2 = {names[0]: xp.atleast_3d(p2)}
 
         out_diff = {}
         for key in names:
-            periods = self.periods[key]
-            inds_periodic = self.inds_periodic[key]
+            periods = xp.asarray(self.periods[key])
+            inds_periodic = xp.asarray(self.inds_periodic[key])
 
             # get basic distance
             diff = p2[key] - p1[key]
@@ -81,13 +89,13 @@ class PeriodicContainer:
                 diff_periodic = diff[:, :, inds_periodic]
 
                 # fix when the distance is over 1/2 period away
-                inds_fix = np.abs(diff_periodic) > periods[np.newaxis, np.newaxis, :] / 2.0
+                inds_fix = xp.abs(diff_periodic) > periods[xp.newaxis, xp.newaxis, :] / 2.0
 
                 # wrap back to make proper periodic distance
                 new_s = -(
-                    periods[np.newaxis, np.newaxis, :] - p1[key][:, :, inds_periodic]
+                    periods[xp.newaxis, xp.newaxis, :] - p1[key][:, :, inds_periodic]
                 ) * (diff_periodic < 0.0) + (
-                    periods[np.newaxis, np.newaxis, :] + p1[key][:, :, inds_periodic]
+                    periods[xp.newaxis, xp.newaxis, :] + p1[key][:, :, inds_periodic]
                 ) * (
                     diff_periodic >= 0.0
                 )
@@ -102,11 +110,11 @@ class PeriodicContainer:
 
         return out_diff
 
-    def wrap(self, p, names=None):
+    def wrap(self, p, names=None, xp=None):
         """Wrap p with periodic distance control
 
         Args:
-            p (double np.ndarray or dict): If dict, keys are ``branch_names``
+            p (double xp.ndarray or dict): If dict, keys are ``branch_names``
                 and values are positions with parameters along the final dimension.
                 If array, positions with parameters along the final dimension.
             names (str or list of str): ``branch_names`` to properly reference
@@ -115,26 +123,29 @@ class PeriodicContainer:
         """
         names = self._check_names(names)
 
+        if xp is None:
+            xp = np
+
         # adjust input
-        if isinstance(p, np.ndarray):
+        if isinstance(p, xp.ndarray):
             if len(names) > 1:
                 raise ValueError(
-                    "If providing p as np.ndarray, names must be a single string or length-1 list."
+                    "If providing p as xp.ndarray, names must be a single string or length-1 list."
                 )
 
-            if isinstance(p, np.ndarray):
-                p = {names[0]: np.atleast_3d(p)}
+            if isinstance(p, xp.ndarray):
+                p = {names[0]: xp.atleast_3d(p)}
 
         # wrap for each branch
         for key in names:
             pos = p[key]
 
             if len(self.periods[key]) > 0:
-                periods = self.periods[key]
-                inds_periodic = self.inds_periodic[key]
+                periods = xp.asarray(self.periods[key])
+                inds_periodic = xp.asarray(self.inds_periodic[key])
                 # wrap
                 pos[:, :, inds_periodic] = (
-                    pos[:, :, inds_periodic] % periods[np.newaxis, np.newaxis, :]
+                    pos[:, :, inds_periodic] % periods[xp.newaxis, xp.newaxis, :]
                 )
 
             p[key] = pos

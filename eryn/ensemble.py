@@ -655,7 +655,7 @@ class EnsembleSampler(object):
             else:
                 inds = None
             state.log_prob, state.blobs = self.compute_log_prob(
-                coords, inds=inds, logp=state.log_prior
+                coords, inds=inds, logp=state.log_prior, supps=state.supplimental, branch_supps=state.branches_supplimental 
             )
 
         if np.shape(state.log_prob) != (self.ntemps, self.nwalkers):
