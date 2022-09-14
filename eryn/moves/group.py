@@ -52,6 +52,7 @@ class GroupMove(Move, ABC):
         gibbs_sampling_leaves_per=None,
         n_iter_update=100,
         live_dangerously=False,
+        skip_branches=[],
         **kwargs
     ):
 
@@ -62,6 +63,7 @@ class GroupMove(Move, ABC):
         self.nfriends = int(nfriends)
         self.n_iter_update = n_iter_update
         self.live_dangerously = live_dangerously
+        self.skip_branches = skip_branches
 
         if gibbs_sampling_leaves_per is not None:
             if (
@@ -178,6 +180,9 @@ class GroupMove(Move, ABC):
             # adjust new inds for gibbs sampling
             name_keep, inds_keep, nleaves_max_here = gs
 
+            if name_keep in self.skip_branches:
+                continue
+            
             if len(inds_keep) > 1:
                 raise NotImplementedError
 
