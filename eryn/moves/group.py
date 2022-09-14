@@ -296,7 +296,8 @@ class GroupMove(Move, ABC):
             if (new_branch_supps is not None and not np.all(np.asarray(list(new_branch_supps.values())) == None)) or new_supps is not None:
                 if new_branch_supps is not None:
                     for name in new_branch_supps:
-                        new_branch_supps[name].remove_objects("inds_keep")
+                        if new_branch_supps[name] is not None:
+                            new_branch_supps[name].remove_objects("inds_keep")
                 elif new_supps is not None:
                     pass  # del new_branch_supps
 
