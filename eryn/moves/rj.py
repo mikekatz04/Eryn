@@ -97,38 +97,10 @@ class ReversibleJump(Move):
         """
         raise NotImplementedError("The proposal must be implemented by " "subclasses")
 
-    def propose(self, model, state):
-        """Use the move to generate a proposal and compute the acceptance
-
-        Args:
-            model (:class:`eryn.model.Model`): Carrier of sampler information.
-            state (:class:`State`): Current state of the sampler.
-
-        Returns:
-            :class:`State`: State of sampler after proposal is complete.
-
-        """
-
-        # TODO: keep this?
-        # this exposes anywhere in the proposal class to this information
-        self.current_state = state
-        self.current_model = model
-
-        # Run any move-specific setup.
-        self.setup(state.branches)
-
-        ll_before = model.compute_log_prob_fn(state.branches_coords, inds=state.branches_inds, supps=state.supplimental, branch_supps=state.branches_supplimental)
-
-        if not np.allclose(ll_before[0], state.log_prob):
-            breakpoint()
-
-        ntemps, nwalkers, _, _ = state.branches[list(state.branches.keys())[0]].shape
-
-        # Split the ensemble in half and iterate over these two halves.
-        accepted = np.zeros((ntemps, nwalkers), dtype=bool)
-
-        # TODO: do we want an probability that the model count will not change?
+    def get_model_change_proposal(self, state, model):
+        
         inds_for_change = {}
+        ntemps, nwalkers, _, _ = state.branches[list(state.branches.keys())[0]].shape
 
         assert len(self.min_k) == len(self.max_k)
         assert len(state.branches.keys()) == len(self.max_k)
@@ -212,10 +184,39 @@ class ReversibleJump(Move):
                     # model component number not changing
                     else:
                         pass
+        return inds_for_change
 
-        coords_propose_in = {key: state.branches_coords[key] for key in inds_for_change}
-        inds_propose_in = {key: state.branches_inds[key] for key in inds_for_change}
-        branches_supp_propose_in =  {key: state.branches_supplimental[key] for key in inds_for_change}
+    def propose(self, model, state):
+        """Use the move to generate a proposal and compute the acceptance
+
+        Args:
+            model (:class:`eryn.model.Model`): Carrier of sampler information.
+            state (:class:`State`): Current state of the sampler.
+
+        Returns:
+            :class:`State`: State of sampler after proposal is complete.
+
+        """
+        
+        # TODO: keep this?
+        # this exposes anywhere in the proposal class to this information
+        self.current_state = state
+        self.current_model = model
+
+        # Run any move-specific setup.
+        self.setup(state.branches)
+
+        ntemps, nwalkers, _, _ = state.branches[list(state.branches.keys())[0]].shape
+
+        # Split the ensemble in half and iterate over these two halves.
+        accepted = np.zeros((ntemps, nwalkers), dtype=bool)
+
+        # TODO: check if temperatures are properly repeated after reset
+        # TODO: do we want an probability that the model count will not change?
+        inds_for_change = self.get_model_change_proposal(state, model)
+        coords_propose_in = state.branches_coords
+        inds_propose_in = state.branches_inds
+        branches_supp_propose_in = state.branches_supplimental
 
         if len(list(coords_propose_in.keys())) == 0:
             raise ValueError("Right now, no models are getting a reversible jump proposal. Check min_k and max_k or do not use rj proposal.")
@@ -224,7 +225,7 @@ class ReversibleJump(Move):
         q, new_inds, factors = self.get_proposal(
             coords_propose_in, inds_propose_in, inds_for_change, model.random, branch_supps=branches_supp_propose_in, supps=state.supplimental
         )
-
+        
         for name, branch in state.branches.items():
             if name not in q:
                 q[name] = state.branches[name].coords[:].copy()
@@ -350,12 +351,15 @@ class ReversibleJump(Move):
         lnpdiff = factors + logP - prev_logP
 
         accepted = lnpdiff > np.log(model.random.rand(ntemps, nwalkers))
-
+        
         # TODO: deal with blobs
         new_state = State(q, log_prob=logl, log_prior=logp, blobs=None, inds=new_inds, supplimental=new_supps, branch_supplimental=new_branch_supps)
         state = self.update(state, new_state, accepted)
 
         # apply delayed rejection to walkers that are +1
+        # TODO: need to reexamine this a bit. I have a feeling that only applying 
+        # this to +1 may not be preserving detailed balance. You may need to 
+        # "simulate it" for -1 similar to what we do in multiple try
         if self.dr:
             # for name, branch in state.branches.items():
             #     # We have to work with the binaries added only.
@@ -370,8 +374,10 @@ class ReversibleJump(Move):
         # In most cases, RJ proposal is has small acceptance rate, so in the end we end up 
         # switching back what was swapped in the previous in-model step.
         # TODO: MLK: I think we should allow for swapping but no adaptation. 
+        
         if self.temperature_control is not None and not self.prevent_swaps:
              state, accepted = self.temperature_control.temper_comps(state, accepted, adapt=False)
         if np.any(state.log_prob > 1e10):
             breakpoint()
+        
         return state, accepted
