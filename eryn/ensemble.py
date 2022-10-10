@@ -577,6 +577,7 @@ class EnsembleSampler(object):
         thin_by=1,
         store=True,
         progress=False,
+        save_first_state=False,
     ):
         """Advance the chain as a generator
 
@@ -679,6 +680,20 @@ class EnsembleSampler(object):
             self.backend.grow(iterations, state.blobs)
 
         model = self.get_model()
+
+        if save_first_state and store and self.backend.iteration == 0:
+            if iterations <= 1:
+                raise ValueError("Cannot save_first_state if iterations == 1.")
+            state.random_state = self.random_state
+            state.betas = model.temperature_control.betas
+            rj_accepted_tmp = np.zeros((self.ntemps, self.nwalkers)) if self.has_reversible_jump else None
+            self.backend.save_step(
+                state,
+                np.zeros((self.ntemps, self.nwalkers)),  # accepted
+                rj_accepted=rj_accepted_tmp,
+                in_model_swaps_accepted=None,
+                rj_swaps_accepted=None,
+            )
 
         # Inject the progress bar
         total = None if iterations is None else iterations * yield_step
