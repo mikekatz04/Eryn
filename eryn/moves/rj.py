@@ -112,6 +112,12 @@ class ReversibleJump(Move):
             names_upd=[]
             names_upd+=[list(state.branches.keys())[ind_upd]]
 
+            if list(state.branches.keys())[ind_upd]=='qpl':
+                names_upd+=['qbpl']
+
+            elif list(state.branches.keys())[ind_upd]=='qbpl':
+                names_upd+=['qpl']
+
         for (name, branch), min_k, max_k in zip(
             state.branches.items(), self.min_k, self.max_k
         ):
