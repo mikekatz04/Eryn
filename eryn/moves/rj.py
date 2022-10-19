@@ -106,10 +106,11 @@ class ReversibleJump(Move):
         assert len(state.branches.keys()) == len(self.max_k)
 
         inds_choose=np.where(np.array(self.max_k)>np.array(self.min_k))[0]
+        names_upd=[]
         if len(inds_choose)>0:
             ind_upd=np.random.choice(inds_choose)
 
-            names_upd=[]
+
             names_upd+=[list(state.branches.keys())[ind_upd]]
 
             if list(state.branches.keys())[ind_upd]=='qpl':
@@ -200,7 +201,7 @@ class ReversibleJump(Move):
                     # model component number not changing
                     else:
                         pass
-        return inds_for_change
+        return inds_for_change,names_upd
 
     def propose(self, model, state):
         """Use the move to generate a proposal and compute the acceptance
@@ -229,7 +230,7 @@ class ReversibleJump(Move):
 
         # TODO: check if temperatures are properly repeated after reset
         # TODO: do we want an probability that the model count will not change?
-        inds_for_change = self.get_model_change_proposal(state, model)
+        inds_for_change, names_upd = self.get_model_change_proposal(state, model)
         coords_propose_in = state.branches_coords
         inds_propose_in = state.branches_inds
         branches_supp_propose_in = state.branches_supplimental
@@ -271,7 +272,7 @@ class ReversibleJump(Move):
             # do not work on sources with fixed source count
             if min_k+1 >= max_k:
                 continue
-            if kcount!=ind_upd:
+            if name not in names_upd:
                 continue
 
             # fix proposal asymmetry at bottom of k range
