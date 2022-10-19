@@ -232,15 +232,21 @@ class ReversibleJump(Move):
             raise ValueError("Right now, no models are getting a reversible jump proposal. Check min_k and max_k or do not use rj proposal.")
 
         # propose new sources and coordinates
-        q, new_inds, factors = self.get_proposal(
-            coords_propose_in, inds_propose_in, inds_for_change, model.random, branch_supps=branches_supp_propose_in, supps=state.supplimental
+        q0, new_inds0, factors = self.get_proposal(
+            state.branches_coords, state.branches_inds, inds_for_change, model.random, branch_supps=state.branches_supplimental, supps=state.supplimental
         )
 
         for name, branch in state.branches.items():
-            if name not in q:
-                q[name] = state.branches[name].coords[:].copy()
-            if name not in new_inds:
-                new_inds[name] = state.branches[name].inds[:].copy()
+            if name not in q0:
+                q0[name] = state.branches[name].coords[:].copy()
+            if name not in new_inds0:
+                new_inds0[name] = state.branches[name].inds[:].copy()
+
+        q={}
+        new_inds={}
+        for name, branch in state.branches.items():
+            q[name]=q0[name][:].copy()
+            new_inds[name]=new_inds0[name][:].copy()
 
         if "inds_here" in q:
             temp_transfer_info = {name: q.pop(name) for name in ["ll", "lp", "inds_here"]}
