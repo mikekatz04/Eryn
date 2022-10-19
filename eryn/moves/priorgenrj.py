@@ -60,14 +60,12 @@ class PriorGenerateRJ(ReversibleJump):
         q = {}
         new_inds = {}
 
-        for i, (name, coords, inds, inds_for_change) in enumerate(
-            zip(
-                all_coords.keys(),
-                all_coords.values(),
-                all_inds.values(),
-                all_inds_for_change.values(),
-            )
-        ):
+        for i, name in enumerate(all_inds_for_change.keys()):
+
+            coords=all_coords[name]
+            inds=all_inds[name]
+            inds_for_change=all_inds_for_change[name]
+            
             ntemps, nwalkers, nleaves_max, ndim = coords.shape
             new_inds[name] = inds.copy()
             q[name] = coords.copy()
