@@ -104,6 +104,14 @@ class ReversibleJump(Move):
 
         assert len(self.min_k) == len(self.max_k)
         assert len(state.branches.keys()) == len(self.max_k)
+
+        inds_choose=np.where(np.array(self.max_k)>np.array(self.min_k))[0]
+        if len(inds_choose)>0:
+            ind_upd=np.random.choice(inds_choose)
+
+            names_upd=[]
+            names_upd+=[list(state.branches.keys())[ind_upd]]
+
         for (name, branch), min_k, max_k in zip(
             state.branches.items(), self.min_k, self.max_k
         ):
@@ -115,6 +123,8 @@ class ReversibleJump(Move):
                 continue
             elif min_k > max_k:
                 raise ValueError("min_k is greater than max_k. Not allowed.")
+            elif name not in names_upd:
+                continue
 
             nleaves = branch.nleaves
             # choose whether to add or remove
