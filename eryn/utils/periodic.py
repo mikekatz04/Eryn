@@ -29,6 +29,7 @@ class PeriodicContainer:
 
     def _check_names(self, names):
         if names is None:
+            # TODO: fix this
             try:
                 names = p1.keys()
             except AttributeError:
