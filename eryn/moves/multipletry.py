@@ -44,7 +44,7 @@ class MultipleTryMove:
         if self.return_accepted_info:
             assert hasattr(self, "special_prior_func")
 
-    def get_bf_log_posterior(self, ll, lp, betas=None):
+    def get_mt_log_posterior(self, ll, lp, betas=None):
         if betas is None:
             ll_temp = ll.copy()
         else:
@@ -57,7 +57,7 @@ class MultipleTryMove:
 
         return ll_temp + lp
 
-    def get_bf_proposal(self, coords, nwalkers, inds_reverse, inds_reverse_individual, random, args_generate=(), kwargs_generate={}, args_like=(), kwargs_like={}, args_prior=(), kwargs_prior={}, rj_info={}, betas=None):
+    def get_mt_proposal(self, coords, nwalkers, inds_reverse, inds_reverse_individual, random, args_generate=(), kwargs_generate={}, args_like=(), kwargs_like={}, args_prior=(), kwargs_prior={}, rj_info={}, betas=None):
         """Make a proposal
 
         Args:
@@ -133,10 +133,11 @@ class MultipleTryMove:
                     aux_lp[inds_reverse] -= diff[:, 0]
                     lp[inds_reverse] = aux_lp[inds_reverse, None] + diff
 
-                logP = self.get_bf_log_posterior(ll, lp, betas=betas)
+                logP = self.get_mt_log_posterior(ll, lp, betas=betas)
 
             else:
-                logP = ll
+                lp = np.zeros_like(ll)
+                logP = self.get_mt_log_posterior(ll, lp, betas=betas)
 
             
             log_importance_weights = logP - log_proposal_pdf
@@ -172,7 +173,7 @@ class MultipleTryMove:
 
                 if hasattr(self, "special_prior_func"):
                     aux_lp = self.special_prior_func(aux_generated_points)
-                    aux_logP = self.get_bf_log_posterior(aux_ll, aux_lp, betas=betas)
+                    aux_logP = self.get_mt_log_posterior(aux_ll, aux_lp, betas=betas)
                     
                 else:
                     aux_logP = aux_ll
@@ -189,7 +190,7 @@ class MultipleTryMove:
                 aux_ll[inds_reverse] = self.special_aux_ll
 
                 # aux_lp[inds_reverse]  # do not need to do this because the inds reflect the removed case already. 
-                aux_logP = self.get_bf_log_posterior(aux_ll, aux_lp, betas=betas)
+                aux_logP = self.get_mt_log_posterior(aux_ll, aux_lp, betas=betas)
                 aux_log_proposal_pdf = np.zeros_like(aux_logP)
                 aux_log_importance_weights = aux_logP - aux_log_proposal_pdf
 

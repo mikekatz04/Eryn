@@ -49,6 +49,8 @@ class Move(object):
                 self.temperature_control.compute_log_posterior_tempered
             )
 
+            self.ntemps = self.temperature_control.ntemps
+
     def compute_log_posterior_basic(self, logl, logp):
         """Compute the log of posterior
 

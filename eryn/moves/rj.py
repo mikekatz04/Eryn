@@ -25,7 +25,8 @@ class ReversibleJump(Move):
     def __init__(
         self, max_k, min_k, dr=None, dr_max_iter=5, tune=False, fix_change=None, **kwargs
     ):
-        super(ReversibleJump, self).__init__(**kwargs)
+        # super(ReversibleJump, self).__init__(**kwargs)
+        Move.__init__(self, **kwargs)
 
         if isinstance(max_k, int):
             max_k = [max_k]

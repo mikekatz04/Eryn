@@ -38,7 +38,8 @@ class StretchMove(RedBlueMove):
 
         self.use_gpu = use_gpu
         self.return_gpu = return_gpu
-        super(StretchMove, self).__init__(**kwargs)
+        # super(StretchMove, self).__init__(**kwargs)
+        RedBlueMove.__init__(self, **kwargs)
 
     def adjust_factors(self, factors, ndims_old, ndims_new):
         # adjusts in place
