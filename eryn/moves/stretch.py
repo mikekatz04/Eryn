@@ -29,7 +29,7 @@ class StretchMove(RedBlueMove):
             the returned arrays will be returned as ``CuPy`` arrays. (default: ``False``)
         random_seed (int, optional): Set the random seed in ``CuPy/NumPy`` if not ``None``.
             (default: ``None``)
-        kwargs (dict, optional): Additional keyword arguments passed down through :class:`RedRedBlueMove.
+        kwargs (dict, optional): Additional keyword arguments passed down through :class:`RedRedBlueMove`_.
 
     Attributes:
         a (double): The stretch scale parameter.
@@ -40,21 +40,42 @@ class StretchMove(RedBlueMove):
         
     """
     def __init__(self, a=2.0, use_gpu=False, return_gpu=False, random_seed=None, **kwargs):
+
+        # store scale factor
         self.a = a
+
+        # change array library based on GPU usage
         if use_gpu:
             self.xp = xp
         else:
             self.xp = np
 
+        # set the random seet of the library if desired
         if random_seed is not None:
             self.xp.random.seed(random_seed)
 
         self.use_gpu = use_gpu
         self.return_gpu = return_gpu
-        # super(StretchMove, self).__init__(**kwargs)
+
+        # pass kwargs up
         RedBlueMove.__init__(self, **kwargs)
 
+        # how it was formerly
+        # super(StretchMove, self).__init__(**kwargs)
+
     def adjust_factors(self, factors, ndims_old, ndims_new):
+        """Adjust the ``factors`` based on changing dimensions. 
+
+        ``factors`` is adjusted in place.
+
+        Args: 
+            factors (xp.ndarray): Array of ``factors`` values. It is adjusted in place.
+            ndims_old (int or xp.ndarray): Old dimension. If given as an ``xp.ndarray``,
+                must be broadcastable with ``factors``.
+            ndims_new (int or xp.ndarray): New dimension. If given as an ``xp.ndarray``,
+                must be broadcastable with ``factors``.  
+        
+        """
         # adjusts in place
         logzz = factors / (ndims_old - 1.0) 
         factors[:] = logzz * (ndims_new - 1.0)
