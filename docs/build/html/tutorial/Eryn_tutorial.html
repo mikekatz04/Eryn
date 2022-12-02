@@ -3,9 +3,10 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
   <title>Getting Started with Eryn &mdash; Eryn 0.0.1 documentation</title>
   
@@ -13,10 +14,15 @@
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
 
   
   
+
   
+  
+
   
 
   
@@ -26,13 +32,13 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
-        <script src="../_static/language_data.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "document", "processHtmlClass": "math|output_area"}}</script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -53,7 +59,7 @@
           
 
           
-            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> Eryn
+            <a href="../index.html" class="icon icon-home"> Eryn
           
 
           
@@ -152,6 +158,8 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -163,7 +171,7 @@
     
       <li class="wy-breadcrumbs-aside">
         
-            
+          
             <a href="../_sources/tutorial/Eryn_tutorial.ipynb.txt" rel="nofollow"> View page source</a>
           
         
@@ -175,7 +183,7 @@
   <div class="rst-breadcrumbs-buttons" role="navigation" aria-label="breadcrumb navigation">
       
       
-        <a href="../user/utils.html" class="btn btn-neutral float-left" title="Utilities" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="../user/utils.html" class="btn btn-neutral float-left" title="Utilities" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
       
   </div>
   
@@ -470,6 +478,7 @@ div.rendered_html tbody tr:hover {
 <span class="kn">from</span> <span class="nn">eryn.prior</span> <span class="kn">import</span> <span class="n">PriorContainer</span><span class="p">,</span> <span class="n">uniform_dist</span>
 <span class="kn">from</span> <span class="nn">eryn.utils</span> <span class="kn">import</span> <span class="n">TransformContainer</span>
 <span class="kn">from</span> <span class="nn">eryn.moves</span> <span class="kn">import</span> <span class="n">GaussianMove</span>
+<span class="kn">from</span> <span class="nn">eryn.utils.utility</span> <span class="kn">import</span> <span class="n">groups_from_inds</span>
 
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -482,9 +491,9 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 </div>
-<div class="section" id="Getting-Started-with-Eryn">
+<section id="Getting-Started-with-Eryn">
 <h1>Getting Started with Eryn<a class="headerlink" href="#Getting-Started-with-Eryn" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="n-dimensional-Gaussian">
+<section id="n-dimensional-Gaussian">
 <h2>n-dimensional Gaussian<a class="headerlink" href="#n-dimensional-Gaussian" title="Permalink to this headline">¶</a></h2>
 <p>Let’s start by running on a simple Gaussian likelihood. We will then build up to the full capabilities of the Eryn sampler.</p>
 <div class="nbinput docutils container">
@@ -556,7 +565,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-  3%|▎         | 34/1000 [00:00&lt;00:02, 339.07it/s]
+  0%|                                                  | 0/1000 [00:00&lt;?, ?it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -591,45 +600,27 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|██████████| 1000/1000 [00:02&lt;00:00, 448.56it/s]
-100%|██████████| 25000/25000 [00:52&lt;00:00, 473.94it/s]
+100%|██████████████████████████████████████| 1000/1000 [00:03&lt;00:00, 275.09it/s]
+100%|████████████████████████████████████| 25000/25000 [01:18&lt;00:00, 318.41it/s]
 </pre></div></div>
 </div>
-<div class="nboutput nblast docutils container">
+<div class="nboutput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
-<div class="highlight"><pre>
-&lt;eryn.state.State at 0x10cd74720&gt;
-</pre></div></div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_5_0.png" src="../_images/tutorial_Eryn_tutorial_5_0.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_4_3.png" src="../_images/tutorial_Eryn_tutorial_4_3.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_5_1.png" src="../_images/tutorial_Eryn_tutorial_5_1.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_4_4.png" src="../_images/tutorial_Eryn_tutorial_4_4.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -646,14 +637,14 @@ div.rendered_html tbody tr:hover {
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_6_0.png" src="../_images/tutorial_Eryn_tutorial_6_0.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_5_0.png" src="../_images/tutorial_Eryn_tutorial_5_0.png" />
 </div>
 </div>
-</div>
-<div class="section" id="Add-tempering">
+</section>
+<section id="Add-tempering">
 <h2>Add tempering<a class="headerlink" href="#Add-tempering" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -692,27 +683,27 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|██████████| 1000/1000 [00:05&lt;00:00, 191.10it/s]
-100%|██████████| 25000/25000 [02:07&lt;00:00, 195.38it/s]
+100%|██████████████████████████████████████| 1000/1000 [00:05&lt;00:00, 186.40it/s]
+100%|████████████████████████████████████| 25000/25000 [02:18&lt;00:00, 180.50it/s]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;eryn.state.State at 0x111541400&gt;
+&lt;eryn.state.State at 0x178a5c160&gt;
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ntemps</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">temp</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">samples</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;model_0&#39;</span><span class="p">][:,</span> <span class="n">temp</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ndim</span><span class="p">)</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">ensemble_pt</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;model_0&#39;</span><span class="p">][:,</span> <span class="n">temp</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ndim</span><span class="p">)</span>
     <span class="n">corner</span><span class="o">.</span><span class="n">corner</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">truths</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ndim</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
 </pre></div>
 </div>
@@ -733,6 +724,98 @@ div.rendered_html tbody tr:hover {
 9
 10
 </pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_8_1.png" src="../_images/tutorial_Eryn_tutorial_8_1.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_8_2.png" src="../_images/tutorial_Eryn_tutorial_8_2.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_8_3.png" src="../_images/tutorial_Eryn_tutorial_8_3.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_8_4.png" src="../_images/tutorial_Eryn_tutorial_8_4.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_8_5.png" src="../_images/tutorial_Eryn_tutorial_8_5.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_8_6.png" src="../_images/tutorial_Eryn_tutorial_8_6.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_8_7.png" src="../_images/tutorial_Eryn_tutorial_8_7.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_8_8.png" src="../_images/tutorial_Eryn_tutorial_8_8.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_8_9.png" src="../_images/tutorial_Eryn_tutorial_8_9.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_8_10.png" src="../_images/tutorial_Eryn_tutorial_8_10.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1">#### Chains</span>
+<span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ntemps</span><span class="p">):</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ndim</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ndim</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">walk</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">):</span>
+            <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ensemble_pt</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;model_0&#39;</span><span class="p">][:,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">walk</span><span class="p">,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_9_0.png" src="../_images/tutorial_Eryn_tutorial_9_0.png" />
+</div>
 </div>
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
@@ -790,110 +873,18 @@ div.rendered_html tbody tr:hover {
 <img alt="../_images/tutorial_Eryn_tutorial_9_8.png" src="../_images/tutorial_Eryn_tutorial_9_8.png" />
 </div>
 </div>
-<div class="nboutput docutils container">
+<div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
 <img alt="../_images/tutorial_Eryn_tutorial_9_9.png" src="../_images/tutorial_Eryn_tutorial_9_9.png" />
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_9_10.png" src="../_images/tutorial_Eryn_tutorial_9_10.png" />
-</div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1">#### Chains</span>
-<span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ntemps</span><span class="p">):</span>
-    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ndim</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ndim</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">walk</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">):</span>
-            <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;model_0&#39;</span><span class="p">][:,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">walk</span><span class="p">,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">])</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_10_0.png" src="../_images/tutorial_Eryn_tutorial_10_0.png" />
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_10_1.png" src="../_images/tutorial_Eryn_tutorial_10_1.png" />
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_10_2.png" src="../_images/tutorial_Eryn_tutorial_10_2.png" />
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_10_3.png" src="../_images/tutorial_Eryn_tutorial_10_3.png" />
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_10_4.png" src="../_images/tutorial_Eryn_tutorial_10_4.png" />
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_10_5.png" src="../_images/tutorial_Eryn_tutorial_10_5.png" />
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_10_6.png" src="../_images/tutorial_Eryn_tutorial_10_6.png" />
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_10_7.png" src="../_images/tutorial_Eryn_tutorial_10_7.png" />
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_10_8.png" src="../_images/tutorial_Eryn_tutorial_10_8.png" />
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_10_9.png" src="../_images/tutorial_Eryn_tutorial_10_9.png" />
-</div>
-</div>
-</div>
-<div class="section" id="Add-multiple-leaf-count-uncertainty-(i.e. reversible-jump-MCMC))">
+</section>
+<section id="Add-multiple-leaf-count-uncertainty-(i.e. reversible-jump-MCMC))">
 <h2>Add multiple leaf count uncertainty (i.e. reversible-jump MCMC))<a class="headerlink" href="#Add-multiple-leaf-count-uncertainty-(i.e. reversible-jump-MCMC))" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[115]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -907,7 +898,7 @@ div.rendered_html tbody tr:hover {
     <span class="n">f_x</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="n">b</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">c</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">f_x</span>
 
-<span class="k">def</span> <span class="nf">combine_gaussians</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">group1</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">combine_gaussians</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">group1</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
     <span class="n">a</span> <span class="o">=</span> <span class="n">x1</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
     <span class="n">b</span> <span class="o">=</span> <span class="n">x1</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
     <span class="n">c</span> <span class="o">=</span> <span class="n">x1</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
@@ -929,7 +920,7 @@ div.rendered_html tbody tr:hover {
     <span class="c1"># group1 is which tree this leaf belongs to</span>
 
 
-    <span class="n">template</span> <span class="o">=</span> <span class="n">combine_gaussians</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">group1</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="n">combine_gaussians</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">group1</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
 
 
     <span class="n">ll</span> <span class="o">=</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(((</span><span class="n">template</span> <span class="o">-</span> <span class="n">data</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
@@ -957,7 +948,7 @@ div.rendered_html tbody tr:hover {
 <span class="n">injection</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
 
 <span class="c1"># combine gaussians</span>
-<span class="n">injection</span> <span class="o">=</span> <span class="n">combine_gaussians</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">gauss_inj_params</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gauss_inj_params</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span> <span class="n">t</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">injection</span> <span class="o">=</span> <span class="n">combine_gaussians</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">gauss_inj_params</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gauss_inj_params</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span> <span class="n">t</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
 <span class="c1"># set noise level</span>
 <span class="n">sigma</span> <span class="o">=</span> <span class="mf">0.25</span>
@@ -972,25 +963,25 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[115]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x10706dbb0&gt;
+&lt;matplotlib.legend.Legend at 0x179441dc0&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_12_1.png" src="../_images/tutorial_Eryn_tutorial_12_1.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_11_1.png" src="../_images/tutorial_Eryn_tutorial_11_1.png" />
 </div>
 </div>
-<div class="section" id="setup-for-reversible-jump">
+<section id="setup-for-reversible-jump">
 <h3>setup for reversible-jump<a class="headerlink" href="#setup-for-reversible-jump" title="Permalink to this headline">¶</a></h3>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[116]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1027,20 +1018,10 @@ div.rendered_html tbody tr:hover {
 
 <span class="n">inds</span><span class="p">[</span><span class="s1">&#39;gauss&#39;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">gauss_inj_params</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">True</span>
 
-<span class="c1"># setup groups just to compute likelihood</span>
-<span class="n">groups</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="n">name</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">coords</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
-        <span class="n">coords</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
-    <span class="p">)[:,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">]</span>
-    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">coords</span>
-<span class="p">}</span>
-
-<span class="n">groups</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="n">name</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">groups</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">coords</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">groups</span>
-<span class="p">}</span>
-
 <span class="n">coords_in</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">coords</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">inds</span><span class="p">[</span><span class="n">name</span><span class="p">]]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">coords</span><span class="p">}</span>
-<span class="n">groups_in</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">groups</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">inds</span><span class="p">[</span><span class="n">name</span><span class="p">]]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">}</span>
+
+<span class="c1"># useful function: groups_from_inds</span>
+<span class="n">groups_in</span> <span class="o">=</span> <span class="n">groups_from_inds</span><span class="p">(</span><span class="n">inds</span><span class="p">)</span>
 
 <span class="n">log_prob</span> <span class="o">=</span> <span class="n">log_prob_fn</span><span class="p">(</span>
     <span class="n">coords_in</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">],</span>
@@ -1071,26 +1052,26 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[[-240.18791329 -240.34854827 -240.36601662 -240.38774254 -240.45677155
-  -240.32180016 -240.38252592 -240.46182312 -240.09483499 -240.20280119
-  -240.54079238 -240.53599251 -240.48582986 -240.26035003 -240.17782736
-  -240.43964753 -240.28094621 -240.21442607 -240.32945851 -240.20817986]
- [-240.24180987 -240.28184959 -240.34207866 -240.23243778 -240.28235961
-  -240.48581688 -240.13450893 -240.08082802 -240.11640099 -240.18165578
-  -240.27383069 -240.39261319 -240.21260148 -240.17549217 -240.14570604
-  -240.22673338 -240.57568622 -240.086541   -240.35601697 -240.12922591]
- [-240.17255821 -240.4484594  -240.40777878 -240.08281649 -240.24932027
-  -240.0549914  -240.37771324 -240.37488778 -240.16040373 -240.20829846
-  -240.43244332 -240.29210751 -240.33117257 -240.27479091 -240.21411032
-  -240.10415578 -240.41950913 -240.33033012 -240.33306585 -240.31010685]
- [-240.3380475  -240.15620733 -240.35612046 -240.32938538 -240.55067322
-  -240.08208768 -240.26982983 -240.12931061 -240.04433935 -240.19734074
-  -240.13785651 -240.32464081 -240.42523943 -240.41948135 -240.14067469
-  -240.100841   -240.26314194 -240.28423207 -240.0055032  -240.41084331]]
+[[-252.13149308 -252.02831479 -251.99524411 -252.18632623 -251.97003942
+  -252.10484943 -252.06665276 -252.04854725 -252.02155305 -251.99380089
+  -252.02084072 -251.87089009 -252.02148315 -251.92158796 -251.99476225
+  -251.90709475 -252.22166534 -251.9586698  -252.11045188 -252.09855964]
+ [-251.86159598 -251.84804063 -252.00820348 -252.07190106 -251.90839444
+  -251.94322078 -252.25748349 -252.07346766 -251.93317874 -251.92511581
+  -252.07559703 -252.00143713 -252.25080653 -251.91306619 -251.99266252
+  -251.85917095 -252.17609825 -252.08551594 -251.89631882 -251.99770055]
+ [-252.0175381  -251.9983529  -251.94620724 -252.04229361 -251.90881573
+  -252.1422719  -252.01591993 -252.25033864 -252.09381481 -251.99828879
+  -252.13801311 -252.02309045 -252.14998019 -251.9177185  -252.04156307
+  -251.98291793 -252.10901641 -251.95305651 -251.91459563 -251.96218311]
+ [-251.99216879 -252.15120065 -251.95620029 -251.94876049 -252.12626242
+  -252.00009839 -251.92389404 -251.93244406 -252.04694841 -252.00249949
+  -252.37322133 -251.99687921 -251.90507335 -252.07975126 -252.25850779
+  -252.07706206 -251.9944927  -252.08357066 -252.21372574 -251.87470958]]
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[117]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1122,7 +1103,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[118]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1137,46 +1118,46 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|██████████| 1000/1000 [00:10&lt;00:00, 92.77it/s]
-100%|██████████| 10000/10000 [01:48&lt;00:00, 92.55it/s]
+100%|███████████████████████████████████████| 1000/1000 [00:11&lt;00:00, 86.35it/s]
+100%|█████████████████████████████████████| 10000/10000 [01:52&lt;00:00, 88.56it/s]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[118]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;eryn.state.State at 0x113031f40&gt;
+&lt;eryn.state.State at 0x17951ba60&gt;
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[99]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;gauss&#39;</span><span class="p">][:,</span> <span class="n">temp</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ndim</span><span class="p">)</span>
+<span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;gauss&#39;</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ndim</span><span class="p">)</span>
 <span class="n">samples</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">samples</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])]</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[99]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([[ 3.27653476, -0.19580649,  0.11017908],
-       [ 2.61609257, -0.10210084,  0.08425267],
-       [ 3.42586189,  0.01963378,  0.08657705],
+array([[ 3.29983912e+00, -2.00181521e-01,  1.00031396e-01],
+       [ 2.60019157e+00, -1.00168747e-01,  1.00054137e-01],
+       [ 3.40007299e+00, -1.74067921e-06,  1.00116074e-01],
        ...,
-       [ 3.07204554, -0.03255286,  0.13580535],
-       [ 3.01244011,  0.29030763,  0.0829935 ],
-       [ 2.73236945, -0.19496055,  0.06811822]])
+       [ 2.63019804e+00, -1.08015496e-01,  9.86863371e-02],
+       [ 3.42452427e+00,  2.09320779e-03,  9.34621931e-02],
+       [ 2.88687128e+00,  2.97805501e-01,  1.03424088e-01]])
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[100]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1196,22 +1177,6 @@ array([[ 3.27653476, -0.19580649,  0.11017908],
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 1
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-WARNING:root:Too few points to create valid contours
-WARNING:root:Too few points to create valid contours
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
 2
 3
 4
@@ -1221,32 +1186,32 @@ WARNING:root:Too few points to create valid contours
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_18_3.png" src="../_images/tutorial_Eryn_tutorial_18_3.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_17_1.png" src="../_images/tutorial_Eryn_tutorial_17_1.png" />
 </div>
 </div>
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_18_4.png" src="../_images/tutorial_Eryn_tutorial_18_4.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_17_2.png" src="../_images/tutorial_Eryn_tutorial_17_2.png" />
 </div>
 </div>
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_18_5.png" src="../_images/tutorial_Eryn_tutorial_18_5.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_17_3.png" src="../_images/tutorial_Eryn_tutorial_17_3.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_18_6.png" src="../_images/tutorial_Eryn_tutorial_18_6.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_17_4.png" src="../_images/tutorial_Eryn_tutorial_17_4.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[112]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1268,22 +1233,22 @@ WARNING:root:Too few points to create valid contours
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-max ll: -240.00550320262988
+max ll: -249.8977787874206
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_19_1.png" src="../_images/tutorial_Eryn_tutorial_19_1.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_18_1.png" src="../_images/tutorial_Eryn_tutorial_18_1.png" />
 </div>
 </div>
-</div>
-</div>
-<div class="section" id="Add-multiple-branch">
+</section>
+</section>
+<section id="Add-multiple-branch">
 <h2>Add multiple branch<a class="headerlink" href="#Add-multiple-branch" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1341,9 +1306,13 @@ max ll: -240.00550320262988
         <span class="n">template</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">gauss_out</span><span class="p">[</span><span class="n">inds1</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">template</span>
 
-<span class="k">def</span> <span class="nf">log_prob_fn</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">group1</span><span class="p">,</span> <span class="n">group2</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">log_prob_fn</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">groups</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
     <span class="c1"># x1 is one leaf&#39;s parameters</span>
     <span class="c1"># group1 is which tree this leaf belongs to</span>
+
+    <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span> <span class="o">=</span> <span class="n">xs</span>
+    <span class="n">group1</span><span class="p">,</span> <span class="n">group2</span> <span class="o">=</span> <span class="n">groups</span>
+
     <span class="n">template_gaussian</span> <span class="o">=</span> <span class="n">combine_gaussians</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">group1</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
 
     <span class="n">template_sine</span> <span class="o">=</span> <span class="n">combine_sines</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">group2</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
@@ -1395,25 +1364,25 @@ max ll: -240.00550320262988
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x15b969af0&gt;
+&lt;matplotlib.legend.Legend at 0x179934fd0&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_21_1.png" src="../_images/tutorial_Eryn_tutorial_21_1.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_20_1.png" src="../_images/tutorial_Eryn_tutorial_20_1.png" />
 </div>
 </div>
-<div class="section" id="id1">
+<section id="id1">
 <h3>setup for reversible-jump<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1474,10 +1443,8 @@ max ll: -240.00550320262988
 <span class="n">groups_in</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">groups</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">inds</span><span class="p">[</span><span class="n">name</span><span class="p">]]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">}</span>
 
 <span class="n">log_prob</span> <span class="o">=</span> <span class="n">log_prob_fn</span><span class="p">(</span>
-    <span class="n">coords_in</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">],</span>
-    <span class="n">coords_in</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">],</span>
-    <span class="n">groups_in</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">],</span>
-    <span class="n">groups_in</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">],</span>
+    <span class="p">[</span><span class="n">coords_in</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">],</span> <span class="n">coords_in</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">]],</span>
+    <span class="p">[</span><span class="n">groups_in</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">],</span> <span class="n">groups_in</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">]],</span>
     <span class="n">t</span><span class="p">,</span>
     <span class="n">y</span><span class="p">,</span>
     <span class="n">sigma</span>
@@ -1504,26 +1471,26 @@ max ll: -240.00550320262988
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[[-240.30593475 -240.2186701  -240.22956144 -240.15367694 -240.24677223
-  -240.29515087 -240.32060301 -240.24834021 -240.22989383 -240.19174669
-  -240.40206841 -240.25366282 -240.23435269 -240.23096031 -240.14530587
-  -240.30838493 -240.22275597 -240.19109284 -240.27959124 -240.21886765]
- [-240.19202397 -240.15499298 -240.25402934 -240.22160728 -240.27359671
-  -240.21502912 -240.29408137 -240.32808822 -240.2336987  -240.2215405
-  -240.18622771 -240.25265759 -240.27054968 -240.23091008 -240.18914598
-  -240.22787591 -240.3299771  -240.21034111 -240.40020854 -240.22944946]
- [-240.33557967 -240.36576771 -240.22947036 -240.34699602 -240.31841375
-  -240.14468966 -240.26245742 -240.21859757 -240.25266841 -240.20336684
-  -240.18190933 -240.26778995 -240.42716142 -240.27140775 -240.21301958
-  -240.20479827 -240.10682025 -240.16340571 -240.13172285 -240.21500632]
- [-240.32670637 -240.28422157 -240.32573791 -240.41107733 -240.25951377
-  -240.24845501 -240.20647164 -240.27271781 -240.3121007  -240.11646926
-  -240.35309148 -240.26143694 -240.37590903 -240.24642285 -240.2569483
-  -240.27284515 -240.24324533 -240.32195489 -240.24275208 -240.43731543]]
+[[-243.14554279 -243.08517342 -243.20806323 -243.23209029 -243.15375403
+  -243.04760268 -243.18848271 -243.23405063 -243.21236996 -243.15164293
+  -243.08827875 -243.08505318 -243.26307724 -243.24902653 -243.12372915
+  -243.16184737 -243.03931295 -243.13096053 -243.15776882 -243.17292767]
+ [-243.15691304 -243.21433365 -243.11498176 -243.20456773 -243.03851979
+  -243.19160657 -243.18309129 -243.21182986 -243.12886209 -243.10078696
+  -243.09654304 -243.28050076 -243.02641387 -243.16219712 -243.18774933
+  -243.02955012 -243.12752068 -243.0126541  -243.16058365 -243.06734183]
+ [-243.18478716 -243.18552814 -243.00261286 -243.08096325 -243.16217254
+  -243.21447103 -243.10682468 -243.17638949 -243.13907491 -243.15347619
+  -243.24933804 -243.11789789 -243.08239191 -243.18403971 -243.05676215
+  -243.26249693 -243.08809143 -243.08699663 -243.1053959  -243.14700949]
+ [-243.10384271 -243.22144524 -243.1462034  -243.16883087 -243.08713324
+  -243.18325663 -243.14619391 -243.09708785 -243.09332549 -243.25844904
+  -243.08949877 -243.20692821 -243.11504804 -243.23748455 -243.09070017
+  -243.10472949 -243.07480132 -243.2268993  -243.12324334 -243.09098599]]
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1532,7 +1499,7 @@ max ll: -240.00550320262988
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1575,7 +1542,7 @@ make_ladder(ndim, ntemps=None, Tmax=None)
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1607,7 +1574,7 @@ make_ladder(ndim, ntemps=None, Tmax=None)
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1622,21 +1589,21 @@ make_ladder(ndim, ntemps=None, Tmax=None)
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|██████████| 1000/1000 [00:18&lt;00:00, 52.85it/s]
-100%|██████████| 10000/10000 [03:03&lt;00:00, 54.43it/s]
+100%|███████████████████████████████████████| 1000/1000 [00:19&lt;00:00, 52.24it/s]
+100%|█████████████████████████████████████| 10000/10000 [03:15&lt;00:00, 51.10it/s]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;eryn.state.State at 0x15bae9360&gt;
+&lt;eryn.state.State at 0x1791b5280&gt;
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1665,32 +1632,32 @@ make_ladder(ndim, ntemps=None, Tmax=None)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_28_1.png" src="../_images/tutorial_Eryn_tutorial_28_1.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_27_1.png" src="../_images/tutorial_Eryn_tutorial_27_1.png" />
 </div>
 </div>
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_28_2.png" src="../_images/tutorial_Eryn_tutorial_28_2.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_27_2.png" src="../_images/tutorial_Eryn_tutorial_27_2.png" />
 </div>
 </div>
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_28_3.png" src="../_images/tutorial_Eryn_tutorial_28_3.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_27_3.png" src="../_images/tutorial_Eryn_tutorial_27_3.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_28_4.png" src="../_images/tutorial_Eryn_tutorial_28_4.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_27_4.png" src="../_images/tutorial_Eryn_tutorial_27_4.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1703,6 +1670,14 @@ make_ladder(ndim, ntemps=None, Tmax=None)
     <span class="n">corner</span><span class="o">.</span><span class="n">corner</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING:root:Too few points to create valid contours
+</pre></div></div>
 </div>
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
@@ -1726,38 +1701,7 @@ WARNING:root:Too few points to create valid contours
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 2
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-WARNING:root:Too few points to create valid contours
-WARNING:root:Too few points to create valid contours
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
 3
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-WARNING:root:Too few points to create valid contours
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
 4
 </pre></div></div>
 </div>
@@ -1765,32 +1709,32 @@ WARNING:root:Too few points to create valid contours
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_29_7.png" src="../_images/tutorial_Eryn_tutorial_29_7.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_28_4.png" src="../_images/tutorial_Eryn_tutorial_28_4.png" />
 </div>
 </div>
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_29_8.png" src="../_images/tutorial_Eryn_tutorial_29_8.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_28_5.png" src="../_images/tutorial_Eryn_tutorial_28_5.png" />
 </div>
 </div>
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_29_9.png" src="../_images/tutorial_Eryn_tutorial_29_9.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_28_6.png" src="../_images/tutorial_Eryn_tutorial_28_6.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_29_10.png" src="../_images/tutorial_Eryn_tutorial_29_10.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_28_7.png" src="../_images/tutorial_Eryn_tutorial_28_7.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1812,18 +1756,18 @@ WARNING:root:Too few points to create valid contours
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-max ll: -236.7055791918694
+max ll: -242.344934538642
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_30_1.png" src="../_images/tutorial_Eryn_tutorial_30_1.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_29_1.png" src="../_images/tutorial_Eryn_tutorial_29_1.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1845,22 +1789,22 @@ max ll: -236.7055791918694
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-max ll: -236.7055791918694
+max ll: -242.344934538642
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_31_1.png" src="../_images/tutorial_Eryn_tutorial_31_1.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_30_1.png" src="../_images/tutorial_Eryn_tutorial_30_1.png" />
 </div>
 </div>
-</div>
-</div>
-</div>
-<div class="section" id="Utilities">
+</section>
+</section>
+</section>
+<section id="Utilities">
 <h1>Utilities<a class="headerlink" href="#Utilities" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="Transform-Container">
+<section id="Transform-Container">
 <h2>Transform Container<a class="headerlink" href="#Transform-Container" title="Permalink to this headline">¶</a></h2>
 <p>Transform containers are primary used in likelihood functions to transform the arrays incoming from the sampler to the proper setup for likelihood computation. It can transform parameters based on transform functions and fill values into a final array for any value that is fixed during sampling.</p>
 <p>It can be passed to the likeihood function as an <code class="docutils literal notranslate"><span class="pre">arg</span></code> or <code class="docutils literal notranslate"><span class="pre">kwarg</span></code>.</p>
@@ -2129,43 +2073,36 @@ max ll: -236.7055791918694
 </pre></div>
 </div>
 </div>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
            
           </div>
           <footer>
-  
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-      
-        <a href="../user/utils.html" class="btn btn-neutral float-left" title="Utilities" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+        <a href="../user/utils.html" class="btn btn-neutral float-left" title="Utilities" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        
-        &copy; Copyright 2021, Michael Katz and Nikos Karnesis
+        &#169; Copyright 2021, Michael Katz and Nikos Karnesis.
 
     </p>
   </div>
     
     
     
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 

@@ -19,6 +19,7 @@ from .utils.utility import groups_from_inds
 
 __all__ = ["EnsembleSampler", "walkers_independent"]
 
+
 try:
     from collections.abc import Iterable
 except ImportError:
@@ -33,25 +34,45 @@ class EnsembleSampler(object):
     everything from a basic non-tempered MCMC to a parallel-tempered,
     global fit containing multiple branches (models) and a variable
     number of leaves (sources) per branch. (# TODO: add link to tree explainer)
+  
     Parameters related to parallelization can be
-    controlled via the ``pool`` argument (:ref:`parallel`).
+    controlled via the ``pool`` argument.
 
     Args:
-        nwalkers (int): The number of walkers in the ensemble.
+        nwalkers (int): The number of walkers in the ensemble per temperature.
         ndims (int or list of ints): Number of dimensions in the parameter space
             for each branch tested.
-        log_prob_fn (callable): A function that takes a vector in the
-            parameter space as input and returns the natural logarithm of the
-            likelihood for that position. When using reversible jump, this function
-            must take a specific set of arguments: ``(x1, group1,...,xN, groupN)``,
-            where ``N`` is the number of branches. ``x1,..,xN`` are the coordinates
-            for each branch and ``group1,...,groupN`` are the groups of leaves that
-            are combined for each walker. This is due to the possibly variable number
-            of leaves associated with different walkers. ``x1`` is 2D with shape
-            (all included individual leaves of branch 1, ndim1), ``xN`` is 2D with shape
-            (all included individual leaves of branch N, ndimN). ``group1`` is
-            a 1D int array array of indexes assigning the specific leaf to a
-            specific walker. Please see the tutorial for more information. (# TODO: add link to tutorial)
+        log_prob_fn (callable): A function that returns the natural logarithm of the
+            likelihood for that position. The inputs to ``log_prob_fn`` depend on whether
+            the function is vectorized (kwarg ``vectorize`` below), if you are using reversible jump, 
+            and how many branches you have. 
+            
+                In the simplest case where ``vectorize == False``, no reversible jump, and only one 
+                type of model, the inputs are just the array of parameters for one walker, so shape is ``(ndim,)``.
+
+                If ``vectorize == True``, no reversible jimp, and only one type of model, the inputs will 
+                be a 2D array of parameters of all the walkers going in. Shape: ``(num positions, ndim)``.
+
+                If using reversible jump, the leaves that go together in the same Likelihood will be grouped
+                together into a single function call. If ``vectorize == False``, then each group is sent as
+                an individual computation. With ``N`` different branches (``N > 1``), inputs would be a list 
+                of 2D arrays of the coordinates for all leaves within each branch: ``([x0, x1,...,xN])``
+                where ``xi`` is 2D with shape ``(number of leaves in this branch, ndim)``. If ``N == 1``, then
+                a list is not provided, just x0, the 2D array of coordinates for the one branch considered.
+
+                If using reversible jump and ``vectorize == True``, then the arrays of parameters will be output
+                with information as regards the grouping of branch and leaf set. Inputs will be
+                ``([X0, X1,..XN], [group0, group1,...,groupN])`` where ``Xi`` is a 2D array of all
+                leaves in the sampler for branch ``i``. ``groupi`` is an index indicating which unique group
+                that sources belongs. For example, if we have 3 walkers with (1, 2, 1) leaves for model ``i``,
+                respectively, we wil have an ``Xi = array([params0, params1, params2, params3])`` and 
+                ``groupsi = array([0, 1, 1, 2])``. 
+                If ``N == 1``, then the lists are removed and the inputs become ``(X0, group0)``. 
+
+                Extra ``args`` and ``kwargs`` for the Likelihood function can be added with the kwargs 
+                ``args`` and ``kwargs`` below.
+
+                Please see the tutorial for more information. (# TODO: add link to tutorial)           
         priors (dict): The prior dictionary can take four forms.
             1) A dictionary with keys as int or tuple containing the int or tuple of int
             that describe the parameter number over which to assess the prior, and values that
@@ -92,10 +113,10 @@ class EnsembleSampler(object):
             of new components/models will be switched off for this run. Requires ``rj_moves`` set to ``True``.
             (default: ``None``)
         args (optional): A list of extra positional arguments for
-            ``log_prob_fn``. ``log_prob_fn`` will be called with the sequence
+            ``log_prob_fn``. ``log_prob_fn`` will be called as
             ``log_prob_fn(p, *args, **kwargs)``.
         kwargs (optional): A dict of extra keyword arguments for
-            ``log_prob_fn``. ``log_prob_fn`` will be called with the sequence
+            ``log_prob_fn``. ``log_prob_fn`` will be called as
             ``log_prob_fn(p, *args, **kwargs)``.
         backend (optional): Either a :class:`backends.Backend` or a subclass
             (like :class:`backends.HDFBackend`) that is used to store and
@@ -334,7 +355,6 @@ class EnsembleSampler(object):
             # TODO: fix error catch here
             self._rj_moves = [rj_moves]
             self._rj_weights = [1.0]
-            
 
         # adjust rj weights properly
         if self.has_reversible_jump:
@@ -476,7 +496,7 @@ class EnsembleSampler(object):
         except:
             pass
 
-    @property 
+    @property
     def priors(self):
         return self._priors
 
@@ -656,7 +676,11 @@ class EnsembleSampler(object):
             else:
                 inds = None
             state.log_prob, state.blobs = self.compute_log_prob(
-                coords, inds=inds, logp=state.log_prior, supps=state.supplimental, branch_supps=state.branches_supplimental 
+                coords,
+                inds=inds,
+                logp=state.log_prior,
+                supps=state.supplimental,
+                branch_supps=state.branches_supplimental,
             )
 
         if np.shape(state.log_prob) != (self.ntemps, self.nwalkers):
@@ -686,7 +710,11 @@ class EnsembleSampler(object):
                 raise ValueError("Cannot save_first_state if iterations == 1.")
             state.random_state = self.random_state
             state.betas = model.temperature_control.betas
-            rj_accepted_tmp = np.zeros((self.ntemps, self.nwalkers)) if self.has_reversible_jump else None
+            rj_accepted_tmp = (
+                np.zeros((self.ntemps, self.nwalkers))
+                if self.has_reversible_jump
+                else None
+            )
             self.backend.save_step(
                 state,
                 np.zeros((self.ntemps, self.nwalkers)),  # accepted
@@ -703,7 +731,7 @@ class EnsembleSampler(object):
                 for _ in range(yield_step):
                     # in model moves
                     for repeat in range(self.num_repeats_in_model):
-                            
+
                         # Choose a random move
                         move = self._random.choice(self._moves, p=self._weights)
 
@@ -819,7 +847,7 @@ class EnsembleSampler(object):
 
         if nsteps == 0:
             return initial_state
-            
+
         results = None
 
         i = 0
@@ -916,14 +944,18 @@ class EnsembleSampler(object):
 
             prior_out = np.zeros((ntemps, nwalkers))
             for name in x_in:
-                prior_out_temp = self.priors[name].logpdf(x_in[name]) * inds[name].flatten()
+                prior_out_temp = (
+                    self.priors[name].logpdf(x_in[name]) * inds[name].flatten()
+                )
                 prior_out += prior_out_temp.reshape(ntemps, nwalkers, nleaves_max).sum(
                     axis=-1
                 )
 
             return prior_out
 
-    def compute_log_prob(self, coords, inds=None, logp=None, supps=None, branch_supps=None):
+    def compute_log_prob(
+        self, coords, inds=None, logp=None, supps=None, branch_supps=None
+    ):
         """Calculate the vector of log-likelihood for the walkers
 
         Args:
@@ -961,49 +993,186 @@ class EnsembleSampler(object):
                 raise ValueError("At least one parameter value was NaN")
 
         # Run the log-probability calculations (optionally in parallel).
+        if inds is None:
+            inds = {
+                name: np.full(coords[name].shape[:-1], True, dtype=bool)
+                for name in coords
+            }
+
+        # if no prior values are added, compute_prior
+        if logp is None:
+            logp = self.compute_log_prior(coords, inds=inds)
+
+        if np.all(np.isinf(logp)):
+            return np.full_like(logp, -1e300), None
+
+        # do not run log likelihood where logp = -inf
+        inds_copy = deepcopy(inds)
+        inds_bad = np.where(np.isinf(logp))
+        for key in inds_copy:
+            inds_copy[key][inds_bad] = False
+
+            if branch_supps is not None and branch_supps[key] is not None:
+                branch_supps[key][inds_bad] = {"inds_keep": False}
+
+        # take information out of dict and spread to x1..xn
+        x_in = {}
+        if self.provide_supplimental:
+            if supps is None and branch_supps is None:
+                raise ValueError(
+                    "supps and branch_supps are both None. If self.provide_supplimental is True, must provide some supplimental information."
+                )
+            if branch_supps is not None:
+                branch_supps_in = {}
+
+        if inds is None:
+            inds = {name: np.full(x[name].shape[:-1], True, dtype=bool) for name in x}
+
+        # determine groupings from inds
+        groups = groups_from_inds(inds)
+
+        # need to map group inds properly
+        # this is the unique group indexes
+        unique_groups = np.unique(
+            np.concatenate([groups_i for groups_i in groups.values()])
+        )
+
+        # this is the map to those indexes that are used in the likelihood
+        groups_map = np.arange(len(unique_groups))
+
+        ll_groups = {}
+        for key, group in groups.items():
+            temp_unique_groups, inverse = np.unique(group, return_inverse=True)
+            keep_groups = groups_map[np.in1d(unique_groups, temp_unique_groups)]
+            ll_groups[key] = keep_groups[inverse]
+
+        for i, (name, coords) in enumerate(p.items()):
+            ntemps, nwalkers, nleaves_max, ndim = coords.shape
+            nwalkers_all = ntemps * nwalkers
+            x_in[name] = coords[inds[name]]
+
+            if self.provide_supplimental:
+                if branch_supps is not None:  #  and
+                    if branch_supps[name] is not None:
+                        branch_supps_in[name] = branch_supps[name][inds[name]]
+                    else:
+                        branch_supps_in[name] = None
+
+        if self.provide_supplimental:
+            if supps is not None:
+                temp = supps.flat
+                supps_in = {name: values[keep_groups] for name, values in temp.items()}
+
+        groups_in = list(ll_groups.values())
+        if len(groups_in) == 1:
+            groups_in = groups_in[0]
+
+        params_in = list(x_in.values())
+
         if self.vectorize:
-            if inds is None:
-                inds = {
-                    name: np.full(coords[name].shape[:-1], True, dtype=bool)
-                    for name in coords
-                }
 
-            # if no prior values are added, compute_prior
-            if logp is None:
-                logp = self.compute_log_prior(coords, inds=inds)
+            args_in = []
 
-            if np.all(np.isinf(logp)):
-                return np.full_like(logp, -1e300), None
+            if len(params_in) == 1:
+                params_in = params_in[0]
 
-            # do not run log likelihood where logp = -inf
-            inds_copy = deepcopy(inds)
-            inds_bad = np.where(np.isinf(logp))
-            for key in inds_copy:
-                inds_copy[key][inds_bad] = False
+            args_in.append(params_in)
 
-                if branch_supps is not None and branch_supps[key] is not None:
-                    branch_supps[key][inds_bad] = {"inds_keep": False}
+            if self.provide_groups:
+                args_in.append(groups_in)
 
-            results = self.log_prob_fn(p, inds=inds_copy, supps=supps, branch_supps=branch_supps)
-            if not isinstance(results, list):
-                results = [results]
+            kwargs_in = {}
+            if self.provide_supplimental:
+                if supps is not None:
+                    kwargs_in["supps"] = supps_in
+                if branch_supps is not None:
+                    branch_supps_in_2 = list(branch_supps_in.values())
+                    if len(branch_supps_in_2) == 1:
+                        kwargs_in["branch_supps"] = branch_supps_in_2[0]
+
+                    else:
+                        kwargs_in["branch_supps"] = branch_supps_in_2
+
+            results = self.log_prob_fn(args_in, kwargs_in)
+
         else:
-            raise NotImplementedError
+
+            if isinstance(groups_in, np.ndarray):
+                groups_in = [groups_in]
+
+            args_in = []
+            for group_i in groups_map:
+                arg_i = []
+                kwarg_i = {}
+                for branch_i, groups_in_set in enumerate(groups_in):
+                    inds_keep = np.where(groups_in_set == group_i)[0]
+                    if inds_keep.shape[0] > 0:
+                        params = params_in[branch_i][inds_keep]
+                        arg_i.append(params)
+                        if self.provide_supplimental:
+                            raise NotImplementedError
+
+                # if only one model type
+                add_term = arg_i[0] if len(groups_in) == 1 else arg_i
+                args_in.append([[add_term], kwarg_i])
+
             # If the `pool` property of the sampler has been set (i.e. we want
             # to use `multiprocessing`), use the `pool`'s map method.
             # Otherwise, just use the built-in `map` function.
             if self.pool is not None:
                 map_func = self.pool.map
+
             else:
                 map_func = map
-            results = list(map_func(self.log_prob_fn, (p[i] for i in range(len(p)))))
 
-        log_prob = results[0]
-        try:
-            blob = results[1]
+            results = np.asarray(list(map_func(self.log_prob_fn, args_in)))
 
-        except (IndexError, TypeError):
-            blob = None
+        assert isinstance(results, np.ndarray)
+
+        # -1e300 because -np.inf screws up state acceptance transfer in proposals
+        ll = np.full(nwalkers_all, -1e300)
+        inds_fix_zeros = np.delete(np.arange(nwalkers_all), unique_groups)
+
+        if results.ndim == 2:
+            ll[unique_groups] = results[:, 0]
+            ll[inds_fix_zeros] = self.fill_zero_leaves_val
+            blobs_out = np.zeros((nwalkers_all, results.shape[1] - 1))
+            blobs_out[unique_groups] = results[:, 1:]
+
+        elif results.dtype == "object":
+            raise NotImplementedError
+
+        else:
+            try:
+                ll[unique_groups] = results
+            except ValueError:
+                breakpoint()
+            ll[inds_fix_zeros] = self.fill_zero_leaves_val
+
+            blobs_out = None
+
+        if self.provide_supplimental:
+            if branch_supps is not None:
+                for name_i, name in enumerate(branch_supps):
+                    if branch_supps[name] is not None:
+                        # TODO: better way to do this? limit to
+                        if "inds_keep" in branch_supps[name]:
+                            inds_back = branch_supps[name][:]["inds_keep"]
+                            inds_back2 = branch_supps_in[name]["inds_keep"]
+                        else:
+                            inds_back = inds[name]
+                            inds_back2 = slice(None)
+                        try:
+                            branch_supps[name][inds_back] = {
+                                key: branch_supps_in_2[name_i][key][inds_back2]
+                                for key in branch_supps_in_2[name_i]
+                            }
+                        except ValueError:
+                            breakpoint()
+                            branch_supps[name][inds_back] = {
+                                key: branch_supps_in_2[name_i][key][inds_back2]
+                                for key in branch_supps_in_2[name_i]
+                            }
 
         """
         # TODO: adjust this
@@ -1051,7 +1220,7 @@ class EnsembleSampler(object):
         if np.any(np.isnan(log_prob)):
             raise ValueError("Probability function returned NaN")
         """
-        return log_prob, blob
+        return ll.reshape(ntemps, nwalkers), blobs_out
 
     @property
     def acceptance_fraction(self):
@@ -1136,7 +1305,13 @@ class _FunctionWrapper(object):
     """
 
     def __init__(
-        self, f, args, kwargs, provide_groups=False, provide_supplimental=False, fill_zero_leaves_val=-1e300
+        self,
+        f,
+        args,
+        kwargs,
+        provide_groups=False,
+        provide_supplimental=False,
+        fill_zero_leaves_val=-1e300,
     ):
         self.f = f
         self.args = [] if args is None else args
@@ -1145,134 +1320,25 @@ class _FunctionWrapper(object):
         self.provide_supplimental = provide_supplimental
         self.fill_zero_leaves_val = fill_zero_leaves_val
 
-    def __call__(self, x, inds=None, supps=None, branch_supps=None):
+    def __call__(self, args_and_kwargs):
+
+        args_in_add, kwargs_in_add = args_and_kwargs
+
         try:
-            # take information out of dict and spread to x1..xn
-            x_in = {}
-            if self.provide_supplimental:
-                if supps is None and branch_supps is None:
-                    raise ValueError("supps and branch_supps are both None. If self.provide_supplimental is True, must provide some supplimental information.")
-                if branch_supps is not None:
-                    branch_supps_in = {}
-                    
-
-            if inds is None:
-                inds = {
-                    name: np.full(x[name].shape[:-1], True, dtype=bool) for name in x
-                }
-
-            # determine groupings from inds
-            groups = groups_from_inds(inds)
-
-            # need to map group inds properly
-            # this is the unique group indexes
-            unique_groups = np.unique(
-                np.concatenate([groups_i for groups_i in groups.values()])
-            )
-
-            # this is the map to those indexes that are used in the likelihood
-            groups_in = np.arange(len(unique_groups))
-
-            ll_groups = {}
-            for key, group in groups.items():
-                temp_unique_groups, inverse = np.unique(group, return_inverse=True)
-                keep_groups = groups_in[np.in1d(unique_groups, temp_unique_groups)]
-                ll_groups[key] = keep_groups[inverse]
-
-            for i, (name, coords) in enumerate(x.items()):
-                ntemps, nwalkers, nleaves_max, ndim = coords.shape
-                nwalkers_all = ntemps * nwalkers
-                x_in[name] = coords[inds[name]]
-                
-                if self.provide_supplimental:
-                    if branch_supps is not None:  #  and 
-                        if branch_supps[name] is not None:
-                            branch_supps_in[name] = branch_supps[name][inds[name]]
-                        else:
-                            branch_supps_in[name] = None
-
-            if self.provide_supplimental:
-                if supps is not None:
-                    temp = supps.flat
-                    supps_in = {name: values[keep_groups] for name, values in temp.items()}
-
-            args_in = []
-            
-            params_in = list(x_in.values()) 
-            
-            if len(params_in) == 1:
-                params_in = params_in[0]
-
-            args_in.append(params_in)
-            
-            if self.provide_groups:
-                groups_in = list(ll_groups.values())
-                if len(groups_in) == 1:
-                    groups_in = groups_in[0]
-
-                args_in.append(groups_in)
-
-            args_in += self.args
-
-            kwargs_in = self.kwargs.copy()
-            if self.provide_supplimental:
-                if supps is not None:
-                    kwargs_in["supps"] = supps_in
-                if branch_supps is not None:
-                    branch_supps_in_2 = list(branch_supps_in.values())
-                    if len(branch_supps_in_2) == 1:
-                        kwargs_in["branch_supps"] = branch_supps_in_2[0]
-
-                    else:
-                        kwargs_in["branch_supps"] = branch_supps_in_2
-                    
+            args_in = args_in_add + self.args
+            kwargs_in = {**kwargs_in_add, **self.kwargs}
             # TODO: this may have pickle issue with multiprocessing (kwargs_in)
+
             out = self.f(*args_in, **kwargs_in)
-
-            if self.provide_supplimental:
-                if branch_supps is not None:
-                    for name_i, name in enumerate(branch_supps):
-                        if branch_supps[name] is not None:
-                            # TODO: better way to do this? limit to 
-                            if "inds_keep" in branch_supps[name]:
-                                inds_back = branch_supps[name][:]["inds_keep"]
-                                inds_back2 = branch_supps_in[name]["inds_keep"]
-                            else:
-                                inds_back = inds[name]
-                                inds_back2 = slice(None)
-                            try:
-                                branch_supps[name][inds_back] = {key: branch_supps_in_2[name_i][key][inds_back2] for key in branch_supps_in_2[name_i]}
-                            except ValueError:
-                                breakpoint()
-                                branch_supps[name][inds_back] = {key: branch_supps_in_2[name_i][key][inds_back2] for key in branch_supps_in_2[name_i]}
-                                
-            # -1e300 because -np.inf screws up state acceptance transfer in proposals
-            ll = np.full(nwalkers_all, -1e300)
-            inds_fix_zeros = np.delete(np.arange(nwalkers_all), unique_groups)
-
-            if out.ndim == 2:
-                ll[unique_groups] = out[:, 0]
-                ll[inds_fix_zeros] = self.fill_zero_leaves_val
-                blobs_out = np.zeros((nwalkers_all, out.shape[1] - 1))
-                blobs_out[unique_groups] = out[:, 1:]
-                return [
-                    ll.reshape(ntemps, nwalkers),
-                    blobs_out.reshape(ntemps, nwalkers, -1),
-                ]
-            else:
-                try:
-                    ll[unique_groups] = out
-                except ValueError:
-                    breakpoint()
-                ll[inds_fix_zeros] = self.fill_zero_leaves_val
-                return ll.reshape(ntemps, nwalkers)
+            return out
 
         except:  # pragma: no cover
             import traceback
 
             print("emcee: Exception while calling your likelihood function:")
-            print("  params:", x)
+            print("  args added:", args_in_add)
             print("  args:", self.args)
+            print("  kwargs added:", kwargs_in_add)
             print("  kwargs:", self.kwargs)
             print("  exception:")
             traceback.print_exc()
