@@ -35,8 +35,7 @@ class EnsembleSampler(object):
     global fit containing multiple branches (models) and a variable
     number of leaves (sources) per branch. (# TODO: add link to tree explainer)
   
-    Parameters related to parallelization can be
-    controlled via the ``pool`` argument.
+    Parameters related to parallelization can be controlled via the ``pool`` argument.
 
     Args:
         nwalkers (int): The number of walkers in the ensemble per temperature.
@@ -82,27 +81,32 @@ class EnsembleSampler(object):
             each branch as described for (1).
             4) A dictionary with keys that are ``branch_names`` and values are
             :class:`eryn.prior.PriorContainer` objects.
-        provide_groups (bool, optional): If True, provide groups as described in ``log_prob_fn`` above.
+        provide_groups (bool, optional): If ``True``, provide groups as described in ``log_prob_fn`` above.
             A group parameter is added for each branch. (default: ``False``)
+        provide_supplimental (bool, optional): If ``True``, it will provide keyword arguments to 
+            the Likelihood function: ``supps`` and ``branch_supps``. Please see the Tutorial
+            (# TODO: add tutorial link) and :class:`eryn.state.BranchSupplimental` for more information.
         tempering_kwargs (dict, optional): Keyword arguments for initialization of the
-            tempering class (# TODO: add link to tempering class).  (default: ``{}``)
+            tempering class: :class:`eryn.moves.tempering.TemperatureControl`.  (default: ``{}``)
+        branch_names (list, optional): List of branch names. If ``None``, models will be assigned
+            names as ``f"model_{index}"``. (default: ``None``)
         nbranches (int, optional): Number of branches (models) tested. (default: ``1``)
         nleaves_max (int, list of int, or int np.ndarray[nbranches], optional):
             Number of maximum allowable leaves for each branch. (default: ``1``)
         nleaves_min (int, list of int, or int np.ndarray[nbranches], optional):
             Number of minimum allowable leaves for each branch. This is only
             used when using reversible jump. (default: ``1``)
-        pool (optional): An object with a ``map`` method that follows the same
+        pool (object, optional): An object with a ``map`` method that follows the same
             calling sequence as the built-in ``map`` function. This is
             generally used to compute the log-probabilities for the ensemble
             in parallel.
-        moves (optional): This can be a single move object, a list of moves,
-            or a "weighted" list of the form ``[(emcee.moves.StretchMove(),
+        moves (list or object, optional): This can be a single move object, a list of moves,
+            or a "weighted" list of the form ``[(eryn.moves.StretchMove(),
             0.1), ...]``. When running, the sampler will randomly select a
             move from this list (optionally with weights) for each proposal.
             If ``None``, the default will be :class:`StretchMove`.
             (default: ``None``)
-        rj_moves (optional): If ``None`` ot ``False``, reversible jump will not be included in the run.
+        rj_moves (list or object, optional): If ``None`` or ``False``, reversible jump will not be included in the run.
             This can be a single move object, a list of moves,
             or a "weighted" list of the form ``[(eryn.moves.PriorGenerateRJ(),
             0.1), ...]``. When running, the sampler will randomly select a
@@ -111,35 +115,26 @@ class EnsembleSampler(object):
             (default: ``None``)
         dr_moves (bool, optional): If ``None`` ot ``False``, delayed rejection when proposing "birth"
             of new components/models will be switched off for this run. Requires ``rj_moves`` set to ``True``.
+            # TODO: check in with Nikos about this
             (default: ``None``)
+        dr_max_iter (int, optional): Maximum number of iterations used with delayed rejection. (default: 5)
         args (optional): A list of extra positional arguments for
             ``log_prob_fn``. ``log_prob_fn`` will be called as
-            ``log_prob_fn(p, *args, **kwargs)``.
+            ``log_prob_fn(sampler added args, *args, sampler added kwargs, **kwargs)``.
         kwargs (optional): A dict of extra keyword arguments for
             ``log_prob_fn``. ``log_prob_fn`` will be called as
-            ``log_prob_fn(p, *args, **kwargs)``.
+            ``log_prob_fn(sampler added args, *args, sampler added kwargs, **kwargs)``.
         backend (optional): Either a :class:`backends.Backend` or a subclass
             (like :class:`backends.HDFBackend`) that is used to store and
             serialize the state of the chain. By default, the chain is stored
             as a set of numpy arrays in memory, but new backends can be
             written to support other mediums.
         vectorize (bool, optional): If ``True``, ``log_prob_fn`` is expected
-            to accept a list of position vectors instead of just one. Note
-            that ``pool`` will be ignored if this is ``True``.
+            to accept an array of position vectors instead of just one. Note
+            that ``pool`` will be ignored if this is ``True``. See ``log_prob_fn`` information
+            above to understand the arguments of ``log_prob_fn`` based on whether 
+            ``vectorize`` is ``True``. 
             (default: ``False``)
-        subset (int, optional): Set an amount of walkers to have their likelihood
-            calculated (used when ``vectorize == True``). This allows the user
-            to maintain memory constraints while adding more walkers to the ensemble.
-            When subset is ``None``, all walkers are determined together.
-            (default: ``None``) # TODO implement
-        autocorr_iter_count (int, optional): Number of iterations of the sampler
-            before the autocorrelations are checked and printed.
-            ``autocorr_iter_count == -1`` will not check the autocorrelation lengths.
-            (default: 100)
-        autocorr_multiplier (int, optional): This will stop the sampler if the
-            sampler iteration is greater than
-            ``autocorr_multiplier * max(autocorrelation lengths)``.
-            (default: 50)
         plot_iterations (int, optional): If ``plot_iterations == -1``, then the
             diagnostic plots will not be constructed. Otherwise, the diagnostic
             plots will be constructed every ``plot_iterations`` sampler iterations.
@@ -154,24 +149,37 @@ class EnsembleSampler(object):
         periodic (dict, optional): Keys are ``branch_names``. Values are dictionaries
             that have (key: value) pairs as (index to parameter: period). Periodic
             parameters are treated as having periodic boundary conditions in proposals.
-        update_fn (optional): :class:`eryn.utils.updates.AdjustStretchProposalScale`
+        update_fn (callable, optional): :class:`eryn.utils.updates.AdjustStretchProposalScale`
             object that allows the user to update the sampler in any preferred way
-            every ``update_iterations`` sampler iterations.
+            every ``update_iterations`` sampler iterations. The callable must have signature:
+            ``(sampler iteration, last sample state object, EnsembleSampler object)``. 
         update_iterations (int, optional): Number of iterations between sampler
-            updates using ``update_fn``.
-        stopping_fn (optional): :class:`eryn.utils.stopping.Stopping` object that
+            updates using ``update_fn``. Updates are only performed at the thinning rate. 
+            If ``thin_by>1`` when :func:`EnsembleSampler.run_mcmc` is used, the sampler
+            is updated every ``thin_by * update_iterations`` iterations. 
+        stopping_fn (callable, optional): :class:`eryn.utils.stopping.Stopping` object that
             allows the user to end the sampler if specified criteria are met.
+            The callable must have signature:
+            ``(sampler iteration, last sample state object, EnsembleSampler object)``. 
         stopping_iterations (int, optional): Number of iterations between sampler
-            attempts to evaluate the ``stopping_fn``.
-        info (dict, optional): Key and value pairs reprenting any information
-            the user wants to add to the backend if the user is not inputing
-            their own backend.
+            attempts to evaluate the ``stopping_fn``. Stopping checks are only performed at the thinning rate. 
+            If ``thin_by>1`` when :func:`EnsembleSampler.run_mcmc` is used, the sampler
+            is checked for the stopping criterion every ``thin_by * stopping_iterations`` iterations.
         fill_zero_leaves_val (double, optional): When there are zero leaves in a
             given walker (across all branches), fill the likelihood value with
             ``fill_zero_leaves_val``. If wanting to keep zero leaves as a possible
             model, this should be set to the value of the contribution to the Likelihood
             from the data. (Default: ``-1e300``).
+        num_repeats_in_model (int, optional): Number of times to repeat the in-model step
+            within in one sampler iteration. When analyzing the acceptance fraction, you must 
+            include the value of ``num_repeats_in_model`` to get the proper denominator.
+        num_repeats_rj (int, optional): Number of time to repeat the reversible jump step 
+            within in one sampler iteration. When analyzing the acceptance fraction, you must 
+            include the value of ``num_repeats_rj`` to get the proper denominator.
         verbose (int, optional): # TODO
+        info (dict, optional): Key and value pairs reprenting any information
+            the user wants to add to the backend if the user is not inputing
+            their own backend.
 
     Raises:
         ValueError: Any startup issues.
@@ -187,10 +195,10 @@ class EnsembleSampler(object):
         provide_groups=False,  # TODO: improve this
         provide_supplimental=False,  # TODO: improve this
         tempering_kwargs={},
+        branch_names=None,
         nbranches=1,
         nleaves_max=1,
         nleaves_min=1,
-        # test_inds=None,  # TODO: add ?
         pool=None,
         moves=None,
         rj_moves=None,
@@ -200,34 +208,36 @@ class EnsembleSampler(object):
         kwargs=None,
         backend=None,
         vectorize=True,
-        subset=None,
         blobs_dtype=None,  # TODO check this
-        truth=None,  # TODO: add this
-        autocorr_iter_count=100,
-        autocorr_multiplier=1000,  # TODO: adjust this to 50
-        plot_iterations=-1,
+        plot_iterations=-1,  # TODO: do plot stuff?
         plot_generator=None,
         plot_name=None,
-        periodic=None,  # TODO: add periodic to proposals
+        periodic=None,
         update_fn=None,
         update_iterations=-1,
         stopping_fn=None,
         stopping_iterations=-1,
-        info={},
-        branch_names=None,
         fill_zero_leaves_val=-1e300,
         num_repeats_in_model=1,
         num_repeats_rj=1,
         verbose=False,
+        info={},
     ):
 
-        # TODO: check non-vectorized
+        # store priors
+        self.priors = priors
 
+        # store some kwargs
         self.provide_groups = provide_groups
         self.provide_supplimental = provide_supplimental
         self.fill_zero_leaves_val = fill_zero_leaves_val
         self.num_repeats_in_model = num_repeats_in_model
         self.num_repeats_rj = num_repeats_rj
+
+        # setup emcee-like basics
+        self.pool = pool
+        self.vectorize = vectorize
+        self.blobs_dtype = blobs_dtype
 
         # store default branch names if not given
         if branch_names is None:
@@ -251,18 +261,10 @@ class EnsembleSampler(object):
             self.ntemps = 1
             self.temperature_control = None
         else:
-            # TODO: fix ndim
             self.temperature_control = TemperatureControl(
                 ndims, nwalkers, nleaves_max, **tempering_kwargs
             )
             self.ntemps = self.temperature_control.ntemps
-
-        # setup emcee basics
-        self.pool = pool
-        self.vectorize = vectorize
-        self.blobs_dtype = blobs_dtype
-
-        self.priors = priors
 
         # set basic variables for sampling settings
         self.ndims = ndims  # interpeted as ndim_max
@@ -271,6 +273,7 @@ class EnsembleSampler(object):
         self.nleaves_max = nleaves_max
         self.branch_names = branch_names
 
+        # eryn wraps periodic parameters
         if periodic is not None:
             if not isinstance(periodic, PeriodicContainer) and not isinstance(
                 periodic, dict
@@ -285,12 +288,12 @@ class EnsembleSampler(object):
         if moves is None:
             if rj_moves is not None:
                 raise ValueError(
-                    "If providing rj_moves, must provide moves kwargs as well."
+                    "If providing rj_moves, must provide moves kwarg as well."
                 )
-            # TODO: remove live_dangerously
+
+            # defaults to stretch move
             self._moves = [
                 StretchMove(
-                    live_dangerously=True,
                     temperature_control=self.temperature_control,
                     periodic=periodic,
                     a=2.0,
@@ -318,7 +321,10 @@ class EnsembleSampler(object):
             self.has_reversible_jump = rj_moves
             # TODO: deal with tuning
             if self.has_reversible_jump:
-                if isinstance(nleaves_min, int):
+                if nleaves_min is None:
+                    # default to 0 for all models
+                    self.nleaves_min = [0 for _ in range(self.nbranches)]
+                elif isinstance(nleaves_min, int):
                     self.nleaves_min = [nleaves_min for _ in range(self.nbranches)]
                 elif isinstance(nleaves_min, list):
                     self.nleaves_min = nleaves_min
@@ -329,6 +335,7 @@ class EnsembleSampler(object):
 
                 assert len(self.nleaves_min) == self.nbranches
 
+                # default to PriorGenerateRJ
                 rj_move = PriorGenerateRJ(
                     self.priors,
                     self.nleaves_max,
@@ -341,6 +348,7 @@ class EnsembleSampler(object):
                 self._rj_moves = [rj_move]
                 self._rj_weights = [1.0]
 
+        # same as above for moves
         elif isinstance(rj_moves, Iterable):
             self.has_reversible_jump = True
 
@@ -372,6 +380,7 @@ class EnsembleSampler(object):
                     if move.temperature_control is None:
                         move.temperature_control = self.temperature_control
 
+        # make sure moves have temperature module
         if periodic is not None:
             for move in self._moves:
                 if move.periodic is None:
@@ -437,19 +446,13 @@ class EnsembleSampler(object):
 
         # Do a little bit of _magic_ to make the likelihood call with
         # ``args`` and ``kwargs`` pickleable.
-        self.log_prob_fn = _FunctionWrapper(
-            log_prob_fn,
-            args,
-            kwargs,
-            provide_groups=self.provide_groups,
-            provide_supplimental=provide_supplimental,
-            fill_zero_leaves_val=self.fill_zero_leaves_val,
-        )
+        self.log_prob_fn = _FunctionWrapper(log_prob_fn, args, kwargs)
 
         self.all_walkers = self.nwalkers * self.ntemps
         self.verbose = verbose
 
         # prepare plotting
+        # TODO: adjust plotting maybe?
         self.plot_iterations = plot_iterations
 
         if plot_generator is None and self.plot_iterations > 0:
@@ -498,11 +501,21 @@ class EnsembleSampler(object):
 
     @property
     def priors(self):
+        """
+        Return the priors in the sampler.
+
+        """
         return self._priors
 
     @priors.setter
     def priors(self, priors):
+        """Set priors information.
+        
+        This performs checks to make sure the inputs are okay.
+
+        """
         if isinstance(priors, dict):
+            # TODO: do checks on all priors, not just first
             test = priors[list(priors.keys())[0]]
             if isinstance(test, dict):
                 # check all dists
@@ -544,7 +557,7 @@ class EnsembleSampler(object):
 
     def reset(self, **info):
         """
-        Reset the bookkeeping parameters
+        Reset the backend.
 
         Args:
             **info (dict, optional): information to pass to backend reset method.
@@ -568,7 +581,6 @@ class EnsembleSampler(object):
 
         Returns:
             :class:`Model`: ``Model`` object used by sampler.
-
 
         """
         # Set up a wrapper around the relevant model functions
@@ -597,38 +609,39 @@ class EnsembleSampler(object):
         thin_by=1,
         store=True,
         progress=False,
-        save_first_state=False,
     ):
         """Advance the chain as a generator
 
         Args:
-            initial_state (State or ndarray[nwalkers, ndim] or dict): The initial
+            initial_state (State or ndarray[ntemps, nwalkers, nleaves_max, ndim] or dict): The initial
                 :class:`State` or positions of the walkers in the
                 parameter space. If multiple branches used, must be dict with keys
                 as the ``branch_names`` and values as the positions.
-            iterations (int or NoneType, optional): The number of steps to generate.
+            iterations (int or None, optional): The number of steps to generate.
                 ``None`` generates an infinite stream (requires ``store=False``).
                 (default: 1)
             tune (bool, optional): If ``True``, the parameters of some moves
-                will be automatically tuned.
+                will be automatically tuned. (default: ``False``)
             thin_by (int, optional): If you only want to store and yield every
                 ``thin_by`` samples in the chain, set ``thin_by`` to an
                 integer greater than 1. When this is set, ``iterations *
-                thin_by`` proposals will be made.
+                thin_by`` proposals will be made. (default: 1)
             store (bool, optional): By default, the sampler stores in the backend
-                the positions and log-probabilities of the samples in the
+                the positions (and other information) of the samples in the
                 chain. If you are using another method to store the samples to
                 a file or if you don't need to analyze the samples after the
-                fact (for burn-in for example) set ``store`` to ``False``.
+                fact (for burn-in for example) set ``store`` to ``False``. (default: ``True``)
             progress (bool or str, optional): If ``True``, a progress bar will
                 be shown as the sampler progresses. If a string, will select a
                 specific ``tqdm`` progress bar - most notable is
                 ``'notebook'``, which shows a progress bar suitable for
                 Jupyter notebooks.  If ``False``, no progress bar will be
-                shown.
+                shown. (default: ``False``)
             skip_initial_state_check (bool, optional): If ``True``, a check
                 that the initial_state can fully explore the space will be
-                skipped. (default: ``False``)
+                skipped. If using reversible jump, the user needs to ensure this on their own 
+                (``skip_initial_state_check``is set to ``False`` in this case.
+                (default: ``True``)
 
         Returns:
             State: Every ``thin_by`` steps, this generator yields the :class:`State` of the ensemble.
@@ -642,17 +655,22 @@ class EnsembleSampler(object):
 
         # Interpret the input as a walker state and check the dimensions.
         state = State(initial_state, copy=True)
+
         # Check the backend shape
         for i, (name, branch) in enumerate(state.branches.items()):
             ntemps_, nwalkers_, nleaves_, ndim_ = branch.shape
-            if (ntemps_, nwalkers_, ndim_) != (
+            if (ntemps_, nwalkers_, nleaves_, ndim_) != (
                 self.ntemps,
                 self.nwalkers,
+                self.nleaves_max[i],
                 self.ndims[i],
-            ) or nleaves_ > self.nleaves_max[i]:
+            ):
                 raise ValueError("incompatible input dimensions")
 
-        if (not skip_initial_state_check) and (not walkers_independent(state.coords)):
+        # do an initial state check if is requested and we are not using reversible jump
+        if (not skip_initial_state_check) and (
+            not walkers_independent(state.coords) and not self.has_reversible_jump
+        ):
             raise ValueError(
                 "Initial state has a large condition number. "
                 "Make sure that your walkers are linearly independent for the "
@@ -661,26 +679,19 @@ class EnsembleSampler(object):
 
         # get log prior and likelihood if not provided in the initial state
         if state.log_prior is None:
-            coords = {name: branch.coords for name, branch in state.branches.items()}
-            if self.provide_groups:
-                inds = {name: branch.inds for name, branch in state.branches.items()}
-            else:
-                inds = None
+            coords = state.branches_coords
+            inds = state.branches_inds
             state.log_prior = self.compute_log_prior(coords, inds=inds)
 
         if state.log_prob is None:
-            coords = {name: branch.coords for name, branch in state.branches.items()}
-
-            if self.provide_groups:
-                inds = {name: branch.inds for name, branch in state.branches.items()}
-            else:
-                inds = None
+            coords = state.branches_coords
+            inds = state.branches_inds
             state.log_prob, state.blobs = self.compute_log_prob(
                 coords,
                 inds=inds,
                 logp=state.log_prior,
-                supps=state.supplimental,
-                branch_supps=state.branches_supplimental,
+                supps=state.supplimental,  # only used if self.provide_supplimental is True
+                branch_supps=state.branches_supplimental,  # only used if self.provide_supplimental is True
             )
 
         if np.shape(state.log_prob) != (self.ntemps, self.nwalkers):
@@ -703,25 +714,8 @@ class EnsembleSampler(object):
         if store:
             self.backend.grow(iterations, state.blobs)
 
+        # get the model object
         model = self.get_model()
-
-        if save_first_state and store and self.backend.iteration == 0:
-            if iterations <= 1:
-                raise ValueError("Cannot save_first_state if iterations == 1.")
-            state.random_state = self.random_state
-            state.betas = model.temperature_control.betas
-            rj_accepted_tmp = (
-                np.zeros((self.ntemps, self.nwalkers))
-                if self.has_reversible_jump
-                else None
-            )
-            self.backend.save_step(
-                state,
-                np.zeros((self.ntemps, self.nwalkers)),  # accepted
-                rj_accepted=rj_accepted_tmp,
-                in_model_swaps_accepted=None,
-                rj_swaps_accepted=None,
-            )
 
         # Inject the progress bar
         total = None if iterations is None else iterations * yield_step
@@ -730,13 +724,15 @@ class EnsembleSampler(object):
             for _ in count() if iterations is None else range(iterations):
                 for _ in range(yield_step):
                     # in model moves
+                    accepted = np.zeros((self.ntemps, self.nwalkers))
                     for repeat in range(self.num_repeats_in_model):
 
                         # Choose a random move
                         move = self._random.choice(self._moves, p=self._weights)
 
                         # Propose (in model)
-                        state, accepted = move.propose(model, state)
+                        state, accepted_out = move.propose(model, state)
+                        accepted += accepted_out
                         if self.ntemps > 1:
                             in_model_swaps = move.temperature_control.swaps_accepted
                         else:
@@ -745,17 +741,18 @@ class EnsembleSampler(object):
                         state.random_state = self.random_state
 
                         if tune:
-                            move.tune(state, accepted)
+                            move.tune(state, accepted_out)
 
                     if self.has_reversible_jump:
+                        rj_accepted = np.zeros((self.ntemps, self.nwalkers))
                         for repeat in range(self.num_repeats_rj):
                             rj_move = self._random.choice(
                                 self._rj_moves, p=self._rj_weights
                             )
 
                             # Propose (Between models)
-                            state, rj_accepted = rj_move.propose(model, state)
-
+                            state, rj_accepted_out = rj_move.propose(model, state)
+                            rj_accepted += rj_accepted_out
                             # Again commenting out this section: We do not control temperature on RJ moves
                             # if self.ntemps > 1:
                             #     rj_swaps = rj_move.temperature_control.swaps_accepted
@@ -766,7 +763,7 @@ class EnsembleSampler(object):
                             state.random_state = self.random_state
 
                             if tune:
-                                rj_move.tune(state, rj_accepted)
+                                rj_move.tune(state, rj_accepted_out)
 
                     else:
                         rj_accepted = None
@@ -789,19 +786,20 @@ class EnsembleSampler(object):
                 # sorts of fun stuff with the results so far.
                 yield state
 
-    def run_mcmc(self, initial_state, nsteps, burn=None, **kwargs):
+    def run_mcmc(
+        self, initial_state, nsteps, burn=None, post_burn_update=False, **kwargs
+    ):
         """
-        Iterate :func:`sample` for ``nsteps`` iterations and return the result
+        Iterate :func:`sample` for ``nsteps`` iterations and return the result.
 
         Args:
-            initial_state (State or ndarray[nwalkers, ndim] or dict): The initial
+            initial_state (State or ndarray[ntemps, nwalkers, nleaves_max, ndim] or dict): The initial
                 :class:`State` or positions of the walkers in the
                 parameter space. If multiple branches used, must be dict with keys
-                as the ``branch_names`` and values as the positions. Can also be
-                ``None`` to resume from where :func:``run_mcmc`` left off the
-                last time it executed.
-            nsteps: The number of steps to run.
-            burn (int, optional): Number of burn steps to run before storing information.
+                as the ``branch_names`` and values as the positions.
+            nsteps (int): The number of steps to generate. The total number of proposals is ``nsteps * thin_by``.
+            burn (int, optional): Number of burn steps to run before storing information. The ``thin_by`` kwarg is ignored when counting burn steps since there is no storage (equivalent to ``thin_by=1``).
+            post_burn_update (bool, optional): If ``True``, run ``update_fn`` after burn in. 
 
         Other parameters are directly passed to :func:`sample`.
 
@@ -820,12 +818,15 @@ class EnsembleSampler(object):
                 )
             initial_state = self._previous_state
 
+        # setup thin_by info
         thin_by = 1 if "thin_by" not in kwargs else kwargs["thin_by"]
 
+        # run burn in
         if burn is not None and burn != 0:
             if self.verbose:
                 print("Start burn")
 
+            # prepare kwargs that relate to burn
             burn_kwargs = deepcopy(kwargs)
             burn_kwargs["store"] = False
             burn_kwargs["thin_by"] = 1
@@ -838,8 +839,12 @@ class EnsembleSampler(object):
                     and self.update_fn is not None
                     and (i + 1) % (self.update_iterations * thin_by) == 0
                 ):
-                    stop = self.update_fn(i, results, self)
+                    self.update_fn(i, results, self)
                 i += 1
+
+            # run post-burn update
+            if post_burn_update and self.update_fn is not None:
+                self.update_fn(i, results, self)
 
             initial_state = results
             if self.verbose:
@@ -854,6 +859,7 @@ class EnsembleSampler(object):
         for results in self.sample(initial_state, iterations=nsteps, **kwargs):
 
             # diagnostic plots
+            # TODO: adjust diagnostic plots
             if self.plot_iterations > 0 and (i + 1) % (self.plot_iterations) == 0:
                 self.plot_generator.generate_plot_info()  # TODO: remove defaults
 
@@ -1093,7 +1099,8 @@ class EnsembleSampler(object):
                     else:
                         kwargs_in["branch_supps"] = branch_supps_in_2
 
-            results = self.log_prob_fn(args_in, kwargs_in)
+            args_and_kwargs = (args_in, kwargs_in)
+            results = self.log_prob_fn(args_and_kwargs)
 
         else:
 
@@ -1305,20 +1312,11 @@ class _FunctionWrapper(object):
     """
 
     def __init__(
-        self,
-        f,
-        args,
-        kwargs,
-        provide_groups=False,
-        provide_supplimental=False,
-        fill_zero_leaves_val=-1e300,
+        self, f, args, kwargs,
     ):
         self.f = f
         self.args = [] if args is None else args
         self.kwargs = {} if kwargs is None else kwargs
-        self.provide_groups = provide_groups
-        self.provide_supplimental = provide_supplimental
-        self.fill_zero_leaves_val = fill_zero_leaves_val
 
     def __call__(self, args_and_kwargs):
 
@@ -1345,19 +1343,22 @@ class _FunctionWrapper(object):
             raise
 
 
-def walkers_independent(coords):
-    raise NotImplementedError
+def walkers_independent(coords_in):
+
+    assert coords_in.ndim == 4
+    ntemps, nwalkers, nleaves_max, ndim = coords_in.shape
+    coords = coords_in.reshape(ntemps * nwalkers, nleaves_max * ndim)
+
     if not np.all(np.isfinite(coords)):
         return False
-    C = coords - np.mean(coords, axis=(1, 2))[:, None, None, :, :]
-    C_colmax = np.amax(np.abs(C), axis=(1, 2))[:, None, None, :, :]
+    C = coords - np.mean(coords, axis=0)[None, :]
+    C_colmax = np.amax(np.abs(C), axis=0)
     if np.any(C_colmax == 0):
         return False
     C /= C_colmax
-    C_colsum = np.sqrt(np.sum(C ** 2, axis=(1, 2)))[:, None, None, :, :]
+    C_colsum = np.sqrt(np.sum(C ** 2, axis=0))
     C /= C_colsum
-    cond = np.array([np.linalg.cond(C[i,].astype(float))])
-    return np.all(cond <= 1e8)
+    return np.linalg.cond(C.astype(float)) <= 1e8
 
 
 def walkers_independent_cov(coords):

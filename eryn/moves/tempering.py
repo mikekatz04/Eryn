@@ -204,11 +204,6 @@ class TemperatureControl(object):
             if ntemps == 1:
                 betas = np.array([1.0])
             else:
-                if len(ndim) > 1:
-                    raise ValueError(
-                        "If building a temp ladder, only done for one model."
-                    )
-
                 # A compromise for building a temperature ladder for the case of rj.
                 # We start by assuming that the dimensionality will be defined by the number of
                 # components. We take that maximum divided by two, and multiply it with the higher

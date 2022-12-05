@@ -13,169 +13,318 @@ import numpy as np
 __all__ = ["State"]
 
 
-def atleast_nd(x, n):
-    if not isinstance(x, np.ndarray):
-        raise ValueError("Input value must be a numpy.ndarray.")
-
-    elif x.ndim < n:
-        ndim = x.ndim
-        for _ in range(ndim, n):
-            x = np.array([x])
-    return x
-
-
-def atleast_4d(x):
-    return atleast_nd(x, 4)
-
-
 class BranchSupplimental(object):
-    def __init__(self, obj_info: dict, obj_contained_shape=None, copy=False):  # obj_contained, obj_contained_shape):
+    """Special object to carry information through sampler.
 
+    The :class:`BranchSupplimental` object is a holder of information that is
+    passed through the sampler. It can also be indexed similar to other quantities
+    carried throughout the sampler.
+
+    This indexing is based on the ``base_shape``. You can store many objects that have the same base
+    shape and then index across all of them. For example, if you want to store individual leaf 
+    information, the base shape will be ``(ntemps, nwalkers, nleaves_max)``. 
+    If you want to store a 2D array per individual leaf, the overall shape will be 
+    ``(ntemps, nwalkers, nleaves_max, dim2_extra, dim1_extra)``. Another type of information is
+    stored in a class object (for example). Using ``numpy`` object arrays, 
+    ``ntemps * nwalkers * nleaves_max`` number of class objects can be stored in the array. Then,
+    using special indexing functions, information can be updated/accessed across all objects 
+    stored simultaneously. If you index this class, it will give you back a dictionary with
+    all objects stored indexed for each leaf. So if you index (0, 0, 0) in our running example,
+    you will get back a dictionary with one 2D array and one class object from the ``numpy`` object
+    array. 
+
+    All of these objects are stored in ``self.holder``.
+
+    Args:
+        obj_info (dict): Initial information for storage. Keys are the names to be stored under
+            and values are arrays. These arrays should have a base shape that is equivalent to
+            ``base_shape``, meaning ``array.shape[:len(base_shape)] == self.base_shape``. 
+            The dimensions beyond the base shape can be anything.
+        base_shape (tuple): Base shape for indexing. Objects stored in the supplimental object 
+            will have a shape that at minimum is equivalent to ``base_shape``.
+        copy (bool, optional): If ``True``, copy whatever information is given in before it is stored. 
+            if ``False``, store directly the input information. (default: ``False``) 
+
+    Attributes:
+        holder (dict): All of the objects stored for this supplimental object.
+
+    
+    """
+
+    def __init__(self, obj_info: dict, base_shape: tuple, copy: bool = False):
+
+        # store initial information
         self.holder = {}
-        self.shape = None
-        self.add_objects(obj_info, obj_contained_shape=obj_contained_shape, copy=copy)
+        self.base_shape = base_shape
+        self.ndim = len(self.base_shape)
 
-    def add_objects(self, obj_info: dict, obj_contained_shape=None, copy=False):
+        # add initial set of objects
+        self.add_objects(obj_info, copy=copy)
 
-        if self.shape is not None and obj_contained_shape is not None:
-            if self.shape != obj_contained_shape:
-                raise ValueError(f"Shape of input object ({obj_contained_shape}) not equivalent to established shape ({self.shape}).")
-        elif obj_contained_shape is None and self.shape is not None:
-            obj_contained_shape = self.shape
+    def add_objects(self, obj_info: dict, copy=False):
+        """Add objects to the holder.
         
+        Args:
+            obj_info (dict): Information for storage. Keys are the names to be stored under
+                and values are arrays. These arrays should have a base shape that is equivalent to
+                ``base_shape``, meaning ``array.shape[:len(base_shape)] == self.base_shape``. 
+                The dimensions beyond the base shape can be anything.
+            copy (bool, optional): If ``True``, copy whatever information is given in before it is stored. 
+                if ``False``, store directly the input information. (default: ``False``) 
+
+        Raises:
+            ValueError: Shape matching issues.
+        
+        """
+
+        # whether a copy is requested
         dc = deepcopy if copy else (lambda x: x)
-        
+
+        # iterate through the dictionary of incoming objects to add
         for name, obj_contained in obj_info.items():
-            # TODO: add cupy
-            if isinstance(obj_contained, np.ndarray) and obj_contained.dtype.name == "object":
+            if (
+                isinstance(obj_contained, np.ndarray)
+                and obj_contained.dtype.name == "object"
+            ):
                 # TODO: need to copy?
                 self.holder[name] = dc(obj_contained)
-                if obj_contained_shape is None:
-                    obj_contained_shape = self.holder[name].shape
-                    self.ndim = ndim =  len(obj_contained_shape)
+                if self.base_shape is None:
+                    self.base_shape = self.holder[name].shape
+                    self.ndim = ndim = len(self.base_shape)
                 else:
-                    if self.holder[name].shape != obj_contained_shape:
-                        raise ValueError(f"Outer shapes of all input objects must be the same. {name} object array has shape {self.holder[name].shape}. The original shape found was {obj_contained_shape}.")
+                    if self.holder[name].shape != self.base_shape:
+                        raise ValueError(
+                            f"Outer shapes of all input objects must be the same. {name} object array has shape {self.holder[name].shape}. The original shape found was {self.base_shape}."
+                        )
 
-            elif obj_contained_shape is None:
-                raise ValueError("If obj_contained is not an already built object array, obj_contained_shape cannot be None.")
-
-            
             else:
-                self.ndim = ndim =  len(obj_contained_shape)
-                
+                self.ndim = ndim = len(self.base_shape)
+
                 # xp for GPU
-                if isinstance(obj_contained, np.ndarray) or isinstance(obj_contained, xp.ndarray):
+                if isinstance(obj_contained, np.ndarray) or isinstance(
+                    obj_contained, xp.ndarray
+                ):
                     self.holder[name] = obj_contained.copy()
 
+                # fill object array from list
+                # adjust based on how many dimensions found
                 else:
-                    self.holder[name] = np.empty(obj_contained_shape, dtype=object)
-                    if len(obj_contained) != obj_contained_shape[0]:
-                        raise ValueError("Shapes of obj_contained does not match obj_contained_shape along axis 0.")
+                    # objects to be stored
+                    self.holder[name] = np.empty(self.base_shape, dtype=object)
+                    if len(obj_contained) != self.base_shape[0]:
+                        raise ValueError(
+                            "Shapes of obj_contained does not match base_shape along axis 0."
+                        )
 
                     if ndim > 1:
-                        for i in range(obj_contained_shape[0]):
-                            if len(obj_contained[i]) != obj_contained_shape[1]:
-                                    raise ValueError("Shapes of obj_contained does not match obj_contained_sha along axis 1.")
+                        for i in range(self.base_shape[0]):
+                            if len(obj_contained[i]) != self.base_shape[1]:
+                                raise ValueError(
+                                    "Shapes of obj_contained does not match obj_contained_sha along axis 1."
+                                )
 
                             if ndim > 2:
-                                for j in range(obj_contained_shape[1]):
-                                    if len(obj_contained[i][j]) != obj_contained_shape[2]:
-                                        raise ValueError("Shapes of obj_contained does not match obj_contained_shape along axis 2.")
-                                    
-                                    for k in range(obj_contained_shape[2]):
+                                for j in range(self.base_shape[1]):
+                                    if len(obj_contained[i][j]) != self.base_shape[2]:
+                                        raise ValueError(
+                                            "Shapes of obj_contained does not match base_shape along axis 2."
+                                        )
+
+                                    for k in range(self.base_shape[2]):
                                         # TODO: copy?
-                                        self.holder[name][i, j, k] = obj_contained[i][j][k]
+                                        self.holder[name][i, j, k] = obj_contained[i][
+                                            j
+                                        ][k]
                             else:
-                                for j in range(obj_contained_shape[1]):
+                                for j in range(self.base_shape[1]):
                                     self.holder[name][i, j] = obj_contained[i][j]
 
                     else:
-                        for i in range(obj_contained_shape[0]):
+                        for i in range(self.base_shape[0]):
                             self.holder[name][i] = obj_contained[i]
 
-        if self.shape is None:
-            self.shape = obj_contained_shape
-            self.ndim = len(self.shape)
-
     def remove_objects(self, names):
+        """Remove objects from the holder.
+
+
+        Args:
+            names (str or list of str): Strings associated with information to delete.
+                Please note it does not return the information. 
+
+        Raises:
+            ValueError: Input issues. 
+
+
+        """
+        # check inputs
         if not isinstance(names, list):
             if not isinstance(names, str):
                 raise ValueError("names must be a string or list of strings.")
 
             names = [names]
+
+        # iterate and remove items from holder
         for name in names:
             self.holder.pop(name)
 
     @property
     def contained_objects(self):
+        """The list of keys of contained objects."""
         return list(self.holder.keys())
-    
+
     def __contains__(self, name: str):
-        return (name in self.holder)
-            
+        """Check if the holder holds a specific key."""
+        return name in self.holder
+
     def __getitem__(self, tmp):
+        """Special indexing for retrieval.
+        
+        When indexing the overall class, this will return the slice of each object
+        
+        Args:
+            tmp (int, np.ndarray, or slice): indexing slice of some form.
+
+        Returns:
+            dict: Keys are names of the objects contained. Values are the slices of those objects.
+        
+        """
+        # slice each object contained
         return {name: values[tmp] for name, values in self.holder.items()}
 
     def __setitem__(self, tmp, new_value):
+        """Special indexing for setting elements.
+        
+        When indexing the overall class, this will set object information.
+
+        **Please note**: If you try to input information that is not already stored,
+        it will ignore it.
+        
+        Args:
+            tmp (int, np.ndarray, or slice): indexing slice of some form.
+
+        """
+        # loop through values already in holder
         for name, values in self.holder.items():
+
             if name not in new_value:
                 continue
-            
+            # if the name is already contained, update with incoming value
             self.holder[name][tmp] = new_value[name]
 
-    def take_along_axis(self, indices, axis, skip_names=[]):
-        out = {}
+    def take_along_axis(self, indices, axis: int, skip_names=[]):
+        """Take information from contained arrays along an axis.
         
+        See ```numpy.take_along_axis`` <https://numpy.org/doc/stable/reference/generated/numpy.take_along_axis.html>`_. 
+
+        Args:
+            indices (xp.ndarray): Indices to take along each 1d slice of arr. This must match the dimension 
+                of ``self.base_shape``, but other dimensions only need to broadcast against 
+                ``self.base_shape``.
+            axis (int): The axis to take 1d slices along.
+            skip_names (list of str, optional): By default, this function returns the results for 
+                all stored objects. This list gives the strings of objects to leave behind and
+                not return.
+
+        Returns:
+            dict: Keys are names of stored objects and values are the proper array slices.
+        
+
+        """
+        # prepare output dictionary
+        out = {}
+
+        # iterate through holder
         for name, values in self.holder.items():
+            # skip names if desired
             if name in skip_names:
                 continue
 
             indices_temp = indices.copy()
-            if (isinstance(values, np.ndarray) and values.dtype.name != "object") or isinstance(values, xp.ndarray):
+            # adjust indices properly for specific object within the holder
+            if (
+                isinstance(values, np.ndarray) and values.dtype.name != "object"
+            ) or isinstance(values, xp.ndarray):
+                # expand the dimensions of the indexing values for non-object arrays
                 for _ in range(values.ndim - indices_temp.ndim):
-                    try:
+                    if isinstance(values, np.ndarray):
                         indices_temp = np.expand_dims(np.asarray(indices_temp), (-1,))
-                    except TypeError:
+                    elif isinstance(values, xp.ndarray):
                         indices_temp = xp.expand_dims(xp.asarray(indices_temp), (-1,))
-            try:
+
+            # store the output for either numpy or cupy
+            if isinstance(values, np.ndarray):
                 out[name] = np.take_along_axis(values, indices_temp, axis)
 
-            except TypeError:
+            elif isinstance(values, xp.ndarray):
                 out[name] = xp.take_along_axis(values, indices_temp, axis)
 
-            except (ValueError, IndexError) as e:
-                breakpoint()
         return out
 
-    def put_along_axis(self, indices, values_in, axis):
+    def put_along_axis(self, indices, values_in: dict, axis: int):
+        """Put information information into contained arrays along an axis.
+        
+        See ```numpy.put_along_axis`` <https://numpy.org/doc/stable/reference/generated/numpy.put_along_axis.html>`_. 
+
+        **Please note** this function is not implemented in ``cupy``, so this is a custom implementation
+        for both ``cupy`` and ``numpy``.
+
+        Args:
+            indices (xp.ndarray): Indices to put values along each 1d slice of arr. This must match 
+            the dimension of ``self.base_shape``, but other dimensions only need to broadcast against 
+            ``self.base_shape``.
+            axis (int): The axis to put 1d slices along.
+            values_in (dict): Keys are the objects contained to update. Values are the arrays of these
+                objects with shape and dimension that can broadcast to match that of indices.
+
+        """
+        # iterate through all objects in the holder
         for name, values in self.holder.items():
+            # skip names that are not to be updated
             if name not in values_in:
                 continue
+
+            # will need to have flexibility to broadcast
             indices_temp = indices.copy()
-            if (isinstance(values, np.ndarray) and values.dtype.name != "object") or isinstance(values, xp.ndarray):
+
+            if (
+                isinstance(values, np.ndarray) and values.dtype.name != "object"
+            ) or isinstance(values, xp.ndarray):
+                # prepare indices for proper broadcasting
                 for _ in range(values.ndim - indices_temp.ndim):
-                    try:
+                    if isinstance(values, np.ndarray):
                         indices_temp = np.expand_dims(np.asarray(indices_temp), (-1,))
-                    except TypeError:
+                    elif isinstance(values, xp.ndarray):
                         indices_temp = xp.expand_dims(xp.asarray(indices_temp), (-1,))
 
-            try:
-                inds0 = np.repeat(np.arange(len(indices_temp))[:, None], indices_temp.shape[1], axis=1)
-            except TypeError:
-                inds0 = xp.repeat(np.arange(len(indices_temp))[:, None], indices_temp.shape[1], axis=1)
-            #self.xp.put_along_axis(self.holder[name], indices_temp, values_in[name], axis)
+            # prepare slicing information for entry
+            if isinstance(values, np.ndarray):
+                inds0 = np.repeat(
+                    np.arange(len(indices_temp))[:, None], indices_temp.shape[1], axis=1
+                )
+            elif isinstance(values, xp.ndarray):
+                inds0 = xp.repeat(
+                    np.arange(len(indices_temp))[:, None], indices_temp.shape[1], axis=1
+                )
+            # self.xp.put_along_axis(self.holder[name], indices_temp, values_in[name], axis)
             # because cupy does not have put_along_axis
-            try:
-                self.holder[name][(inds0.flatten(), indices_temp.flatten())] = values_in[name].reshape((-1,) + values_in[name].shape[2:])
-            except ValueError:
-                breakpoint()
+            self.holder[name][(inds0.flatten(), indices_temp.flatten())] = values_in[
+                name
+            ].reshape((-1,) + values_in[name].shape[2:])
 
     @property
     def flat(self):
+        """Get flattened arrays from the stored objects.
+
+        Here "flat" is in relation to ``self.base_shape``. Beyond ``self.base_shape``, the shape is mainted.
+        
+        """
         out = {}
+        # loop through holder
         for name, values in self.holder.items():
-            if (isinstance(values, np.ndarray) and values.dtype.name != "object") or isinstance(values, xp.ndarray):
+            if (
+                isinstance(values, np.ndarray) and values.dtype.name != "object"
+            ) or isinstance(values, xp.ndarray):
+                # need to account for higher dimensional arrays.
                 out[name] = values.reshape((-1,) + values.shape[2:])
             else:
                 out[name] = values.flatten()
@@ -223,8 +372,10 @@ class Branch(object):
 
         if branch_supplimental is not None:
             if branch_supplimental.shape != self.inds.shape:
-                raise ValueError(f"branch_supplimental shape ( {branch_supplimental.shape} ) does not match inds shape ( {self.inds.shape} ).")
-            
+                raise ValueError(
+                    f"branch_supplimental shape ( {branch_supplimental.shape} ) does not match inds shape ( {self.inds.shape} )."
+                )
+
         self.branch_supplimental = branch_supplimental
         # verify no 0 nleaves walkers
         self.nleaves
@@ -279,7 +430,15 @@ class State(object):
 
     """
 
-    __slots__ = "branches", "log_prob", "log_prior", "blobs", "betas", "supplimental", "random_state"
+    __slots__ = (
+        "branches",
+        "log_prob",
+        "log_prior",
+        "blobs",
+        "betas",
+        "supplimental",
+        "random_state",
+    )
 
     def __init__(
         self,
@@ -344,14 +503,18 @@ class State(object):
 
         # setup all information for storage
         self.branches = {
-            key: Branch(dc(temp_coords), inds=inds[key], branch_supplimental=branch_supplimental[key])
+            key: Branch(
+                dc(temp_coords),
+                inds=inds[key],
+                branch_supplimental=branch_supplimental[key],
+            )
             for key, temp_coords in coords.items()
         }
         self.log_prob = dc(np.atleast_2d(log_prob)) if log_prob is not None else None
         self.log_prior = dc(np.atleast_2d(log_prior)) if log_prior is not None else None
         self.blobs = dc(np.atleast_3d(blobs)) if blobs is not None else None
         self.betas = dc(np.atleast_1d(betas)) if betas is not None else None
-        self.supplimental = dc(supplimental) 
+        self.supplimental = dc(supplimental)
         self.random_state = dc(random_state)
 
     @property
@@ -367,7 +530,9 @@ class State(object):
     @property
     def branches_supplimental(self):
         """Get the ``branch.supplimental`` from all branch objects returned as a dictionary with ``branch_names`` as keys."""
-        return {name: branch.branch_supplimental for name, branch in self.branches.items()}
+        return {
+            name: branch.branch_supplimental for name, branch in self.branches.items()
+        }
 
     def copy_into_self(self, state_to_copy):
         for name in state_to_copy.__slots__:
