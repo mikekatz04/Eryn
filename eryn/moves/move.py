@@ -2,6 +2,7 @@
 
 from ..state import BranchSupplimental
 import numpy as np
+
 try:
     import cupy as xp
 except (ModuleNotFoundError, ImportError):
@@ -22,7 +23,15 @@ class Move(object):
 
     """
 
-    def __init__(self, temperature_control=None, periodic=None, adjust_supps_pre_logl_func=None, skip_supp_names=[], prevent_swaps=False, proposal_branch_names=None):
+    def __init__(
+        self,
+        temperature_control=None,
+        periodic=None,
+        adjust_supps_pre_logl_func=None,
+        skip_supp_names=[],
+        prevent_swaps=False,
+        proposal_branch_names=None,
+    ):
         self.temperature_control = temperature_control
         self.periodic = periodic
         self.adjust_supps_pre_logl_func = adjust_supps_pre_logl_func
@@ -106,20 +115,20 @@ class Move(object):
         if subset is None:
             # subset of everything
             subset = np.tile(
-                np.arange(old_state.log_prob.shape[1]), (old_state.log_prob.shape[0], 1)
+                np.arange(old_state.log_like.shape[1]), (old_state.log_like.shape[0], 1)
             )
 
         # take_along_axis is necessary to do this all in higher dimensions
         accepted_temp = np.take_along_axis(accepted, subset, axis=1)
 
         # new log likelihood
-        old_log_probs = np.take_along_axis(old_state.log_prob, subset, axis=1)
-        new_log_probs = new_state.log_prob
-        temp_change_log_prob = new_log_probs * (accepted_temp) + old_log_probs * (
+        old_log_likes = np.take_along_axis(old_state.log_like, subset, axis=1)
+        new_log_likes = new_state.log_like
+        temp_change_log_like = new_log_likes * (accepted_temp) + old_log_likes * (
             ~accepted_temp
         )
 
-        np.put_along_axis(old_state.log_prob, subset, temp_change_log_prob, axis=1)
+        np.put_along_axis(old_state.log_like, subset, temp_change_log_like, axis=1)
 
         # new log prior
         old_log_priors = np.take_along_axis(old_state.log_prior, subset, axis=1)
@@ -169,8 +178,14 @@ class Move(object):
             temp_change_branch_supplimental = {}
             for name in old_state.branches:
                 if old_state.branches[name].branch_supplimental is not None:
-                    old_branch_supplimental = old_state.branches[name].branch_supplimental.take_along_axis(subset[:, :, None], axis=1, skip_names=self.skip_supp_names)
-                    new_branch_supplimental = new_state.branches[name].branch_supplimental[:]
+                    old_branch_supplimental = old_state.branches[
+                        name
+                    ].branch_supplimental.take_along_axis(
+                        subset[:, :, None], axis=1, skip_names=self.skip_supp_names
+                    )
+                    new_branch_supplimental = new_state.branches[
+                        name
+                    ].branch_supplimental[:]
 
                     tmp = {}
                     for key in old_branch_supplimental:
@@ -178,37 +193,51 @@ class Move(object):
                             continue
                         accepted_temp_here = accepted_temp.copy()
                         if new_branch_supplimental[key].dtype.name != "object":
-                            for _ in range(new_branch_supplimental[key].ndim - accepted_temp_here.ndim):
-                                accepted_temp_here = np.expand_dims(accepted_temp_here, (-1,))
+                            for _ in range(
+                                new_branch_supplimental[key].ndim
+                                - accepted_temp_here.ndim
+                            ):
+                                accepted_temp_here = np.expand_dims(
+                                    accepted_temp_here, (-1,)
+                                )
 
                         try:
-                            tmp[key] = (new_branch_supplimental[key] * (accepted_temp_here)
-                                        + old_branch_supplimental[key] * (~accepted_temp_here))
+                            tmp[key] = new_branch_supplimental[key] * (
+                                accepted_temp_here
+                            ) + old_branch_supplimental[key] * (~accepted_temp_here)
                         except TypeError:
                             # for gpus
-                            tmp[key] = (new_branch_supplimental[key] * (xp.asarray(accepted_temp_here))
-                                        + old_branch_supplimental[key] * (xp.asarray(~accepted_temp_here)))
+                            tmp[key] = new_branch_supplimental[key] * (
+                                xp.asarray(accepted_temp_here)
+                            ) + old_branch_supplimental[key] * (
+                                xp.asarray(~accepted_temp_here)
+                            )
 
-                    temp_change_branch_supplimental[name] = BranchSupplimental(tmp, obj_contained_shape=new_state.branches_supplimental[name].shape, copy=True)
+                    temp_change_branch_supplimental[name] = BranchSupplimental(
+                        tmp,
+                        obj_contained_shape=new_state.branches_supplimental[name].shape,
+                        copy=True,
+                    )
 
                 else:
                     temp_change_branch_supplimental[name] = None
-            
-             # TODO: check Nones
+
+            # TODO: check Nones
             [
                 old_state.branches[name].branch_supplimental.put_along_axis(
                     subset[:, :, None],
                     temp_change_branch_supplimental[name][:],
                     axis=1,
                 )
-                for name in new_inds if temp_change_branch_supplimental[name] is not None
+                for name in new_inds
+                if temp_change_branch_supplimental[name] is not None
             ]
 
         if old_state.supplimental is not None:
             # suppliment
             old_suppliment = old_state.supplimental.take_along_axis(subset, axis=1)
             new_suppliment = new_state.supplimental[:]
-            
+
             accepted_temp_here = accepted_temp.copy()
 
             temp_change_suppliment = {}
@@ -220,15 +249,17 @@ class Move(object):
                         accepted_temp_here = np.expand_dims(accepted_temp_here, (-1,))
                 try:
                     # TODO: cleanup?
-                    temp_change_suppliment[name] = new_suppliment[name] * (accepted_temp_here) + old_suppliment[name] * (
-                        ~accepted_temp_here
-                    )
+                    temp_change_suppliment[name] = new_suppliment[name] * (
+                        accepted_temp_here
+                    ) + old_suppliment[name] * (~accepted_temp_here)
                 except TypeError:
-                    temp_change_suppliment[name] = new_suppliment[name] * (xp.asarray(accepted_temp_here)) + old_suppliment[name] * (
-                        xp.asarray(~accepted_temp_here)
-                    )
-            old_state.supplimental.put_along_axis(subset, temp_change_suppliment, axis=1)
-        
+                    temp_change_suppliment[name] = new_suppliment[name] * (
+                        xp.asarray(accepted_temp_here)
+                    ) + old_suppliment[name] * (xp.asarray(~accepted_temp_here))
+            old_state.supplimental.put_along_axis(
+                subset, temp_change_suppliment, axis=1
+            )
+
         # coords
         old_coords = {
             name: np.take_along_axis(branch.coords, subset[:, :, None, None], axis=1)
@@ -259,7 +290,7 @@ class Move(object):
         if new_state.blobs is not None:
             if old_state.blobs is None:
                 raise ValueError(
-                    "If you start sampling with a given log_prob, "
+                    "If you start sampling with a given log_like, "
                     "you also need to provide the current list of "
                     "blobs at that position."
                 )
@@ -275,6 +306,4 @@ class Move(object):
             )
 
         return old_state
-
-
 

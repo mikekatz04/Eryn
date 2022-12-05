@@ -391,10 +391,6 @@ class Branch(object):
 class State(object):
     """The state of the ensemble during an MCMC run
 
-    For backwards compatibility, this will unpack into ``coords, log_prob,
-    (blobs), random_state`` when iterated over (where ``blobs`` will only be
-    included if it exists and is not ``None``).
-
     Args:
         coords (double ndarray[ntemps, nwalkers, nleaves_max, ndim], dict, or :class:`.State`): The current positions of the walkers
             in the parameter space. If dict, need to use ``branch_names`` for the keys.
@@ -403,7 +399,7 @@ class State(object):
             was used in this step. If dict, need to use ``branch_names`` for the keys.
             Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
             (default: ``None``)
-        log_prob (ndarray[ntemps, nwalkers], optional): Log likelihoods
+        log_like (ndarray[ntemps, nwalkers], optional): Log likelihoods
             for the  walkers at positions given by ``coords``.
             Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
             (default: ``None``)
@@ -432,7 +428,7 @@ class State(object):
 
     __slots__ = (
         "branches",
-        "log_prob",
+        "log_like",
         "log_prior",
         "blobs",
         "betas",
@@ -446,7 +442,7 @@ class State(object):
         inds=None,
         branch_supplimental=None,
         supplimental=None,
-        log_prob=None,
+        log_like=None,
         log_prior=None,
         betas=None,
         blobs=None,
@@ -459,7 +455,7 @@ class State(object):
         # check if coords is a State object
         if hasattr(coords, "branches"):
             self.branches = dc(coords.branches)
-            self.log_prob = dc(coords.log_prob)
+            self.log_like = dc(coords.log_like)
             self.log_prior = dc(coords.log_prior)
             self.blobs = dc(coords.blobs)
             self.betas = dc(coords.betas)
@@ -510,7 +506,7 @@ class State(object):
             )
             for key, temp_coords in coords.items()
         }
-        self.log_prob = dc(np.atleast_2d(log_prob)) if log_prob is not None else None
+        self.log_like = dc(np.atleast_2d(log_like)) if log_like is not None else None
         self.log_prior = dc(np.atleast_2d(log_prior)) if log_prior is not None else None
         self.blobs = dc(np.atleast_3d(blobs)) if blobs is not None else None
         self.betas = dc(np.atleast_1d(betas)) if betas is not None else None
@@ -538,17 +534,36 @@ class State(object):
         for name in state_to_copy.__slots__:
             setattr(self, name, getattr(state_to_copy, name))
 
+    def get_log_prob(self, temper: bool = False):
+        """Get the posterior probability
+        
+        Args:
+            temper (bool, optional): If ``True``, apply tempering to the posterior computation.
+
+        Returns:
+            np.ndarray[ntemps, nwalkers]: Log of the posterior probability.
+        
+        """
+
+        if temper:
+            betas = self.betas
+
+        else:
+            betas = np.ones_like(self.betas)
+
+        return betas * self.log_like + self.log_prior
+
     """
     # TODO
     def __repr__(self):
-        return "State({0}, log_prob={1}, blobs={2}, betas={3}, random_state={4})".format(
-            self.coords, self.log_prob, self.blobs, self.betas, self.random_state
+        return "State({0}, log_like={1}, blobs={2}, betas={3}, random_state={4})".format(
+            self.coords, self.log_like, self.blobs, self.betas, self.random_state
         )
 
     def __iter__(self):
         temp = (self.coords,)
-        if self.log_prob is not None:
-            temp += (self.log_prob,)
+        if self.log_like is not None:
+            temp += (self.log_like,)
 
         if self.blobs is not None:
             temp += (self.blobs,)

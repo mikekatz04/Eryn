@@ -31,12 +31,9 @@ class MultipleTryMove:
     """
 
     def __init__(
-        self,
-        num_try,
-        take_max_ll=False,
-        return_accepted_info=False,
+        self, num_try, take_max_ll=False, return_accepted_info=False,
     ):
-        # TODO: make priors optional like special generate function? 
+        # TODO: make priors optional like special generate function?
         self.num_try = num_try
         self.take_max_ll = take_max_ll
         self.return_accepted_info = return_accepted_info
@@ -50,14 +47,29 @@ class MultipleTryMove:
         else:
             assert isinstance(betas, np.ndarray)
             if ll.ndim > 1:
-               betas_tmp = np.expand_dims(betas, ll.ndim - 1)
+                betas_tmp = np.expand_dims(betas, ll.ndim - 1)
             else:
                 betas_tmp = betas
             ll_temp = betas_tmp * ll
 
         return ll_temp + lp
 
-    def get_mt_proposal(self, coords, nwalkers, inds_reverse, inds_reverse_individual, random, args_generate=(), kwargs_generate={}, args_like=(), kwargs_like={}, args_prior=(), kwargs_prior={}, rj_info={}, betas=None):
+    def get_mt_proposal(
+        self,
+        coords,
+        nwalkers,
+        inds_reverse,
+        inds_reverse_individual,
+        random,
+        args_generate=(),
+        kwargs_generate={},
+        args_like=(),
+        kwargs_like={},
+        args_prior=(),
+        kwargs_prior={},
+        rj_info={},
+        betas=None,
+    ):
         """Make a proposal
 
         Args:
@@ -96,7 +108,16 @@ class MultipleTryMove:
         inds_reverse_tuple = (inds_reverse, np.zeros_like(inds_reverse))
 
         # generate new points and get detailed balance info
-        generated_points, log_proposal_pdf = self.special_generate_func(coords, nwalkers, *args_generate, random=random, size=self.num_try, fill=coords[inds_reverse], fill_inds=inds_reverse_tuple, **kwargs_generate)
+        generated_points, log_proposal_pdf = self.special_generate_func(
+            coords,
+            nwalkers,
+            *args_generate,
+            random=random,
+            size=self.num_try,
+            fill=coords[inds_reverse],
+            fill_inds=inds_reverse_tuple,
+            **kwargs_generate
+        )
         ll = self.special_like_func(generated_points, *args_like, **kwargs_like)
 
         if rj_info != {}:
@@ -113,7 +134,7 @@ class MultipleTryMove:
         if self.take_max_ll:
             # get max
             inds_keep = np.argmax(ll, axis=-1)
-        
+
             factors = np.zeros((nwalkers,))
             return generated_points_out, ll_out, factors
 
@@ -123,7 +144,9 @@ class MultipleTryMove:
                 ll[np.isnan(ll)] = -1e300
 
             if hasattr(self, "special_prior_func"):
-                lp = self.special_prior_func(generated_points, *args_prior, **kwargs_prior)
+                lp = self.special_prior_func(
+                    generated_points, *args_prior, **kwargs_prior
+                )
                 if rj_info != {} and np.any(inds_reverse):
                     # fix prior for inds_reverse
                     # fake new point difference was added to prior that
@@ -139,7 +162,6 @@ class MultipleTryMove:
                 lp = np.zeros_like(ll)
                 logP = self.get_mt_log_posterior(ll, lp, betas=betas)
 
-            
             log_importance_weights = logP - log_proposal_pdf
 
             log_sum_weights = logsumexp(log_importance_weights, axis=-1)
@@ -148,11 +170,13 @@ class MultipleTryMove:
             probs = np.exp(log_of_probs)
 
             # draw based on likelihood
-            inds_keep = (probs.cumsum(1) > np.random.rand(probs.shape[0])[:,None]).argmax(1)
+            inds_keep = (
+                probs.cumsum(1) > np.random.rand(probs.shape[0])[:, None]
+            ).argmax(1)
 
             inds_keep[inds_reverse] = 0
 
-            #log_prob_factors = np.log(probs[:, ind_keep])
+            # log_like_factors = np.log(probs[:, ind_keep])
             inds_tuple = (np.arange(len(inds_keep)), inds_keep)
             logP_out = logP[inds_tuple]
             self.ll_out = ll[inds_tuple]
@@ -167,57 +191,86 @@ class MultipleTryMove:
 
             if rj_info == {}:
                 # generate auxillary points
-                aux_generated_points, aux_log_proposal_pdf = self.special_generate_func(generated_points_out, nwalkers, *args_generate, random=random, size=self.num_try, fill=generated_points_out, fill_inds=inds_tuple, **kwargs_generate)
+                aux_generated_points, aux_log_proposal_pdf = self.special_generate_func(
+                    generated_points_out,
+                    nwalkers,
+                    *args_generate,
+                    random=random,
+                    size=self.num_try,
+                    fill=generated_points_out,
+                    fill_inds=inds_tuple,
+                    **kwargs_generate
+                )
 
-                aux_ll = self.special_like_func(aux_generated_points, *args_like, **kwargs_like)
+                aux_ll = self.special_like_func(
+                    aux_generated_points, *args_like, **kwargs_like
+                )
 
                 if hasattr(self, "special_prior_func"):
                     aux_lp = self.special_prior_func(aux_generated_points)
                     aux_logP = self.get_mt_log_posterior(aux_ll, aux_lp, betas=betas)
-                    
+
                 else:
                     aux_logP = aux_ll
 
                 aux_log_importance_weights = aux_logP - aux_log_proposal_pdf
 
             else:
-                
 
                 if not hasattr(self, "special_aux_ll"):
-                    raise ValueError("If using RJ, must have special_aux_ll attribute that gives the aux_ll for reverse proposals.")
+                    raise ValueError(
+                        "If using RJ, must have special_aux_ll attribute that gives the aux_ll for reverse proposals."
+                    )
 
                 # sub in the old ll values for the reverse cases
                 aux_ll[inds_reverse] = self.special_aux_ll
 
-                # aux_lp[inds_reverse]  # do not need to do this because the inds reflect the removed case already. 
+                # aux_lp[inds_reverse]  # do not need to do this because the inds reflect the removed case already.
                 aux_logP = self.get_mt_log_posterior(aux_ll, aux_lp, betas=betas)
                 aux_log_proposal_pdf = np.zeros_like(aux_logP)
                 aux_log_importance_weights = aux_logP - aux_log_proposal_pdf
 
-                self.log_diff = (logsumexp(ll, axis=-1) - logsumexp(np.repeat(aux_ll[:, None], self.num_try, axis=-1), axis=-1))
+                self.log_diff = logsumexp(ll, axis=-1) - logsumexp(
+                    np.repeat(aux_ll[:, None], self.num_try, axis=-1), axis=-1
+                )
 
                 # scale out
-                aux_log_importance_weights = np.repeat(aux_log_importance_weights[:, None], self.num_try, axis=-1)
+                aux_log_importance_weights = np.repeat(
+                    aux_log_importance_weights[:, None], self.num_try, axis=-1
+                )
 
             aux_log_sum_weights = logsumexp(aux_log_importance_weights, axis=-1)
 
-            #aux_log_proposal_pdf = np.zeros_like(log_proposal_pdf_out)
+            # aux_log_proposal_pdf = np.zeros_like(log_proposal_pdf_out)
             # this is setup to make clear with the math.
-            # setting up factors properly means the 
-            # final lnpdiff will be effectively be the ratio of the sums 
+            # setting up factors properly means the
+            # final lnpdiff will be effectively be the ratio of the sums
             # of the weights
 
-            # IMPORTANT: logP_out must be subtracted against log_sum_weights before anything else due to -1e300s. 
-            factors = ((aux_logP - aux_log_sum_weights) - aux_log_proposal_pdf + aux_log_proposal_pdf) - ((logP_out - log_sum_weights) - log_proposal_pdf_out + log_proposal_pdf_out) 
-            
-            #factors = (aux_logP - aux_log_proposal_pdf - aux_log_sum_weights) - (logP_out - log_proposal_pdf_out - log_sum_weights) - log_proposal_pdf_out
+            # IMPORTANT: logP_out must be subtracted against log_sum_weights before anything else due to -1e300s.
+            factors = (
+                (aux_logP - aux_log_sum_weights)
+                - aux_log_proposal_pdf
+                + aux_log_proposal_pdf
+            ) - (
+                (logP_out - log_sum_weights)
+                - log_proposal_pdf_out
+                + log_proposal_pdf_out
+            )
+
+            # factors = (aux_logP - aux_log_proposal_pdf - aux_log_sum_weights) - (logP_out - log_proposal_pdf_out - log_sum_weights) - log_proposal_pdf_out
             self.log_proposal_pdf_out = log_proposal_pdf_out
             # stop pretending, reverse factors for reverse case
             factors[inds_reverse] *= -1.0
-            #if np.any(factors > 0.0):
+            # if np.any(factors > 0.0):
             self.logP_out = logP_out.copy()
 
-            #if np.any((log_sum_weights - aux_log_sum_weights) > 0.0):
+            # if np.any((log_sum_weights - aux_log_sum_weights) > 0.0):
             #    breakpoint()
-            
-            return generated_points_out[np.delete(np.arange(nwalkers), inds_reverse)], logP_out, factors
+
+            return (
+                generated_points_out[np.delete(np.arange(nwalkers), inds_reverse)],
+                logP_out,
+                factors,
+            )
+

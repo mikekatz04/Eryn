@@ -63,30 +63,38 @@ class MHMove(Move):
         if state.supplimental is not None:
             # TODO: should there be a copy?
             new_supps = deepcopy(state.supplimental)
-        else:   
+        else:
             new_supps = None
 
         # Get the move-specific proposal.
         q, factors = self.get_proposal(
-            state.branches_coords, state.branches_inds, model.random, supps=new_supps, branch_supps=new_branch_supps
+            state.branches_coords,
+            state.branches_inds,
+            model.random,
+            supps=new_supps,
+            branch_supps=new_branch_supps,
         )
 
         if self.proposal_branch_names is not None:
-            # return all branches not tested back to 
+            # return all branches not tested back to
             for name in state.branches:
-                if  name not in self.proposal_branch_names:
+                if name not in self.proposal_branch_names:
                     q[name][:] = state.branches_coords[name][:]
 
         # Compute prior of the proposed position
         logp = model.compute_log_prior_fn(q, inds=state.branches_inds)
 
-        #if new_branch_supps is not None or new_supps is not None:
+        # if new_branch_supps is not None or new_supps is not None:
         #   self.adjust_supps_pre_logl_func(q, inds=state.branches_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
 
         # Compute the lnprobs of the proposed position.
         # Can adjust supplimentals in place
-        logl, new_blobs = model.compute_log_prob_fn(
-            q, inds=state.branches_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps
+        logl, new_blobs = model.compute_log_like_fn(
+            q,
+            inds=state.branches_inds,
+            logp=logp,
+            supps=new_supps,
+            branch_supps=new_branch_supps,
         )
 
         if new_branch_supps is not None:
@@ -96,7 +104,7 @@ class MHMove(Move):
 
         logP = self.compute_log_posterior(logl, logp)
 
-        prev_logl = state.log_prob
+        prev_logl = state.log_like
 
         prev_logp = state.log_prior
 
@@ -110,7 +118,13 @@ class MHMove(Move):
 
         # Update the parameters
         new_state = State(
-            q, log_prob=logl, log_prior=logp, blobs=new_blobs, inds=state.branches_inds, supplimental=new_supps, branch_supplimental=new_branch_supps
+            q,
+            log_like=logl,
+            log_prior=logp,
+            blobs=new_blobs,
+            inds=state.branches_inds,
+            supplimental=new_supps,
+            branch_supplimental=new_branch_supps,
         )
         state = self.update(state, new_state, accepted)
 

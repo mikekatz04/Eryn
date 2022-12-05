@@ -275,7 +275,7 @@ class HDFBackend(Backend):
                 )
 
             g.create_dataset(
-                "log_prob",
+                "log_like",
                 (0, ntemps, nwalkers),
                 maxshape=(None, ntemps, nwalkers),
                 dtype=self.dtype,
@@ -484,7 +484,7 @@ class HDFBackend(Backend):
                 g["chain"][key].resize(ntot, axis=0)
                 g["inds"][key].resize(ntot, axis=0)
 
-            g["log_prob"].resize(ntot, axis=0)
+            g["log_like"].resize(ntot, axis=0)
             g["log_prior"].resize(ntot, axis=0)
             g["betas"].resize(ntot, axis=0)
             if blobs is not None:
@@ -567,7 +567,7 @@ class HDFBackend(Backend):
                 coords_in[~inds_all] = self.store_missing_leaves
                 g["chain"][name][self.iteration] = coords_in
 
-            g["log_prob"][iteration, :] = state.log_prob
+            g["log_like"][iteration, :] = state.log_like
             g["log_prior"][iteration, :] = state.log_prior
             if state.blobs is not None:
                 g["blobs"][iteration, :] = state.blobs

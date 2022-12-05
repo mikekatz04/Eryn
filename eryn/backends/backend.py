@@ -37,7 +37,7 @@ class Backend(object):
         iteration (int): Current index within the data storage arrays.
         log_prior (3D double np.ndarray): Log of the prior values. Shape is
             (nsteps, nwalkers, ntemps).
-        log_prob (3D double np.ndarray): Log of the likelihood values. Shape is
+        log_like (3D double np.ndarray): Log of the likelihood values. Shape is
             (nsteps, nwalkers, ntemps).
         nbranches (int): Number of branches.
         ndims (1D int np.ndarray): Dimensionality of each branch.
@@ -193,7 +193,7 @@ class Backend(object):
         }
 
         # log likelihood and prior
-        self.log_prob = np.empty((0, self.ntemps, self.nwalkers), dtype=self.dtype)
+        self.log_like = np.empty((0, self.ntemps, self.nwalkers), dtype=self.dtype)
         self.log_prior = np.empty((0, self.ntemps, self.nwalkers), dtype=self.dtype)
 
         # temperature ladder
@@ -390,7 +390,7 @@ class Backend(object):
         """
         return self.get_value("blobs", **kwargs)
 
-    def get_log_prob(self, **kwargs):
+    def get_log_like(self, **kwargs):
         """Get the chain of log probabilities evaluated at the MCMC samples
 
         Args:
@@ -405,7 +405,7 @@ class Backend(object):
             double np.ndarray[nsteps, ntemps, nwalkers]: The chain of log likelihood values.
 
         """
-        return self.get_value("log_prob", **kwargs)
+        return self.get_value("log_like", **kwargs)
 
     def get_log_prior(self, **kwargs):
         """Get the chain of log probabilities evaluated at the MCMC samples
@@ -464,11 +464,15 @@ class Backend(object):
 
         # fill a State with quantities from the last sample in the chain
         sample = State(
-            {name: temp[0] for name, temp in self.get_chain(discard=it - 1, thin=thin).items()},
-            log_prob=self.get_log_prob(discard=it - 1, thin=thin)[0],
+            {
+                name: temp[0]
+                for name, temp in self.get_chain(discard=it - 1, thin=thin).items()
+            },
+            log_like=self.get_log_like(discard=it - 1, thin=thin)[0],
             log_prior=self.get_log_prior(discard=it - 1, thin=thin)[0],
             inds={
-                name: temp[0] for name, temp in self.get_inds(discard=it - 1, thin=thin).items()
+                name: temp[0]
+                for name, temp in self.get_inds(discard=it - 1, thin=thin).items()
             },
             blobs=blobs,
             random_state=self.random_state,
@@ -550,7 +554,7 @@ class Backend(object):
         """
         # TODO: check this
         # get all the likelihood and temperature values
-        logls_all = self.get_log_prob(discard=discard, thin=thin)
+        logls_all = self.get_log_like(discard=discard, thin=thin)
         betas_all = self.get_betas(discard=discard, thin=thin)
 
         # make sure that the betas were fixed during sampling (after burn in)
@@ -648,7 +652,7 @@ class Backend(object):
         # temperorary addition for log likelihood
         a = np.empty((i, self.ntemps, self.nwalkers), dtype=self.dtype)
         # combine with original log likelihood
-        self.log_prob = np.concatenate((self.log_prob, a), axis=0)
+        self.log_like = np.concatenate((self.log_like, a), axis=0)
 
         # temperorary addition for log prior
         a = np.empty((i, self.ntemps, self.nwalkers), dtype=self.dtype)
@@ -713,7 +717,7 @@ class Backend(object):
                 )
 
         # make sure log likelihood, log prior, blobs, accepted, rj_accepted, betas
-        if state.log_prob.shape != (ntemps, nwalkers,):
+        if state.log_like.shape != (ntemps, nwalkers,):
             raise ValueError(
                 "invalid log probability size; expected {0}".format(ntemps, nwalkers)
             )
@@ -799,7 +803,7 @@ class Backend(object):
             self.chain[key][self.iteration] = coords_in
 
         # save higher level quantities
-        self.log_prob[self.iteration, :, :] = state.log_prob
+        self.log_like[self.iteration, :, :] = state.log_like
         self.log_prior[self.iteration, :, :] = state.log_prior
         if state.blobs is not None:
             self.blobs[self.iteration, :] = state.blobs
@@ -847,7 +851,7 @@ class Backend(object):
         tau = self.get_autocorr_time()
 
         # get log prob
-        out_info["log_prob"] = self.get_log_prob(thin=thin, discard=discard)
+        out_info["log_like"] = self.get_log_like(thin=thin, discard=discard)
 
         # get temperatures
         out_info["betas"] = self.get_betas(thin=thin, discard=discard)

@@ -254,7 +254,9 @@ class TemperatureControl(object):
 
         return loglT
 
-    def temperature_swaps(self, x, logP, logl, logp, inds=None, blobs=None, supps=None, branch_supps=None):
+    def temperature_swaps(
+        self, x, logP, logl, logp, inds=None, blobs=None, supps=None, branch_supps=None
+    ):
         """
         Perform parallel-tempering temperature swaps on the state in ``x`` with associated ``logP`` and ``logl``.
         """
@@ -282,9 +284,9 @@ class TemperatureControl(object):
             x_temp = {name: np.copy(x[name]) for name in x}
             if inds is not None:
                 inds_temp = {name: np.copy(inds[name]) for name in inds}
-            #if branch_supps is not None:
+            # if branch_supps is not None:
             #    branch_supps_temp = {name: deepcopy(branch_supps[name]) for name in branch_supps}
-            
+
             logl_temp = np.copy(logl[i, iperm[sel]])
             logp_temp = np.copy(logp[i, iperm[sel]])
             logP_temp = np.copy(logP[i, iperm[sel]])
@@ -308,10 +310,20 @@ class TemperatureControl(object):
                     leaf_inds_i1 = inds_i1[1]
                     temp_inds_i1 = np.full_like(leaf_inds_i1, i - 1)
                     for name2 in branch_supps[name].holder:
-                        bring_back_branch_supps = branch_supps[name].holder[name2][(temp_inds_i, walker_inds_i, leaf_inds_i)].copy()
-                        branch_supps[name].holder[name2][(temp_inds_i, walker_inds_i, leaf_inds_i)] = branch_supps[name].holder[name2][(temp_inds_i1, walker_inds_i1, leaf_inds_i1)]
-                        branch_supps[name].holder[name2][(temp_inds_i1, walker_inds_i1, leaf_inds_i1)] = bring_back_branch_supps
-                    
+                        bring_back_branch_supps = (
+                            branch_supps[name]
+                            .holder[name2][(temp_inds_i, walker_inds_i, leaf_inds_i)]
+                            .copy()
+                        )
+                        branch_supps[name].holder[name2][
+                            (temp_inds_i, walker_inds_i, leaf_inds_i)
+                        ] = branch_supps[name].holder[name2][
+                            (temp_inds_i1, walker_inds_i1, leaf_inds_i1)
+                        ]
+                        branch_supps[name].holder[name2][
+                            (temp_inds_i1, walker_inds_i1, leaf_inds_i1)
+                        ] = bring_back_branch_supps
+
             logl[i, iperm[sel]] = logl[i - 1, i1perm[sel]]
             logp[i, iperm[sel]] = logp[i - 1, i1perm[sel]]
             logP[i, iperm[sel]] = (
@@ -328,7 +340,7 @@ class TemperatureControl(object):
                     inds[name][i - 1, i1perm[sel], :] = inds_temp[name][
                         i, iperm[sel], :
                     ]
-                #if branch_supps[name] is not None:
+                # if branch_supps[name] is not None:
                 #    branch_supps[name][i - 1, i1perm[sel], :] = branch_supps_temp[name][
                 #        i, iperm[sel], :
                 #    ]
@@ -367,7 +379,7 @@ class TemperatureControl(object):
         return betas - betas0
 
     def temper_comps(self, state, accepted, adapt=True):
-        logl = state.log_prob
+        logl = state.log_like
         logp = state.log_prior
         logP = self.compute_log_posterior_tempered(logl, logp)
         x, logP, logl, logp, inds, blobs, supps, branch_supps = self.temperature_swaps(
@@ -388,12 +400,12 @@ class TemperatureControl(object):
                 dbetas = self._get_ladder_adjustment(self.time, self.betas, ratios)
                 self.betas += dbetas
 
-            # only increase time if it is adaptive. 
+            # only increase time if it is adaptive.
             self.time += 1
 
         new_state = State(
             x,
-            log_prob=logl,
+            log_like=logl,
             log_prior=logp,
             blobs=blobs,
             inds=inds,

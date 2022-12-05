@@ -8,8 +8,8 @@ from ..state import BranchSupplimental, State
 from .move import Move
 
 
-
 __all__ = ["RedBlueMove"]
+
 
 class RedBlueMove(Move, ABC):
     """
@@ -218,33 +218,38 @@ class RedBlueMove(Move, ABC):
                 sets = {
                     key: [
                         np.take_along_axis(
-                        state.branches[key].coords,
-                        all_inds[inds == j].reshape(ntemps, nwalkers_here)[:, :, None, None],
-                        axis=1,
-                    )
+                            state.branches[key].coords,
+                            all_inds[inds == j].reshape(ntemps, nwalkers_here)[
+                                :, :, None, None
+                            ],
+                            axis=1,
+                        )
                         for j in range(self.nsplits)
                     ]
                     for key in state.branches
                 }
 
                 s = {key: sets[key][split] for key in sets}
-                c = {
-                    key: sets[key][:split] + sets[key][split + 1 :] for key in sets
-                }
+                c = {key: sets[key][:split] + sets[key][split + 1 :] for key in sets}
 
                 # Get the move-specific proposal.
                 # Get the move-specific proposal.
 
                 # need to trick stretch proposal into using the dimenionality associated
                 # with Gibbs sampling if it is being used
-                
+
                 temp_inds_s = {
-                    name: new_inds_adjust[name][:].reshape((ntemps, -1,) + state.branches[name].coords.shape[2:3]) for name in new_inds_adjust
+                    name: new_inds_adjust[name][:].reshape(
+                        (ntemps, -1,) + state.branches[name].coords.shape[2:3]
+                    )
+                    for name in new_inds_adjust
                 }
 
                 temp_inds_c = {
                     name: np.take_along_axis(
-                        state.branches[name].inds, all_inds[inds != split].reshape(ntemps, -1, 1), axis=1
+                        state.branches[name].inds,
+                        all_inds[inds != split].reshape(ntemps, -1, 1),
+                        axis=1,
                     )
                     for name in state.branches_inds
                 }
@@ -254,19 +259,25 @@ class RedBlueMove(Move, ABC):
                 )
                 q = {}
                 for name in q_temp:
-                    q[name] = q_temp[name]  # TODO: take this out? .reshape((ntemps, -1,) + state.branches[name].coords.shape[2:])
+                    q[name] = q_temp[
+                        name
+                    ]  # TODO: take this out? .reshape((ntemps, -1,) + state.branches[name].coords.shape[2:])
 
                 factors = factors_temp.reshape((ntemps, -1,))
 
                 new_inds_prior = deepcopy(new_inds)
                 if "model_indicator" in q:
-                    model_indicator = np.take_along_axis(state.branches["model_indicator"].coords, all_inds_shaped[:, :, None, None], axis=1)
+                    model_indicator = np.take_along_axis(
+                        state.branches["model_indicator"].coords,
+                        all_inds_shaped[:, :, None, None],
+                        axis=1,
+                    )
 
                     # reset all model_indicators in q
                     q["model_indicator"][:] = model_indicator.copy()
-                    
+
                     model_indicator = model_indicator.squeeze().astype(int)
-                    
+
                     if model_indicator.ndim == 1:
                         model_indicator = model_indicator[None, :]
 
@@ -289,10 +300,10 @@ class RedBlueMove(Move, ABC):
                         ndims_old = np.full_like(factors, ndims.sum() + 1)
                         ndims_new = ndims[model_indicator]
                         self.adjust_factors(factors, ndims_old, ndims_new)
-                    
+
                     for name in new_inds_prior:
                         new_inds_prior[name][:] = True
-                    
+
                 for name in q:
                     q[name] = q[name] * (
                         new_inds_adjust[name][:, :, :, None]
@@ -309,7 +320,7 @@ class RedBlueMove(Move, ABC):
                 # Compute prior of the proposed position
                 # new_inds_prior is adjusted if product-space is used
                 logp = model.compute_log_prior_fn(q, inds=new_inds_prior)
-               
+
                 # set logp for walkers with no leaves that are being tested
                 # in this gibbs run
                 if gs is not None:
@@ -318,37 +329,68 @@ class RedBlueMove(Move, ABC):
                 # setup supplimental information
                 if state.supplimental is not None:
                     # TODO: should there be a copy?
-                    new_supps = BranchSupplimental(state.supplimental.take_along_axis(all_inds_shaped, axis=1), obj_contained_shape=(ntemps, nwalkers), copy=False)
+                    new_supps = BranchSupplimental(
+                        state.supplimental.take_along_axis(all_inds_shaped, axis=1),
+                        obj_contained_shape=(ntemps, nwalkers),
+                        copy=False,
+                    )
 
                 else:
                     new_supps = None
 
                 # default for removing inds info from supp
-                if not np.all(np.asarray(list(state.branches_supplimental.values())) == None):
+                if not np.all(
+                    np.asarray(list(state.branches_supplimental.values())) == None
+                ):
                     new_branch_supps = {
                         name: state.branches[name].branch_supplimental.take_along_axis(
                             all_inds_shaped[:, :, None], axis=1
                         )
                         for name in state.branches
                     }
-                    
-                    new_branch_supps = {name: BranchSupplimental(new_branch_supps[name], obj_contained_shape=new_inds[name].shape, copy=False) for name in new_branch_supps}
+
+                    new_branch_supps = {
+                        name: BranchSupplimental(
+                            new_branch_supps[name],
+                            obj_contained_shape=new_inds[name].shape,
+                            copy=False,
+                        )
+                        for name in new_branch_supps
+                    }
                     for name in new_branch_supps:
-                        new_branch_supps[name].add_objects({"inds_keep": new_inds_adjust[name]})
+                        new_branch_supps[name].add_objects(
+                            {"inds_keep": new_inds_adjust[name]}
+                        )
 
                 else:
                     new_branch_supps = None
                     if new_supps is not None:
-                        new_branch_supps = {name: BranchSupplimental({"inds_keep": new_inds_adjust[name]}, obj_contained_shape=new_inds[name].shape, copy=False) for name in new_branch_supps}
+                        new_branch_supps = {
+                            name: BranchSupplimental(
+                                {"inds_keep": new_inds_adjust[name]},
+                                obj_contained_shape=new_inds[name].shape,
+                                copy=False,
+                            )
+                            for name in new_branch_supps
+                        }
 
                 # TODO: add supplimental prepare step
-                #if (new_branch_supps is not None or new_supps is not None) and self.adjust_supps_pre_logl_func is not None:
+                # if (new_branch_supps is not None or new_supps is not None) and self.adjust_supps_pre_logl_func is not None:
                 #    self.adjust_supps_pre_logl_func(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps, inds_keep=new_inds_adjust)
 
                 # Compute the lnprobs of the proposed position.
-                logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
-                    
-                if (new_branch_supps is not None and not np.all(np.asarray(list(new_branch_supps.values())) == None)) or new_supps is not None:
+                logl, new_blobs = model.compute_log_like_fn(
+                    q,
+                    inds=new_inds,
+                    logp=logp,
+                    supps=new_supps,
+                    branch_supps=new_branch_supps,
+                )
+
+                if (
+                    new_branch_supps is not None
+                    and not np.all(np.asarray(list(new_branch_supps.values())) == None)
+                ) or new_supps is not None:
                     if new_branch_supps is not None:
                         for name in new_branch_supps:
                             new_branch_supps[name].remove_objects("inds_keep")
@@ -362,7 +404,7 @@ class RedBlueMove(Move, ABC):
 
                 logP = self.compute_log_posterior(logl, logp)
 
-                prev_logl = np.take_along_axis(state.log_prob, all_inds_shaped, axis=1)
+                prev_logl = np.take_along_axis(state.log_like, all_inds_shaped, axis=1)
 
                 prev_logp = np.take_along_axis(state.log_prior, all_inds_shaped, axis=1)
 
@@ -387,7 +429,13 @@ class RedBlueMove(Move, ABC):
                 )
 
                 new_state = State(
-                    q, log_prob=logl, log_prior=logp, blobs=new_blobs, inds=new_inds, supplimental=new_supps, branch_supplimental=new_branch_supps
+                    q,
+                    log_like=logl,
+                    log_prior=logp,
+                    blobs=new_blobs,
+                    inds=new_inds,
+                    supplimental=new_supps,
+                    branch_supplimental=new_branch_supps,
                 )
 
                 state = self.update(

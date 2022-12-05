@@ -8,8 +8,8 @@ from ..state import BranchSupplimental, State
 from .move import Move
 
 
-
 __all__ = ["GroupMove"]
+
 
 class GroupMove(Move, ABC):
     """
@@ -128,7 +128,7 @@ class GroupMove(Move, ABC):
 
         import time
 
-        #st = time.perf_counter()
+        # st = time.perf_counter()
         # Check that the dimensions are compatible.
         ndim_total = 0
         for branch in state.branches.values():
@@ -138,10 +138,10 @@ class GroupMove(Move, ABC):
         # TODO: deal with more intensive acceptance fractions
         # Run any move-specific setup.
         self.setup(state.branches)
-        
+
         # Split the ensemble in half and iterate over these two halves.
         accepted = np.zeros((ntemps, nwalkers), dtype=bool)
-        
+
         if self.gibbs_sampling_leaves_per is not None:
             # setup for gibbs sampling
             gibbs_splits = []
@@ -162,9 +162,9 @@ class GroupMove(Move, ABC):
         else:
             gibbs_splits = [None]
 
-        #et = time.perf_counter()
-        #print("start", et - st)
-        #st = time.perf_counter()
+        # et = time.perf_counter()
+        # print("start", et - st)
+        # st = time.perf_counter()
         for gs_i, gs in enumerate(gibbs_splits):
 
             if gs is None:
@@ -172,7 +172,7 @@ class GroupMove(Move, ABC):
 
             accepted_here = np.zeros((ntemps, nwalkers), dtype=bool)
             new_inds = deepcopy(state.branches_inds)
-            
+
             # fix values in q that are not actually being tested here
             # new_inds_adjust is used temporarily for this
             new_inds_adjust = deepcopy(new_inds)
@@ -182,7 +182,7 @@ class GroupMove(Move, ABC):
 
             if name_keep in self.skip_branches:
                 continue
-            
+
             if len(inds_keep) > 1:
                 raise NotImplementedError
 
@@ -203,15 +203,19 @@ class GroupMove(Move, ABC):
                         keep_arr[keep_inds] = True
 
                     new_inds_adjust[name] = keep_arr.copy()
-                    
+
             points_to_move = state.branches_coords[name_keep][keep_arr]
-            points_for_move = state.branches_supplimental[name_keep][keep_arr]["group_move_points"]
+            points_for_move = state.branches_supplimental[name_keep][keep_arr][
+                "group_move_points"
+            ]
 
             points_to_move = points_to_move.reshape(-1, points_to_move.shape[-1])
-            points_for_move = points_for_move.reshape((-1,) + points_for_move.shape[-2:])
+            points_for_move = points_for_move.reshape(
+                (-1,) + points_for_move.shape[-2:]
+            )
 
             q_temp, factors_temp = self.get_proposal(
-                {name_keep: points_to_move},  {name_keep: points_for_move}, model.random
+                {name_keep: points_to_move}, {name_keep: points_for_move}, model.random
             )
 
             q = deepcopy(state.branches_coords)
@@ -224,7 +228,7 @@ class GroupMove(Move, ABC):
             factors[factors_inds] = factors_temp
 
             new_inds_prior = deepcopy(new_inds)
-            
+
             """
             # product space
             if "model_indicator" in q:
@@ -264,7 +268,9 @@ class GroupMove(Move, ABC):
             for name in q:
                 q[name] = q[name] * (
                     new_inds_adjust[name][:, :, :, None]
-                ) + state.branches_coords[name] * (~new_inds_adjust[name][:, :, :, None])
+                ) + state.branches_coords[name] * (
+                    ~new_inds_adjust[name][:, :, :, None]
+                )
 
             # Compute prior of the proposed position
             # new_inds_prior is adjusted if product-space is used
@@ -278,27 +284,46 @@ class GroupMove(Move, ABC):
             new_supps = deepcopy(state.supplimental)
 
             # default for removing inds info from supp
-            if not np.all(np.asarray(list(state.branches_supplimental.values())) == None):
+            if not np.all(
+                np.asarray(list(state.branches_supplimental.values())) == None
+            ):
                 new_branch_supps = deepcopy(state.branches_supplimental)
-                #new_branch_supps = {name: BranchSupplimental(new_branch_supps[name], obj_contained_shape=new_inds[name].shape, copy=False) for name in new_branch_supps}
+                # new_branch_supps = {name: BranchSupplimental(new_branch_supps[name], obj_contained_shape=new_inds[name].shape, copy=False) for name in new_branch_supps}
                 for name in new_branch_supps:
                     if new_branch_supps[name] is not None:
-                        new_branch_supps[name].add_objects({"inds_keep": new_inds_adjust[name]})
+                        new_branch_supps[name].add_objects(
+                            {"inds_keep": new_inds_adjust[name]}
+                        )
 
             else:
                 new_branch_supps = None
                 if new_supps is not None:
-                    new_branch_supps = {name: BranchSupplimental({"inds_keep": new_inds_adjust[name]}, obj_contained_shape=new_inds[name].shape, copy=False) for name in new_branch_supps}
+                    new_branch_supps = {
+                        name: BranchSupplimental(
+                            {"inds_keep": new_inds_adjust[name]},
+                            obj_contained_shape=new_inds[name].shape,
+                            copy=False,
+                        )
+                        for name in new_branch_supps
+                    }
 
             # TODO: add supplimental prepare step
-            #if (new_branch_supps is not None or new_supps is not None) and self.adjust_supps_pre_logl_func is not None:
+            # if (new_branch_supps is not None or new_supps is not None) and self.adjust_supps_pre_logl_func is not None:
             #    self.adjust_supps_pre_logl_func(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps, inds_keep=new_inds_adjust)
 
-            
             # Compute the lnprobs of the proposed position.
-            logl, new_blobs = model.compute_log_prob_fn(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
-            
-            if (new_branch_supps is not None and not np.all(np.asarray(list(new_branch_supps.values())) == None)) or new_supps is not None:
+            logl, new_blobs = model.compute_log_like_fn(
+                q,
+                inds=new_inds,
+                logp=logp,
+                supps=new_supps,
+                branch_supps=new_branch_supps,
+            )
+
+            if (
+                new_branch_supps is not None
+                and not np.all(np.asarray(list(new_branch_supps.values())) == None)
+            ) or new_supps is not None:
                 if new_branch_supps is not None:
                     for name in new_branch_supps:
                         if new_branch_supps[name] is not None:
@@ -313,7 +338,7 @@ class GroupMove(Move, ABC):
 
             logP = self.compute_log_posterior(logl, logp)
 
-            prev_logl = state.log_prob
+            prev_logl = state.log_like
 
             prev_logp = state.log_prior
 
@@ -331,27 +356,29 @@ class GroupMove(Move, ABC):
             accepted_here = keep.copy()
 
             # readout for total
-            accepted = (accepted.astype(int) + accepted_here.astype(int)).astype(
-                bool
-            )
+            accepted = (accepted.astype(int) + accepted_here.astype(int)).astype(bool)
 
             new_state = State(
-                q, log_prob=logl, log_prior=logp, blobs=new_blobs, inds=new_inds, supplimental=new_supps, branch_supplimental=new_branch_supps
+                q,
+                log_like=logl,
+                log_prior=logp,
+                blobs=new_blobs,
+                inds=new_inds,
+                supplimental=new_supps,
+                branch_supplimental=new_branch_supps,
             )
 
-            state = self.update(
-                state, new_state, accepted_here
-            )
+            state = self.update(state, new_state, accepted_here)
 
-        #et = time.perf_counter()
-        #print("gibbs3", et - st)
-        #st = time.perf_counter()
+        # et = time.perf_counter()
+        # print("gibbs3", et - st)
+        # st = time.perf_counter()
         if self.temperature_control is not None:
             state, accepted = self.temperature_control.temper_comps(state, accepted)
 
-        #et = time.perf_counter()
-        #print("temper", et - st)
+        # et = time.perf_counter()
+        # print("temper", et - st)
         # make accepted move specific ?
-        #breakpoint()
+        # breakpoint()
         return state, accepted
 

@@ -41,8 +41,8 @@ class EnsembleSampler(object):
         nwalkers (int): The number of walkers in the ensemble per temperature.
         ndims (int or list of ints): Number of dimensions in the parameter space
             for each branch tested.
-        log_prob_fn (callable): A function that returns the natural logarithm of the
-            likelihood for that position. The inputs to ``log_prob_fn`` depend on whether
+        log_like_fn (callable): A function that returns the natural logarithm of the
+            likelihood for that position. The inputs to ``log_like_fn`` depend on whether
             the function is vectorized (kwarg ``vectorize`` below), if you are using reversible jump, 
             and how many branches you have. 
             
@@ -81,7 +81,7 @@ class EnsembleSampler(object):
             each branch as described for (1).
             4) A dictionary with keys that are ``branch_names`` and values are
             :class:`eryn.prior.PriorContainer` objects.
-        provide_groups (bool, optional): If ``True``, provide groups as described in ``log_prob_fn`` above.
+        provide_groups (bool, optional): If ``True``, provide groups as described in ``log_like_fn`` above.
             A group parameter is added for each branch. (default: ``False``)
         provide_supplimental (bool, optional): If ``True``, it will provide keyword arguments to 
             the Likelihood function: ``supps`` and ``branch_supps``. Please see the Tutorial
@@ -119,20 +119,20 @@ class EnsembleSampler(object):
             (default: ``None``)
         dr_max_iter (int, optional): Maximum number of iterations used with delayed rejection. (default: 5)
         args (optional): A list of extra positional arguments for
-            ``log_prob_fn``. ``log_prob_fn`` will be called as
-            ``log_prob_fn(sampler added args, *args, sampler added kwargs, **kwargs)``.
+            ``log_like_fn``. ``log_like_fn`` will be called as
+            ``log_like_fn(sampler added args, *args, sampler added kwargs, **kwargs)``.
         kwargs (optional): A dict of extra keyword arguments for
-            ``log_prob_fn``. ``log_prob_fn`` will be called as
-            ``log_prob_fn(sampler added args, *args, sampler added kwargs, **kwargs)``.
+            ``log_like_fn``. ``log_like_fn`` will be called as
+            ``log_like_fn(sampler added args, *args, sampler added kwargs, **kwargs)``.
         backend (optional): Either a :class:`backends.Backend` or a subclass
             (like :class:`backends.HDFBackend`) that is used to store and
             serialize the state of the chain. By default, the chain is stored
             as a set of numpy arrays in memory, but new backends can be
             written to support other mediums.
-        vectorize (bool, optional): If ``True``, ``log_prob_fn`` is expected
+        vectorize (bool, optional): If ``True``, ``log_like_fn`` is expected
             to accept an array of position vectors instead of just one. Note
-            that ``pool`` will be ignored if this is ``True``. See ``log_prob_fn`` information
-            above to understand the arguments of ``log_prob_fn`` based on whether 
+            that ``pool`` will be ignored if this is ``True``. See ``log_like_fn`` information
+            above to understand the arguments of ``log_like_fn`` based on whether 
             ``vectorize`` is ``True``. 
             (default: ``False``)
         plot_iterations (int, optional): If ``plot_iterations == -1``, then the
@@ -190,7 +190,7 @@ class EnsembleSampler(object):
         self,
         nwalkers,
         ndims,  # assumes ndim_max
-        log_prob_fn,
+        log_like_fn,
         priors,
         provide_groups=False,  # TODO: improve this
         provide_supplimental=False,  # TODO: improve this
@@ -446,7 +446,7 @@ class EnsembleSampler(object):
 
         # Do a little bit of _magic_ to make the likelihood call with
         # ``args`` and ``kwargs`` pickleable.
-        self.log_prob_fn = _FunctionWrapper(log_prob_fn, args, kwargs)
+        self.log_like_fn = _FunctionWrapper(log_like_fn, args, kwargs)
 
         self.all_walkers = self.nwalkers * self.ntemps
         self.verbose = verbose
@@ -591,8 +591,8 @@ class EnsembleSampler(object):
 
         # setup model framework for passing necessary items
         model = Model(
-            self.log_prob_fn,
-            self.compute_log_prob,
+            self.log_like_fn,
+            self.compute_log_like,
             self.compute_log_prior,
             self.temperature_control,
             map_fn,
@@ -683,10 +683,10 @@ class EnsembleSampler(object):
             inds = state.branches_inds
             state.log_prior = self.compute_log_prior(coords, inds=inds)
 
-        if state.log_prob is None:
+        if state.log_like is None:
             coords = state.branches_coords
             inds = state.branches_inds
-            state.log_prob, state.blobs = self.compute_log_prob(
+            state.log_like, state.blobs = self.compute_log_like(
                 coords,
                 inds=inds,
                 logp=state.log_prior,
@@ -694,15 +694,15 @@ class EnsembleSampler(object):
                 branch_supps=state.branches_supplimental,  # only used if self.provide_supplimental is True
             )
 
-        if np.shape(state.log_prob) != (self.ntemps, self.nwalkers):
+        if np.shape(state.log_like) != (self.ntemps, self.nwalkers):
             raise ValueError("incompatible input dimensions")
         if np.shape(state.log_prior) != (self.ntemps, self.nwalkers):
             raise ValueError("incompatible input dimensions")
 
         # Check to make sure that the probability function didn't return
         # ``np.nan``.
-        if np.any(np.isnan(state.log_prob)):
-            raise ValueError("The initial log_prob was NaN")
+        if np.any(np.isnan(state.log_like)):
+            raise ValueError("The initial log_like was NaN")
 
         # Check that the thin keyword is reasonable.
         thin_by = int(thin_by)
@@ -959,7 +959,7 @@ class EnsembleSampler(object):
 
             return prior_out
 
-    def compute_log_prob(
+    def compute_log_like(
         self, coords, inds=None, logp=None, supps=None, branch_supps=None
     ):
         """Calculate the vector of log-likelihood for the walkers
@@ -1100,7 +1100,7 @@ class EnsembleSampler(object):
                         kwargs_in["branch_supps"] = branch_supps_in_2
 
             args_and_kwargs = (args_in, kwargs_in)
-            results = self.log_prob_fn(args_and_kwargs)
+            results = self.log_like_fn(args_and_kwargs)
 
         else:
 
@@ -1132,7 +1132,7 @@ class EnsembleSampler(object):
             else:
                 map_func = map
 
-            results = np.asarray(list(map_func(self.log_prob_fn, args_in)))
+            results = np.asarray(list(map_func(self.log_like_fn, args_in)))
 
         assert isinstance(results, np.ndarray)
 
@@ -1184,10 +1184,10 @@ class EnsembleSampler(object):
         """
         # TODO: adjust this
         try:
-            log_prob = np.array([float(l[0]) for l in results])
+            log_like = np.array([float(l[0]) for l in results])
             blob = [l[1:] for l in results]
         except (IndexError, TypeError):
-            log_prob = np.array([float(l) for l in results])
+            log_like = np.array([float(l) for l in results])
             blob = None
         else:
             # Get the blobs dtype
@@ -1223,8 +1223,8 @@ class EnsembleSampler(object):
                 if len(axes):
                     blob = np.squeeze(blob, tuple(axes))
 
-        # Check for log_prob returning NaN.
-        if np.any(np.isnan(log_prob)):
+        # Check for log_like returning NaN.
+        if np.any(np.isnan(log_like)):
             raise ValueError("Probability function returned NaN")
         """
         return ll.reshape(ntemps, nwalkers), blobs_out
@@ -1268,10 +1268,10 @@ class EnsembleSampler(object):
 
     get_blobs.__doc__ = Backend.get_blobs.__doc__
 
-    def get_log_prob(self, **kwargs):
-        return self.get_value("log_prob", **kwargs)
+    def get_log_like(self, **kwargs):
+        return self.get_value("log_like", **kwargs)
 
-    get_log_prob.__doc__ = Backend.get_log_prob.__doc__
+    get_log_like.__doc__ = Backend.get_log_like.__doc__
 
     def get_inds(self, **kwargs):
         return self.get_value("inds", **kwargs)
