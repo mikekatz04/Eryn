@@ -1,0 +1,1653 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Eryn Tutorial &mdash; Eryn 0.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "document", "processHtmlClass": "math|output_area"}}</script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Utilities" href="../user/utils.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: coral" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Eryn
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user/ensemble.html">Ensemble</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/state.html">State</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/backend.html">Backends</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/moves.html">Moves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/prior.html">Priors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/utils.html">Utilities</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Tutorial:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Eryn Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#The-Tree-Metaphor">The Tree Metaphor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Getting-Started-with-the-Ensemble-Sampler">Getting Started with the Ensemble Sampler</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#State-Objects">State Objects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Add-tempering">Add tempering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Add-multiple-leaf-count-uncertainty-(i.e. reversible-jump-MCMC))">Add multiple leaf count uncertainty (i.e. reversible-jump MCMC))</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#setup-for-reversible-jump">setup for reversible-jump</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#Add-multiple-branch">Add multiple branch</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">setup for reversible-jump</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#Utilities">Utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Transform-Container">Transform Container</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Eryn</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Eryn Tutorial</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/tutorial/Eryn_tutorial.ipynb.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <div class="rst-breadcrumbs-buttons" role="navigation" aria-label="breadcrumb navigation">
+      
+      
+        <a href="../user/utils.html" class="btn btn-neutral float-left" title="Utilities" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+      
+  </div>
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt a.copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="o">%</span><span class="k">load_ext</span> autoreload
+<span class="o">%</span><span class="k">autoreload</span> 2
+
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+
+<span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;/Users/michaelkatz/Research/Eryn/&#39;</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">eryn.ensemble</span> <span class="kn">import</span> <span class="n">EnsembleSampler</span>
+<span class="kn">from</span> <span class="nn">eryn.state</span> <span class="kn">import</span> <span class="n">State</span>
+<span class="kn">from</span> <span class="nn">eryn.prior</span> <span class="kn">import</span> <span class="n">PriorContainer</span><span class="p">,</span> <span class="n">uniform_dist</span>
+<span class="kn">from</span> <span class="nn">eryn.utils</span> <span class="kn">import</span> <span class="n">TransformContainer</span>
+<span class="kn">from</span> <span class="nn">eryn.moves</span> <span class="kn">import</span> <span class="n">GaussianMove</span>
+<span class="kn">from</span> <span class="nn">eryn.utils.utility</span> <span class="kn">import</span> <span class="n">groups_from_inds</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># set random seed</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">corner</span>
+
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">eryn</span>
+<span class="n">eryn</span><span class="o">.</span><span class="vm">__file__</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;/Users/michaelkatz/anaconda3/envs/eryn_env/lib/python3.9/site-packages/eryn/__init__.py&#39;
+</pre></div></div>
+</div>
+<section id="Eryn-Tutorial">
+<h1>Eryn Tutorial<a class="headerlink" href="#Eryn-Tutorial" title="Permalink to this headline">¶</a></h1>
+<p>Eryn is an advanced MCMC sampler. It has the capability to run with parallel tempering, multiple model types, and unknown counts within each model type using Reversible-Jump MCMC techniques. Eryn is heavily based on <a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a>. The <code class="docutils literal notranslate"><span class="pre">emcee</span></code> base structure with the Ensemble Sampler, State objects, proposal setup, and storage backends is carried over into Eryn with small changes to account for the increased complexity. In a simple sense, Eryn is an
+advanced (and slightly more complicated) version of <code class="docutils literal notranslate"><span class="pre">emcee</span></code>.</p>
+<p>In this tutorial, we will go through much of what is available in Eryn. We will start with a basic sampling operation to illustrate how to build and navigate common objects in Eryn. We will then scale up the complexity to understand how to use Eryn in different circumstances.</p>
+<p>If you use Eryn in your publication, please cite (# TODO: add paper). The documentation for Eryn can be found here: (# TODO: add website). You will find the code on Github: <a class="reference external" href="https://github.com/mikekatz04/Eryn">github.com/mikekatz04/Eryn</a>. (# TODO: add zenodo as well)</p>
+<section id="The-Tree-Metaphor">
+<h2>The Tree Metaphor<a class="headerlink" href="#The-Tree-Metaphor" title="Permalink to this headline">¶</a></h2>
+<p>Before we get into using the sampler, we will discuss the “infamous” tree metaphor. It helped in thinking about the early creation of Eryn and has carried through to the end. <code class="docutils literal notranslate"><span class="pre">Eryn</span></code> is the Sindarin word for “forest” or “woods.” The purpose of this metaphor is to simplify the complex dimensionality associated with changing models and model counts in MCMC. We choose not to use “model” and “model counts” everywhere because those descriptions can quickly become confusing.</p>
+<p>We start with a forest with a bunch of trees. These trees are the MCMC “walkers”. Each tree will have the same number of branches which is fixed throughout a sampling run (i.e. each walker has the same base setup). These branches are our different model types. For example, if you have a signal that is a combination of sine waves and Gaussians. In this case, you have two branches, one for the “sine wave” model and one for the “Gaussian” model. The number of Gaussians or sine waves is accounted
+for as the number of “leafs” on each branch. So, if 1 walker has 3 Gaussians and 2 sine waves, we can imagine this as a tree with two branches. The first branch for sine waves has 2 leaves and the second branch as 3 leaves for 3 Gaussians.</p>
+<p>(# TODO: add image)</p>
+</section>
+<section id="Getting-Started-with-the-Ensemble-Sampler">
+<h2>Getting Started with the Ensemble Sampler<a class="headerlink" href="#Getting-Started-with-the-Ensemble-Sampler" title="Permalink to this headline">¶</a></h2>
+<p>Let’s start by running on a simple multivariate Gaussian likelihood:</p>
+<div class="math notranslate nohighlight">
+\[\ln{\mathcal{L}}\propto -\frac{1}{2}(\vec{x} - \vec{\mu})^T \tilde{C}^{-1} (\vec{x} - \vec{\mu})\]</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># Gaussian likelihood</span>
+<span class="k">def</span> <span class="nf">log_like_fn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">invcov</span><span class="p">):</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">mu</span>
+    <span class="k">return</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">diff</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">invcov</span><span class="p">,</span> <span class="n">diff</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+</pre></div>
+</div>
+</div>
+<p>Add the initial settings: number of dimensions and number of walkers. Then, generate a covariance matrix for the given dimensionality for the likelihood and a set of means for each component of the Gaussian.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">ndim</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">nwalkers</span> <span class="o">=</span> <span class="mi">100</span>
+
+<span class="c1"># mean</span>
+<span class="n">means</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ndim</span><span class="p">)</span>  <span class="c1"># np.random.rand(ndim)</span>
+
+<span class="c1"># define covariance matrix</span>
+<span class="n">cov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">ndim</span><span class="p">))</span>
+<span class="n">invcov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Next we will build our priors. For simplicity (and based on this problem), we will use a hyper-cube centered on the means with side length set to be <code class="docutils literal notranslate"><span class="pre">2</span> <span class="pre">*</span> <span class="pre">lims</span></code>. Eryn requires a class object as the prior with an <code class="docutils literal notranslate"><span class="pre">logpdf</span></code> method (similar to <code class="docutils literal notranslate"><span class="pre">scipy.stats</span></code> distributions). Eryn provides a helper class to aid in this process: <code class="docutils literal notranslate"><span class="pre">`eryn.prior.PriorContainer</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/build/html/user/prior.html#prior-container">https://mikekatz04.github.io/Eryn/build/html/user/prior.html#prior-container</a>&gt;`__. This class takes a dictionary as input. In the simplest
+form, the keys are integers representing the index into the array of parameters and the values are the associated distributions: <code class="docutils literal notranslate"><span class="pre">{index:</span> <span class="pre">distribution}</span></code>. Eryn has a wrapper for the <code class="docutils literal notranslate"><span class="pre">scipy.stats.uniform</span></code> class that allows you to enter the start and stop points: <code class="docutils literal notranslate"><span class="pre">`eryn.prior.uniform</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/build/html/user/prior.html#eryn.prior.uniform_dist">https://mikekatz04.github.io/Eryn/build/html/user/prior.html#eryn.prior.uniform_dist</a>&gt;`__. For example, if we have a 3D space with uniform priors for all dimensions from -1 to 1, the input dictionary would look
+like this:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>priors_in = {
+    0: uniform_dist(-1, 1),
+    1: uniform_dist(-1, 1),
+    2: uniform_dist(-1, 1)
+}
+</pre></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># set prior limits</span>
+<span class="n">lims</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="n">priors_in</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="o">-</span><span class="n">lims</span> <span class="o">+</span> <span class="n">means</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">lims</span> <span class="o">+</span> <span class="n">means</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ndim</span><span class="p">)}</span>
+<span class="n">priors</span> <span class="o">=</span> <span class="n">PriorContainer</span><span class="p">(</span><span class="n">priors_in</span><span class="p">)</span>
+
+</pre></div>
+</div>
+</div>
+<p>In this case, we are not going to use really any of Eryn’s special capabilities. This will allow us to focus on how to navigate the sampler and deal with its output. Then we can add the fun stuff!</p>
+<p>The object that directs everything in Eryn (like in <code class="docutils literal notranslate"><span class="pre">emcee</span></code>) is <code class="docutils literal notranslate"><span class="pre">`eryn.ensemble.EnsembleSampler</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/build/html/user/ensemble.html#eryn.ensemble.EnsembleSampler">https://mikekatz04.github.io/Eryn/build/html/user/ensemble.html#eryn.ensemble.EnsembleSampler</a>&gt;`__. It required arguments are number of walkers, dimensionality of inputs (for this simple case this is an integer), the log likelihood function, and the priors. Similar to <code class="docutils literal notranslate"><span class="pre">emcee</span></code>, you can add arguments and keyword arguments to the Likelihood function by providing the <code class="docutils literal notranslate"><span class="pre">args</span></code> and <code class="docutils literal notranslate"><span class="pre">kwargs</span></code> keyword
+arguments to the <code class="docutils literal notranslate"><span class="pre">EnsembleSampler</span></code>. In this case, we add the means and inverse of the covariance matrix as extra arguments.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">ensemble</span> <span class="o">=</span> <span class="n">EnsembleSampler</span><span class="p">(</span>
+    <span class="n">nwalkers</span><span class="p">,</span>
+    <span class="n">ndim</span><span class="p">,</span>
+    <span class="n">log_like_fn</span><span class="p">,</span>
+    <span class="n">priors</span><span class="p">,</span>
+    <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">means</span><span class="p">,</span> <span class="n">invcov</span><span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Now we will get starting positions for our walkers by sampling from the priors using the <code class="docutils literal notranslate"><span class="pre">rvs</span></code> method of the <code class="docutils literal notranslate"><span class="pre">PriorContainer</span></code> and then evaluating the associated Likelihood and prior values. The <code class="docutils literal notranslate"><span class="pre">rvs</span></code> method is also called like in <code class="docutils literal notranslate"><span class="pre">scipy.stats</span></code> distributions.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># starting positions</span>
+<span class="c1"># randomize throughout prior</span>
+<span class="n">coords</span> <span class="o">=</span> <span class="n">priors</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">,))</span>
+
+<span class="c1"># check log_like</span>
+<span class="n">log_like</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span>
+    <span class="n">log_like_fn</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">means</span><span class="p">,</span> <span class="n">invcov</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">)])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">log_like</span><span class="p">)</span>
+
+<span class="c1"># check log_prior</span>
+<span class="n">log_prior</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span>
+    <span class="n">priors</span><span class="o">.</span><span class="n">logpdf</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">)])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">log_prior</span><span class="p">)</span>
+
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[-30.69858605 -27.88613553 -10.22294092 -14.70569247 -18.96300942
+ -40.24777582 -18.73441074 -24.83741982 -29.01040764 -27.8427905
+ -15.6395355  -37.63324244 -37.32945619 -23.65755241 -14.71578138
+ -17.41587351 -10.60372232 -14.78508305 -16.44610878 -14.65807937
+ -10.96569731 -21.07245692 -21.71012131 -11.7938995  -26.68678623
+ -10.56139796 -21.07206293 -15.22766639 -21.70138195 -21.66486977
+ -12.67496753 -16.03289018 -29.46929288 -26.72131899 -44.24698912
+ -21.3584848  -19.77366496 -28.72150734  -5.84518648 -33.37118884
+ -36.15731891 -25.26041351 -25.57594664 -12.25802303 -22.37039294
+ -31.88982593 -15.35309536 -24.45627855 -22.46651653 -23.11210745
+ -25.31311317 -14.36123373 -23.67409531 -23.41272599 -34.51272062
+ -13.40386882 -42.6083427  -10.3819265  -33.56151466 -19.79275524
+ -10.09464227 -17.63670509 -15.88594767  -1.5583328  -38.33786195
+ -10.04251137 -22.92432228 -26.5383962  -29.02898281 -34.39747766
+ -29.93610511 -43.67631032 -37.6288042  -26.57863213 -12.43201382
+ -21.71339587 -24.98065915 -22.34629761 -28.53454745 -20.72808992
+ -23.58751379 -13.39368888 -12.15662608 -32.82365756  -8.14075088
+ -26.22668818 -20.43301692  -8.79050623 -23.10278803 -16.10581548
+ -38.66327643 -21.96839538 -19.91765459 -10.73450427 -13.25399003
+ -11.51642261 -12.99636574 -21.3527218  -33.90758502 -35.26045709]
+[-11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+ -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+ -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+ -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+ -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+ -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+ -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+ -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+ -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+ -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+ -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+ -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+ -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+ -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+ -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+ -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+ -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+ -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+ -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+ -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546]
+</pre></div></div>
+</div>
+<p>Because we are in the unit cube, the prior values are constant.</p>
+<p>Now, we can run the sampler using the <code class="docutils literal notranslate"><span class="pre">run_mcmc</span></code> method on the <code class="docutils literal notranslate"><span class="pre">EnsembleSampler</span></code> class. It first takes as an argument an array of the starting positions (or a <code class="docutils literal notranslate"><span class="pre">State</span></code> object which we will cover below). We also must provide the number of steps as the second argument. Helpful kwargs (not all inclusive):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">burn</span></code>: Perform a burn in for a certain number of proposals.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">progress</span></code>: If <code class="docutils literal notranslate"><span class="pre">True</span></code>, show the progress as the sampler runs.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">thin_by</span></code>: How much to thin the chain directly before storage.</p></li>
+</ul>
+<p>The total number of proposals the sampler will do is <code class="docutils literal notranslate"><span class="pre">nsteps</span> <span class="pre">*</span> <span class="pre">thin_by</span></code>. It will store <code class="docutils literal notranslate"><span class="pre">nsteps</span></code> samples.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">nsteps</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="c1"># burn for 1000 steps</span>
+<span class="n">burn</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="c1"># thin by 5</span>
+<span class="n">thin_by</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">out</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">nsteps</span><span class="p">,</span> <span class="n">burn</span><span class="o">=</span><span class="n">burn</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="n">thin_by</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+100%|██████████████████████████████████████████| 10/10 [00:00&lt;00:00, 175.06it/s]
+100%|████████████████████████████████████████| 250/250 [00:01&lt;00:00, 237.86it/s]
+</pre></div></div>
+</div>
+<p>Similar to <code class="docutils literal notranslate"><span class="pre">emcee</span></code>, all of the sampler information is stored in a backend object. In the default case, this backend is <code class="docutils literal notranslate"><span class="pre">`eryn.backends.Backend</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/build/html/user/backend.html#eryn.backends.Backend">https://mikekatz04.github.io/Eryn/build/html/user/backend.html#eryn.backends.Backend</a>&gt;`__. To retrieve the samples from the backend, you call the <code class="docutils literal notranslate"><span class="pre">get_chain</span></code> method. This will return a 5-dimensional array, which can be intimidating. We will cover that array just below. For now, just focus on the output of the sampler.</p>
+<p>We will first generate corner plot.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;model_0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ndim</span><span class="p">)</span>
+<span class="n">corner</span><span class="o">.</span><span class="n">corner</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">truths</span><span class="o">=</span><span class="n">means</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_22_0.png" src="../_images/tutorial_Eryn_tutorial_22_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_22_1.png" src="../_images/tutorial_Eryn_tutorial_22_1.png" />
+</div>
+</div>
+<p>Now we will plot the chains.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1">#### Chains</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ndim</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ndim</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">walk</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">):</span>
+        <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;model_0&#39;</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">walk</span><span class="p">,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_24_0.png" src="../_images/tutorial_Eryn_tutorial_24_0.png" />
+</div>
+</div>
+</section>
+<section id="State-Objects">
+<h2>State Objects<a class="headerlink" href="#State-Objects" title="Permalink to this headline">¶</a></h2>
+<p>Now, we are going to look at <code class="docutils literal notranslate"><span class="pre">`State</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/build/html/user/state.html#eryn.state.State">https://mikekatz04.github.io/Eryn/build/html/user/state.html#eryn.state.State</a>&gt;`__ objects. They carry the current information throughout the sampler about the current state of the sampler. In our simple example, we can examine the current coordinates, likelihood, and prior values.</p>
+<p>Output from the sampler above is the last state of the sampler <code class="docutils literal notranslate"><span class="pre">out</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">out</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;eryn.state.State at 0x16e38af40&gt;
+</pre></div></div>
+</div>
+<p>We can access the Likelihood and prior values as <code class="docutils literal notranslate"><span class="pre">State.log_like</span></code> and <code class="docutils literal notranslate"><span class="pre">State.log_prior</span></code>. We can also ask the state to give use the posterior probability with the <code class="docutils literal notranslate"><span class="pre">get_log_prob</span></code> method.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="nb">print</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">log_like</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">log_prior</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">get_log_prob</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[[-3.18607669 -1.1429558  -1.6589886  -1.60856068 -2.05237241 -2.80511361
+  -3.2820529  -0.48777215 -4.69744231 -4.54166543 -0.49613285 -2.57913187
+  -0.82081494 -3.15835422 -4.69374692 -1.36431241 -1.02297895 -3.81079257
+  -1.3500181  -2.69702179 -0.94306879 -0.68869336 -1.55075872 -1.77505016
+  -1.29913963 -0.47419261 -4.0502107  -4.29488605 -5.78437773 -5.5541193
+  -1.66435034 -5.32560629 -4.35274089 -4.13308071 -0.75070212 -0.51465938
+  -1.96452927 -2.96740213 -5.80681138 -4.45549403 -2.34328003 -1.40855724
+  -1.85349052 -0.6874936  -1.03817694 -1.38031118 -4.25650003 -3.3810526
+  -2.91694682 -1.83256203 -2.18093864 -4.73560743 -1.46391034 -2.48634414
+  -3.10277004 -4.19744949 -1.45608498 -2.77594935 -1.79394206 -2.81752866
+  -2.98090146 -3.03810478 -1.99565952 -0.66910034 -1.13193638 -1.67270637
+  -2.18410851 -0.32066335 -1.41987524 -1.47641726 -0.84826231 -1.45503317
+  -1.15618694 -3.20802127 -1.0925304  -2.32264582 -4.37653078 -0.70767912
+  -2.06409617 -1.07758357 -2.10580722 -1.84564786 -3.61425952 -1.68459496
+  -2.39591868 -5.65374059 -2.1732853  -4.77084663 -2.46614494 -1.42360664
+  -3.2575306  -2.05376261 -3.32153097 -2.44184142 -1.65441363 -7.02191783
+  -2.8051769  -1.47512843 -2.64662908 -0.39670766]] [[-11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546]] [[-14.6990021540539 -12.655881269058789 -13.17191406689161
+  -13.12148614396511 -13.5652978728914 -14.318039074525378
+  -14.794978368963069 -12.000697616071093 -16.21036777460609
+  -16.05459089268453 -12.009058310747992 -14.09205733316421
+  -12.333740402421263 -14.671279685052703 -16.206672383919198
+  -12.877237875605088 -12.535904414377118 -15.323718037268904
+  -12.862943563633566 -14.209947253912995 -12.455994255558881
+  -12.201618828385325 -13.063684185602074 -13.287975620845916
+  -12.812065097627617 -11.98711807655929 -15.56313616851288
+  -15.807811510546149 -17.2973031911239 -17.06704476331893
+  -13.177275804769963 -16.838531752608766 -15.865666352455646
+  -15.646006173265935 -12.263627585992179 -12.027584847542167
+  -13.477454735452302 -14.480327598172524 -17.319736841299754
+  -15.968419490353646 -13.856205494617711 -12.92148270602327
+  -13.366415981314853 -12.20041906602199 -12.551102404030136
+  -12.89323664751312 -15.769425499474632 -14.893978068157692
+  -14.429872284958009 -13.345487493852174 -13.693864100180623
+  -16.24853289649521 -12.97683580667583 -13.999269605668973
+  -14.615695504490748 -15.710374958113102 -12.969010441825302
+  -14.288874810370201 -13.306867527629654 -14.330454126226034
+  -14.493826923458506 -14.551030240748224 -13.508584980057442
+  -12.182025801962808 -12.644861845259639 -13.185631833515409
+  -13.697033973828631 -11.833588817748547 -12.932800709919292
+  -12.989342729251522 -12.361187774055535 -12.96795863879418
+  -12.6691124060966 -14.72094673416529 -12.605455861333246
+  -13.835571281559565 -15.889456246665725 -12.220604581103181
+  -13.577021635399863 -12.590509038171271 -13.618732680723763
+  -13.358573324153861 -15.12718498062653 -13.197520429651778
+  -13.908844140114212 -17.166666057493867 -13.686210760179495
+  -16.2837720949975 -13.979070401548165 -12.936532101543465
+  -14.770456067028594 -13.566688073600343 -14.834456434408597
+  -13.954766888488795 -13.167339094387502 -18.534843295419698
+  -14.318102365933672 -12.988053893367788 -14.15955454909765
+  -11.909633127086721]]
+</pre></div></div>
+</div>
+</section>
+<section id="Add-tempering">
+<h2>Add tempering<a class="headerlink" href="#Add-tempering" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+
+<span></span><span class="n">ndim</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">nwalkers</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">ntemps</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="n">tempering_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">ntemps</span><span class="o">=</span><span class="n">ntemps</span><span class="p">)</span>
+
+<span class="c1"># randomize throughout prior</span>
+<span class="n">coords</span> <span class="o">=</span> <span class="n">priors</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,))</span>
+
+<span class="n">ensemble_pt</span> <span class="o">=</span> <span class="n">EnsembleSampler</span><span class="p">(</span>
+    <span class="n">nwalkers</span><span class="p">,</span>
+    <span class="n">ndim</span><span class="p">,</span>
+    <span class="n">log_prob_fn</span><span class="p">,</span>
+    <span class="n">priors</span><span class="p">,</span>
+    <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">means</span><span class="p">,</span> <span class="n">cov</span><span class="p">],</span>
+    <span class="n">tempering_kwargs</span><span class="o">=</span><span class="n">tempering_kwargs</span>
+<span class="p">)</span>
+
+<span class="n">nsteps</span> <span class="o">=</span> <span class="mi">5000</span>
+<span class="c1"># burn for 1000 steps</span>
+<span class="n">burn</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="c1"># thin by 5</span>
+<span class="n">thin_by</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">ensemble_pt</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">nsteps</span><span class="p">,</span> <span class="n">burn</span><span class="o">=</span><span class="n">burn</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="n">thin_by</span><span class="p">)</span>
+
+
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ntemps</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">temp</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">ensemble_pt</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;model_0&#39;</span><span class="p">][:,</span> <span class="n">temp</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ndim</span><span class="p">)</span>
+    <span class="n">corner</span><span class="o">.</span><span class="n">corner</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">truths</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ndim</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1">#### Chains</span>
+<span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ntemps</span><span class="p">):</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ndim</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ndim</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">walk</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">):</span>
+            <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ensemble_pt</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;model_0&#39;</span><span class="p">][:,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">walk</span><span class="p">,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Add-multiple-leaf-count-uncertainty-(i.e. reversible-jump-MCMC))">
+<h2>Add multiple leaf count uncertainty (i.e. reversible-jump MCMC))<a class="headerlink" href="#Add-multiple-leaf-count-uncertainty-(i.e. reversible-jump-MCMC))" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># need new likelihood</span>
+<span class="k">def</span> <span class="nf">gaussian</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+    <span class="n">f_x</span> <span class="o">=</span> <span class="n">a</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">((</span><span class="n">x</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">b</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">c</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">f_x</span>
+
+
+<span class="k">def</span> <span class="nf">gaussian_flat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+    <span class="n">f_x</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="n">b</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">c</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">f_x</span>
+
+<span class="k">def</span> <span class="nf">combine_gaussians</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">group1</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">x1</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">x1</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">x1</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
+
+    <span class="n">gauss_out</span> <span class="o">=</span> <span class="n">gaussian</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+    <span class="n">num_groups</span> <span class="o">=</span> <span class="n">group1</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="c1"># add templates to the proper template based on group1</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">num_groups</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_groups</span><span class="p">):</span>
+        <span class="n">inds1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">group1</span> <span class="o">==</span> <span class="n">i</span><span class="p">)</span>
+
+        <span class="n">template</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">gauss_out</span><span class="p">[</span><span class="n">inds1</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">template</span>
+
+<span class="k">def</span> <span class="nf">log_prob_fn</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">group1</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+    <span class="c1"># x1 is one leaf&#39;s parameters</span>
+    <span class="c1"># group1 is which tree this leaf belongs to</span>
+
+
+    <span class="n">template</span> <span class="o">=</span> <span class="n">combine_gaussians</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">group1</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+
+    <span class="n">ll</span> <span class="o">=</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(((</span><span class="n">template</span> <span class="o">-</span> <span class="n">data</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ll</span>
+
+
+<span class="n">nwalkers</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">ntemps</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">ndims</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+<span class="n">nleaves_max</span> <span class="o">=</span> <span class="p">[</span><span class="mi">8</span><span class="p">]</span>
+
+<span class="n">branch_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span>
+
+<span class="c1"># define time stream</span>
+<span class="n">num</span> <span class="o">=</span> <span class="mi">500</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">num</span><span class="p">)</span>
+
+<span class="n">gauss_inj_params</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span><span class="mf">3.3</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+    <span class="p">[</span><span class="mf">2.6</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+    <span class="p">[</span><span class="mf">3.4</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+    <span class="p">[</span><span class="mf">2.9</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+<span class="p">]</span>
+
+<span class="n">injection</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
+
+<span class="c1"># combine gaussians</span>
+<span class="n">injection</span> <span class="o">=</span> <span class="n">combine_gaussians</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">gauss_inj_params</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gauss_inj_params</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span> <span class="n">t</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="c1"># set noise level</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="mf">0.25</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">injection</span> <span class="o">+</span> <span class="n">sigma</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">injection</span><span class="p">))</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;lightskyblue&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">injection</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;injection&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;crimson&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<section id="setup-for-reversible-jump">
+<h3>setup for reversible-jump<a class="headerlink" href="#setup-for-reversible-jump" title="Permalink to this headline">¶</a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># describes priors for all leaves independently</span>
+<span class="n">priors</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="mi">0</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">),</span>  <span class="c1"># amplitude</span>
+        <span class="mi">1</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">t</span><span class="o">.</span><span class="n">max</span><span class="p">()),</span>  <span class="c1"># mean</span>
+        <span class="mi">2</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.21</span><span class="p">),</span>  <span class="c1"># sigma</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+
+<span class="n">coords</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaf</span><span class="p">,</span> <span class="n">ndim</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">nleaf</span><span class="p">,</span> <span class="n">ndim</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">,</span> <span class="n">ndims</span><span class="p">,</span> <span class="n">branch_names</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="c1"># this is the sigma for the multivariate Gaussian that sets starting points</span>
+<span class="c1"># We need it to be very small to assume we are passed the search phase</span>
+<span class="c1"># we will verify this is with likelihood calculations</span>
+<span class="n">sig1</span> <span class="o">=</span> <span class="mf">0.00000001</span>
+<span class="k">for</span> <span class="n">nleaf</span><span class="p">,</span> <span class="n">ndim</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">,</span> <span class="n">ndims</span><span class="p">,</span> <span class="n">branch_names</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">nn</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaf</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">nn</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">gauss_inj_params</span><span class="p">):</span>
+            <span class="c1"># fill a non-used starting leaf with reasonable parameters</span>
+            <span class="n">nn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">coords</span><span class="p">[</span><span class="n">name</span><span class="p">][:,</span> <span class="p">:,</span> <span class="n">nn</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">gauss_inj_params</span><span class="p">[</span><span class="n">nn</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">sig1</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">))</span>  <span class="c1"># dist.rvs(size=(ntemps, nwalkers, nleaf))</span>
+
+<span class="c1"># make sure to start near the proper setup</span>
+<span class="n">inds</span> <span class="o">=</span> <span class="p">{</span>
+     <span class="n">name</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaf</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+     <span class="k">for</span> <span class="n">nleaf</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">,</span> <span class="n">branch_names</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="n">inds</span><span class="p">[</span><span class="s1">&#39;gauss&#39;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">gauss_inj_params</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="n">coords_in</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">coords</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">inds</span><span class="p">[</span><span class="n">name</span><span class="p">]]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">coords</span><span class="p">}</span>
+
+<span class="c1"># useful function: groups_from_inds</span>
+<span class="n">groups_in</span> <span class="o">=</span> <span class="n">groups_from_inds</span><span class="p">(</span><span class="n">inds</span><span class="p">)</span>
+
+<span class="n">log_prob</span> <span class="o">=</span> <span class="n">log_prob_fn</span><span class="p">(</span>
+    <span class="n">coords_in</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">],</span>
+    <span class="n">groups_in</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">],</span>
+    <span class="n">t</span><span class="p">,</span>
+    <span class="n">y</span><span class="p">,</span>
+    <span class="n">sigma</span>
+<span class="p">)</span>
+
+<span class="c1"># make sure it is reasonably small</span>
+<span class="c1"># will not be zero due to noise</span>
+<span class="n">log_prob</span> <span class="o">=</span> <span class="n">log_prob</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">log_prob</span><span class="p">)</span>
+
+<span class="c1"># setup starting state</span>
+
+<span class="n">log_prob</span> <span class="o">=</span> <span class="n">log_prob</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">)</span>
+
+<span class="n">blobs</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># np.random.randn(ntemps, nwalkers, 3)</span>
+
+<span class="n">state</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">log_prob</span><span class="o">=</span><span class="n">log_prob</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">)</span>
+
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># for the Gaussian Move, will be explained later</span>
+<span class="n">factor</span> <span class="o">=</span> <span class="mf">0.0001</span>
+<span class="n">cov</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">ndims</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span> <span class="o">*</span> <span class="n">factor</span><span class="p">}</span>
+
+<span class="n">moves</span> <span class="o">=</span> <span class="n">GaussianMove</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
+
+<span class="c1"># backend.grow(100, blobs)</span>
+
+
+<span class="n">ensemble</span> <span class="o">=</span> <span class="n">EnsembleSampler</span><span class="p">(</span>
+    <span class="n">nwalkers</span><span class="p">,</span>
+    <span class="n">ndims</span><span class="p">,</span>  <span class="c1"># assumes ndim_max</span>
+    <span class="n">log_prob_fn</span><span class="p">,</span>
+    <span class="n">priors</span><span class="p">,</span>
+    <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sigma</span><span class="p">],</span>
+    <span class="n">tempering_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">ntemps</span><span class="o">=</span><span class="n">ntemps</span><span class="p">),</span>
+    <span class="n">nbranches</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">branch_names</span><span class="p">),</span>
+    <span class="n">branch_names</span><span class="o">=</span><span class="n">branch_names</span><span class="p">,</span>
+    <span class="n">nleaves_max</span><span class="o">=</span><span class="n">nleaves_max</span><span class="p">,</span>
+    <span class="n">provide_groups</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">moves</span><span class="o">=</span><span class="n">moves</span><span class="p">,</span>
+    <span class="n">rj_moves</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># basic generation of new leaves from the prior</span>
+<span class="p">)</span>
+
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">nsteps</span> <span class="o">=</span> <span class="mi">10000</span>
+<span class="n">ensemble</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">nsteps</span><span class="p">,</span> <span class="n">burn</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;gauss&#39;</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ndim</span><span class="p">)</span>
+<span class="n">samples</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">samples</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])]</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ntemps</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">temp</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;gauss&#39;</span><span class="p">][:,</span> <span class="n">temp</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ndim</span><span class="p">)</span>
+
+    <span class="c1"># need to remove NaNs</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">samples</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])]</span>
+    <span class="n">corner</span><span class="o">.</span><span class="n">corner</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;max ll: </span><span class="si">{</span><span class="n">ensemble</span><span class="o">.</span><span class="n">get_log_prob</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="n">bns</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span>
+<span class="p">)</span>  <span class="c1"># Just to make it pretty and center the bins</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">temp</span><span class="p">,</span> <span class="n">ax_t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ax</span><span class="p">):</span>
+    <span class="n">ax_t</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">ensemble</span><span class="o">.</span><span class="n">get_nleaves</span><span class="p">()[</span><span class="s1">&#39;gauss&#39;</span><span class="p">][:,</span> <span class="n">temp</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="n">bns</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="Add-multiple-branch">
+<h2>Add multiple branch<a class="headerlink" href="#Add-multiple-branch" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># need new likelihood</span>
+<span class="k">def</span> <span class="nf">gaussian</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+    <span class="n">f_x</span> <span class="o">=</span> <span class="n">a</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">((</span><span class="n">x</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">b</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">c</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">f_x</span>
+
+
+<span class="k">def</span> <span class="nf">gaussian_flat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+    <span class="n">f_x</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="n">b</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">c</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">f_x</span>
+
+<span class="k">def</span> <span class="nf">combine_gaussians</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">group1</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">x1</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">x1</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">x1</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
+
+    <span class="n">gauss_out</span> <span class="o">=</span> <span class="n">gaussian</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+    <span class="n">num_groups</span> <span class="o">=</span> <span class="n">group1</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="c1"># add templates to the proper template based on group1</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">num_groups</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_groups</span><span class="p">):</span>
+        <span class="n">inds1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">group1</span> <span class="o">==</span> <span class="n">i</span><span class="p">)</span>
+
+        <span class="n">template</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">gauss_out</span><span class="p">[</span><span class="n">inds1</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">template</span>
+
+<span class="c1"># need new likelihood</span>
+<span class="k">def</span> <span class="nf">sine</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+    <span class="n">f_x</span> <span class="o">=</span> <span class="n">a</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">b</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">c</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">f_x</span>
+
+
+<span class="k">def</span> <span class="nf">sine_flat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+    <span class="n">f_x</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">b</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">c</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">f_x</span>
+
+<span class="k">def</span> <span class="nf">combine_sines</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">group1</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">x1</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">x1</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">x1</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
+
+    <span class="n">gauss_out</span> <span class="o">=</span> <span class="n">sine</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+    <span class="n">num_groups</span> <span class="o">=</span> <span class="n">group1</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="c1"># add templates to the proper template based on group1</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">num_groups</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_groups</span><span class="p">):</span>
+        <span class="n">inds1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">group1</span> <span class="o">==</span> <span class="n">i</span><span class="p">)</span>
+
+        <span class="n">template</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">gauss_out</span><span class="p">[</span><span class="n">inds1</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">template</span>
+
+<span class="k">def</span> <span class="nf">log_prob_fn</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">groups</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+    <span class="c1"># x1 is one leaf&#39;s parameters</span>
+    <span class="c1"># group1 is which tree this leaf belongs to</span>
+
+    <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span> <span class="o">=</span> <span class="n">xs</span>
+    <span class="n">group1</span><span class="p">,</span> <span class="n">group2</span> <span class="o">=</span> <span class="n">groups</span>
+
+    <span class="n">template_gaussian</span> <span class="o">=</span> <span class="n">combine_gaussians</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">group1</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+    <span class="n">template_sine</span> <span class="o">=</span> <span class="n">combine_sines</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">group2</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+    <span class="n">template</span> <span class="o">=</span> <span class="n">template_gaussian</span> <span class="o">+</span> <span class="n">template_sine</span>
+
+    <span class="n">ll</span> <span class="o">=</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(((</span><span class="n">template</span> <span class="o">-</span> <span class="n">data</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ll</span>
+
+
+<span class="n">nwalkers</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">ntemps</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">ndims</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="n">nleaves_max</span> <span class="o">=</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+
+<span class="n">branch_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">,</span> <span class="s2">&quot;sine&quot;</span><span class="p">]</span>
+
+<span class="c1"># define time stream</span>
+<span class="n">num</span> <span class="o">=</span> <span class="mi">500</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">num</span><span class="p">)</span>
+
+<span class="n">gauss_inj_params</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span><span class="mf">3.3</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+    <span class="p">[</span><span class="mf">2.6</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+    <span class="p">[</span><span class="mf">3.4</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+    <span class="p">[</span><span class="mf">2.9</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+<span class="p">]</span>
+
+<span class="n">sine_inj_params</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span><span class="mf">1.3</span><span class="p">,</span> <span class="mf">10.1</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span>
+    <span class="p">[</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">4.6</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">],</span>
+<span class="p">]</span>
+
+<span class="n">injection</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
+
+<span class="c1"># combine gaussians</span>
+<span class="n">injection</span> <span class="o">=</span> <span class="n">combine_gaussians</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">gauss_inj_params</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gauss_inj_params</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span> <span class="n">t</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">injection</span> <span class="o">+=</span> <span class="n">combine_sines</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sine_inj_params</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sine_inj_params</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span> <span class="n">t</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="c1"># set noise level</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="mf">0.5</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">injection</span> <span class="o">+</span> <span class="n">sigma</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">injection</span><span class="p">))</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;lightskyblue&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">injection</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;injection&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;crimson&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<section id="id1">
+<h3>setup for reversible-jump<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># describes priors for all leaves independently</span>
+<span class="n">priors</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="mi">0</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">),</span>  <span class="c1"># amplitude</span>
+        <span class="mi">1</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">t</span><span class="o">.</span><span class="n">max</span><span class="p">()),</span>  <span class="c1"># mean</span>
+        <span class="mi">2</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.21</span><span class="p">),</span>  <span class="c1"># sigma</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="mi">0</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">),</span>  <span class="c1"># amplitude</span>
+        <span class="mi">1</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">20.</span><span class="p">),</span>  <span class="c1"># mean</span>
+        <span class="mi">2</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">),</span>  <span class="c1"># sigma</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+
+<span class="n">coords</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaf</span><span class="p">,</span> <span class="n">ndim</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">nleaf</span><span class="p">,</span> <span class="n">ndim</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">,</span> <span class="n">ndims</span><span class="p">,</span> <span class="n">branch_names</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="c1"># this is the sigma for the multivariate Gaussian that sets starting points</span>
+<span class="c1"># We need it to be very small to assume we are passed the search phase</span>
+<span class="c1"># we will verify this is with likelihood calculations</span>
+<span class="n">sig1</span> <span class="o">=</span> <span class="mf">0.00000001</span>
+<span class="n">inj_params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;gauss&#39;</span><span class="p">:</span> <span class="n">gauss_inj_params</span><span class="p">,</span> <span class="s1">&#39;sine&#39;</span><span class="p">:</span> <span class="n">sine_inj_params</span><span class="p">}</span>
+<span class="k">for</span> <span class="n">nleaf</span><span class="p">,</span> <span class="n">ndim</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">,</span> <span class="n">ndims</span><span class="p">,</span> <span class="n">branch_names</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">nn</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaf</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">nn</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">inj_params</span><span class="p">[</span><span class="n">name</span><span class="p">]):</span>
+            <span class="c1"># fill a non-used starting leaf with reasonable parameters</span>
+            <span class="n">nn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">inj_params</span><span class="p">[</span><span class="n">name</span><span class="p">]))</span>
+
+        <span class="n">coords</span><span class="p">[</span><span class="n">name</span><span class="p">][:,</span> <span class="p">:,</span> <span class="n">nn</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">inj_params</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">nn</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">ndim</span><span class="p">)</span> <span class="o">*</span> <span class="n">sig1</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">))</span>  <span class="c1"># dist.rvs(size=(ntemps, nwalkers, nleaf))</span>
+
+<span class="c1"># make sure to start near the proper setup</span>
+<span class="n">inds</span> <span class="o">=</span> <span class="p">{</span>
+     <span class="n">name</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaf</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+     <span class="k">for</span> <span class="n">nleaf</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">,</span> <span class="n">branch_names</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="n">inds</span><span class="p">[</span><span class="s1">&#39;gauss&#39;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">gauss_inj_params</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">inds</span><span class="p">[</span><span class="s1">&#39;sine&#39;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">sine_inj_params</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="c1"># setup groups just to compute likelihood</span>
+<span class="n">groups</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">coords</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+        <span class="n">coords</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+    <span class="p">)[:,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">coords</span>
+<span class="p">}</span>
+
+<span class="n">groups</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">groups</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">coords</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">groups</span>
+<span class="p">}</span>
+
+<span class="n">coords_in</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">coords</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">inds</span><span class="p">[</span><span class="n">name</span><span class="p">]]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">coords</span><span class="p">}</span>
+<span class="n">groups_in</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">groups</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">inds</span><span class="p">[</span><span class="n">name</span><span class="p">]]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">}</span>
+
+<span class="n">log_prob</span> <span class="o">=</span> <span class="n">log_prob_fn</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">coords_in</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">],</span> <span class="n">coords_in</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">]],</span>
+    <span class="p">[</span><span class="n">groups_in</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">],</span> <span class="n">groups_in</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">]],</span>
+    <span class="n">t</span><span class="p">,</span>
+    <span class="n">y</span><span class="p">,</span>
+    <span class="n">sigma</span>
+<span class="p">)</span>
+
+<span class="c1"># make sure it is reasonably small</span>
+<span class="c1"># will not be zero due to noise</span>
+<span class="n">log_prob</span> <span class="o">=</span> <span class="n">log_prob</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">log_prob</span><span class="p">)</span>
+
+<span class="c1"># setup starting state</span>
+
+<span class="n">log_prob</span> <span class="o">=</span> <span class="n">log_prob</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">)</span>
+
+<span class="n">blobs</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># np.random.randn(ntemps, nwalkers, 3)</span>
+
+<span class="n">state</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">log_prob</span><span class="o">=</span><span class="n">log_prob</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">)</span>
+
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">eryn.moves.tempering</span> <span class="kn">import</span> <span class="n">make_ladder</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">help</span><span class="p">(</span><span class="n">make_ladder</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># for the Gaussian Move, will be explained later</span>
+<span class="n">factor</span> <span class="o">=</span> <span class="mf">0.0001</span>
+<span class="n">cov</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">ndims</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span> <span class="o">*</span> <span class="n">factor</span><span class="p">,</span> <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">ndims</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span> <span class="o">*</span> <span class="n">factor</span><span class="p">}</span>
+
+<span class="n">moves</span> <span class="o">=</span> <span class="n">GaussianMove</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
+
+<span class="n">total_ndim</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">nleaves_max_i</span> <span class="o">*</span> <span class="n">ndim_i</span> <span class="k">for</span> <span class="n">nleaves_max_i</span><span class="p">,</span> <span class="n">ndim_i</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">,</span> <span class="n">ndims</span><span class="p">)])</span>
+<span class="n">betas</span> <span class="o">=</span> <span class="n">make_ladder</span><span class="p">(</span><span class="n">total_ndim</span><span class="p">,</span> <span class="n">ntemps</span><span class="o">=</span><span class="n">ntemps</span><span class="p">)</span>
+
+<span class="n">ensemble</span> <span class="o">=</span> <span class="n">EnsembleSampler</span><span class="p">(</span>
+    <span class="n">nwalkers</span><span class="p">,</span>
+    <span class="n">ndims</span><span class="p">,</span>  <span class="c1"># assumes ndim_max</span>
+    <span class="n">log_prob_fn</span><span class="p">,</span>
+    <span class="n">priors</span><span class="p">,</span>
+    <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sigma</span><span class="p">],</span>
+    <span class="n">tempering_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">),</span>
+    <span class="n">nbranches</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">branch_names</span><span class="p">),</span>
+    <span class="n">branch_names</span><span class="o">=</span><span class="n">branch_names</span><span class="p">,</span>
+    <span class="n">nleaves_max</span><span class="o">=</span><span class="n">nleaves_max</span><span class="p">,</span>
+    <span class="n">provide_groups</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">moves</span><span class="o">=</span><span class="n">moves</span><span class="p">,</span>
+    <span class="n">rj_moves</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># basic generation of new leaves from the prior</span>
+<span class="p">)</span>
+
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">nsteps</span> <span class="o">=</span> <span class="mi">10000</span>
+<span class="n">ensemble</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">nsteps</span><span class="p">,</span> <span class="n">burn</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ntemps</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">temp</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;gauss&#39;</span><span class="p">][:,</span> <span class="n">temp</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ndim</span><span class="p">)</span>
+
+    <span class="c1"># need to remove NaNs</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">samples</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])]</span>
+    <span class="n">corner</span><span class="o">.</span><span class="n">corner</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ntemps</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">temp</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;sine&#39;</span><span class="p">][:,</span> <span class="n">temp</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ndim</span><span class="p">)</span>
+
+    <span class="c1"># need to remove NaNs</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">samples</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])]</span>
+    <span class="n">corner</span><span class="o">.</span><span class="n">corner</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;max ll: </span><span class="si">{</span><span class="n">ensemble</span><span class="o">.</span><span class="n">get_log_prob</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="n">bns</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span>
+<span class="p">)</span>  <span class="c1"># Just to make it pretty and center the bins</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">temp</span><span class="p">,</span> <span class="n">ax_t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ax</span><span class="p">):</span>
+    <span class="n">ax_t</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">ensemble</span><span class="o">.</span><span class="n">get_nleaves</span><span class="p">()[</span><span class="s1">&#39;gauss&#39;</span><span class="p">][:,</span> <span class="n">temp</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="n">bns</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;max ll: </span><span class="si">{</span><span class="n">ensemble</span><span class="o">.</span><span class="n">get_log_prob</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="n">bns</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span>
+<span class="p">)</span>  <span class="c1"># Just to make it pretty and center the bins</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">temp</span><span class="p">,</span> <span class="n">ax_t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ax</span><span class="p">):</span>
+    <span class="n">ax_t</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">ensemble</span><span class="o">.</span><span class="n">get_nleaves</span><span class="p">()[</span><span class="s1">&#39;sine&#39;</span><span class="p">][:,</span> <span class="n">temp</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="n">bns</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="Utilities">
+<h1>Utilities<a class="headerlink" href="#Utilities" title="Permalink to this headline">¶</a></h1>
+<section id="Transform-Container">
+<h2>Transform Container<a class="headerlink" href="#Transform-Container" title="Permalink to this headline">¶</a></h2>
+<p>Transform containers are primary used in likelihood functions to transform the arrays incoming from the sampler to the proper setup for likelihood computation. It can transform parameters based on transform functions and fill values into a final array for any value that is fixed during sampling.</p>
+<p>It can be passed to the likeihood function as an <code class="docutils literal notranslate"><span class="pre">arg</span></code> or <code class="docutils literal notranslate"><span class="pre">kwarg</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># can be done with lambda or regular function</span>
+<span class="c1"># must have same number of inputs and outputs at same index in outer arrays</span>
+<span class="k">def</span> <span class="nf">transform1</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">y</span><span class="p">,</span> <span class="n">y</span> <span class="o">/</span> <span class="n">x</span>
+
+<span class="c1"># this will do transform lambda x, y: (x**2, y**2) before transform1</span>
+<span class="n">parameter_transforms</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">y</span><span class="o">**</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span> <span class="n">transform1</span><span class="p">}</span>
+
+<span class="n">fill_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;ndim_full&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>  <span class="c1"># full dimensionality after values are added</span>
+    <span class="s2">&quot;fill_inds&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">]),</span>  <span class="c1"># indexes for fill values in final array</span>
+    <span class="s2">&quot;fill_values&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">]),</span>  <span class="c1"># associated values for filling</span>
+<span class="p">}</span>
+
+<span class="n">tc</span> <span class="o">=</span> <span class="n">TransformContainer</span><span class="p">(</span><span class="n">parameter_transforms</span><span class="o">=</span><span class="n">parameter_transforms</span><span class="p">,</span> <span class="n">fill_dict</span><span class="o">=</span><span class="n">fill_dict</span><span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+
+<span class="c1"># can copy and transpose values if needed</span>
+<span class="n">out</span> <span class="o">=</span> <span class="n">tc</span><span class="o">.</span><span class="n">transform_base_parameters</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_transpose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>If you have mutliple branches in your sampler, you can add more than one <code class="docutils literal notranslate"><span class="pre">Transform</span> <span class="pre">Container</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">lnprob</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">group1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">group2</span><span class="p">,</span> <span class="n">transform_containers</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">x_i</span><span class="p">,</span> <span class="n">transform</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">([</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">],</span> <span class="n">transform_containers</span><span class="p">)):</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">transform</span><span class="o">.</span><span class="n">transform_base_parameters</span><span class="p">(</span><span class="n">x_i</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_transpose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">transform</span><span class="o">.</span><span class="n">fill_values</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="c1">## do more in the likelihood here with transformed information</span>
+
+<span class="c1"># setup transforms for x1</span>
+<span class="n">parameter_transforms1</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="p">)}</span>
+
+<span class="c1"># setup transforms for x2</span>
+<span class="n">parameter_transforms2</span> <span class="o">=</span> <span class="p">{(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">y</span><span class="o">**</span><span class="mi">2</span><span class="p">)}</span>
+
+<span class="c1"># fill dict for x1</span>
+<span class="n">fill_dict1</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;ndim_full&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>  <span class="c1"># full dimensionality after values are added</span>
+    <span class="s2">&quot;fill_inds&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">]),</span>  <span class="c1"># indexes for fill values in final array</span>
+    <span class="s2">&quot;fill_values&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">]),</span>  <span class="c1"># associated values for filling</span>
+<span class="p">}</span>
+
+<span class="c1"># fill dict for x2</span>
+<span class="n">fill_dict2</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;ndim_full&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>  <span class="c1"># full dimensionality after values are added</span>
+    <span class="s2">&quot;fill_inds&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">]),</span>  <span class="c1"># indexes for fill values in final array</span>
+    <span class="s2">&quot;fill_values&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">1.0</span><span class="p">]),</span>  <span class="c1"># associated values for filling</span>
+<span class="p">}</span>
+
+<span class="n">tcs</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">TransformContainer</span><span class="p">(</span><span class="n">parameter_transforms</span><span class="o">=</span><span class="n">parameter_transforms1</span><span class="p">,</span> <span class="n">fill_dict</span><span class="o">=</span><span class="n">fill_dict1</span><span class="p">),</span>
+    <span class="n">TransformContainer</span><span class="p">(</span><span class="n">parameter_transforms</span><span class="o">=</span><span class="n">parameter_transforms2</span><span class="p">,</span> <span class="n">fill_dict</span><span class="o">=</span><span class="n">fill_dict2</span><span class="p">),</span>
+<span class="p">]</span>
+
+<span class="n">num</span> <span class="o">=</span> <span class="mi">40</span>
+<span class="n">x1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">x2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+
+<span class="n">group1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
+<span class="n">group2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
+
+<span class="c1"># it can be added via args or kwargs in the ensemble sampler</span>
+<span class="n">lnprob</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">group1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">group2</span><span class="p">,</span> <span class="n">tcs</span><span class="p">)</span>
+
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../user/utils.html" class="btn btn-neutral float-left" title="Utilities" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Michael Katz and Nikos Karnesis.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
