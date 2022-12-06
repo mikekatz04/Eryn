@@ -6,7 +6,7 @@
 Welcome to Eryn's documentation!
 ================================
 
-.. image:: source/img/ent.jpg
+.. image:: img/ents.png
   :width: 400
   :alt: Alternative text
 
