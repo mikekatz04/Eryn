@@ -207,12 +207,9 @@
 <p>The <a class="reference internal" href="#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.State</span></code></a> carries the information around for all walkers at a given step.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="eryn.state.State">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.state.</span></span><span class="sig-name descname"><span class="pre">State</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_supplimental</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">supplimental</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_prob</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.state.State" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.state.</span></span><span class="sig-name descname"><span class="pre">State</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_supplimental</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">supplimental</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_like</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.state.State" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>The state of the ensemble during an MCMC run</p>
-<p>For backwards compatibility, this will unpack into <code class="docutils literal notranslate"><span class="pre">coords,</span> <span class="pre">log_prob,</span>
-<span class="pre">(blobs),</span> <span class="pre">random_state</span></code> when iterated over (where <code class="docutils literal notranslate"><span class="pre">blobs</span></code> will only be
-included if it exists and is not <code class="docutils literal notranslate"><span class="pre">None</span></code>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -223,7 +220,7 @@ on which leaves are used and which are not used. A value of True means the speci
 was used in this step. If dict, need to use <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> for the keys.
 Input should be <code class="docutils literal notranslate"><span class="pre">None</span></code> if a complete <a class="reference internal" href="#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code></a> object is input for <code class="docutils literal notranslate"><span class="pre">coords</span></code>.
 (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
-<li><p><strong>log_prob</strong> (<em>ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em><em>, </em><em>optional</em>) – Log likelihoods
+<li><p><strong>log_like</strong> (<em>ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em><em>, </em><em>optional</em>) – Log likelihoods
 for the  walkers at positions given by <code class="docutils literal notranslate"><span class="pre">coords</span></code>.
 Input should be <code class="docutils literal notranslate"><span class="pre">None</span></code> if a complete <a class="reference internal" href="#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code></a> object is input for <code class="docutils literal notranslate"><span class="pre">coords</span></code>.
 (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
@@ -266,6 +263,23 @@ Input should be <code class="docutils literal notranslate"><span class="pre">Non
 <dt class="sig sig-object py" id="eryn.state.State.branches_supplimental">
 <em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">branches_supplimental</span></span><a class="headerlink" href="#eryn.state.State.branches_supplimental" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the <code class="docutils literal notranslate"><span class="pre">branch.supplimental</span></code> from all branch objects returned as a dictionary with <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> as keys.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.state.State.get_log_prob">
+<span class="sig-name descname"><span class="pre">get_log_prob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temper</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.state.State.get_log_prob" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the posterior probability</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>temper</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, apply tempering to the posterior computation.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Log of the posterior probability.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

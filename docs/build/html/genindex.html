@@ -235,6 +235,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="user/backend.html#eryn.backends.Backend.chain">chain (eryn.backends.Backend attribute)</a>
 </li>
+      <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.compute_log_like">compute_log_like() (eryn.ensemble.EnsembleSampler method)</a>
+</li>
       <li><a href="user/moves.html#eryn.moves.GaussianMove.compute_log_posterior_basic">compute_log_posterior_basic() (eryn.moves.GaussianMove method)</a>
 
       <ul>
@@ -254,8 +256,6 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.compute_log_prior">compute_log_prior() (eryn.ensemble.EnsembleSampler method)</a>
-</li>
-      <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.compute_log_prob">compute_log_prob() (eryn.ensemble.EnsembleSampler method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -389,20 +389,22 @@
         <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_last_sample">(eryn.ensemble.EnsembleSampler method)</a>
 </li>
       </ul></li>
+      <li><a href="user/backend.html#eryn.backends.Backend.get_log_like">get_log_like() (eryn.backends.Backend method)</a>
+
+      <ul>
+        <li><a href="user/backend.html#eryn.backends.HDFBackend.get_log_like">(eryn.backends.HDFBackend method)</a>
+</li>
+        <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_log_like">(eryn.ensemble.EnsembleSampler method)</a>
+</li>
+      </ul></li>
       <li><a href="user/backend.html#eryn.backends.Backend.get_log_prior">get_log_prior() (eryn.backends.Backend method)</a>
 
       <ul>
         <li><a href="user/backend.html#eryn.backends.HDFBackend.get_log_prior">(eryn.backends.HDFBackend method)</a>
 </li>
       </ul></li>
-      <li><a href="user/backend.html#eryn.backends.Backend.get_log_prob">get_log_prob() (eryn.backends.Backend method)</a>
-
-      <ul>
-        <li><a href="user/backend.html#eryn.backends.HDFBackend.get_log_prob">(eryn.backends.HDFBackend method)</a>
+      <li><a href="user/state.html#eryn.state.State.get_log_prob">get_log_prob() (eryn.state.State method)</a>
 </li>
-        <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_log_prob">(eryn.ensemble.EnsembleSampler method)</a>
-</li>
-      </ul></li>
       <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_model">get_model() (eryn.ensemble.EnsembleSampler method)</a>
 </li>
       <li><a href="user/backend.html#eryn.backends.Backend.get_nleaves">get_nleaves() (eryn.backends.Backend method)</a>
@@ -477,9 +479,9 @@
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="user/backend.html#eryn.backends.Backend.log_prior">log_prior (eryn.backends.Backend attribute)</a>
+      <li><a href="user/backend.html#eryn.backends.Backend.log_like">log_like (eryn.backends.Backend attribute)</a>
 </li>
-      <li><a href="user/backend.html#eryn.backends.Backend.log_prob">log_prob (eryn.backends.Backend attribute)</a>
+      <li><a href="user/backend.html#eryn.backends.Backend.log_prior">log_prior (eryn.backends.Backend attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -549,8 +551,12 @@
 </li>
       <li><a href="user/moves.html#eryn.moves.PriorGenerate">PriorGenerate (class in eryn.moves)</a>
 </li>
-      <li><a href="user/prior.html#eryn.prior.PriorContainer.priors">priors (eryn.prior.PriorContainer attribute)</a>
+      <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.priors">priors (eryn.ensemble.EnsembleSampler property)</a>
+
+      <ul>
+        <li><a href="user/prior.html#eryn.prior.PriorContainer.priors">(eryn.prior.PriorContainer attribute)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="user/prior.html#eryn.prior.PriorContainer.priors_in">priors_in (eryn.prior.PriorContainer attribute)</a>

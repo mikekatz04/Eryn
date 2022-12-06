@@ -346,8 +346,8 @@ relevant for reversible jump.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="eryn.backends.Backend.log_prob">
-<span class="sig-name descname"><span class="pre">log_prob</span></span><a class="headerlink" href="#eryn.backends.Backend.log_prob" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="eryn.backends.Backend.log_like">
+<span class="sig-name descname"><span class="pre">log_like</span></span><a class="headerlink" href="#eryn.backends.Backend.log_like" title="Permalink to this definition">¶</a></dt>
 <dd><p>Log of the likelihood values. Shape is
 (nsteps, nwalkers, ntemps).</p>
 <dl class="field-list simple">
@@ -670,8 +670,8 @@ the chain as burn-in. (default: <code class="docutils literal notranslate"><span
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="eryn.backends.Backend.get_log_prob">
-<span class="sig-name descname"><span class="pre">get_log_prob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_log_prob" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="eryn.backends.Backend.get_log_like">
+<span class="sig-name descname"><span class="pre">get_log_like</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_log_like" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the chain of log probabilities evaluated at the MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1349,6 +1349,30 @@ checks or plotting.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_log_like">
+<span class="sig-name descname"><span class="pre">get_log_like</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_log_like" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the chain of log probabilities evaluated at the MCMC samples</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flat</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flatten the chain across the ensemble.
+(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
+<li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Take only every <code class="docutils literal notranslate"><span class="pre">thin</span></code> steps from the
+chain. (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
+<li><p><strong>discard</strong> (<em>int</em><em>, </em><em>optional</em>) – Discard the first <code class="docutils literal notranslate"><span class="pre">discard</span></code> steps in
+the chain as burn-in. (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The chain of log likelihood values.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>double np.ndarray[nsteps, ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_log_prior">
 <span class="sig-name descname"><span class="pre">get_log_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_log_prior" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the chain of log probabilities evaluated at the MCMC samples</p>
@@ -1365,30 +1389,6 @@ the chain as burn-in. (default: <code class="docutils literal notranslate"><span
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>The chain of log prior values.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>double np.ndarray[nsteps, ntemps, nwalkers]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_log_prob">
-<span class="sig-name descname"><span class="pre">get_log_prob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_log_prob" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the chain of log probabilities evaluated at the MCMC samples</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>flat</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flatten the chain across the ensemble.
-(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
-<li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Take only every <code class="docutils literal notranslate"><span class="pre">thin</span></code> steps from the
-chain. (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
-<li><p><strong>discard</strong> (<em>int</em><em>, </em><em>optional</em>) – Discard the first <code class="docutils literal notranslate"><span class="pre">discard</span></code> steps in
-the chain as burn-in. (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The chain of log likelihood values.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>double np.ndarray[nsteps, ntemps, nwalkers]</p>
