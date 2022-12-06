@@ -898,7 +898,7 @@ class EnsembleSampler(object):
                 This dictionary is created with the ``branches_coords`` attribute
                 from :class:`State`.
             inds (dict, optional): Keys are ``branch_names`` and values are
-                the inds np.arrays[ntemps, nwalkers, nleaves_max] that indicates
+                the ``inds`` np.arrays[ntemps, nwalkers, nleaves_max] that indicates
                 which leaves are being used. This dictionary is created with the
                 ``branches_inds`` attribute from :class:`State`.
                 (default: ``None``)
@@ -908,9 +908,9 @@ class EnsembleSampler(object):
 
         """
 
+        # get number of temperature and walkers
         ntemps, nwalkers, _, _ = coords[list(coords.keys())[0]].shape
 
-        # take information out of dict and spread to x1..xn
         if inds is None:
             # default use all sources
             inds = {
@@ -918,34 +918,40 @@ class EnsembleSampler(object):
                 for name in coords
             }
 
+        # take information out of dict and spread to x1..xn
         x_in = {}
         if self.provide_groups:
 
             # get group information from the inds dict
             groups = groups_from_inds(inds)
 
+            # get the coordinates that are used
             for i, (name, coords_i) in enumerate(coords.items()):
                 x_in[name] = coords_i[inds[name]]
 
             prior_out = np.zeros((ntemps * nwalkers))
             for name in x_in:
+                # get prior for individual binaries
                 prior_out_temp = self.priors[name].logpdf(x_in[name])
 
                 # arrange prior values by groups
+                # TODO: vectorize this?
                 for i in np.unique(groups[name]):
+                    # which members are in the group i
                     inds_temp = np.where(groups[name] == i)[0]
-                    num_in_group = len(inds_temp)
-                    # check = (prior_out_temp[inds_temp].sum() / num_in_group)
+                    # num_in_group = len(inds_temp)
+
+                    # add to the prior for this group
                     prior_out[i] += prior_out_temp[inds_temp].sum()
 
+            # reshape
             prior_out = prior_out.reshape(ntemps, nwalkers)
-            return prior_out
 
         else:
+            # flatten coordinate arrays
             for i, (name, coords_i) in enumerate(coords.items()):
                 ntemps, nwalkers, nleaves_max, ndim = coords_i.shape
 
-                # TODO: add copy here?
                 x_in[name] = coords_i.reshape(-1, ndim)
 
             prior_out = np.zeros((ntemps, nwalkers))
@@ -953,11 +959,12 @@ class EnsembleSampler(object):
                 prior_out_temp = (
                     self.priors[name].logpdf(x_in[name]) * inds[name].flatten()
                 )
+                # vectorized because everything is rectangular (no groups to indicate model difference)
                 prior_out += prior_out_temp.reshape(ntemps, nwalkers, nleaves_max).sum(
                     axis=-1
                 )
 
-            return prior_out
+        return prior_out
 
     def compute_log_like(
         self, coords, inds=None, logp=None, supps=None, branch_supps=None
@@ -989,16 +996,15 @@ class EnsembleSampler(object):
             ValueError: Infinite or NaN values in parameters.
 
         """
-        p = coords
 
         # Check that the parameters are in physical ranges.
-        for ptemp in p.values():
+        for ptemp in coords.values():
             if np.any(np.isinf(ptemp)):
                 raise ValueError("At least one parameter value was infinite")
             if np.any(np.isnan(ptemp)):
                 raise ValueError("At least one parameter value was NaN")
 
-        # Run the log-probability calculations (optionally in parallel).
+        # if inds not provided, use all
         if inds is None:
             inds = {
                 name: np.full(coords[name].shape[:-1], True, dtype=bool)
@@ -1006,10 +1012,15 @@ class EnsembleSampler(object):
             }
 
         # if no prior values are added, compute_prior
+        # this is necessary to ensure Likelihood is not evaluated outside of the prior
         if logp is None:
             logp = self.compute_log_prior(coords, inds=inds)
 
+        # if all points are outside the prior
         if np.all(np.isinf(logp)):
+            warnings.warn(
+                "All points input for the Likelihood have a log prior of -inf."
+            )
             return np.full_like(logp, -1e300), None
 
         # do not run log likelihood where logp = -inf
@@ -1018,7 +1029,13 @@ class EnsembleSampler(object):
         for key in inds_copy:
             inds_copy[key][inds_bad] = False
 
-            if branch_supps is not None and branch_supps[key] is not None:
+            # if inds_keep in branch supps, indicate which to not keep
+            if (
+                branch_supps is not None
+                and branch_supps[key] is not None
+                and "inds_keep" in branch_supps[key]
+            ):
+                # TODO: indicate specialty of inds_keep in branch_supp
                 branch_supps[key][inds_bad] = {"inds_keep": False}
 
         # take information out of dict and spread to x1..xn
@@ -1026,13 +1043,11 @@ class EnsembleSampler(object):
         if self.provide_supplimental:
             if supps is None and branch_supps is None:
                 raise ValueError(
-                    "supps and branch_supps are both None. If self.provide_supplimental is True, must provide some supplimental information."
+                    """supps and branch_supps are both None. If self.provide_supplimental
+                       is True, must provide some supplimental information."""
                 )
             if branch_supps is not None:
                 branch_supps_in = {}
-
-        if inds is None:
-            inds = {name: np.full(x[name].shape[:-1], True, dtype=bool) for name in x}
 
         # determine groupings from inds
         groups = groups_from_inds(inds)
@@ -1046,81 +1061,153 @@ class EnsembleSampler(object):
         # this is the map to those indexes that are used in the likelihood
         groups_map = np.arange(len(unique_groups))
 
+        # get the indices with groups_map for the Likelihood
         ll_groups = {}
         for key, group in groups.items():
+            # get unique groups in this sub-group (or branch)
             temp_unique_groups, inverse = np.unique(group, return_inverse=True)
+
+            # use groups_map by finding where temp_unique_groups overlaps with unique_groups
             keep_groups = groups_map[np.in1d(unique_groups, temp_unique_groups)]
+
+            # fill group information for Likelihood
             ll_groups[key] = keep_groups[inverse]
 
-        for i, (name, coords) in enumerate(p.items()):
-            ntemps, nwalkers, nleaves_max, ndim = coords.shape
+        for i, (name, coords_i) in enumerate(coords.items()):
+            ntemps, nwalkers, nleaves_max, ndim = coords_i.shape
             nwalkers_all = ntemps * nwalkers
-            x_in[name] = coords[inds[name]]
 
+            # fill x_values properly into dictionary
+            x_in[name] = coords_i[inds[name]]
+
+            # prepare branch supplimentals for each branch
             if self.provide_supplimental:
                 if branch_supps is not None:  #  and
                     if branch_supps[name] is not None:
+                        # index the branch supps
+                        # it will carry in a dictionary of information
                         branch_supps_in[name] = branch_supps[name][inds[name]]
                     else:
+                        # fill with None if this branch does not have a supplimental
                         branch_supps_in[name] = None
 
+        # deal with overall supplimental not specific to the branches
         if self.provide_supplimental:
             if supps is not None:
+                # get the flattened supplimental
+                # this will produce the shape (ntemps * nwalkers,...)
                 temp = supps.flat
-                supps_in = {name: values[keep_groups] for name, values in temp.items()}
 
+                # unique_groups will properly index the flattened array
+                supps_in = {
+                    name: values[unique_groups] for name, values in temp.items()
+                }
+
+        # prepare group information
+        # this gets the group_map indexing into a list
         groups_in = list(ll_groups.values())
+
+        # if only one branch, take the group array out of the list
         if len(groups_in) == 1:
             groups_in = groups_in[0]
 
+        # list of paramter arrays
         params_in = list(x_in.values())
 
+        # Likelihoods are vectorized across groups
         if self.vectorize:
 
+            # prepare args list
             args_in = []
 
+            # when vectorizing, if params_in has one entry, take out of list
             if len(params_in) == 1:
                 params_in = params_in[0]
 
+            # add parameters to args
             args_in.append(params_in)
 
+            # if providing groups, add to args
             if self.provide_groups:
                 args_in.append(groups_in)
 
+            # prepare supplimentals as kwargs to the Likelihood
             kwargs_in = {}
             if self.provide_supplimental:
                 if supps is not None:
                     kwargs_in["supps"] = supps_in
                 if branch_supps is not None:
+                    # get list of branch_supps values
                     branch_supps_in_2 = list(branch_supps_in.values())
+
+                    # if only one entry, take out of list
                     if len(branch_supps_in_2) == 1:
                         kwargs_in["branch_supps"] = branch_supps_in_2[0]
 
                     else:
                         kwargs_in["branch_supps"] = branch_supps_in_2
 
+            # provide args, kwargs as a tuple
             args_and_kwargs = (args_in, kwargs_in)
+
+            # get vectorized results
             results = self.log_like_fn(args_and_kwargs)
 
+        # each Likelihood is computed individually
         else:
 
+            # if groups in is an array, need to put it in a list.
             if isinstance(groups_in, np.ndarray):
                 groups_in = [groups_in]
 
+            # prepare input args for all Likelihood calls
+            # to be spread out with map functions below
             args_in = []
+
+            # each individual group in the groups_map
             for group_i in groups_map:
+
+                # args and kwargs for the individual Likelihood
                 arg_i = []
                 kwarg_i = {}
+
+                # iterate over the group information from the branches
                 for branch_i, groups_in_set in enumerate(groups_in):
+                    # which entries in this branch are in the overall group tested
+                    # this accounts for multiple leaves (or model counts)
                     inds_keep = np.where(groups_in_set == group_i)[0]
+
+                    branch_name_i = self.branch_names[branch_i]
+
                     if inds_keep.shape[0] > 0:
+                        # get parameters
                         params = params_in[branch_i][inds_keep]
+
+                        # add them to the specific args for this Likelihood
                         arg_i.append(params)
                         if self.provide_supplimental:
-                            raise NotImplementedError
+                            if supps is not None:
+                                # supps are specific to each group
+                                kwarg_i["supps"] = supps_in[group_i]
+                            if branch_supps is not None:
+                                # make sure there is a dictionary ready in this kwarg dictionary
+                                if "branch_supps" not in kwarg_i:
+                                    kwarg_i["branch_supps"] = {}
 
-                # if only one model type
+                                # fill these branch supplimentals for the specific group
+                                if branch_supps_in[branch_name_i] is not None:
+                                    # get list of branch_supps values
+                                    kwarg_i["branch_supps"][
+                                        branch_name_i
+                                    ] = branch_supps_in[branch_name_i][inds_keep]
+                                else:
+                                    kwarg_i["branch_supps"][branch_name_i] = None
+
+                # if only one model type, will take out of groups
                 add_term = arg_i[0] if len(groups_in) == 1 else arg_i
+
+                # based on how this is dealth with in the _FunctionWrapper
+                # add_term is wrapped in a list
                 args_in.append([[add_term], kwarg_i])
 
             # If the `pool` property of the sampler has been set (i.e. we want
@@ -1132,6 +1219,7 @@ class EnsembleSampler(object):
             else:
                 map_func = map
 
+            # get results and turn into an array
             results = np.asarray(list(map_func(self.log_like_fn, args_in)))
 
         assert isinstance(results, np.ndarray)
@@ -1140,25 +1228,31 @@ class EnsembleSampler(object):
         ll = np.full(nwalkers_all, -1e300)
         inds_fix_zeros = np.delete(np.arange(nwalkers_all), unique_groups)
 
+        # parse the results if it has blobs
         if results.ndim == 2:
+            # get the results and put into groups that were analyzed
             ll[unique_groups] = results[:, 0]
+
+            # fix groups that were not analyzed
             ll[inds_fix_zeros] = self.fill_zero_leaves_val
+
+            # deal with blobs
             blobs_out = np.zeros((nwalkers_all, results.shape[1] - 1))
             blobs_out[unique_groups] = results[:, 1:]
 
         elif results.dtype == "object":
+            # TODO: check blobs and add this capability
             raise NotImplementedError
 
         else:
-            try:
-                ll[unique_groups] = results
-            except ValueError:
-                breakpoint()
+            # no blobs
+            ll[unique_groups] = results
             ll[inds_fix_zeros] = self.fill_zero_leaves_val
 
             blobs_out = None
 
-        if self.provide_supplimental:
+        if False:  # self.provide_supplimental:
+            # TODO: need to think about how to return information, we may need to add a function to do that
             if branch_supps is not None:
                 for name_i, name in enumerate(branch_supps):
                     if branch_supps[name] is not None:
@@ -1181,52 +1275,7 @@ class EnsembleSampler(object):
                                 for key in branch_supps_in_2[name_i]
                             }
 
-        """
-        # TODO: adjust this
-        try:
-            log_like = np.array([float(l[0]) for l in results])
-            blob = [l[1:] for l in results]
-        except (IndexError, TypeError):
-            log_like = np.array([float(l) for l in results])
-            blob = None
-        else:
-            # Get the blobs dtype
-            if self.blobs_dtype is not None:
-                dt = self.blobs_dtype
-            else:
-                try:
-                    with warnings.catch_warnings(record=True):
-                        warnings.simplefilter("error",
-                                              np.VisibleDeprecationWarning)
-                        try:
-                            dt = np.atleast_1d(blob[0]).dtype
-                        except Warning:
-                            deprecation_warning(
-                                "You have provided blobs that are not all the "
-                                "same shape or size. This means they must be "
-                                "placed in an object array. Numpy has "
-                                "deprecated this automatic detection, so "
-                                "please specify "
-                                "blobs_dtype=np.dtype('object')")
-                            dt = np.dtype("object")
-                except ValueError:
-                    dt = np.dtype("object")
-                if dt.kind in "US":
-                    # Strings need to be object arrays or we risk truncation
-                    dt = np.dtype("object")
-            blob = np.array(blob, dtype=dt)
-
-            # Deal with single blobs properly
-            shape = blob.shape[1:]
-            if len(shape):
-                axes = np.arange(len(shape))[np.array(shape) == 1] + 1
-                if len(axes):
-                    blob = np.squeeze(blob, tuple(axes))
-
-        # Check for log_like returning NaN.
-        if np.any(np.isnan(log_like)):
-            raise ValueError("Probability function returned NaN")
-        """
+        # return Likelihood and blobs
         return ll.reshape(ntemps, nwalkers), blobs_out
 
     @property
@@ -1319,6 +1368,12 @@ class _FunctionWrapper(object):
         self.kwargs = {} if kwargs is None else kwargs
 
     def __call__(self, args_and_kwargs):
+        """
+        Internal function that takes a tuple (args, kwargs) for entrance into the Likelihood.
+
+        ``self.args`` and ``self.kwargs`` are added to these inputs.
+        
+        """
 
         args_in_add, kwargs_in_add = args_and_kwargs
 
@@ -1333,7 +1388,7 @@ class _FunctionWrapper(object):
         except:  # pragma: no cover
             import traceback
 
-            print("emcee: Exception while calling your likelihood function:")
+            print("eryn: Exception while calling your likelihood function:")
             print("  args added:", args_in_add)
             print("  args:", self.args)
             print("  kwargs added:", kwargs_in_add)
@@ -1344,13 +1399,28 @@ class _FunctionWrapper(object):
 
 
 def walkers_independent(coords_in):
+    """Determine if walkers are independent
 
+    Orginall from ``emcee``.
+    
+    Args:
+        coords_in (np.ndarray[ntemps, nwalkers, nleaves_max, ndim]): Coordinates of the walkers.
+
+    Returns:
+        bool: If walkers are independent.
+    
+    """
+    # make sure it is 4-dimensional and reshape
+    # so it groups by temperature and walker
     assert coords_in.ndim == 4
     ntemps, nwalkers, nleaves_max, ndim = coords_in.shape
     coords = coords_in.reshape(ntemps * nwalkers, nleaves_max * ndim)
 
+    # make sure all coordinates are finite
     if not np.all(np.isfinite(coords)):
         return False
+
+    # roughly determine covariance information
     C = coords - np.mean(coords, axis=0)[None, :]
     C_colmax = np.amax(np.abs(C), axis=0)
     if np.any(C_colmax == 0):
@@ -1359,22 +1429,3 @@ def walkers_independent(coords_in):
     C_colsum = np.sqrt(np.sum(C ** 2, axis=0))
     C /= C_colsum
     return np.linalg.cond(C.astype(float)) <= 1e8
-
-
-def walkers_independent_cov(coords):
-    C = np.cov(coords, rowvar=False)
-    if np.any(np.isnan(C)):
-        return False
-    return _scaled_cond(np.atleast_2d(C)) <= 1e8
-
-
-def _scaled_cond(a):
-    asum = np.sqrt((a ** 2).sum(axis=0))[None, :]
-    if np.any(asum == 0):
-        return np.inf
-    b = a / asum
-    bsum = np.sqrt((b ** 2).sum(axis=1))[:, None]
-    if np.any(bsum == 0):
-        return np.inf
-    c = b / bsum
-    return np.linalg.cond(c.astype(float))
