@@ -37,6 +37,8 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "document", "processHtmlClass": "math|output_area"}}</script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -205,7 +207,7 @@
 </style>
 <section id="parallel-tempering">
 <h1>Parallel Tempering<a class="headerlink" href="#parallel-tempering" title="Permalink to this headline">¶</a></h1>
-<p>The tempering is controlled from the <a class="reference internal" href="#eryn.moves.tempering.TemperatureControl" title="eryn.moves.tempering.TemperatureControl"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.tempering.TemperatureControl</span></code></a>.</p>
+<p>The tempering is controlled from <a class="reference internal" href="#eryn.moves.tempering.TemperatureControl" title="eryn.moves.tempering.TemperatureControl"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.tempering.TemperatureControl</span></code></a>.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="eryn.moves.tempering.TemperatureControl">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.tempering.</span></span><span class="sig-name descname"><span class="pre">TemperatureControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ndim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ntemps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Tmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptation_lag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptation_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_adaptation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.tempering.TemperatureControl" title="Permalink to this definition">¶</a></dt>
@@ -216,6 +218,45 @@
 <dd><p>Perform parallel-tempering temperature swaps on the state in <code class="docutils literal notranslate"><span class="pre">x</span></code> with associated <code class="docutils literal notranslate"><span class="pre">logP</span></code> and <code class="docutils literal notranslate"><span class="pre">logl</span></code>.</p>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="eryn.moves.tempering.make_ladder">
+<span class="sig-prename descclassname"><span class="pre">eryn.moves.tempering.</span></span><span class="sig-name descname"><span class="pre">make_ladder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ndim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ntemps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Tmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.tempering.make_ladder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a ladder of <span class="math notranslate nohighlight">\(\beta \equiv 1/T\)</span> under a geometric spacing that is determined by the
+arguments <code class="docutils literal notranslate"><span class="pre">ntemps</span></code> and <code class="docutils literal notranslate"><span class="pre">Tmax</span></code>.  The temperature selection algorithm works as follows:
+Ideally, <code class="docutils literal notranslate"><span class="pre">Tmax</span></code> should be specified such that the tempered posterior looks like the prior at
+this temperature.  If using adaptive parallel tempering, per <a class="reference external" href="http://arxiv.org/abs/1501.05823">arXiv:1501.05823</a>, choosing <code class="docutils literal notranslate"><span class="pre">Tmax</span> <span class="pre">=</span> <span class="pre">inf</span></code> is a safe bet, so long as
+<code class="docutils literal notranslate"><span class="pre">ntemps</span></code> is also specified.
+:param ndim:</p>
+<blockquote>
+<div><p>The number of dimensions in the parameter space.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ntemps</strong> – (optional)
+If set, the number of temperatures to generate.</p></li>
+<li><p><strong>Tmax</strong> – (optional)
+If set, the maximum temperature for the ladder.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Temperatures are chosen according to the following algorithm:
+* If neither <code class="docutils literal notranslate"><span class="pre">ntemps</span></code> nor <code class="docutils literal notranslate"><span class="pre">Tmax</span></code> is specified, raise an exception (insufficient</p>
+<blockquote>
+<div><p>information).</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>If <code class="docutils literal notranslate"><span class="pre">ntemps</span></code> is specified but not <code class="docutils literal notranslate"><span class="pre">Tmax</span></code>, return a ladder spaced so that a Gaussian
+posterior would have a 25% temperature swap acceptance ratio.</p></li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">Tmax</span></code> is specified but not <code class="docutils literal notranslate"><span class="pre">ntemps</span></code>:
+* If <code class="docutils literal notranslate"><span class="pre">Tmax</span> <span class="pre">=</span> <span class="pre">inf</span></code>, raise an exception (insufficient information).
+* Else, space chains geometrically as above (for 25% acceptance) until <code class="docutils literal notranslate"><span class="pre">Tmax</span></code> is reached.</p></li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">Tmax</span></code> and <code class="docutils literal notranslate"><span class="pre">ntemps</span></code> are specified:
+* If <code class="docutils literal notranslate"><span class="pre">Tmax</span> <span class="pre">=</span> <span class="pre">inf</span></code>, place one chain at <code class="docutils literal notranslate"><span class="pre">inf</span></code> and <code class="docutils literal notranslate"><span class="pre">ntemps-1</span></code> in a 25% geometric spacing.
+* Else, use the unique geometric spacing defined by <code class="docutils literal notranslate"><span class="pre">ntemps</span></code> and <code class="docutils literal notranslate"><span class="pre">Tmax</span></code>.</p></li>
+</ul>
 </dd></dl>
 
 </section>
