@@ -214,8 +214,10 @@
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Controls the temperature ladder and operations in the sampler.</p>
 <p>All of the tempering features within Eryn are controlled from this class.
-This includes the evaluation of the tempered posterior, swapping between temperatures, and the adaptation of the temperatures over time. The adaptive tempering model can be found in the Eryn paper
-as well as the paper for <cite>ptemcee</cite>, which acted as a basis for the code below.</p>
+This includes the evaluation of the tempered posterior, swapping between temperatures, and
+the adaptation of the temperatures over time. The adaptive tempering model can be
+found in the Eryn paper as well as the paper for <cite>ptemcee</cite>, which acted
+as a basis for the code below.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -224,11 +226,11 @@ as well as the paper for <cite>ptemcee</cite>, which acted as a basis for the co
 <li><p><strong>nleaves_max</strong> (<em>int</em><em>, or </em><em>list of int</em><em>, </em><em>optional</em>) – Maximum allowable leaves per branch.
 Must maintain proper order of branches. (default: 1)</p></li>
 <li><p><strong>ntemps</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of temperatures. If this is provided rather than <code class="docutils literal notranslate"><span class="pre">betas</span></code>,
-<a href="#id1"><span class="problematic" id="id2">:function:`make_ladder`</span></a> will be used to generate the temperature ladder. (default: 1)</p></li>
+<a class="reference internal" href="#eryn.moves.tempering.make_ladder" title="eryn.moves.tempering.make_ladder"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_ladder()</span></code></a> will be used to generate the temperature ladder. (default: 1)</p></li>
 <li><p><strong>betas</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>]</em><em>, </em><em>optional</em>) – If provided, will use as the array of inverse temperatures.
 (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>).</p></li>
 <li><p><strong>Tmax</strong> (<em>float</em><em>, </em><em>optional</em>) – If provided and <code class="docutils literal notranslate"><span class="pre">betas</span></code> is not provided, this will be included with
-<code class="docutils literal notranslate"><span class="pre">ntemps</span></code> when determing the temperature ladder with <a href="#id3"><span class="problematic" id="id4">:function:`make_ladder`</span></a>.
+<code class="docutils literal notranslate"><span class="pre">ntemps</span></code> when determing the temperature ladder with <a class="reference internal" href="#eryn.moves.tempering.make_ladder" title="eryn.moves.tempering.make_ladder"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_ladder()</span></code></a>.
 See that functions docs for more information. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 <li><p><strong>adaptive</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, adapt the temperature ladder during sampling.
 (default: <code class="docutils literal notranslate"><span class="pre">True</span></code>).</p></li>
