@@ -6,8 +6,6 @@ from copy import deepcopy
 
 __all__ = ["TemperatureControl"]
 
-# TODO: add temperature control to existing proposal input by user
-
 
 def make_ladder(ndim, ntemps=None, Tmax=None):
     """
@@ -17,25 +15,35 @@ def make_ladder(ndim, ntemps=None, Tmax=None):
     this temperature.  If using adaptive parallel tempering, per `arXiv:1501.05823
     <http://arxiv.org/abs/1501.05823>`_, choosing ``Tmax = inf`` is a safe bet, so long as
     ``ntemps`` is also specified.
-    :param ndim:
-        The number of dimensions in the parameter space.
-    :param ntemps: (optional)
-        If set, the number of temperatures to generate.
-    :param Tmax: (optional)
-        If set, the maximum temperature for the ladder.
+
+    This function is originally from ``ptemcee`` `github.com/willvousden/ptemcee <https://github.com/willvousden/ptemcee>`_. 
+
     Temperatures are chosen according to the following algorithm:
     * If neither ``ntemps`` nor ``Tmax`` is specified, raise an exception (insufficient
-      information).
+    information).
     * If ``ntemps`` is specified but not ``Tmax``, return a ladder spaced so that a Gaussian
-      posterior would have a 25% temperature swap acceptance ratio.
+    posterior would have a 25% temperature swap acceptance ratio.
     * If ``Tmax`` is specified but not ``ntemps``:
-      * If ``Tmax = inf``, raise an exception (insufficient information).
-      * Else, space chains geometrically as above (for 25% acceptance) until ``Tmax`` is reached.
+    * If ``Tmax = inf``, raise an exception (insufficient information).
+    * Else, space chains geometrically as above (for 25% acceptance) until ``Tmax`` is reached.
     * If ``Tmax`` and ``ntemps`` are specified:
-      * If ``Tmax = inf``, place one chain at ``inf`` and ``ntemps-1`` in a 25% geometric spacing.
-      * Else, use the unique geometric spacing defined by ``ntemps`` and ``Tmax``.
+    * If ``Tmax = inf``, place one chain at ``inf`` and ``ntemps-1`` in a 25% geometric spacing.
+    * Else, use the unique geometric spacing defined by ``ntemps`` and ``Tmax``.`
+
+    Args:
+        ndim (int): The number of dimensions in the parameter space.
+        ntemps (int, optional): If set, the number of temperatures to generate.
+        Tmax (float, optional): If set, the maximum temperature for the ladder.
+
+    Returns:
+        np.ndarray[ntemps]: Output inverse temperature (beta) array. 
+
+    Raises:
+        ValueError: Improper inputs.
+        
     """
 
+    # make sure all inputs are okay
     if type(ndim) != int or ndim < 1:
         raise ValueError("Invalid number of dimensions specified.")
     if ntemps is None and Tmax is None:
@@ -45,6 +53,7 @@ def make_ladder(ndim, ntemps=None, Tmax=None):
     if ntemps is not None and (type(ntemps) != int or ntemps < 1):
         raise ValueError("Invalid number of temperatures specified.")
 
+    # step size in temperature based on ndim
     tstep = np.array(
         [
             25.2741,
@@ -155,12 +164,15 @@ def make_ladder(ndim, ntemps=None, Tmax=None):
         # dimension
         tstep = 1.0 + 2.0 * np.sqrt(np.log(4.0)) / np.sqrt(ndim)
     else:
+        # get correct step for dimension
         tstep = tstep[ndim - 1]
 
+    # wheter to add the infinite temperature to the end
     appendInf = False
     if Tmax == np.inf:
         appendInf = True
         Tmax = None
+        # non-infinite temperatures will now have 1 less
         ntemps = ntemps - 1
 
     if ntemps is not None:
@@ -186,11 +198,48 @@ def make_ladder(ndim, ntemps=None, Tmax=None):
 
 
 class TemperatureControl(object):
+    """Controls the temperature ladder and operations in the sampler.
+
+    All of the tempering features within Eryn are controlled from this class. 
+    This includes the evaluation of the tempered posterior, swapping between temperatures, and the adaptation of the temperatures over time. The adaptive tempering model can be found in the Eryn paper
+    as well as the paper for `ptemcee`, which acted as a basis for the code below. 
+
+    Args:
+        ndims (int or list of int): Dimensions for the model in the sampling run.
+        nwalkers (int): Number of walkers in the sampler. Must maintain proper order of branches.
+        nleaves_max (int, or list of int, optional): Maximum allowable leaves per branch. 
+            Must maintain proper order of branches. (default: 1)
+        ntemps (int, optional): Number of temperatures. If this is provided rather than ``betas``, 
+            :func:`make_ladder` will be used to generate the temperature ladder. (default: 1)
+        betas (np.ndarray[ntemps], optional): If provided, will use as the array of inverse temperatures. 
+            (default: ``None``).
+        Tmax (float, optional): If provided and ``betas`` is not provided, this will be included with 
+            ``ntemps`` when determing the temperature ladder with :func:`make_ladder`. 
+            See that functions docs for more information. (default: ``None``)
+        adaptive (bool, optional): If ``True``, adapt the temperature ladder during sampling.
+            (default: ``True``).
+        adaptation_lag (int, optional): lag parameter from 
+            `arXiv:1501.05823 <http://arxiv.org/abs/1501.05823>`_. ``adaptation_lag`` must be
+            much greater than ``adapation_time``. (default: 10000)
+        adaptation_time (int, optional): initial amplitude of adjustments from
+            `arXiv:1501.05823 <http://arxiv.org/abs/1501.05823>`_. ``adaptation_lag`` must be
+            much greater than ``adapation_time``. (default: 100)
+        stop_adaptation (int, optional): If ``stop_adaptation > 0``, the adapating will stop after 
+            ``stop_adaption`` steps. The number of steps is counted as the number times adaptation 
+            has happened which is generally once per sampler iteration. For example, 
+            if you only want to adapt temperatures during burn-in, you set ``stop_adaption = burn``. 
+            This can become complicated when using the repeating proposal options, so the 
+            user must be careful and verify constant temperatures in the backend.
+            (default: -1)
+    
+
+    """
+
     def __init__(
         self,
-        ndim,
+        ndims,
         nwalkers,
-        nleaves_max,
+        nleaves_max=1,
         ntemps=1,
         betas=None,
         Tmax=None,
@@ -199,6 +248,16 @@ class TemperatureControl(object):
         adaptation_time=100,
         stop_adaptation=-1,
     ):
+        # force ndims and nleaves_max to be a list of ints
+        if isinstance(ndims, int):
+            ndims = [ndims]
+        elif not isinstance(ndims, list):
+            raise ValueError("ndims must be an int or list of int.")
+
+        if isinstance(nleaves_max, int):
+            nleaves_max = [nleaves_max]
+        elif not isinstance(nleaves_max, list):
+            raise ValueError("ndims must be an int or list of int.")
 
         if betas is None:
             if ntemps == 1:
@@ -210,10 +269,10 @@ class TemperatureControl(object):
                 # dimensional component.
                 if sum(nleaves_max) > 1:
                     betas = make_ladder(
-                        int(max(ndim) * sum(nleaves_max) / 2), ntemps=ntemps, Tmax=Tmax
+                        int(max(ndims) * sum(nleaves_max) / 2), ntemps=ntemps, Tmax=Tmax
                     )
                 else:
-                    betas = make_ladder(ndim[0], ntemps=ntemps, Tmax=Tmax)
+                    betas = make_ladder(ndims[0], ntemps=ntemps, Tmax=Tmax)
 
         self.nwalkers = nwalkers
         self.betas = betas

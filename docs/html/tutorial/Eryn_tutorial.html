@@ -103,6 +103,7 @@
 <p class="caption"><span class="caption-text">Tutorial:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Eryn</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#MCMC-Basics">MCMC Basics</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#The-Tree-Metaphor">The Tree Metaphor</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Getting-Started-with-the-Ensemble-Sampler">Getting Started with the Ensemble Sampler</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Backend-Objects">Backend Objects</a><ul>
@@ -114,7 +115,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#Parallel-Tempering">Parallel Tempering</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Add-multiple-leaf-count-uncertainty-(i.e. reversible-jump-MCMC))">Add multiple leaf count uncertainty (i.e. reversible-jump MCMC))</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Mutliple-Branches-(Model-Types)">Mutliple Branches (Model Types)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Add-multiple-branch">Add multiple branch</a></li>
 </ul>
 </li>
@@ -504,31 +505,30 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 </div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">eryn</span>
-<span class="n">eryn</span><span class="o">.</span><span class="vm">__file__</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-&#39;/Users/michaelkatz/anaconda3/envs/eryn_env/lib/python3.9/site-packages/eryn/__init__.py&#39;
-</pre></div></div>
-</div>
 <section id="Eryn">
 <h1>Eryn<a class="headerlink" href="#Eryn" title="Permalink to this headline">¶</a></h1>
 <p>Eryn is an advanced MCMC sampler. It has the capability to run with parallel tempering, multiple model types, and unknown counts within each model type using Reversible-Jump MCMC techniques. Eryn is heavily based on <a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a>. The <code class="docutils literal notranslate"><span class="pre">emcee</span></code> base structure with the Ensemble Sampler, State objects, proposal setup, and storage backends is carried over into Eryn with small changes to account for the increased complexity. In a simple sense, Eryn is an
 advanced (and slightly more complicated) version of <code class="docutils literal notranslate"><span class="pre">emcee</span></code>.</p>
 <p>In this tutorial, we will go through much of what is available in Eryn. We will start with a basic sampling operation to illustrate how to build and navigate common objects in Eryn. We will then scale up the complexity to understand how to use Eryn in different circumstances.</p>
 <p>If you use Eryn in your publication, please cite (# TODO: add paper). The documentation for Eryn can be found here: (# TODO: add website). You will find the code on Github: <a class="reference external" href="https://github.com/mikekatz04/Eryn">github.com/mikekatz04/Eryn</a>. (# TODO: add zenodo as well)</p>
+<section id="MCMC-Basics">
+<h2>MCMC Basics<a class="headerlink" href="#MCMC-Basics" title="Permalink to this headline">¶</a></h2>
+<p>Here we will go through the basics of MCMC. For a better overall understanding of MCMC, see the Eryn paper: (# TODO: add paper).</p>
+<p>The goal of MCMC is to assess the posterior probablity on parameters <span class="math notranslate nohighlight">\((\vec{\theta})\)</span> from a model (<span class="math notranslate nohighlight">\(\mathcal{M}\)</span>), given some data <span class="math notranslate nohighlight">\(y\)</span>: <span class="math notranslate nohighlight">\(p(\vec{\theta}, \mathcal{M}|y)\)</span>. We can rewrite this probability using Bayes’ rule:</p>
+<div class="math notranslate nohighlight">
+\[p(\vec{\theta}|y)=\frac{p(y|\vec{\theta}, \mathcal{M})p(\vec{\theta}, \mathcal{M})}{p(y|\mathcal{M})}\]</div>
+<p>.</p>
+<p>Here are the main pieces of the righthand side: * Posterior - <span class="math notranslate nohighlight">\(p(\vec{\theta}|y)\)</span>: The probability distribution on the parameters, the main goal of MCMC. We will refer to this from now on as <span class="math notranslate nohighlight">\(\pi(\vec{\theta})\)</span>. * Likelihood - <span class="math notranslate nohighlight">\(p(y|\vec{\theta}, \mathcal{M})\)</span>: This is the surface that MCMC will sample (weighted by the prior). We will refer to the Likelihood. We will write this from now on as <span class="math notranslate nohighlight">\(\mathcal{L}(\vec{\theta}, \mathcal{M})\)</span>. * Prior -
+<span class="math notranslate nohighlight">\(p(\vec{\theta}, \mathcal{M})\)</span>: Prior probability on the parameters and the model chosen. * Evidence - <span class="math notranslate nohighlight">\(p(y|\mathcal{M})\)</span>: The evidence is the integral of the numerator in the equation above integrated over all of the parameter space: <span class="math notranslate nohighlight">\(\int_{\vec{\theta}_\mathcal{M}}\mathcal{L}(\vec{\theta}, \mathcal{M})d\vec{\theta}\)</span>. This will be referred to below as <span class="math notranslate nohighlight">\(Z(\mathcal{M})\)</span> (the evidence of model <span class="math notranslate nohighlight">\(\mathcal{M}\)</span>).</p>
+<p>MCMC numerically draws samples from the posterior density by exploring the Likelihood surface weighted by the prior. In most MCMC applications, the evidence will be intractable and ignored as it is just a constant factor over all samples. There are methods to estimate the evidence that we will discuss below.</p>
+<p>MCMC is special because of <strong>how it explores</strong>. Using a concept called “Detailed Balance,” walkers exploring the Likelihood surface preferentially move upwards, but probabilistically can move downwards. This allows for a full exploration of the peak of the Likelihood surface rather than just moving directly towards the highest point.</p>
+<p>There are requirements to make this work properly that we will discuss below when we discsuss MCMC “moves” or “proposals.” At a basic level, also know as the Metropolis-Hastings algorithm, MCMC works like this: 1. It starts with a current point in parameter space, <span class="math notranslate nohighlight">\(\vec{\theta}_t\)</span>. 2. The sampler proposes a new position for this walker: <span class="math notranslate nohighlight">\(\vec{\theta}_{t+1}\)</span>. 3. It then accepts this new position with probabilty, <span class="math notranslate nohighlight">\(\alpha\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\min\left(1, \frac{\pi(\vec{\theta}_{t+1})q(\vec{\theta}_{t}|\vec{\theta}_{t+1})}{\pi(\vec{\theta}_{t})q(\vec{\theta}_{t+1}|\vec{\theta}_{t})}\right)\]</div>
+<p>. 4. Repeat many times.</p>
+<p><span class="math notranslate nohighlight">\(q\)</span> is the proposal distribution to move from <span class="math notranslate nohighlight">\(\vec{\theta}_{t}\)</span> to <span class="math notranslate nohighlight">\(\vec{\theta}_{t+1}\)</span> or vice versa. If the proposal distribution is symmetric, the <span class="math notranslate nohighlight">\(q\)</span> distributions drop out and we are left with the fraction of posterior probabilities. We can see, in this case, if the new posterior probability is larger than the previous probability, the move will ALWAYS be accepted. If the new posterior probability is worse than the old probability, the move will be accepted with a
+probability equal to this fraction. Therefore, as the new value becomes worse and worse compared to the old value, the probability of acceptance decreases.</p>
+</section>
 <section id="The-Tree-Metaphor">
 <h2>The Tree Metaphor<a class="headerlink" href="#The-Tree-Metaphor" title="Permalink to this headline">¶</a></h2>
 <p>Before we get into using the sampler, we will discuss the “infamous” tree metaphor. It helped in thinking about the early creation of Eryn and has carried through to the end. <code class="docutils literal notranslate"><span class="pre">Eryn</span></code> is the Sindarin word for “forest” or “woods.” The purpose of this metaphor is to simplify the complex dimensionality associated with changing models and model counts in MCMC. We choose not to use “model” and “model counts” everywhere because those descriptions can quickly become confusing.</p>
@@ -735,14 +735,14 @@ the output of the sampler.</p>
 </pre></div>
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_22_0.png" src="../_images/tutorial_Eryn_tutorial_22_0.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_23_0.png" src="../_images/tutorial_Eryn_tutorial_23_0.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_22_1.png" src="../_images/tutorial_Eryn_tutorial_22_1.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_23_1.png" src="../_images/tutorial_Eryn_tutorial_23_1.png" />
 </div>
 </div>
 <p>Now we will plot the chains.</p>
@@ -764,7 +764,7 @@ the output of the sampler.</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_24_0.png" src="../_images/tutorial_Eryn_tutorial_24_0.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_25_0.png" src="../_images/tutorial_Eryn_tutorial_25_0.png" />
 </div>
 </div>
 </section>
@@ -1338,32 +1338,50 @@ array([[[[-1.42033703e+00, -1.02810079e-01, -8.59592624e-01,
 <h2>Parallel Tempering<a class="headerlink" href="#Parallel-Tempering" title="Permalink to this headline">¶</a></h2>
 <p>Adding tempering to our problem is straight forward. It will effectively just take the <code class="docutils literal notranslate"><span class="pre">ntemps</span></code> dimension that was 1 above and stretch it to the number of temperatures desired. We add tempering information by providing the <code class="docutils literal notranslate"><span class="pre">tempering_kwargs</span></code> argument to the <code class="docutils literal notranslate"><span class="pre">EnsembleSampler</span></code>. The tempering kwargs documentation can be found here because they are the <code class="docutils literal notranslate"><span class="pre">kwargs</span></code> that go into the initialization of the temperature controller:
 <code class="docutils literal notranslate"><span class="pre">`eryn.moves.tempering.TemperatureControl</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/temper.html#eryn.moves.tempering.TemperatureControl">https://mikekatz04.github.io/Eryn/html/user/temper.html#eryn.moves.tempering.TemperatureControl</a>&gt;`__.</p>
-<p>The simplest thing to do is to provide the number of temperatures. In this case, we just pass <code class="docutils literal notranslate"><span class="pre">ntemps</span></code> in a dictionary. You can also provide a direct array of <code class="docutils literal notranslate"><span class="pre">betas</span></code>. Under the hood, if only <code class="docutils literal notranslate"><span class="pre">ntemps</span></code> is passed (not <code class="docutils literal notranslate"><span class="pre">betas</span></code>), the sampler will use the</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<p>The simplest thing to do is to provide the number of temperatures. In this case, we just pass <code class="docutils literal notranslate"><span class="pre">ntemps</span></code> in a dictionary. You can also provide a direct array of <code class="docutils literal notranslate"><span class="pre">betas</span></code> (inverse temperatures). Under the hood, if only <code class="docutils literal notranslate"><span class="pre">ntemps</span></code> is passed (not <code class="docutils literal notranslate"><span class="pre">betas</span></code>), the sampler will use the <code class="docutils literal notranslate"><span class="pre">`eryn.moves.tempering.make_ladder</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/temper.html#eryn.moves.tempering.make_ladder">https://mikekatz04.github.io/Eryn/html/user/temper.html#eryn.moves.tempering.make_ladder</a>&gt;`__ function. We will go all thr way through to the MCMC run. Notice that we are once
+again just passing <code class="docutils literal notranslate"><span class="pre">coords</span></code> as an array to start the sampling. We could also pass a <code class="docutils literal notranslate"><span class="pre">State</span></code> object.</p>
+<p>What does tempering actual do? The inverse temperature, <span class="math notranslate nohighlight">\(\beta=1/T\)</span>, is attached as an exponent on the Likelihood. The posterior probability as a function of inverse temperature is given by,</p>
+<div class="math notranslate nohighlight">
+\[\pi_\beta(\vec{\theta}, \mathcal{M})\propto (\mathcal{L}(\vec{\theta}, \mathcal{M}))^\beta p(\vec{\theta},\mathcal{M}).\]</div>
+<p>If <span class="math notranslate nohighlight">\(T=1\rightarrow \beta=1\)</span>, we are probing our TARGET distribution.</p>
+<p>If <span class="math notranslate nohighlight">\(T=\infty\rightarrow \beta=0\)</span>, we are probing the PRIOR distribution. In this case, the Likelihood surface is effectively flat.</p>
+<p>Temperatures in between represent the gradual flattening of the target Likelihood surface towards the flat surface at infinite temperature. During sampling, we look at the log of the Likelihood, so the inverse temperature becomes a multiplicative factor:</p>
+<div class="math notranslate nohighlight">
+\[\ln\pi_\beta(\vec{\theta}, \mathcal{M})\propto\beta\ln\mathcal{L}(\vec{\theta}, \mathcal{M})\]</div>
+<p>Tempering is useful for multimodal distributions and to improve mixing in your chains. This mixing is created by swapping between rungs on our temperature ladder. After each sampler step, swaps are proposed starting at the two highest temperatures and iterating down until we reach the two lowest temperatures. This ensures as higher temperature chains find better Likelihood values, these values and positions are passed toward the cold chain (<span class="math notranslate nohighlight">\(\beta=1\)</span>). The swaps between chains are accepted
+with fraction, <span class="math notranslate nohighlight">\(\alpha_T\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\alpha_T = \min\left(1, \left[\frac{\mathcal{L_{\beta_1}}}{\mathcal{L_{\beta_2}}}\right]^{\beta_1 - \beta_2}\right).\]</div>
+<p>We can see from this how swapping is similar to the Metropolis-Hastings acceptance setup.If <span class="math notranslate nohighlight">\(\beta_1 &gt; \beta_2\)</span> (or <span class="math notranslate nohighlight">\(T_1 &lt;T_2\)</span>), the exponent is positive. In this case, if <span class="math notranslate nohighlight">\(\mathcal{L_{\beta_1}} &gt; \mathcal{L_{\beta_2}}\)</span>, the swap will always be accepted because we want the better likelihood to go to higher <span class="math notranslate nohighlight">\(\beta\)</span> (or lower <span class="math notranslate nohighlight">\(T\)</span>). If <span class="math notranslate nohighlight">\(\mathcal{L_{\beta_1}} &lt; \mathcal{L_{\beta_2}}\)</span>, the swap is accepted with a probability that reflects difference in the
+Likelihoods just like discussed above.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 
-<span></span><span class="n">ndim</span> <span class="o">=</span> <span class="mi">5</span>
+<span></span><span class="c1"># set up problem</span>
+<span class="n">ndim</span> <span class="o">=</span> <span class="mi">5</span>
 <span class="n">nwalkers</span> <span class="o">=</span> <span class="mi">100</span>
 <span class="n">ntemps</span> <span class="o">=</span> <span class="mi">10</span>
 
+<span class="c1"># fill kwargs dictionary</span>
 <span class="n">tempering_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">ntemps</span><span class="o">=</span><span class="n">ntemps</span><span class="p">)</span>
 
 <span class="c1"># randomize throughout prior</span>
 <span class="n">coords</span> <span class="o">=</span> <span class="n">priors</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,))</span>
 
+<span class="c1"># initialize sampler</span>
 <span class="n">ensemble_pt</span> <span class="o">=</span> <span class="n">EnsembleSampler</span><span class="p">(</span>
     <span class="n">nwalkers</span><span class="p">,</span>
     <span class="n">ndim</span><span class="p">,</span>
-    <span class="n">log_prob_fn</span><span class="p">,</span>
+    <span class="n">log_like_fn</span><span class="p">,</span>
     <span class="n">priors</span><span class="p">,</span>
     <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">means</span><span class="p">,</span> <span class="n">cov</span><span class="p">],</span>
     <span class="n">tempering_kwargs</span><span class="o">=</span><span class="n">tempering_kwargs</span>
 <span class="p">)</span>
 
-<span class="n">nsteps</span> <span class="o">=</span> <span class="mi">5000</span>
+<span class="n">nsteps</span> <span class="o">=</span> <span class="mi">500</span>
 <span class="c1"># burn for 1000 steps</span>
 <span class="n">burn</span> <span class="o">=</span> <span class="mi">1000</span>
 <span class="c1"># thin by 5</span>
@@ -1374,8 +1392,27 @@ array([[[[-1.42033703e+00, -1.02810079e-01, -8.59592624e-01,
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+100%|███████████████████████████████████████| 1000/1000 [00:19&lt;00:00, 50.66it/s]
+100%|███████████████████████████████████████| 2500/2500 [00:51&lt;00:00, 48.56it/s]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;eryn.state.State at 0x177ad93a0&gt;
+</pre></div></div>
+</div>
+<p>We can plot our samples at different temperatures and see the differences in action.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[46]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1386,8 +1423,95 @@ array([[[[-1.42033703e+00, -1.02810079e-01, -8.59592624e-01,
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_49_1.png" src="../_images/tutorial_Eryn_tutorial_49_1.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_49_2.png" src="../_images/tutorial_Eryn_tutorial_49_2.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_49_3.png" src="../_images/tutorial_Eryn_tutorial_49_3.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_49_4.png" src="../_images/tutorial_Eryn_tutorial_49_4.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_49_5.png" src="../_images/tutorial_Eryn_tutorial_49_5.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_49_6.png" src="../_images/tutorial_Eryn_tutorial_49_6.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_49_7.png" src="../_images/tutorial_Eryn_tutorial_49_7.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_49_8.png" src="../_images/tutorial_Eryn_tutorial_49_8.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_49_9.png" src="../_images/tutorial_Eryn_tutorial_49_9.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_49_10.png" src="../_images/tutorial_Eryn_tutorial_49_10.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[47]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1401,9 +1525,120 @@ array([[[[-1.42033703e+00, -1.02810079e-01, -8.59592624e-01,
 </pre></div>
 </div>
 </div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_50_0.png" src="../_images/tutorial_Eryn_tutorial_50_0.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_50_1.png" src="../_images/tutorial_Eryn_tutorial_50_1.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_50_2.png" src="../_images/tutorial_Eryn_tutorial_50_2.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_50_3.png" src="../_images/tutorial_Eryn_tutorial_50_3.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_50_4.png" src="../_images/tutorial_Eryn_tutorial_50_4.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_50_5.png" src="../_images/tutorial_Eryn_tutorial_50_5.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_50_6.png" src="../_images/tutorial_Eryn_tutorial_50_6.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_50_7.png" src="../_images/tutorial_Eryn_tutorial_50_7.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_50_8.png" src="../_images/tutorial_Eryn_tutorial_50_8.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_50_9.png" src="../_images/tutorial_Eryn_tutorial_50_9.png" />
+</div>
+</div>
+<p>Likelihoods across temperatures:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[54]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">ll</span> <span class="o">=</span> <span class="n">ensemble_pt</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">get_log_like</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ll</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+<span class="c1"># cold chain and highest temperature chain</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ll</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;cold&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ll</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;warm&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(500, 10, 100)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[54]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x175682040&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_52_2.png" src="../_images/tutorial_Eryn_tutorial_52_2.png" />
+</div>
+</div>
 </section>
-<section id="Add-multiple-leaf-count-uncertainty-(i.e. reversible-jump-MCMC))">
-<h2>Add multiple leaf count uncertainty (i.e. reversible-jump MCMC))<a class="headerlink" href="#Add-multiple-leaf-count-uncertainty-(i.e. reversible-jump-MCMC))" title="Permalink to this headline">¶</a></h2>
+<section id="Mutliple-Branches-(Model-Types)">
+<h2>Mutliple Branches (Model Types)<a class="headerlink" href="#Mutliple-Branches-(Model-Types)" title="Permalink to this headline">¶</a></h2>
+<p>We will now add to our sampler the ability to run on multiple model types.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
