@@ -252,9 +252,116 @@ user must be careful and verify constant temperatures in the backend.
 </dd>
 </dl>
 <dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.tempering.TemperatureControl.compute_log_posterior_tempered">
+<span class="sig-name descname"><span class="pre">compute_log_posterior_tempered</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.tempering.TemperatureControl.compute_log_posterior_tempered" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the log of the tempered posterior</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>logl</strong> (<em>np.ndarray</em>) – Log of the Likelihood. Can be 1D or 2D array. If 2D,
+must have shape <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers)</span></code>. If 1D, <code class="docutils literal notranslate"><span class="pre">betas</span></code> must be provided
+with the same shape.</p></li>
+<li><p><strong>logp</strong> (<em>np.ndarray</em>) – Log of the Prior. Can be 1D or 2D array. If 2D,
+must have shape <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers)</span></code>. If 1D, <code class="docutils literal notranslate"><span class="pre">betas</span></code> must be provided
+with the same shape.</p></li>
+<li><p><strong>betas</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>]</em>) – If provided, inverse temperatures as 1D array.
+If not provided, it will use <code class="docutils literal notranslate"><span class="pre">self.betas</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Log of the temperated posterior.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>AssertionError</strong> – Inputs are incorrectly shaped.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.tempering.TemperatureControl.tempered_likelihood">
+<span class="sig-name descname"><span class="pre">tempered_likelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.tempering.TemperatureControl.tempered_likelihood" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the log of the tempered Likelihood</p>
+<p>From <cite>ptemcee</cite>: “This is usually a mundane multiplication, except for the special case where
+beta == 0 <em>and</em> we’re outside the likelihood support.
+Here, we find a singularity that demands more careful attention; we allow the
+likelihood to dominate the temperature, since wandering outside the
+likelihood support causes a discontinuity.”</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>logl</strong> (<em>np.ndarray</em>) – Log of the Likelihood. Can be 1D or 2D array. If 2D,
+must have shape <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers)</span></code>. If 1D, <code class="docutils literal notranslate"><span class="pre">betas</span></code> must be provided
+with the same shape.</p></li>
+<li><p><strong>betas</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>]</em>) – If provided, inverse temperatures as 1D array.
+If not provided, it will use <code class="docutils literal notranslate"><span class="pre">self.betas</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Log of the temperated Likelihood.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – betas not provided if needed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.tempering.TemperatureControl.temperature_swaps">
 <span class="sig-name descname"><span class="pre">temperature_swaps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logP</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.tempering.TemperatureControl.temperature_swaps" title="Permalink to this definition">¶</a></dt>
-<dd><p>Perform parallel-tempering temperature swaps on the state in <code class="docutils literal notranslate"><span class="pre">x</span></code> with associated <code class="docutils literal notranslate"><span class="pre">logP</span></code> and <code class="docutils literal notranslate"><span class="pre">logl</span></code>.</p>
+<dd><p>Perform parallel-tempering temperature swaps</p>
+<p>This function performs the swapping between neighboring temperatures. It cascades from
+high temperature down to low temperature.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>dict</em>) – Dictionary with keys as branch names and values as coordinate arrays.</p></li>
+<li><p><strong>logP</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – Log of the posterior probability.</p></li>
+<li><p><strong>logl</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – Log of the Likelihood.</p></li>
+<li><p><strong>logp</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – Log of the prior probability.</p></li>
+<li><p><strong>inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary with keys as branch names and values as the index arrays
+indicating which leaves are used. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>blobs</strong> (<em>object</em><em>, </em><em>optional</em>) – Blobs associated with each walker. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>supps</strong> (<em>object</em><em>, </em><em>optional</em>) – <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.BranchSupplimental</span></code> object. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>branch_supps</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary with keys as branch names and values as
+<code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.BranchSupplimental</span></code> objects for each branch (can be <code class="docutils literal notranslate"><span class="pre">None</span></code> for some branches). (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>All of the information that was input now swapped (output in the same order as input).</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.tempering.TemperatureControl.temper_comps">
+<span class="sig-name descname"><span class="pre">temper_comps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adapt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.tempering.TemperatureControl.temper_comps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perfrom temperature-related operations on a state.</p>
+<p>This includes making swaps and then adapting the temperatures for the next round.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state</strong> (<em>object</em>) – Filled <code class="docutils literal notranslate"><span class="pre">State</span></code> object.</p></li>
+<li><p><strong>adapt</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, swaps are to be performed, but no
+adaptation is made. In this case, <code class="docutils literal notranslate"><span class="pre">self.time</span></code> does not increase by 1.
+(default: <code class="docutils literal notranslate"><span class="pre">True</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>State object after swaps.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.State</span></code></a></p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

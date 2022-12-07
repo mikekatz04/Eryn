@@ -201,8 +201,10 @@ class TemperatureControl(object):
     """Controls the temperature ladder and operations in the sampler.
 
     All of the tempering features within Eryn are controlled from this class. 
-    This includes the evaluation of the tempered posterior, swapping between temperatures, and the adaptation of the temperatures over time. The adaptive tempering model can be found in the Eryn paper
-    as well as the paper for `ptemcee`, which acted as a basis for the code below. 
+    This includes the evaluation of the tempered posterior, swapping between temperatures, and 
+    the adaptation of the temperatures over time. The adaptive tempering model can be 
+    found in the Eryn paper as well as the paper for `ptemcee`, which acted 
+    as a basis for the code below. 
 
     Args:
         ndims (int or list of int): Dimensions for the model in the sampling run.
@@ -274,12 +276,15 @@ class TemperatureControl(object):
                 else:
                     betas = make_ladder(ndims[0], ntemps=ntemps, Tmax=Tmax)
 
+        # store information
         self.nwalkers = nwalkers
         self.betas = betas
         self.ntemps = ntemps = len(betas)
 
+        # number of times adapted
         self.time = 0
 
+        # store adapting inf
         self.adaptive = adaptive
         self.adaptation_time, self.adaptation_lag = adaptation_time, adaptation_lag
         self.stop_adaptation = stop_adaptation
@@ -288,18 +293,58 @@ class TemperatureControl(object):
         self.swaps_proposed = np.full(self.ntemps - 1, self.nwalkers)
 
     def compute_log_posterior_tempered(self, logl, logp, betas=None):
-        tempered_logl = self._tempered_likelihood(logl, betas=betas)
+        """Compute the log of the tempered posterior
+        
+        Args:
+            logl (np.ndarray): Log of the Likelihood. Can be 1D or 2D array. If 2D,
+                must have shape ``(ntemps, nwalkers)``. If 1D, ``betas`` must be provided
+                with the same shape. 
+            logp (np.ndarray): Log of the Prior. Can be 1D or 2D array. If 2D,
+                must have shape ``(ntemps, nwalkers)``. If 1D, ``betas`` must be provided
+                with the same shape. 
+            betas (np.ndarray[ntemps]): If provided, inverse temperatures as 1D array.
+                If not provided, it will use ``self.betas``. (default: ``None``)
+
+        Returns:
+            np.ndarray: Log of the temperated posterior.
+
+        Raises:
+            AssertionError: Inputs are incorrectly shaped.
+
+        """
+        assert logl.shape == logp.shape
+        tempered_logl = self.tempered_likelihood(logl, betas=betas)
         return tempered_logl + logp
 
-    def _tempered_likelihood(self, logl, betas=None):
-        """
-        Compute tempered log likelihood.  This is usually a mundane multiplication, except for the special case where
+    def tempered_likelihood(self, logl, betas=None):
+        """Compute the log of the tempered Likelihood
+
+        From `ptemcee`: "This is usually a mundane multiplication, except for the special case where
         beta == 0 *and* we're outside the likelihood support.
-        Here, we find a singularity that demands more careful attention; we allow the likelihood to dominate the
-        temperature, since wandering outside the likelihood support causes a discontinuity.
+        Here, we find a singularity that demands more careful attention; we allow the 
+        likelihood to dominate the temperature, since wandering outside the 
+        likelihood support causes a discontinuity."
+        
+        Args:
+            logl (np.ndarray): Log of the Likelihood. Can be 1D or 2D array. If 2D,
+                must have shape ``(ntemps, nwalkers)``. If 1D, ``betas`` must be provided
+                with the same shape. 
+            betas (np.ndarray[ntemps]): If provided, inverse temperatures as 1D array.
+                If not provided, it will use ``self.betas``. (default: ``None``)
+
+        Returns:
+            np.ndarray: Log of the temperated Likelihood.
+
+        Raises:
+            ValueError: betas not provided if needed.
+
         """
+        # perform calculation on 1D likelihoods.
         if logl.ndim == 1:
-            assert betas is not None
+            if betas is None:
+                raise ValueError(
+                    "If inputing a 1D logl array, need to provide 1D betas array of the same length."
+                )
             loglT = logl * betas
 
         else:
@@ -309,6 +354,7 @@ class TemperatureControl(object):
             with np.errstate(invalid="ignore"):
                 loglT = logl * betas[:, None]
 
+        # anywhere the likelihood is nan, turn into -infinity
         loglT[np.isnan(loglT)] = -np.inf
 
         return loglT
@@ -316,26 +362,54 @@ class TemperatureControl(object):
     def temperature_swaps(
         self, x, logP, logl, logp, inds=None, blobs=None, supps=None, branch_supps=None
     ):
-        """
-        Perform parallel-tempering temperature swaps on the state in ``x`` with associated ``logP`` and ``logl``.
+        """Perform parallel-tempering temperature swaps
+
+        This function performs the swapping between neighboring temperatures. It cascades from 
+        high temperature down to low temperature. 
+
+        Args:
+            x (dict): Dictionary with keys as branch names and values as coordinate arrays.
+            logP (np.ndarray[ntemps, nwalkers]): Log of the posterior probability.
+            logl (np.ndarray[ntemps, nwalkers]): Log of the Likelihood.
+            logp (np.ndarray[ntemps, nwalkers]): Log of the prior probability.
+            inds (dict, optional): Dictionary with keys as branch names and values as the index arrays
+                indicating which leaves are used. (default: ``None``)
+            blobs (object, optional): Blobs associated with each walker. (default: ``None``)
+            supps (object, optional): :class:`eryn.state.BranchSupplimental` object. (default: ``None``)
+            branch_supps (dict, optional): Dictionary with keys as branch names and values as 
+                :class:`eryn.state.BranchSupplimental` objects for each branch (can be ``None`` for some branches). (default: ``None``)
+
+        Returns:
+            tuple: All of the information that was input now swapped (output in the same order as input).
+
         """
 
         ntemps, nwalkers = self.ntemps, self.nwalkers
+
+        # prepare information on how many swaps are accepted this time
         self.swaps_accepted = np.empty(ntemps - 1)
 
+        # iterate from highest to lowest temperatures
         for i in range(ntemps - 1, 0, -1):
+
+            # get both temperature rungs
             bi = self.betas[i]
             bi1 = self.betas[i - 1]
 
+            # difference in inverse temps
             dbeta = bi1 - bi
 
+            # permute the indices for the walkers in each temperature to randomize swap positions
             iperm = np.random.permutation(nwalkers)
             i1perm = np.random.permutation(nwalkers)
 
+            # random draw that produces log of the acceptance fraction
             raccept = np.log(np.random.uniform(size=nwalkers))
+
+            # log of the detailed balance fraction
             paccept = dbeta * (logl[i, iperm] - logl[i - 1, i1perm])
 
-            # How many swaps were accepted?
+            # How many swaps were accepted
             sel = paccept > raccept
             self.swaps_accepted[i - 1] = np.sum(sel)
 
@@ -354,35 +428,61 @@ class TemperatureControl(object):
             if supps is not None:
                 supps_temp = deepcopy(supps[i, iperm[sel]])
 
+            # swap from i1 to i
             for name in x:
+                # coords first
                 x[name][i, iperm[sel], :, :] = x[name][i - 1, i1perm[sel], :, :]
+
+                # then inds
                 if inds is not None:
                     inds[name][i, iperm[sel], :] = inds[name][i - 1, i1perm[sel], :]
+
+                # do something special for branch_supps in case in contains a large amount of data
+                # that is heavy to copy
                 if branch_supps[name] is not None:
+
+                    # where the inds are alive in the current permutation
                     inds_i = np.where(inds[name][i][iperm[sel]])
+
+                    # gives the associated walker for each spot in the permuted array
                     walker_inds_i = iperm[sel][inds_i[0]]
+
+                    # represents which permuted leaves are alive
                     leaf_inds_i = inds_i[1]
+
+                    # all of these are at the same temperature
                     temp_inds_i = np.full_like(leaf_inds_i, i)
 
+                    # repeat all for the i1 permutated temperature
                     inds_i1 = np.where(inds[name][i - 1][i1perm[sel]])
                     walker_inds_i1 = i1perm[sel][inds_i1[0]]
                     leaf_inds_i1 = inds_i1[1]
                     temp_inds_i1 = np.full_like(leaf_inds_i1, i - 1)
+
+                    # go through the values within each branch supplimental holder
+                    # do direct movement of things that need to change
+                    # rather than copying the whole thing
                     for name2 in branch_supps[name].holder:
+                        # store temperarily
                         bring_back_branch_supps = (
                             branch_supps[name]
                             .holder[name2][(temp_inds_i, walker_inds_i, leaf_inds_i)]
                             .copy()
                         )
+
+                        # make switch from i1 to i
                         branch_supps[name].holder[name2][
                             (temp_inds_i, walker_inds_i, leaf_inds_i)
                         ] = branch_supps[name].holder[name2][
                             (temp_inds_i1, walker_inds_i1, leaf_inds_i1)
                         ]
+
+                        # make switch from i to i1
                         branch_supps[name].holder[name2][
                             (temp_inds_i1, walker_inds_i1, leaf_inds_i1)
                         ] = bring_back_branch_supps
 
+            # switch everythin else from i1 to i
             logl[i, iperm[sel]] = logl[i - 1, i1perm[sel]]
             logp[i, iperm[sel]] = logp[i - 1, i1perm[sel]]
             logP[i, iperm[sel]] = (
@@ -393,6 +493,7 @@ class TemperatureControl(object):
             if supps is not None:
                 supps[i, iperm[sel]] = supps[i - 1, i1perm[sel]]
 
+            # switch x from i to i1
             for name in x:
                 x[name][i - 1, i1perm[sel], :, :] = x_temp[name][i, iperm[sel], :, :]
                 if inds is not None:
@@ -404,6 +505,7 @@ class TemperatureControl(object):
                 #        i, iperm[sel], :
                 #    ]
 
+            # switch the rest from i to i1
             logl[i - 1, i1perm[sel]] = logl_temp
             logp[i - 1, i1perm[sel]] = logp_temp
             logP[i - 1, i1perm[sel]] = logP_temp + dbeta * logl_temp
@@ -437,10 +539,29 @@ class TemperatureControl(object):
         # Don't mutate the ladder here; let the client code do that.
         return betas - betas0
 
-    def temper_comps(self, state, accepted, adapt=True):
+    def temper_comps(self, state, adapt=True):
+        """Perfrom temperature-related operations on a state.
+        
+        This includes making swaps and then adapting the temperatures for the next round.
+        
+        Args:
+            state (object): Filled ``State`` object.
+            adapt (bool, optional): If True, swaps are to be performed, but no
+                adaptation is made. In this case, ``self.time`` does not increase by 1. 
+                (default: ``True``)
+
+        Returns:
+            :class:`eryn.state.State`: State object after swaps. 
+        
+        """
+        # get initial values
         logl = state.log_like
         logp = state.log_prior
+
+        # do posterior just for the hell of it
         logP = self.compute_log_posterior_tempered(logl, logp)
+
+        # make swaps
         x, logP, logl, logp, inds, blobs, supps, branch_supps = self.temperature_swaps(
             state.branches_coords,
             logP.copy(),
@@ -452,8 +573,10 @@ class TemperatureControl(object):
             branch_supps=state.branches_supplimental,
         )
 
+        # determine ratios of swaps accepted to swaps proposed (the ladder is fixed)
         ratios = self.swaps_accepted / self.swaps_proposed
 
+        # adapt if desired
         if adapt and self.adaptive and self.ntemps > 1:
             if self.stop_adaptation < 0 or self.time < self.stop_adaptation:
                 dbetas = self._get_ladder_adjustment(self.time, self.betas, ratios)
@@ -462,6 +585,8 @@ class TemperatureControl(object):
             # only increase time if it is adaptive.
             self.time += 1
 
+        # create a new state out of the swapped information
+        # TODO: make this more memory efficient?
         new_state = State(
             x,
             log_like=logl,
@@ -474,4 +599,4 @@ class TemperatureControl(object):
             random_state=state.random_state,
         )
 
-        return new_state, accepted
+        return new_state
