@@ -207,7 +207,7 @@ class EnsembleSampler(object):
         args=None,
         kwargs=None,
         backend=None,
-        vectorize=True,
+        vectorize=False,
         blobs_dtype=None,  # TODO check this
         plot_iterations=-1,  # TODO: do plot stuff?
         plot_generator=None,
@@ -1321,6 +1321,11 @@ class EnsembleSampler(object):
         return self.get_value("log_like", **kwargs)
 
     get_log_like.__doc__ = Backend.get_log_like.__doc__
+
+    def get_log_prior(self, **kwargs):
+        return self.get_value("log_like", **kwargs)
+
+    get_log_prior.__doc__ = Backend.get_log_prior.__doc__
 
     def get_inds(self, **kwargs):
         return self.get_value("inds", **kwargs)

@@ -7,3 +7,8 @@ The :class:`eryn.state.State` carries the information around for all walkers at 
     :members:
     :show-inheritance:
     :inherited-members:
+
+.. autoclass:: eryn.state.Branch
+    :members:
+    :show-inheritance:
+    :inherited-members:

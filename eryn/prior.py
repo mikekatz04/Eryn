@@ -175,7 +175,7 @@ class PriorContainer:
 
         self.ndim = uni_inds.max() + 1
 
-    def logpdf(self, x, groups=None):
+    def logpdf(self, x):
         """Get logpdf by summing logpdf of individual distributions
 
         Args:
@@ -187,7 +187,19 @@ class PriorContainer:
 
         """
         # TODO: check if mutliple index prior will work
+
+        # make sure at least 2D
+        if x.ndim == 1:
+            x = x[None, :]
+            squeeze = True
+
+        elif x.ndim != 2:
+            raise ValueError("x needs to 1 or 2 dimensional array.")
+        else:
+            squeeze = False
+
         prior_vals = np.zeros(x.shape[0])
+
         # sum the logs (assumes parameters are independent)
         for i, (inds, prior_i) in enumerate(self.priors):
             vals_in = x[:, inds].squeeze()
@@ -195,8 +207,12 @@ class PriorContainer:
                 temp = prior_i.logpdf(vals_in)
             else:
                 temp = prior_i.logpmf(vals_in)
-                
+
             prior_vals += temp
+
+        # if only one walker was asked for, return a scalar value not an array
+        if squeeze:
+            prior_vals = prior_vals[0].item()
 
         return prior_vals
 
@@ -227,7 +243,7 @@ class PriorContainer:
 
             vals_in = x[:, inds].squeeze()
             temp = prior_i.ppf(vals_in)
-            
+
             out_vals[:, inds[0]] = temp
 
         if is_1d:

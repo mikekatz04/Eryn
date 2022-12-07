@@ -347,6 +347,7 @@ class Branch(object):
             are output to the backend, the backend saves a special number (default: ``np.nan``) for all coords
             related to unused leaves at that step. If None, inds will fill with all True values.
             (default: ``None``)
+        branch_supplimental (object): :class:`BranchSupplimental` object specific to this branch. (default: ``None``)
 
     Raises:
         ValueError: ``inds`` has wrong shape or number of leaves is less than zero.
@@ -371,14 +372,14 @@ class Branch(object):
             self.inds = inds
 
         if branch_supplimental is not None:
+            # make sure branch_supplimental shape matches
             if branch_supplimental.shape != self.inds.shape:
                 raise ValueError(
                     f"branch_supplimental shape ( {branch_supplimental.shape} ) does not match inds shape ( {self.inds.shape} )."
                 )
 
+        # store
         self.branch_supplimental = branch_supplimental
-        # verify no 0 nleaves walkers
-        self.nleaves
 
     @property
     def nleaves(self):

@@ -100,7 +100,7 @@
 </ul>
 <p class="caption"><span class="caption-text">Tutorial:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../tutorial/Eryn_tutorial.html">Eryn Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial/Eryn_tutorial.html">Eryn</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorial/Eryn_tutorial.html#Utilities">Utilities</a></li>
 </ul>
 
@@ -280,6 +280,40 @@ Input should be <code class="docutils literal notranslate"><span class="pre">Non
 <dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
 </dd>
 </dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="eryn.state.Branch">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.state.</span></span><span class="sig-name descname"><span class="pre">Branch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_supplimental</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.state.Branch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Special container for one branch (model)</p>
+<p>This class is a key component of Eryn. It this type of object
+that allows for different models to be considered simultaneously
+within an MCMC run.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coords</strong> (<em>4D double np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>, </em><em>nleaves_max</em><em>, </em><em>ndim</em><em>]</em>) – The coordinates
+in parameter space of all walkers.</p></li>
+<li><p><strong>inds</strong> (<em>3D bool np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>, </em><em>nleaves_max</em><em>]</em><em>, </em><em>optional</em>) – The information
+on which leaves are used and which are not used. A value of True means the specific leaf
+was used in this step. Parameters from unused walkers are still kept. When they
+are output to the backend, the backend saves a special number (default: <code class="docutils literal notranslate"><span class="pre">np.nan</span></code>) for all coords
+related to unused leaves at that step. If None, inds will fill with all True values.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>branch_supplimental</strong> (<em>object</em>) – <code class="xref py py-class docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> object specific to this branch. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – <code class="docutils literal notranslate"><span class="pre">inds</span></code> has wrong shape or number of leaves is less than zero.</p>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="eryn.state.Branch.nleaves">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">nleaves</span></span><a class="headerlink" href="#eryn.state.Branch.nleaves" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of leaves for each walker</p>
 </dd></dl>
 
 </dd></dl>

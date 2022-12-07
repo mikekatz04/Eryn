@@ -8,7 +8,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Eryn Tutorial &mdash; Eryn 0.0.1 documentation</title>
+  <title>Eryn &mdash; Eryn 0.0.1 documentation</title>
   
 
   
@@ -101,19 +101,20 @@
 </ul>
 <p class="caption"><span class="caption-text">Tutorial:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Eryn Tutorial</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Eryn</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#The-Tree-Metaphor">The Tree Metaphor</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Getting-Started-with-the-Ensemble-Sampler">Getting Started with the Ensemble Sampler</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#State-Objects">State Objects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Backend-Objects">Backend Objects</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#5-dimensional-Arrays">5-dimensional Arrays</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#State-Objects">State Objects</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Branches">Branches</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#Add-tempering">Add tempering</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Add-multiple-leaf-count-uncertainty-(i.e. reversible-jump-MCMC))">Add multiple leaf count uncertainty (i.e. reversible-jump MCMC))</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#setup-for-reversible-jump">setup for reversible-jump</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#Add-multiple-branch">Add multiple branch</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#id1">setup for reversible-jump</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="#Add-multiple-leaf-count-uncertainty-(i.e. reversible-jump-MCMC))">Add multiple leaf count uncertainty (i.e. reversible-jump MCMC))</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Add-multiple-branch">Add multiple branch</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="#Utilities">Utilities</a><ul>
@@ -168,7 +169,7 @@
     
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
         
-      <li>Eryn Tutorial</li>
+      <li>Eryn</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -521,8 +522,8 @@ div.rendered_html tbody tr:hover {
 &#39;/Users/michaelkatz/anaconda3/envs/eryn_env/lib/python3.9/site-packages/eryn/__init__.py&#39;
 </pre></div></div>
 </div>
-<section id="Eryn-Tutorial">
-<h1>Eryn Tutorial<a class="headerlink" href="#Eryn-Tutorial" title="Permalink to this headline">¶</a></h1>
+<section id="Eryn">
+<h1>Eryn<a class="headerlink" href="#Eryn" title="Permalink to this headline">¶</a></h1>
 <p>Eryn is an advanced MCMC sampler. It has the capability to run with parallel tempering, multiple model types, and unknown counts within each model type using Reversible-Jump MCMC techniques. Eryn is heavily based on <a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a>. The <code class="docutils literal notranslate"><span class="pre">emcee</span></code> base structure with the Ensemble Sampler, State objects, proposal setup, and storage backends is carried over into Eryn with small changes to account for the increased complexity. In a simple sense, Eryn is an
 advanced (and slightly more complicated) version of <code class="docutils literal notranslate"><span class="pre">emcee</span></code>.</p>
 <p>In this tutorial, we will go through much of what is available in Eryn. We will start with a basic sampling operation to illustrate how to build and navigate common objects in Eryn. We will then scale up the complexity to understand how to use Eryn in different circumstances.</p>
@@ -532,6 +533,7 @@ advanced (and slightly more complicated) version of <code class="docutils litera
 <p>Before we get into using the sampler, we will discuss the “infamous” tree metaphor. It helped in thinking about the early creation of Eryn and has carried through to the end. <code class="docutils literal notranslate"><span class="pre">Eryn</span></code> is the Sindarin word for “forest” or “woods.” The purpose of this metaphor is to simplify the complex dimensionality associated with changing models and model counts in MCMC. We choose not to use “model” and “model counts” everywhere because those descriptions can quickly become confusing.</p>
 <p>We start with a forest with a bunch of trees. These trees are the MCMC “walkers”. Each tree will have the same number of branches which is fixed throughout a sampling run (i.e. each walker has the same base setup). These branches are our different model types. For example, if you have a signal that is a combination of sine waves and Gaussians. In this case, you have two branches, one for the “sine wave” model and one for the “Gaussian” model. The number of Gaussians or sine waves is accounted
 for as the number of “leafs” on each branch. So, if 1 walker has 3 Gaussians and 2 sine waves, we can imagine this as a tree with two branches. The first branch for sine waves has 2 leaves and the second branch as 3 leaves for 3 Gaussians.</p>
+<p>When we get to parallel tempering, you can imagine different forests at different temperatures, all having the same number of trees (walkers).</p>
 <p>(# TODO: add image)</p>
 </section>
 <section id="Getting-Started-with-the-Ensemble-Sampler">
@@ -714,8 +716,9 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
 100%|████████████████████████████████████████| 250/250 [00:01&lt;00:00, 237.86it/s]
 </pre></div></div>
 </div>
-<p>Similar to <code class="docutils literal notranslate"><span class="pre">emcee</span></code>, all of the sampler information is stored in a backend object. In the default case, this backend is <code class="docutils literal notranslate"><span class="pre">`eryn.backends.Backend</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/build/html/user/backend.html#eryn.backends.Backend">https://mikekatz04.github.io/Eryn/build/html/user/backend.html#eryn.backends.Backend</a>&gt;`__. To retrieve the samples from the backend, you call the <code class="docutils literal notranslate"><span class="pre">get_chain</span></code> method. This will return a 5-dimensional array, which can be intimidating. We will cover that array just below. For now, just focus on the output of the sampler.</p>
-<p>We will first generate corner plot.</p>
+<p>Similar to <code class="docutils literal notranslate"><span class="pre">emcee</span></code>, all of the sampler information is stored in a backend object. In the default case, this backend is <code class="docutils literal notranslate"><span class="pre">`eryn.backends.Backend</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/build/html/user/backend.html#eryn.backends.Backend">https://mikekatz04.github.io/Eryn/build/html/user/backend.html#eryn.backends.Backend</a>&gt;`__. To retrieve the samples from the backend, you call the <code class="docutils literal notranslate"><span class="pre">get_chain</span></code> method. This will return a dictionary with keys at the omdel names and a 5-dimensional array per model, which can be intimidating. We will cover that array just below. For now, just focus on
+the output of the sampler.</p>
+<p>We will first generate corner plot. In this initial example, we have not defined branch names, therefore, the sampler has assigned our problem default branch names <code class="docutils literal notranslate"><span class="pre">model_0</span></code>,…,<code class="docutils literal notranslate"><span class="pre">model_n</span></code>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
@@ -764,35 +767,24 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
 </div>
 </div>
 </section>
-<section id="State-Objects">
-<h2>State Objects<a class="headerlink" href="#State-Objects" title="Permalink to this headline">¶</a></h2>
-<p>Now, we are going to look at <code class="docutils literal notranslate"><span class="pre">`State</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/build/html/user/state.html#eryn.state.State">https://mikekatz04.github.io/Eryn/build/html/user/state.html#eryn.state.State</a>&gt;`__ objects. They carry the current information throughout the sampler about the current state of the sampler. In our simple example, we can examine the current coordinates, likelihood, and prior values.</p>
-<p>Output from the sampler above is the last state of the sampler <code class="docutils literal notranslate"><span class="pre">out</span></code>.</p>
+<section id="Backend-Objects">
+<h2>Backend Objects<a class="headerlink" href="#Backend-Objects" title="Permalink to this headline">¶</a></h2>
+<p>Backends are where all of the information in the sampler is stored as it runs. It is from these backends that samples are retrieved for plotting. You can find the documentation for the Backend objects <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/backend.html#backends">here</a>. Here, we will go through the most commonly used functions from the backend: * <code class="docutils literal notranslate"><span class="pre">get_chain</span></code>: retrieve all of the samples stored over the course of the sampling run. * <code class="docutils literal notranslate"><span class="pre">get_log_like</span></code>: retrieve the log of the Likelihood
+for each sample. * <code class="docutils literal notranslate"><span class="pre">get_log_prior</span></code>: retrieve the log of the prior for each sample. * <code class="docutils literal notranslate"><span class="pre">get_a_sample</span></code>: retrieve a state object from a specific iteration. <code class="docutils literal notranslate"><span class="pre">get_last_sample</span></code> may be more common. It is just a specific example of <code class="docutils literal notranslate"><span class="pre">get_a_sample</span></code> for the last sample.</p>
+<p>Many (but not all) of the methods from the backend object are also raised to the level of sampler. So you can either call <code class="docutils literal notranslate"><span class="pre">EnsembleSampler.backend.method</span></code> or <code class="docutils literal notranslate"><span class="pre">EnsembleSampler.method</span></code> and it will be equivalent.</p>
+<p>Common properties to get from the backend: * <code class="docutils literal notranslate"><span class="pre">shape</span></code>: returns a dictionary with keys for each branch name and values as tuples representing the specific shape for each model. * <code class="docutils literal notranslate"><span class="pre">iteration</span></code>: number of stored iterations in the backend.</p>
+<p>Now we will get the likelihood and prior. Notice the shape of the Likelihood is <code class="docutils literal notranslate"><span class="pre">(nsteps,</span> <span class="pre">ntemps,</span> <span class="pre">nwalkers)</span></code> (in this example we have 1 temperature). This will always be the shape of quantities that are a single value per walker (e.g. Likelihood, prior, posterior).</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">out</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-&lt;eryn.state.State at 0x16e38af40&gt;
-</pre></div></div>
-</div>
-<p>We can access the Likelihood and prior values as <code class="docutils literal notranslate"><span class="pre">State.log_like</span></code> and <code class="docutils literal notranslate"><span class="pre">State.log_prior</span></code>. We can also ask the state to give use the posterior probability with the <code class="docutils literal notranslate"><span class="pre">get_log_prob</span></code> method.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="nb">print</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">log_like</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">log_prior</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">get_log_prob</span><span class="p">())</span>
+<span></span><span class="n">ll</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">get_log_like</span><span class="p">()</span>
+<span class="n">lp</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">get_log_prior</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of iterations </span><span class="si">{</span><span class="n">ensemble</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">iteration</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># equivalent to ensemble.get_log_like() and ensemble.get_log_prior()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ll</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">ll</span><span class="p">,</span> <span class="n">lp</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -801,7 +793,114 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[[-3.18607669 -1.1429558  -1.6589886  -1.60856068 -2.05237241 -2.80511361
+Number of iterations 50
+(50, 1, 100) [[[-9.43378049 -1.02493852 -4.17726471 ... -5.41402824 -4.02673368
+   -6.18991868]]
+
+ [[-4.52526005 -1.62876958 -1.66639971 ... -5.29449201 -3.19307031
+   -3.09561382]]
+
+ [[-2.47959226 -4.13212497 -3.8753185  ... -2.76500856 -6.39228333
+   -1.7003192 ]]
+
+ ...
+
+ [[-1.71557368 -1.9977553  -2.84171927 ... -1.4080743  -1.53589636
+   -1.1843373 ]]
+
+ [[-1.16305075 -6.99215316 -1.59208011 ... -3.08587029 -1.62457723
+   -3.25310739]]
+
+ [[-3.18607669 -1.1429558  -1.6589886  ... -1.47512843 -2.64662908
+   -0.39670766]]] [[[-11.51292546 -11.51292546 -11.51292546 ... -11.51292546 -11.51292546
+   -11.51292546]]
+
+ [[-11.51292546 -11.51292546 -11.51292546 ... -11.51292546 -11.51292546
+   -11.51292546]]
+
+ [[-11.51292546 -11.51292546 -11.51292546 ... -11.51292546 -11.51292546
+   -11.51292546]]
+
+ ...
+
+ [[-11.51292546 -11.51292546 -11.51292546 ... -11.51292546 -11.51292546
+   -11.51292546]]
+
+ [[-11.51292546 -11.51292546 -11.51292546 ... -11.51292546 -11.51292546
+   -11.51292546]]
+
+ [[-11.51292546 -11.51292546 -11.51292546 ... -11.51292546 -11.51292546
+   -11.51292546]]]
+</pre></div></div>
+</div>
+<section id="5-dimensional-Arrays">
+<h3>5-dimensional Arrays<a class="headerlink" href="#5-dimensional-Arrays" title="Permalink to this headline">¶</a></h3>
+<p>The chain information is returned as a dictionary with keys as the branch names and values as 5-dimensional arrays: <code class="docutils literal notranslate"><span class="pre">(nsteps,</span> <span class="pre">ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max,</span> <span class="pre">ndim)</span></code>. For clarity: * nsteps: number of sampler iterations stored (time evolution of each forest) * ntemps: number of temperatures (which forest you are in) * nwalkers: number of walkers (which tree) * nleaves_max: maximum number of model counts or leaves for each specific branch. * ndim: number of parameters describing a single
+model or leaf.</p>
+<p>In our simple example, we have 1 temperature and our maximum leaf count is 1.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># getting the chain</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()</span>
+
+<span class="c1"># same as</span>
+<span class="c1"># samples = enseble.backend.get_chain()</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">samples</span><span class="p">),</span> <span class="n">samples</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">samples</span><span class="p">[</span><span class="s2">&quot;model_0&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;class &#39;dict&#39;&gt; dict_keys([&#39;model_0&#39;]) (50, 1, 100, 1, 5)
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="State-Objects">
+<h2>State Objects<a class="headerlink" href="#State-Objects" title="Permalink to this headline">¶</a></h2>
+<p>Now, we are going to look at <code class="docutils literal notranslate"><span class="pre">`State</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/build/html/user/state.html#eryn.state.State">https://mikekatz04.github.io/Eryn/build/html/user/state.html#eryn.state.State</a>&gt;`__ objects. They carry the current information throughout the sampler about the current state of the sampler. In our simple example, we can examine the current coordinates, likelihood, and prior values.</p>
+<p>Output from the sampler above is the last state of the sampler <code class="docutils literal notranslate"><span class="pre">out</span></code>. This will include any additional objects passed through the sampler like <code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> objects that we will explain below.</p>
+<p>Another way to retrieve the last state is from the backend. That is what we will do here. However, please note, that supplimental information (discussed below) is not stored in the backend, so the state that is returned from the backend will have information that is stored in the backend, but not supplimental information that was passed through the sampler at runtime.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">last_state</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">get_last_sample</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">last_state</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;class &#39;eryn.state.State&#39;&gt;
+</pre></div></div>
+</div>
+<p>We can access the Likelihood and prior values as <code class="docutils literal notranslate"><span class="pre">State.log_like</span></code> and <code class="docutils literal notranslate"><span class="pre">State.log_prior</span></code>. We can also ask the state to give use the posterior probability with the <code class="docutils literal notranslate"><span class="pre">get_log_prob</span></code> method. Note that shape of these values is <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers)</span></code>. This is because <code class="docutils literal notranslate"><span class="pre">State</span></code> objects represent one moment in time in the sample, so they do not have the <code class="docutils literal notranslate"><span class="pre">nsteps</span></code> outer dimension that the backend has.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="nb">print</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">log_like</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">log_like</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">log_prior</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">get_log_prob</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(1, 100) [[-3.18607669 -1.1429558  -1.6589886  -1.60856068 -2.05237241 -2.80511361
   -3.2820529  -0.48777215 -4.69744231 -4.54166543 -0.49613285 -2.57913187
   -0.82081494 -3.15835422 -4.69374692 -1.36431241 -1.02297895 -3.81079257
   -1.3500181  -2.69702179 -0.94306879 -0.68869336 -1.55075872 -1.77505016
@@ -872,6 +971,10 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
   -11.909633127086721]]
 </pre></div></div>
 </div>
+<section id="Branches">
+<h3>Branches<a class="headerlink" href="#Branches" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">State</span></code> objects store quantities at are single values per walker directly in the state as shown above (e.g. <code class="docutils literal notranslate"><span class="pre">State.log_like</span></code>). Information that gets down to the individual branch (or model type) level is stored in a <code class="docutils literal notranslate"><span class="pre">Branch</span></code> object. These <code class="docutils literal notranslate"><span class="pre">Branch</span></code> objects are stored in a dictionary within the <code class="docutils literal notranslate"><span class="pre">State</span></code> object with keys as branch names and values as the <code class="docutils literal notranslate"><span class="pre">Branch</span></code> object associated with that branch name.</p>
+</section>
 </section>
 <section id="Add-tempering">
 <h2>Add tempering<a class="headerlink" href="#Add-tempering" title="Permalink to this headline">¶</a></h2>
@@ -1019,8 +1122,6 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
 </pre></div>
 </div>
 </div>
-<section id="setup-for-reversible-jump">
-<h3>setup for reversible-jump<a class="headerlink" href="#setup-for-reversible-jump" title="Permalink to this headline">¶</a></h3>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -1175,7 +1276,6 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
 </div>
 </div>
 </section>
-</section>
 <section id="Add-multiple-branch">
 <h2>Add multiple branch<a class="headerlink" href="#Add-multiple-branch" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput nblast docutils container">
@@ -1294,8 +1394,6 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
 </pre></div>
 </div>
 </div>
-<section id="id1">
-<h3>setup for reversible-jump<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -1508,7 +1606,6 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
 </pre></div>
 </div>
 </div>
-</section>
 </section>
 </section>
 <section id="Utilities">
