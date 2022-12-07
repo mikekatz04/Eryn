@@ -21,6 +21,7 @@ Welcome to Eryn's documentation!
    user/backend
    user/moves
    user/prior
+   user/temper
    user/utils
 
 .. toctree::
