@@ -9,6 +9,7 @@ Welcome to Eryn's documentation!
 .. image:: img/ents.jpg
   :width: 400
   :alt: Alternative text
+  :align: center
 
 .. include:: README.rst
 

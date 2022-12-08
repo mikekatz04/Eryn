@@ -704,6 +704,15 @@ class EnsembleSampler(object):
         if np.any(np.isnan(state.log_like)):
             raise ValueError("The initial log_like was NaN")
 
+        if np.any(np.isinf(state.log_like)):
+            raise ValueError("The initial log_like was +/- infinite")
+
+        if np.any(np.isnan(state.log_prior)):
+            raise ValueError("The initial log_prior was NaN")
+
+        if np.any(np.isinf(state.log_prior)):
+            raise ValueError("The initial log_prior was +/- infinite")
+
         # Check that the thin keyword is reasonable.
         thin_by = int(thin_by)
         if thin_by <= 0:
@@ -956,13 +965,19 @@ class EnsembleSampler(object):
 
             prior_out = np.zeros((ntemps, nwalkers))
             for name in x_in:
+                ntemps, nwalkers, nleaves_max, ndim = coords[name].shape
+
                 prior_out_temp = (
-                    self.priors[name].logpdf(x_in[name]) * inds[name].flatten()
+                    self.priors[name]
+                    .logpdf(x_in[name])
+                    .reshape(ntemps, nwalkers, nleaves_max)
                 )
+
+                # fix any infs / nans from binaries that are not being used (inds == False)
+                prior_out_temp[~inds[name]] = 0.0
+
                 # vectorized because everything is rectangular (no groups to indicate model difference)
-                prior_out += prior_out_temp.reshape(ntemps, nwalkers, nleaves_max).sum(
-                    axis=-1
-                )
+                prior_out += prior_out_temp.sum(axis=-1)
 
         return prior_out
 
@@ -1168,7 +1183,7 @@ class EnsembleSampler(object):
             for group_i in groups_map:
 
                 # args and kwargs for the individual Likelihood
-                arg_i = []
+                arg_i = [None for _ in self.branch_names]
                 kwarg_i = {}
 
                 # iterate over the group information from the branches
@@ -1184,7 +1199,7 @@ class EnsembleSampler(object):
                         params = params_in[branch_i][inds_keep]
 
                         # add them to the specific args for this Likelihood
-                        arg_i.append(params)
+                        arg_i[branch_i] = params
                         if self.provide_supplimental:
                             if supps is not None:
                                 # supps are specific to each group

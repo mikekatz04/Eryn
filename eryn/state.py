@@ -427,15 +427,15 @@ class State(object):
 
     """
 
-    __slots__ = (
-        "branches",
-        "log_like",
-        "log_prior",
-        "blobs",
-        "betas",
-        "supplimental",
-        "random_state",
-    )
+    # __slots__ = (
+    #    "branches",
+    #    "log_like",
+    #    "log_prior",
+    #    "blobs",
+    #    "betas",
+    #    "supplimental",
+    #    "random_state",
+    # )
 
     def __init__(
         self,

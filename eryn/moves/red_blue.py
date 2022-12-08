@@ -443,7 +443,7 @@ class RedBlueMove(Move, ABC):
                 )
 
         if self.temperature_control is not None:
-            state, accepted = self.temperature_control.temper_comps(state, accepted)
+            state = self.temperature_control.temper_comps(state)
 
         # make accepted move specific ?
         return state, accepted

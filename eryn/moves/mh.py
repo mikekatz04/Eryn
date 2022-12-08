@@ -129,6 +129,6 @@ class MHMove(Move):
         state = self.update(state, new_state, accepted)
 
         if self.temperature_control is not None:
-            state, accepted = self.temperature_control.temper_comps(state, accepted)
+            state = self.temperature_control.temper_comps(state)
 
         return state, accepted

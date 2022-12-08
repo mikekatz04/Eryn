@@ -374,7 +374,7 @@ class GroupMove(Move, ABC):
         # print("gibbs3", et - st)
         # st = time.perf_counter()
         if self.temperature_control is not None:
-            state, accepted = self.temperature_control.temper_comps(state, accepted)
+            state = self.temperature_control.temper_comps(state)
 
         # et = time.perf_counter()
         # print("temper", et - st)

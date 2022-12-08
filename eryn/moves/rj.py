@@ -435,9 +435,7 @@ class ReversibleJump(Move):
         # TODO: MLK: I think we should allow for swapping but no adaptation.
 
         if self.temperature_control is not None and not self.prevent_swaps:
-            state, accepted = self.temperature_control.temper_comps(
-                state, accepted, adapt=False
-            )
+            state = self.temperature_control.temper_comps(state, adapt=False)
         if np.any(state.log_like > 1e10):
             breakpoint()
 
