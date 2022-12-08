@@ -33,7 +33,7 @@ class Backend(object):
             of shape (nsteps, ntemps, nwalkers, nleaves_max). This array details which
             leaves are used in the current step. This is really only
             relevant for reversible jump.
-        initiailized (bool): If True, backend object has been initialized.
+        initiailized (bool): If ``True``, backend object has been initialized.
         iteration (int): Current index within the data storage arrays.
         log_prior (3D double np.ndarray): Log of the prior values. Shape is
             (nsteps, nwalkers, ntemps).
@@ -42,7 +42,7 @@ class Backend(object):
         nbranches (int): Number of branches.
         ndims (1D int np.ndarray): Dimensionality of each branch.
         nleaves_max (1D int np.ndarray): Maximum allowable leaves for each branch.
-        nwalkers (int): The size of the ensemble
+        nwalkers (int): The size of the ensemble (per temperature). 
         ntemps (int): Number of rungs in the temperature ladder.
         reset_args (tuple): Arguments to reset backend.
         reset_kwargs (dict): Keyword arguments to reset backend.
@@ -72,7 +72,6 @@ class Backend(object):
         ndims,
         nleaves_max=1,
         ntemps=1,
-        truth=None,
         branch_names=None,
         rj=False,
         **info,
@@ -80,16 +79,12 @@ class Backend(object):
         """Clear the state of the chain and empty the backend
 
         Args:
-            nwalkers (int): The size of the ensemble
+            nwalkers (int): The size of the ensemble (per temperature).
             ndims (int or list of ints): The number of dimensions for each branch.
-            nleaves_max (int or list of ints or 1D np.ndarray of ints, optional):
-                Maximum allowable leaf count for each branch. It should have
-                the same length as the number of branches.
-                (default: ``1``)
+            nleaves_max (int or list of ints, optional): Maximum allowable leaf count for each branch. 
+                It should have the same length as the number of branches. (default: ``1``)
             ntemps (int, optional): Number of rungs in the temperature ladder.
                 (default: ``1``)
-            truth (list or 1D double np.ndarray, optional): injection parameters.
-                (default: ``None``)
             branch_names (str or list of str, optional): Names of the branches used. If not given,
                 branches will be names ``model_0``, ..., ``model_n`` for ``n`` branches.
                 (default: ``None``)
@@ -99,13 +94,11 @@ class Backend(object):
                 as attributes to the backend.
 
         """
-
         # store inputs for later resets
         self.reset_args = (nwalkers, ndims)
         self.reset_kwargs = dict(
             nleaves_max=nleaves_max,
             ntemps=ntemps,
-            truth=truth,
             branch_names=branch_names,
             rj=rj,
             info=info,
@@ -136,7 +129,8 @@ class Backend(object):
 
         if len(self.nleaves_max) != len(self.ndims):
             raise ValueError(
-                "Number of branches indicated by nleaves_max and ndims are not equivalent (nleaves_max: {}, ndims: {}).".format(
+                """Number of branches indicated by nleaves_max and ndims are not equivalent"
+                (nleaves_max: {}, ndims: {}).""".format(
                     len(self.nleaves_max), len(self.ndims)
                 )
             )
@@ -153,7 +147,8 @@ class Backend(object):
 
             elif len(branch_names) != self.nbranches:
                 raise ValueError(
-                    "Number of branches indicated by nleaves_max and branch_names are not equivalent (nleaves_max: {}, branch_names: {}).".format(
+                    """Number of branches indicated by nleaves_max and branch_names are not equivalent"
+                       (nleaves_max: {}, branch_names: {}).""".format(
                         len(self.nleaves_max), len(branch_names)
                     )
                 )
@@ -168,13 +163,12 @@ class Backend(object):
 
         # setup all the holder arrays
         self.accepted = np.zeros((self.ntemps, self.nwalkers), dtype=self.dtype)
-        self.in_model_swaps_accepted = np.zeros((self.ntemps - 1,), dtype=self.dtype)
+        self.swaps_accepted = np.zeros((self.ntemps - 1,), dtype=self.dtype)
         if self.rj:
             self.rj_accepted = np.zeros((self.ntemps, self.nwalkers), dtype=self.dtype)
-            self.rj_swaps_accepted = np.zeros((self.ntemps - 1,), dtype=self.dtype)
+
         else:
             self.rj_accepted = None
-            self.rj_swaps_accepted = None
 
         # chains are stored in dictionaries
         self.chain = {
@@ -204,14 +198,11 @@ class Backend(object):
         self.random_state = None
         self.initialized = True
 
-        # injection parameters
-        self.truth = truth
-
     def has_blobs(self):
         """Returns ``True`` if the model includes blobs"""
         return self.blobs is not None
 
-    def get_value(self, name, flat=False, thin=1, discard=0):
+    def get_value(self, name, thin=1, discard=0, slice_vals=None):
         """Returns a requested value to user.
 
         This function helps to streamline the backend for both
@@ -219,17 +210,20 @@ class Backend(object):
 
         Args:
             name (str): Name of value requested.
-            flat (bool, optional): Flatten the chain across the ensemble.
-                (default: ``False``)
             thin (int, optional): Take only every ``thin`` steps from the
                 chain. (default: ``1``)
             discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
+            slice_vals (indexing np.ndarray or slice, optional): Ignored for non-HDFBackend.
 
         Returns:
             dict or np.ndarray: Values requested.
 
         """
+
+        if slice_vals is not None:
+            raise ValueError("slice_vals can only be used with an HDF Backend.")
+
         if self.iteration <= 0:
             raise AttributeError(
                 "you must run the sampler with "
@@ -247,14 +241,6 @@ class Backend(object):
                 key: self.chain[key][discard + thin - 1 : self.iteration : thin]
                 for key in self.chain
             }
-            if flat:
-                v_out = {}
-                for key, v in v_all.items():
-                    s = list(v.shape[1:])
-                    s[0] = np.prod(v.shape[:2])
-                    v.reshape(s)
-                    v_out[key] = v
-                return v_out
             return v_all
 
         # prepare inds for output
@@ -263,35 +249,26 @@ class Backend(object):
                 key: self.inds[key][discard + thin - 1 : self.iteration : thin]
                 for key in self.chain
             }
-            if flat:
-                v_out = {}
-                for key, v in v_all.items():
-                    s = list(v.shape[1:])
-                    s[0] = np.prod(v.shape[:2])
-                    v.reshape(s)
-                    v_out[key] = v
-                return v_out
             return v_all
 
         # all other requests can filter through array output
         # rather than the dictionary output used above
         v = getattr(self, name)[discard + thin - 1 : self.iteration : thin]
-        if flat:
-            s = list(v.shape[1:])
-            s[0] = np.prod(v.shape[:2])
-            return v.reshape(s)
         return v
 
     def get_chain(self, **kwargs):
         """Get the stored chain of MCMC samples
 
         Args:
-            flat (bool, optional): Flatten the chain across the ensemble.
-                (default: ``False``)
             thin (int, optional): Take only every ``thin`` steps from the
                 chain. (default: ``1``)
             discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
+            slice_vals (indexing np.ndarray or slice, optional): This is only available in :class:`eryn.backends.hdfbackend`.
+                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``. 
+                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``. 
+                This is particularly useful if files are very large and the user only wants a 
+                small subset of the overall array. (default: ``None``)
 
         Returns:
             dict: MCMC samples
@@ -337,12 +314,15 @@ class Backend(object):
         """Get the stored chain of MCMC samples
 
         Args:
-            flat (bool, optional): Flatten the chain across the ensemble.
-                (default: ``False``)
             thin (int, optional): Take only every ``thin`` steps from the
                 chain. (default: ``1``)
             discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
+            slice_vals (indexing np.ndarray or slice, optional): This is only available in :class:`eryn.backends.hdfbackend`.
+                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``. 
+                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``. 
+                This is particularly useful if files are very large and the user only wants a 
+                small subset of the overall array. (default: ``None``)
 
         Returns:
             dict: The ``inds`` associated with the MCMC samples.
@@ -356,12 +336,15 @@ class Backend(object):
         """Get the number of leaves for each walker
 
         Args:
-            flat (bool, optional): Flatten the chain across the ensemble.
-                (default: ``False``)
             thin (int, optional): Take only every ``thin`` steps from the
                 chain. (default: ``1``)
             discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
+            slice_vals (indexing np.ndarray or slice, optional): This is only available in :class:`eryn.backends.hdfbackend`.
+                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``. 
+                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``. 
+                This is particularly useful if files are very large and the user only wants a 
+                small subset of the overall array. (default: ``None``)
 
         Returns:
             dict: nleaves on each branch.
@@ -377,12 +360,15 @@ class Backend(object):
         """Get the chain of blobs for each sample in the chain
 
         Args:
-            flat (bool, optional): Flatten the chain across the ensemble.
-                (default: ``False``)
             thin (int, optional): Take only every ``thin`` steps from the
                 chain. (default: ``1``)
             discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
+            slice_vals (indexing np.ndarray or slice, optional): This is only available in :class:`eryn.backends.hdfbackend`.
+                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``. 
+                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``. 
+                This is particularly useful if files are very large and the user only wants a 
+                small subset of the overall array. (default: ``None``)
 
         Returns:
             double np.ndarray[nsteps, ntemps, nwalkers, nblobs]: The chain of blobs.
@@ -394,12 +380,15 @@ class Backend(object):
         """Get the chain of log probabilities evaluated at the MCMC samples
 
         Args:
-            flat (bool, optional): Flatten the chain across the ensemble.
-                (default: ``False``)
             thin (int, optional): Take only every ``thin`` steps from the
                 chain. (default: ``1``)
             discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
+            slice_vals (indexing np.ndarray or slice, optional): This is only available in :class:`eryn.backends.hdfbackend`.
+                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``. 
+                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``. 
+                This is particularly useful if files are very large and the user only wants a 
+                small subset of the overall array. (default: ``None``)
 
         Returns:
             double np.ndarray[nsteps, ntemps, nwalkers]: The chain of log likelihood values.
@@ -411,12 +400,15 @@ class Backend(object):
         """Get the chain of log probabilities evaluated at the MCMC samples
 
         Args:
-            flat (bool, optional): Flatten the chain across the ensemble.
-                (default: ``False``)
             thin (int, optional): Take only every ``thin`` steps from the
                 chain. (default: ``1``)
             discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
+            slice_vals (indexing np.ndarray or slice, optional): This is only available in :class:`eryn.backends.hdfbackend`.
+                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``. 
+                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``. 
+                This is particularly useful if files are very large and the user only wants a 
+                small subset of the overall array. (default: ``None``)
 
         Returns:
             double np.ndarray[nsteps, ntemps, nwalkers]: The chain of log prior values.
@@ -424,16 +416,21 @@ class Backend(object):
         """
         return self.get_value("log_prior", **kwargs)
 
+    # TODO: add get log prob after change is dealth with entirely
+
     def get_betas(self, **kwargs):
         """Get the chain of inverse temperatures
 
         Args:
-            flat (bool, optional): Flatten the chain across the ensemble.
-                (default: ``False``)
             thin (int, optional): Take only every ``thin`` steps from the
                 chain. (default: ``1``)
             discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
+            slice_vals (indexing np.ndarray or slice, optional): This is only available in :class:`eryn.backends.hdfbackend`.
+                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``. 
+                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``. 
+                This is particularly useful if files are very large and the user only wants a 
+                small subset of the overall array. (default: ``None``)
 
         Returns:
             double np.ndarray[nsteps, ntemps]: The chain of temperatures.
@@ -445,8 +442,14 @@ class Backend(object):
     def get_a_sample(self, it):
         """Access a sample in the chain
 
+        Args:
+            it (int): iteration of State to return.
+
         Returns:
             State: :class:`eryn.state.State` object containing the sample from the chain.
+
+        Raises:
+            AttributeError: Backend is not initialized.
 
         """
         if (not self.initialized) or self.iteration <= 0:
@@ -487,6 +490,8 @@ class Backend(object):
 
         """
         it = self.iteration
+
+        # get the state from the last iteration
         last_sample = self.get_a_sample(it)
         return last_sample
 
@@ -504,7 +509,7 @@ class Backend(object):
                 (default: ``1``)
             all_temps (bool, optional): If True, calculate autocorrelation across
                 all temperatures. If False, calculate autocorrelation across the minumum
-                temperature chain (usually 1/T=1). (default: ``False``)
+                temperature chain (usually ``T=1``). (default: ``False``)
             multiply_thin (bool, optional) If True, include the thinning factor
                 into the autocorrelation length. (default: ``True``)
 
@@ -536,6 +541,9 @@ class Backend(object):
     def get_evidence_estimate(self, discard=0, thin=1, return_error=True):
         """Get an estimate of the evidence
 
+        This function gets the sample information and uses 
+        :func:`thermodynamic_integration_log_evidence` to compute the evidence estimate.
+
         Args:
             discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
@@ -560,7 +568,8 @@ class Backend(object):
         # make sure that the betas were fixed during sampling (after burn in)
         if not (betas_all == betas_all[0]).all():
             raise ValueError(
-                "Cannot compute evidence estimation if betas are allowed to vary. Use stop_adaptation kwarg in temperature settings."
+                """Cannot compute evidence estimation if betas are allowed to vary. Use stop_adaptation 
+                kwarg in temperature settings."""
             )
 
         # setup information
@@ -581,7 +590,7 @@ class Backend(object):
 
         Returns:
             dict: Shape of samples
-                Keys are ``branch_names`` and valeus are tuples with
+                Keys are ``branch_names`` and values are tuples with
                 shapes of individual branches: (ntemps, nwalkers, nleaves_max, ndim).
 
         """
@@ -675,12 +684,7 @@ class Backend(object):
                 self.blobs = np.concatenate((self.blobs, a), axis=0)
 
     def _check(
-        self,
-        state,
-        accepted,
-        rj_accepted=None,
-        in_model_swaps_accepted=None,
-        rj_swaps_accepted=None,
+        self, state, accepted, rj_accepted=None, swaps_accepted=None,
     ):
         """Check all the information going in is okay."""
         self._check_blobs(state.blobs)
@@ -716,14 +720,14 @@ class Backend(object):
                     )
                 )
 
-        # make sure log likelihood, log prior, blobs, accepted, rj_accepted, betas
+        # make sure log likelihood, log prior, blobs, accepted, rj_accepted, betas are okay
         if state.log_like.shape != (ntemps, nwalkers,):
             raise ValueError(
-                "invalid log probability size; expected {0}".format(ntemps, nwalkers)
+                "invalid log probability size; expected {0}".format((ntemps, nwalkers))
             )
         if state.log_prior.shape != (ntemps, nwalkers,):
             raise ValueError(
-                "invalid log prior size; expected {0}".format(ntemps, nwalkers)
+                "invalid log prior size; expected {0}".format((ntemps, nwalkers))
             )
         if state.blobs is not None and not has_blobs:
             raise ValueError("unexpected blobs")
@@ -731,41 +735,30 @@ class Backend(object):
             raise ValueError("expected blobs, but none were given")
         if state.blobs is not None and state.blobs.shape[:2] != (ntemps, nwalkers):
             raise ValueError(
-                "invalid blobs size; expected {0}".format(ntemps, nwalkers)
+                "invalid blobs size; expected {0}".format((ntemps, nwalkers))
             )
         if accepted.shape != (ntemps, nwalkers,):
             raise ValueError(
-                "invalid acceptance size; expected {0}".format(ntemps, nwalkers)
+                "invalid acceptance size; expected {0}".format((ntemps, nwalkers))
             )
 
-        if in_model_swaps_accepted is not None and in_model_swaps_accepted.shape != (
-            ntemps - 1,
-        ):
+        if swaps_accepted is not None and swaps_accepted.shape != (ntemps - 1,):
             raise ValueError(
-                "invalid in_model_swaps_accepted size; expected {0}".format(ntemps - 1)
+                "invalid swaps_accepted size; expected {0}".format(ntemps - 1)
             )
         if self.rj:
             if rj_accepted.shape != (ntemps, nwalkers,):
                 raise ValueError(
-                    "invalid rj acceptance size; expected {0}".format(ntemps, nwalkers)
-                )
-            if rj_swaps_accepted is not None and rj_swaps_accepted.shape != (
-                ntemps - 1,
-            ):
-                raise ValueError(
-                    "invalid rj_swaps_accepted size; expected {0}".format(ntemps - 1)
+                    "invalid rj acceptance size; expected {0}".format(
+                        (ntemps, nwalkers)
+                    )
                 )
 
         if state.betas is not None and state.betas.shape != (ntemps,):
             raise ValueError("invalid beta size; expected {0}".format(ntemps))
 
     def save_step(
-        self,
-        state,
-        accepted,
-        rj_accepted=None,
-        in_model_swaps_accepted=None,
-        rj_swaps_accepted=None,
+        self, state, accepted, rj_accepted=None, swaps_accepted=None,
     ):
         """Save a step to the backend
 
@@ -778,15 +771,13 @@ class Backend(object):
                 If :code:`self.rj` is True, then rj_accepted must be an array with
                 :code:`rj_accepted.shape == accepted.shape`. If :code:`self.rj`
                 is False, then rj_accepted must be None, which is the default.
+            swaps_accepted (ndarray, optional): 1D array with number of swaps accepted
+                for the in-model step. (default: ``None``)
 
         """
         # check to make sure all information in the state is okay
         self._check(
-            state,
-            accepted,
-            rj_accepted=rj_accepted,
-            in_model_swaps_accepted=in_model_swaps_accepted,
-            rj_swaps_accepted=rj_swaps_accepted,
+            state, accepted, rj_accepted=rj_accepted, swaps_accepted=swaps_accepted,
         )
 
         # save the coordinates and inds
@@ -812,12 +803,10 @@ class Backend(object):
 
         self.accepted += accepted
 
-        if in_model_swaps_accepted is not None:
-            self.in_model_swaps_accepted += in_model_swaps_accepted
+        if swaps_accepted is not None:
+            self.swaps_accepted += swaps_accepted
         if self.rj:
             self.rj_accepted += rj_accepted
-            if rj_swaps_accepted is not None:
-                self.rj_swaps_accepted += rj_swaps_accepted
 
         self.random_state = state.random_state
         self.iteration += 1

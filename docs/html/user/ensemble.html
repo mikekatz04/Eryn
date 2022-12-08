@@ -587,12 +587,15 @@ to the log likelihood of each walker. Second entry is <code class="docutils lite
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>flat</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flatten the chain across the ensemble.
-(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
 <li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Take only every <code class="docutils literal notranslate"><span class="pre">thin</span></code> steps from the
 chain. (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
 <li><p><strong>discard</strong> (<em>int</em><em>, </em><em>optional</em>) – Discard the first <code class="docutils literal notranslate"><span class="pre">discard</span></code> steps in
 the chain as burn-in. (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
+<li><p><strong>slice_vals</strong> (<em>indexing np.ndarray</em><em> or </em><em>slice</em><em>, </em><em>optional</em>) – This is only available in <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.backends.hdfbackend</span></code>.
+If provided, slice the array directly from the HDF5 file with slice = <code class="docutils literal notranslate"><span class="pre">slice_vals</span></code>.
+<code class="docutils literal notranslate"><span class="pre">thin</span></code> and <code class="docutils literal notranslate"><span class="pre">discard</span></code> will be ignored if slice_vals is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+This is particularly useful if files are very large and the user only wants a
+small subset of the overall array. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -616,12 +619,15 @@ across the branches.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>flat</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flatten the chain across the ensemble.
-(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
 <li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Take only every <code class="docutils literal notranslate"><span class="pre">thin</span></code> steps from the
 chain. (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
 <li><p><strong>discard</strong> (<em>int</em><em>, </em><em>optional</em>) – Discard the first <code class="docutils literal notranslate"><span class="pre">discard</span></code> steps in
 the chain as burn-in. (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
+<li><p><strong>slice_vals</strong> (<em>indexing np.ndarray</em><em> or </em><em>slice</em><em>, </em><em>optional</em>) – This is only available in <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.backends.hdfbackend</span></code>.
+If provided, slice the array directly from the HDF5 file with slice = <code class="docutils literal notranslate"><span class="pre">slice_vals</span></code>.
+<code class="docutils literal notranslate"><span class="pre">thin</span></code> and <code class="docutils literal notranslate"><span class="pre">discard</span></code> will be ignored if slice_vals is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+This is particularly useful if files are very large and the user only wants a
+small subset of the overall array. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -640,12 +646,15 @@ the chain as burn-in. (default: <code class="docutils literal notranslate"><span
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>flat</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flatten the chain across the ensemble.
-(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
 <li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Take only every <code class="docutils literal notranslate"><span class="pre">thin</span></code> steps from the
 chain. (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
 <li><p><strong>discard</strong> (<em>int</em><em>, </em><em>optional</em>) – Discard the first <code class="docutils literal notranslate"><span class="pre">discard</span></code> steps in
 the chain as burn-in. (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
+<li><p><strong>slice_vals</strong> (<em>indexing np.ndarray</em><em> or </em><em>slice</em><em>, </em><em>optional</em>) – This is only available in <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.backends.hdfbackend</span></code>.
+If provided, slice the array directly from the HDF5 file with slice = <code class="docutils literal notranslate"><span class="pre">slice_vals</span></code>.
+<code class="docutils literal notranslate"><span class="pre">thin</span></code> and <code class="docutils literal notranslate"><span class="pre">discard</span></code> will be ignored if slice_vals is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+This is particularly useful if files are very large and the user only wants a
+small subset of the overall array. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -664,12 +673,15 @@ the chain as burn-in. (default: <code class="docutils literal notranslate"><span
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>flat</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flatten the chain across the ensemble.
-(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
 <li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Take only every <code class="docutils literal notranslate"><span class="pre">thin</span></code> steps from the
 chain. (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
 <li><p><strong>discard</strong> (<em>int</em><em>, </em><em>optional</em>) – Discard the first <code class="docutils literal notranslate"><span class="pre">discard</span></code> steps in
 the chain as burn-in. (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
+<li><p><strong>slice_vals</strong> (<em>indexing np.ndarray</em><em> or </em><em>slice</em><em>, </em><em>optional</em>) – This is only available in <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.backends.hdfbackend</span></code>.
+If provided, slice the array directly from the HDF5 file with slice = <code class="docutils literal notranslate"><span class="pre">slice_vals</span></code>.
+<code class="docutils literal notranslate"><span class="pre">thin</span></code> and <code class="docutils literal notranslate"><span class="pre">discard</span></code> will be ignored if slice_vals is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+This is particularly useful if files are very large and the user only wants a
+small subset of the overall array. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -688,12 +700,15 @@ the chain as burn-in. (default: <code class="docutils literal notranslate"><span
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>flat</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flatten the chain across the ensemble.
-(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
 <li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Take only every <code class="docutils literal notranslate"><span class="pre">thin</span></code> steps from the
 chain. (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
 <li><p><strong>discard</strong> (<em>int</em><em>, </em><em>optional</em>) – Discard the first <code class="docutils literal notranslate"><span class="pre">discard</span></code> steps in
 the chain as burn-in. (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
+<li><p><strong>slice_vals</strong> (<em>indexing np.ndarray</em><em> or </em><em>slice</em><em>, </em><em>optional</em>) – This is only available in <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.backends.hdfbackend</span></code>.
+If provided, slice the array directly from the HDF5 file with slice = <code class="docutils literal notranslate"><span class="pre">slice_vals</span></code>.
+<code class="docutils literal notranslate"><span class="pre">thin</span></code> and <code class="docutils literal notranslate"><span class="pre">discard</span></code> will be ignored if slice_vals is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+This is particularly useful if files are very large and the user only wants a
+small subset of the overall array. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -717,12 +732,15 @@ across the branches indicated which leaves were used at each step.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>flat</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flatten the chain across the ensemble.
-(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
 <li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Take only every <code class="docutils literal notranslate"><span class="pre">thin</span></code> steps from the
 chain. (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
 <li><p><strong>discard</strong> (<em>int</em><em>, </em><em>optional</em>) – Discard the first <code class="docutils literal notranslate"><span class="pre">discard</span></code> steps in
 the chain as burn-in. (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
+<li><p><strong>slice_vals</strong> (<em>indexing np.ndarray</em><em> or </em><em>slice</em><em>, </em><em>optional</em>) – This is only available in <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.backends.hdfbackend</span></code>.
+If provided, slice the array directly from the HDF5 file with slice = <code class="docutils literal notranslate"><span class="pre">slice_vals</span></code>.
+<code class="docutils literal notranslate"><span class="pre">thin</span></code> and <code class="docutils literal notranslate"><span class="pre">discard</span></code> will be ignored if slice_vals is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+This is particularly useful if files are very large and the user only wants a
+small subset of the overall array. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -762,12 +780,15 @@ the chain as burn-in. (default: <code class="docutils literal notranslate"><span
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>flat</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flatten the chain across the ensemble.
-(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
 <li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Take only every <code class="docutils literal notranslate"><span class="pre">thin</span></code> steps from the
 chain. (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
 <li><p><strong>discard</strong> (<em>int</em><em>, </em><em>optional</em>) – Discard the first <code class="docutils literal notranslate"><span class="pre">discard</span></code> steps in
 the chain as burn-in. (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
+<li><p><strong>slice_vals</strong> (<em>indexing np.ndarray</em><em> or </em><em>slice</em><em>, </em><em>optional</em>) – This is only available in <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.backends.hdfbackend</span></code>.
+If provided, slice the array directly from the HDF5 file with slice = <code class="docutils literal notranslate"><span class="pre">slice_vals</span></code>.
+<code class="docutils literal notranslate"><span class="pre">thin</span></code> and <code class="docutils literal notranslate"><span class="pre">discard</span></code> will be ignored if slice_vals is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+This is particularly useful if files are very large and the user only wants a
+small subset of the overall array. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -800,7 +821,7 @@ estimated time is in units of steps, not thinned steps.
 (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
 <li><p><strong>all_temps</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, calculate autocorrelation across
 all temperatures. If False, calculate autocorrelation across the minumum
-temperature chain (usually 1/T=1). (default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
+temperature chain (usually <code class="docutils literal notranslate"><span class="pre">T=1</span></code>). (default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
 <li><p><strong>multiply_thin</strong> (<em>bool</em><em>, </em><em>optional</em>) – into the autocorrelation length. (default: <code class="docutils literal notranslate"><span class="pre">True</span></code>)</p></li>
 </ul>
 </dd>
