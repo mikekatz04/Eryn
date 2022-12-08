@@ -67,3 +67,11 @@ Implemented Reversible Jump Moves
     :members:
     :show-inheritance:
     :inherited-members:
+
+Utility Moves
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: eryn.moves.CombineMove
+    :members:
+    :show-inheritance:
+    :inherited-members:

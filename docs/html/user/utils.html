@@ -101,6 +101,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#periodic-container">Periodic Container</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#plotcontainer">PlotContainer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#transformcontainer">TransformContainer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sampler-model-container">Sampler Model Container</a></li>
 </ul>
 </li>
 </ul>
@@ -757,6 +758,10 @@ filled with values according to the <code class="docutils literal notranslate"><
 
 </dd></dl>
 
+</section>
+<section id="sampler-model-container">
+<h2>Sampler Model Container<a class="headerlink" href="#sampler-model-container" title="Permalink to this headline">¶</a></h2>
+<p>The sampler model container (<code class="docutils literal notranslate"><span class="pre">eryn.model.Model</span></code>) is a named tuple that carries around some of the most important objects in the sampler. These are then passed into proposals for usage. The model container has keys: <code class="docutils literal notranslate"><span class="pre">[&quot;log_like_fn&quot;,</span> <span class="pre">&quot;compute_log_like_fn&quot;,</span> <span class="pre">&quot;compute_log_prior_fn&quot;,</span> <span class="pre">&quot;temperature_control&quot;,</span> <span class="pre">&quot;map_fn&quot;,</span> <span class="pre">&quot;random&quot;]</span></code>. These correspond, respectively, to the log Likelihood function in the form of the function wrapper with <code class="docutils literal notranslate"><span class="pre">ensemble.py</span></code>; the log Likelihood function from the sampler; the log prior function from the sampler; the temperature controller; the map function where <code class="docutils literal notranslate"><span class="pre">pool</span></code> objects can be found; and the random generator. After initializing the <a class="reference internal" href="ensemble.html#eryn.ensemble.EnsembleSampler" title="eryn.ensemble.EnsembleSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.ensemble.EnsembleSampler</span></code></a> object, the model container tuple can be accessed with the <a class="reference internal" href="ensemble.html#eryn.ensemble.EnsembleSampler.get_model" title="eryn.ensemble.EnsembleSampler.get_model"><code class="xref py py-func docutils literal notranslate"><span class="pre">eryn.ensemble.EnsembleSampler.get_model()</span></code></a> method. If you store this in a variable <code class="docutils literal notranslate"><span class="pre">model</span></code>, you can access each member as an attribute, e.g. <code class="docutils literal notranslate"><span class="pre">model.compute_log_like_fn</span></code>.</p>
 </section>
 </section>
 

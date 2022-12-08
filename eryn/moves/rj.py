@@ -439,4 +439,8 @@ class ReversibleJump(Move):
         if np.any(state.log_like > 1e10):
             breakpoint()
 
+        # add to move-specific accepted information
+        self.accepted += accepted
+        self.num_proposals += 1
+
         return state, accepted

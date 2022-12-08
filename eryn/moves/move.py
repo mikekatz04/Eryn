@@ -16,10 +16,26 @@ class Move(object):
 
     Args:
         temperature_control (:class:`tempering.TemperatureControl`, optional):
-            This object controls the tempering. It is passes to the parent class
+            This object controls the tempering. It is passed to the parent class
             to moves so that all proposals can share and use temperature settings.
             (default: ``None``)
-        # TODO: update
+        periodic (:class:`eryn.utils.PeriodicContainer, optional):
+            This object holds periodic information and methods for periodic parameters. It is passed to the parent class
+            to moves so that all proposals can share and use periodic information.
+            (default: ``None``)
+        proposal_branch_names (list or str, optional): Branch names to run with this move class.
+        prevent_swaps (bool, optional): If ``True``, do not perform temperature swaps in this move.
+        skip_supp_names_update (list, optional): List of names (`str`), that can be in any :class:`eryn.state.BranchSupplimental`,
+            to skip when updating states (:func:`Move.update`). This is useful if a large amount of memory is stored
+            in the branch supplimentals.
+
+    Raises:
+        ValueError: Incorrect inputs.
+
+    Attributes:
+        Note: All kwargs are stored as attributes.
+        num_proposals (int): the number of times this move has been run. This is needed to 
+            compute the acceptance fraction.
 
     """
 
@@ -27,30 +43,56 @@ class Move(object):
         self,
         temperature_control=None,
         periodic=None,
-        adjust_supps_pre_logl_func=None,
-        skip_supp_names=[],
-        prevent_swaps=False,
         proposal_branch_names=None,
+        prevent_swaps=False,
+        skip_supp_names_update=[],
     ):
+        # store all information
         self.temperature_control = temperature_control
         self.periodic = periodic
-        self.adjust_supps_pre_logl_func = adjust_supps_pre_logl_func
-        self.skip_supp_names = skip_supp_names
+        self.skip_supp_names_update = skip_supp_names_update
         self.prevent_swaps = prevent_swaps
         self.proposal_branch_names = proposal_branch_names
+
+        # setup proposal branches properly
         if self.proposal_branch_names is not None:
             if isinstance(self.proposal_branch_names, str):
                 self.proposal_branch_names = [self.proposal_branch_names]
             elif not isinstance(self.proposal_branch_names, list):
                 raise ValueError("proposal_branch_names must be string or list of str.")
 
+        self.num_proposals = 0
+
+    @property
+    def accepted(self):
+        """Accepted counts for this move."""
+        if self._accepted is None:
+            raise ValueError(
+                "accepted must be inititalized with the init_accepted function if you want to use it."
+            )
+        return self._accepted
+
+    @accepted.setter
+    def accepted(self, accepted):
+        assert isinstance(accepted, np.ndarray)
+        self._accepted = accepted
+
+    @property
+    def acceptance_fraction(self):
+        """Acceptance fraction for this move."""
+        return self.accepted / self.num_proposals
+
     @property
     def temperature_control(self):
+        """Temperature controller"""
         return self._temperature_control
 
     @temperature_control.setter
     def temperature_control(self, temperature_control):
         self._temperature_control = temperature_control
+
+        # use the setting of the temperature control to determine which log posterior function to use
+        # tempered or basic
         if temperature_control is None:
             self.compute_log_posterior = self.compute_log_posterior_basic
         else:
@@ -93,12 +135,12 @@ class Move(object):
         """Update a given subset of the ensemble with an accepted proposal
 
         This class was updated from ``emcee`` to handle the added structure
-        necessary for global fitting.
+        of Eryn.
 
         Args:
             old_state (:class:`eryn.state.State`): State with current information.
                 New information is added to this state.
-            old_state (:class:`eryn.state.State`): State with information from proposed
+            new_state (:class:`eryn.state.State`): State with information from proposed
                 points.
             accepted (np.ndarray[ntemps, nwalkers]): A vector of booleans indicating
                 which walkers were accepted.
@@ -181,7 +223,9 @@ class Move(object):
                     old_branch_supplimental = old_state.branches[
                         name
                     ].branch_supplimental.take_along_axis(
-                        subset[:, :, None], axis=1, skip_names=self.skip_supp_names
+                        subset[:, :, None],
+                        axis=1,
+                        skip_names=self.skip_supp_names_update,
                     )
                     new_branch_supplimental = new_state.branches[
                         name
@@ -189,7 +233,7 @@ class Move(object):
 
                     tmp = {}
                     for key in old_branch_supplimental:
-                        if key in self.skip_supp_names:
+                        if key in self.skip_supp_names_update:
                             continue
                         accepted_temp_here = accepted_temp.copy()
                         if new_branch_supplimental[key].dtype.name != "object":
@@ -222,7 +266,6 @@ class Move(object):
                 else:
                     temp_change_branch_supplimental[name] = None
 
-            # TODO: check Nones
             [
                 old_state.branches[name].branch_supplimental.put_along_axis(
                     subset[:, :, None],
@@ -233,8 +276,9 @@ class Move(object):
                 if temp_change_branch_supplimental[name] is not None
             ]
 
+        # sampler level supplimental
         if old_state.supplimental is not None:
-            # suppliment
+
             old_suppliment = old_state.supplimental.take_along_axis(subset, axis=1)
             new_suppliment = new_state.supplimental[:]
 
@@ -242,13 +286,12 @@ class Move(object):
 
             temp_change_suppliment = {}
             for name in old_suppliment:
-                if name in self.skip_supp_names:
+                if name in self.skip_supp_names_update:
                     continue
                 if old_suppliment[name].dtype.name != "object":
                     for _ in range(old_suppliment[name].ndim - accepted_temp_here.ndim):
                         accepted_temp_here = np.expand_dims(accepted_temp_here, (-1,))
                 try:
-                    # TODO: cleanup?
                     temp_change_suppliment[name] = new_suppliment[name] * (
                         accepted_temp_here
                     ) + old_suppliment[name] * (~accepted_temp_here)
@@ -286,7 +329,7 @@ class Move(object):
             for name in new_coords
         ]
 
-        # take are of blobs
+        # take care of blobs
         if new_state.blobs is not None:
             if old_state.blobs is None:
                 raise ValueError(

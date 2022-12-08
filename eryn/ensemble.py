@@ -292,27 +292,27 @@ class EnsembleSampler(object):
                 )
 
             # defaults to stretch move
-            self._moves = [
+            self.moves = [
                 StretchMove(
                     temperature_control=self.temperature_control,
                     periodic=periodic,
                     a=2.0,
                 )
             ]
-            self._weights = [1.0]
+            self.weights = [1.0]
 
         elif isinstance(moves, Iterable):
             try:
-                self._moves, self._weights = zip(*moves)
+                self.moves, self.weights = zip(*moves)
             except TypeError:
-                self._moves = moves
-                self._weights = np.ones(len(moves))
+                self.moves = moves
+                self.weights = np.ones(len(moves))
         else:
-            self._moves = [moves]
-            self._weights = [1.0]
+            self.moves = [moves]
+            self.weights = [1.0]
 
-        self._weights = np.atleast_1d(self._weights).astype(float)
-        self._weights /= np.sum(self._weights)
+        self.weights = np.atleast_1d(self.weights).astype(float)
+        self.weights /= np.sum(self.weights)
 
         # parse the reversible jump move schedule
         if rj_moves is None:
@@ -345,51 +345,59 @@ class EnsembleSampler(object):
                     tune=False,
                     temperature_control=self.temperature_control,
                 )
-                self._rj_moves = [rj_move]
-                self._rj_weights = [1.0]
+                self.rj_moves = [rj_move]
+                self.rj_weights = [1.0]
 
         # same as above for moves
         elif isinstance(rj_moves, Iterable):
             self.has_reversible_jump = True
 
             try:
-                self._rj_moves, self._rj_weights = zip(*rj_moves)
+                self.rj_moves, self.rj_weights = zip(*rj_moves)
             except TypeError:
-                self._rj_moves = rj_moves
-                self._rj_weights = np.ones(len(rj_moves))
+                self.rj_moves = rj_moves
+                self.rj_weights = np.ones(len(rj_moves))
 
         else:
             self.has_reversible_jump = True
             # TODO: fix error catch here
-            self._rj_moves = [rj_moves]
-            self._rj_weights = [1.0]
+            self.rj_moves = [rj_moves]
+            self.rj_weights = [1.0]
 
         # adjust rj weights properly
         if self.has_reversible_jump:
-            self._rj_weights = np.atleast_1d(self._rj_weights).astype(float)
-            self._rj_weights /= np.sum(self._rj_weights)
+            self.rj_weights = np.atleast_1d(self.rj_weights).astype(float)
+            self.rj_weights /= np.sum(self.rj_weights)
 
         # make sure moves have temperature module
         if self.temperature_control is not None:
-            for move in self._moves:
+            for move in self.moves:
                 if move.temperature_control is None:
                     move.temperature_control = self.temperature_control
 
             if self.has_reversible_jump:
-                for move in self._rj_moves:
+                for move in self.rj_moves:
                     if move.temperature_control is None:
                         move.temperature_control = self.temperature_control
 
         # make sure moves have temperature module
         if periodic is not None:
-            for move in self._moves:
+            for move in self.moves:
                 if move.periodic is None:
                     move.periodic = periodic
 
             if self.has_reversible_jump:
-                for move in self._rj_moves:
+                for move in self.rj_moves:
                     if move.periodic is None:
                         move.periodic = periodic
+
+        # prepare the per proposal accepted values that are held as attributes in the specific classes
+        for move in self.moves:
+            move.accepted = np.zeros((self.ntemps, self.nwalkers))
+
+        if self.has_reversible_jump:
+            for move in self.rj_moves:
+                move.accepted = np.zeros((self.ntemps, self.nwalkers))
 
         # setup backend if not provided or initialized
         if backend is None:
@@ -737,7 +745,7 @@ class EnsembleSampler(object):
                     for repeat in range(self.num_repeats_in_model):
 
                         # Choose a random move
-                        move = self._random.choice(self._moves, p=self._weights)
+                        move = self._random.choice(self.moves, p=self.weights)
 
                         # Propose (in model)
                         state, accepted_out = move.propose(model, state)
@@ -756,7 +764,7 @@ class EnsembleSampler(object):
                         rj_accepted = np.zeros((self.ntemps, self.nwalkers))
                         for repeat in range(self.num_repeats_rj):
                             rj_move = self._random.choice(
-                                self._rj_moves, p=self._rj_weights
+                                self.rj_moves, p=self.rj_weights
                             )
 
                             # Propose (Between models)
@@ -785,7 +793,6 @@ class EnsembleSampler(object):
                             accepted,
                             rj_accepted=rj_accepted,
                             swaps_accepted=in_model_swaps,
-                            rj_swaps_accepted=rj_swaps,
                         )
 
                     pbar.update(1)

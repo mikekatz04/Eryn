@@ -112,7 +112,9 @@ class RedBlueMove(Move, ABC):
             state (:class:`State`): Current state of the sampler.
 
         Returns:
-            :class:`State`: State of sampler after proposal is complete.
+            tuple: (state, accepted)
+                The first return is the state of the sampler after the move.
+                The second return value is the accepted count array.
 
         """
         # Check that the dimensions are compatible.
@@ -446,6 +448,10 @@ class RedBlueMove(Move, ABC):
 
         if self.temperature_control is not None:
             state = self.temperature_control.temper_comps(state)
+
+        # add to move-specific accepted information
+        self.accepted += accepted
+        self.num_proposals += 1
 
         # make accepted move specific ?
         return state, accepted

@@ -380,5 +380,10 @@ class GroupMove(Move, ABC):
         # print("temper", et - st)
         # make accepted move specific ?
         # breakpoint()
+
+        # add to move-specific accepted information
+        self.accepted += accepted
+        self.num_proposals += 1
+
         return state, accepted
 

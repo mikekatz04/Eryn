@@ -131,4 +131,8 @@ class MHMove(Move):
         if self.temperature_control is not None:
             state = self.temperature_control.temper_comps(state)
 
+        # add to move-specific accepted information
+        self.accepted += accepted
+        self.num_proposals += 1
+
         return state, accepted

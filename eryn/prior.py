@@ -1,7 +1,5 @@
 import numpy as np
 from scipy import stats
-import torch
-from torch.distributions.normal import Normal
 
 
 def uniform_dist(min, max):
@@ -62,8 +60,8 @@ class MappedUniformDistribution:
     and ``-np.inf`` if it is outside that range.
 
     Args:
-        min (double): Minimum in the log-uniform distribution
-        max (double): Maximum in the log-uniform distribution
+        min (double): Minimum in the uniform distribution
+        max (double): Maximum in the uniform distribution
 
     Raises:
         ValueError: If ``min`` is greater than ``max``.
@@ -170,7 +168,7 @@ class PriorContainer:
         if len(uni_inds) != len(np.arange(np.max(uni_inds) + 1)):
             # TODO: make better
             raise ValueError(
-                "If providing priors, need to ensure all sampled parameters are included."
+                "Please ensure all sampled parameters are included in priors."
             )
 
         self.ndim = uni_inds.max() + 1
@@ -179,11 +177,11 @@ class PriorContainer:
         """Get logpdf by summing logpdf of individual distributions
 
         Args:
-            x (double np.ndarray[number of tested sources, ndim]):
+            x (double np.ndarray[..., ndim]):
                 Input parameters to get prior values.
 
         Returns:
-            np.ndarray[number of tested sources]: Prior values.
+            np.ndarray[...]: Prior values.
 
         """
         # TODO: check if mutliple index prior will work
@@ -220,11 +218,11 @@ class PriorContainer:
         """Get logpdf by summing logpdf of individual distributions
 
         Args:
-            x (double np.ndarray[number of tested sources, ndim]):
+            x (double np.ndarray[..., ndim]):
                 Input parameters to get prior values.
 
         Returns:
-            np.ndarray[number of tested sources]: Prior values.
+            np.ndarray[...]: Prior values.
 
         """
 
@@ -294,37 +292,3 @@ class PriorContainer:
             out[inds_in] = prior_i.rvs(size=size)[adjust_inds]
 
         return out
-
-
-class UniformTorch(torch.distributions.uniform.Uniform):
-    """
-       For testing Likelihood Ratio.
-    """
-
-    def __init__(self, lower, upper):
-        super(UniformTorch, self).__init__(lower, upper)
-
-    def log_prob(self, sample):
-        return super(UniformTorch, self).log_prob(sample).mean()
-
-
-if __name__ == "__main__":
-    import pickle
-
-    multi = stats.multivariate_normal(
-        mean=np.array([0.0, 0.0]), cov=np.array([[1.0, -0.3], [0.3, 1.0]])
-    )
-    multi_in = multi.rvs(100)
-
-    x = np.concatenate([multi_in, np.array([np.linspace(0, 800, 100)]).T], axis=1)
-
-    with open("amps_dist.pickle", "rb") as f:
-        amps_dist = pickle.load(f)
-
-    priors_in = {(0, 1): multi, 2: amps_dist}
-    prior = PriorContainer(priors_in)
-
-    pval = prior.logpdf(x)
-
-    out = prior.rvs(1000)
-    breakpoint()
