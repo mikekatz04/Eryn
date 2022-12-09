@@ -25,11 +25,12 @@ class Move(object):
             This object holds periodic information and methods for periodic parameters. It is passed to the parent class
             to moves so that all proposals can share and use periodic information.
             (default: ``None``)
-        proposal_branch_names (list or str, optional): Branch names to run with this move class.
+        proposal_branch_setup (list or str, optional): Branch names to run with this move class.
         prevent_swaps (bool, optional): If ``True``, do not perform temperature swaps in this move.
-        skip_supp_names_update (list, optional): List of names (`str`), that can be in any :class:`eryn.state.BranchSupplimental`,
-            to skip when updating states (:func:`Move.update`). This is useful if a large amount of memory is stored
-            in the branch supplimentals.
+        skip_supp_names_update (list, optional): List of names (`str`), that can be in any 
+            :class:`eryn.state.BranchSupplimental`,
+            to skip when updating states (:func:`Move.update`). This is useful if a 
+            large amount of memory is stored in the branch supplimentals.
 
     Raises:
         ValueError: Incorrect inputs.
@@ -48,29 +49,57 @@ class Move(object):
         proposal_branch_setup=None,
         prevent_swaps=False,
         skip_supp_names_update=[],
+        is_rj=False,
     ):
         # store all information
         self.temperature_control = temperature_control
         self.periodic = periodic
         self.skip_supp_names_update = skip_supp_names_update
         self.prevent_swaps = prevent_swaps
+
+        self.initialize_branch_setup(proposal_branch_setup, is_rj=is_rj)
+
+    def initialize_branch_setup(self, proposal_branch_setup, is_rj=False):
         self.proposal_branch_setup = proposal_branch_setup
+
+        message_rj = """inputting gibbs indexing at the leaf/parameter level is not allowed 
+                                        with an RJ proposal. Only branch names."""
+
+        message_non_rj = """When inputing gibbs indexing and using a 2-tuple, second item must be None or 2D np.ndarray of shape (nleaves_max, ndim)."""
 
         # setup proposal branches properly
         if self.proposal_branch_setup is not None:
             if isinstance(self.proposal_branch_setup, str):
                 self.proposal_branch_setup = [self.proposal_branch_setup]
 
-            elif isinstance(self.proposal_branch_setup, dict):
-                self.proposal_branch_setup = [
-                    (key, value) for key, value in self.proposal_branch_setup.items()
-                ]
-
             elif isinstance(self.proposal_branch_setup, tuple):
-                assert len(self.proposal_branch_setup) == 2 and isinstance(
-                    self.proposal_branch_setup[1], np.ndarray
-                )
-                proposal_branch_setup_tmp.append(self.proposal_branch_setupf)
+                assert len(self.proposal_branch_setup) == 2
+                if self.proposal_branch_setup[1] is not None and is_rj:
+                    raise ValueError(message_rj)
+
+                elif (
+                    not isinstance(self.proposal_branch_setup[1], np.ndarray)
+                    and self.proposal_branch_setup[1] is not None
+                ) or (
+                    isinstance(self.proposal_branch_setup[1], np.ndarray)
+                    and self.proposal_branch_setup[1].ndim != 2
+                ):
+                    raise ValueError(message_non_rj)
+
+                self.proposal_branch_setup = [self.proposal_branch_setup]
+
+            elif isinstance(self.proposal_branch_setup, dict):
+                self.proposal_branch_setup = [[]]
+                for key, value in self.proposal_branch_setup.items():
+                    if value is not None and is_rj:
+                        raise ValueError(message_rj)
+
+                    elif (not isinstance(value, np.ndarray) and value is not None) or (
+                        isinstance(value, np.ndarray) and value.ndim != 2
+                    ):
+                        raise ValueError(message_non_rj)
+
+                    self.proposal_branch_setup[0].append((key, value))
 
             elif not isinstance(self.proposal_branch_setup, list):
                 raise ValueError(
@@ -83,16 +112,37 @@ class Move(object):
                 for item in self.proposal_branch_setup:
 
                     # parse and prepare gibbs style input
-
                     if isinstance(item, str):
                         proposal_branch_setup_tmp.append(item)
-                    elif isinstance(item, dict):
-                        for key, value in item.items():
-                            proposal_branch_setup_tmp.append((key, value))
 
                     elif isinstance(item, tuple):
-                        assert len(item) == 2 and isinstance(item[1], np.ndarray)
+                        assert len(item) == 2
+                        if item is not None and is_rj:
+                            raise ValueError(message_rj)
+
+                        elif (
+                            not isinstance(item[1], np.ndarray) and item[1] is not None
+                        ) or (isinstance(item[1], np.ndarray) and item[1].ndim != 2):
+                            breakpoint()
+                            raise ValueError(message_non_rj)
+
                         proposal_branch_setup_tmp.append(item)
+
+                    elif isinstance(item, dict):
+                        tmp = []
+                        for key, value in item.items():
+
+                            if value is not None and is_rj:
+                                raise ValueError(message_rj)
+
+                            elif (
+                                not isinstance(value, np.ndarray) and value is not None
+                            ) or (isinstance(value, np.ndarray) and value.ndim != 2):
+                                raise ValueError(message_non_rj)
+
+                            tmp.append((key, value))
+
+                        proposal_branch_setup_tmp.append(tmp)
 
                     else:
                         raise ValueError(
@@ -105,7 +155,85 @@ class Move(object):
                 # store as the setup that all proposals will follow
                 self.proposal_branch_setup = proposal_branch_setup_tmp
 
+        else:
+            self.proposal_branch_setup = [None]
+
         self.num_proposals = 0
+
+    def proposal_branch_setup_iterator(self, all_branch_names):
+        for proposal_iteration in self.proposal_branch_setup:
+            if isinstance(proposal_iteration, tuple):
+                branch_names_run = [proposal_iteration[0]]
+                inds_run = [proposal_iteration[1]]
+            elif isinstance(proposal_iteration, str):
+                branch_name_run = [proposal_iteration]
+                inds_run = [None]
+            elif isinstance(proposal_iteration, list):
+                branch_names_run = []
+                inds_run = []
+                for item in proposal_iteration:
+                    if isinstance(item, str):
+                        branch_names_run.append(item)
+                        inds_run.append(None)
+                    elif isinstance(proposal_iteration, tuple):
+                        branch_names_run.append(item[0])
+                        inds_run.append(item[1])
+            elif proposal_iteration is None:
+                branch_names_run = None
+                inds_run = None
+
+            else:
+                raise ValueError(
+                    "Items in proposal_branch_setup must be 2-tuple, string, None, or list."
+                )
+
+            if branch_names_run is None:
+                branch_names_run = all_branch_names
+                inds_run = [None for _ in branch_names_run]
+
+            yield (branch_names_run, inds_run)
+
+    def setup_proposals(
+        self, branch_names_run, inds_run, branches_coords, branches_inds
+    ):
+        inds_going_for_proposal = {}
+        coords_going_for_proposal = {}
+
+        at_least_one_proposal = False
+        for bnr, ir in zip(branch_names_run, inds_run):
+            if ir is not None:
+                tmp = np.zeros_like(branches_inds[bnr], dtype=bool)
+
+                # flatten coordinates to the leaves dimension
+                ir_keep = ir.astype(int).sum(axis=-1).astype(bool)
+                tmp[:, :, ir_keep] = True
+                # make sure leavdes that are actually not there are not counted
+                tmp[~branches_inds[bnr]] = False
+                inds_going_for_proposal[bnr] = tmp
+            else:
+                inds_going_for_proposal[bnr] = branches_inds[bnr]
+
+            if np.any(inds_going_for_proposal[bnr]):
+                at_least_one_proposal = True
+
+            coords_going_for_proposal[bnr] = branches_coords[bnr]
+
+        return (
+            coords_going_for_proposal,
+            inds_going_for_proposal,
+            at_least_one_proposal,
+        )
+
+    def cleanup_proposals_gibbs(self, branch_names_run, inds_run, q, state):
+        # add back any parameters that are fixed for this round
+        for bnr, ir in zip(branch_names_run, inds_run):
+            if ir is not None:
+                q[bnr][:, :, ~ir] = state.branches_coords[bnr][:, :, ~ir]
+
+        # add other models that were not included
+        for key, value in state.branches_coords.items():
+            if key not in q:
+                q[key] = value
 
     @property
     def accepted(self):
@@ -145,6 +273,25 @@ class Move(object):
             )
 
             self.ntemps = self.temperature_control.ntemps
+
+    def fix_logp_gibbs(self, branch_names_run, inds_run, logp, inds):
+        total_leaves = np.zeros_like(logp)
+        for bnr, ir in zip(branch_names_run, inds_run):
+            if ir is not None:
+                tmp = np.zeros_like(inds[bnr], dtype=bool)
+
+                # flatten coordinates to the leaves dimension
+                ir_keep = ir.astype(int).sum(axis=-1).astype(bool)
+                tmp[:, :, ir_keep] = True
+                # make sure leavdes that are actually not there are not counted
+                tmp[~inds[bnr]] = False
+
+            else:
+                tmp = inds[bnr]
+
+            total_leaves += tmp.sum(axis=-1)
+
+        logp[total_leaves == 0] = -np.inf
 
     def compute_log_posterior_basic(self, logl, logp):
         """Compute the log of posterior

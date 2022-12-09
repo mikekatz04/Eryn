@@ -33,7 +33,7 @@ class ReversibleJump(Move):
         **kwargs
     ):
         # super(ReversibleJump, self).__init__(**kwargs)
-        Move.__init__(self, **kwargs)
+        Move.__init__(self, is_rj=True, **kwargs)
 
         if isinstance(max_k, int):
             max_k = [max_k]
@@ -105,7 +105,10 @@ class ReversibleJump(Move):
         """
         raise NotImplementedError("The proposal must be implemented by " "subclasses")
 
-    def get_model_change_proposal(self, state, model):
+    def get_model_change_proposal(self, state, model, keep_branches: list = []):
+
+        if len(keep_branches) == 0:
+            keep_branches = list(state.branches.keys())
 
         inds_for_change = {}
         ntemps, nwalkers, _, _ = state.branches[list(state.branches.keys())[0]].shape
@@ -115,10 +118,7 @@ class ReversibleJump(Move):
         for (name, branch), min_k, max_k in zip(
             state.branches.items(), self.min_k, self.max_k
         ):
-            if (
-                self.proposal_branch_names is not None
-                and name not in self.proposal_branch_names
-            ):
+            if name not in keep_branches:
                 # skip this one
                 continue
 
@@ -219,228 +219,241 @@ class ReversibleJump(Move):
 
         ntemps, nwalkers, _, _ = state.branches[list(state.branches.keys())[0]].shape
 
-        # Split the ensemble in half and iterate over these two halves.
         accepted = np.zeros((ntemps, nwalkers), dtype=bool)
 
-        # TODO: check if temperatures are properly repeated after reset
-        # TODO: do we want an probability that the model count will not change?
-        inds_for_change = self.get_model_change_proposal(state, model)
-        coords_propose_in = state.branches_coords
-        inds_propose_in = state.branches_inds
-        branches_supp_propose_in = state.branches_supplimental
+        all_branch_names = list(state.branches.keys())
 
-        if len(list(coords_propose_in.keys())) == 0:
-            raise ValueError(
-                "Right now, no models are getting a reversible jump proposal. Check min_k and max_k or do not use rj proposal."
+        ntemps, nwalkers, _, _ = state.branches[all_branch_names[0]].shape
+
+        for (branch_names_run, inds_run) in self.proposal_branch_setup_iterator(
+            all_branch_names
+        ):
+
+            # TODO: check if temperatures are properly repeated after reset
+            # TODO: do we want an probability that the model count will not change?
+            inds_for_change = self.get_model_change_proposal(
+                state, model, keep_branches=branch_names_run
+            )
+            coords_propose_in = state.branches_coords
+            inds_propose_in = state.branches_inds
+            branches_supp_propose_in = state.branches_supplimental
+
+            if len(list(coords_propose_in.keys())) == 0:
+                raise ValueError(
+                    "Right now, no models are getting a reversible jump proposal. Check min_k and max_k or do not use rj proposal."
+                )
+
+            # propose new sources and coordinates
+            q, new_inds, factors = self.get_proposal(
+                coords_propose_in,
+                inds_propose_in,
+                inds_for_change,
+                model.random,
+                branch_supps=branches_supp_propose_in,
+                supps=state.supplimental,
             )
 
-        # propose new sources and coordinates
-        q, new_inds, factors = self.get_proposal(
-            coords_propose_in,
-            inds_propose_in,
-            inds_for_change,
-            model.random,
-            branch_supps=branches_supp_propose_in,
-            supps=state.supplimental,
-        )
+            for name, branch in state.branches.items():
+                if name not in q:
+                    q[name] = state.branches[name].coords[:].copy()
+                if name not in new_inds:
+                    new_inds[name] = state.branches[name].inds[:].copy()
 
-        for name, branch in state.branches.items():
-            if name not in q:
-                q[name] = state.branches[name].coords[:].copy()
-            if name not in new_inds:
-                new_inds[name] = state.branches[name].inds[:].copy()
+            if "inds_here" in q:
+                temp_transfer_info = {
+                    name: q.pop(name) for name in ["ll", "lp", "inds_here"]
+                }
+            else:
+                temp_transfer_info = {}
 
-        if "inds_here" in q:
-            temp_transfer_info = {
-                name: q.pop(name) for name in ["ll", "lp", "inds_here"]
-            }
-        else:
-            temp_transfer_info = {}
+            # TODO: check this
+            edge_factors = np.zeros((ntemps, nwalkers))
+            # get factors for edges
+            for (name, branch), min_k, max_k in zip(
+                state.branches.items(), self.min_k, self.max_k
+            ):
+                nleaves = branch.nleaves
 
-        # TODO: check this
-        edge_factors = np.zeros((ntemps, nwalkers))
-        # get factors for edges
-        for (name, branch), min_k, max_k in zip(
-            state.branches.items(), self.min_k, self.max_k
-        ):
-            nleaves = branch.nleaves
+                # do not work on sources with fixed source count
+                if min_k == max_k:
+                    continue
 
-            # do not work on sources with fixed source count
-            if min_k == max_k:
-                continue
+                # fix proposal asymmetry at bottom of k range
+                inds_min = np.where(nleaves == min_k)
+                # numerator term so +ln
+                edge_factors[inds_min] += np.log(1 / 2.0)
 
-            # fix proposal asymmetry at bottom of k range
-            inds_min = np.where(nleaves == min_k)
-            # numerator term so +ln
-            edge_factors[inds_min] += np.log(1 / 2.0)
+                # fix proposal asymmetry at top of k range
+                inds_max = np.where(nleaves == max_k)
+                # numerator term so -ln
+                edge_factors[inds_max] += np.log(1 / 2.0)
 
-            # fix proposal asymmetry at top of k range
-            inds_max = np.where(nleaves == max_k)
-            # numerator term so -ln
-            edge_factors[inds_max] += np.log(1 / 2.0)
+                # fix proposal asymmetry at bottom of k range (kmin + 1)
+                inds_min = np.where(nleaves == min_k + 1)
+                # numerator term so +ln
+                edge_factors[inds_min] -= np.log(1 / 2.0)
 
-            # fix proposal asymmetry at bottom of k range (kmin + 1)
-            inds_min = np.where(nleaves == min_k + 1)
-            # numerator term so +ln
-            edge_factors[inds_min] -= np.log(1 / 2.0)
+                # fix proposal asymmetry at top of k range (kmax - 1)
+                inds_max = np.where(nleaves == max_k - 1)
+                # numerator term so -ln
+                edge_factors[inds_max] -= np.log(1 / 2.0)
 
-            # fix proposal asymmetry at top of k range (kmax - 1)
-            inds_max = np.where(nleaves == max_k - 1)
-            # numerator term so -ln
-            edge_factors[inds_max] -= np.log(1 / 2.0)
+            factors += edge_factors
 
-        factors += edge_factors
+            # setup supplimental information
 
-        # setup supplimental information
+            if state.supplimental is not None:
+                # TODO: should there be a copy?
+                new_supps = deepcopy(state.supplimental)
 
-        if state.supplimental is not None:
-            # TODO: should there be a copy?
-            new_supps = deepcopy(state.supplimental)
+            else:
+                new_supps = None
 
-        else:
-            new_supps = None
-
-        if not np.all(np.asarray(list(state.branches_supplimental.values())) == None):
-            # TODO: remove this?
-            new_branch_supps = deepcopy(state.branches_supplimental)
-            for name in new_branch_supps:
-                if new_branch_supps[name] is not None:
-                    indicator_inds = (
-                        new_inds[name].astype(int)
-                        - state.branches_inds[name].astype(int)
-                    ) > 0
-                    new_branch_supps[name].add_objects({"inds_keep": indicator_inds})
-
-        else:
-            new_branch_supps = None
-            if new_supps is not None:
-                new_branch_supps = {}
+            if not np.all(
+                np.asarray(list(state.branches_supplimental.values())) == None
+            ):
+                # TODO: remove this?
+                new_branch_supps = deepcopy(state.branches_supplimental)
                 for name in new_branch_supps:
                     if new_branch_supps[name] is not None:
                         indicator_inds = (
                             new_inds[name].astype(int)
                             - state.branches_inds[name].astype(int)
                         ) > 0
-                        new_branch_supps[name] = BranchSupplimental(
-                            {"inds_keep": indicator_inds},
-                            obj_contained_shape=new_inds[name].shape,
-                            copy=False,
+                        new_branch_supps[name].add_objects(
+                            {"inds_keep": indicator_inds}
                         )
 
-        if hasattr(self, "new_supps_for_transfer"):
-            # logp = self.lp_for_transfer.reshape(ntemps, nwalkers)
-            new_supps = self.new_supps_for_transfer
+            else:
+                new_branch_supps = None
+                if new_supps is not None:
+                    new_branch_supps = {}
+                    for name in new_branch_supps:
+                        if new_branch_supps[name] is not None:
+                            indicator_inds = (
+                                new_inds[name].astype(int)
+                                - state.branches_inds[name].astype(int)
+                            ) > 0
+                            new_branch_supps[name] = BranchSupplimental(
+                                {"inds_keep": indicator_inds},
+                                obj_contained_shape=new_inds[name].shape,
+                                copy=False,
+                            )
 
-        if hasattr(self, "new_branch_supps_for_transfer"):
-            # logp = self.lp_for_transfer.reshape(ntemps, nwalkers)
-            new_branch_supps = self.new_branch_supps_for_transfer
+            if hasattr(self, "new_supps_for_transfer"):
+                # logp = self.lp_for_transfer.reshape(ntemps, nwalkers)
+                new_supps = self.new_supps_for_transfer
 
-        # TODO: adjust this setup
-        # Compute prior of the proposed position
-        if hasattr(self, "ll_for_transfer"):
-            # logp = self.lp_for_transfer.reshape(ntemps, nwalkers)
-            logp = model.compute_log_prior_fn(q, inds=new_inds)
-            logl = self.ll_for_transfer.reshape(ntemps, nwalkers)
-            loglcheck, new_blobs = model.compute_log_like_fn(
+            if hasattr(self, "new_branch_supps_for_transfer"):
+                # logp = self.lp_for_transfer.reshape(ntemps, nwalkers)
+                new_branch_supps = self.new_branch_supps_for_transfer
+
+            # TODO: adjust this setup
+            # Compute prior of the proposed position
+            if hasattr(self, "ll_for_transfer"):
+                # logp = self.lp_for_transfer.reshape(ntemps, nwalkers)
+                logp = model.compute_log_prior_fn(q, inds=new_inds)
+                logl = self.ll_for_transfer.reshape(ntemps, nwalkers)
+                loglcheck, new_blobs = model.compute_log_like_fn(
+                    q,
+                    inds=new_inds,
+                    logp=logp,
+                    supps=new_supps,
+                    branch_supps=new_branch_supps,
+                )
+                if not np.all(
+                    np.abs(logl[logl != -1e300] - loglcheck[logl != -1e300]) < 1e-5
+                ):
+                    breakpoint()
+
+            else:
+                logp = model.compute_log_prior_fn(q, inds=new_inds)
+
+                # pass ll values from special likelihoods in the proposal
+                # prevent ll values from being run again
+                # if "inds_here" in temp_transfer_info:
+                #    logp_keep = logp[temp_transfer_info["inds_here"]]
+                #    logp[temp_transfer_info["inds_here"]] = -np.inf
+
+                # if (new_branch_supps is not None or new_supps is not None) and self.adjust_supps_pre_logl_func is not None:
+                #    self.adjust_supps_pre_logl_func(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
+
+                # Compute the lnprobs of the proposed position.
+                logl, new_blobs = model.compute_log_like_fn(
+                    q,
+                    inds=new_inds,
+                    logp=logp,
+                    supps=new_supps,
+                    branch_supps=new_branch_supps,
+                )
+
+                # pass ll values from special likelihoods in the proposal
+                # put int he correct values
+                # if "inds_here" in temp_transfer_info:
+                #    logp[temp_transfer_info["inds_here"]] = logp_keep
+                #    logl[temp_transfer_info["inds_here"]] = temp_transfer_info["ll"]
+
+            logP = self.compute_log_posterior(logl, logp)
+
+            prev_logl = state.log_like
+
+            prev_logp = state.log_prior
+
+            # TODO: check about prior = - inf
+            # takes care of tempering
+            prev_logP = self.compute_log_posterior(prev_logl, prev_logp)
+
+            # TODO: fix this
+            # this is where _metropolisk should come in
+            lnpdiff = factors + logP - prev_logP
+
+            accepted = lnpdiff > np.log(model.random.rand(ntemps, nwalkers))
+
+            # TODO: deal with blobs
+            new_state = State(
                 q,
+                log_like=logl,
+                log_prior=logp,
+                blobs=None,
                 inds=new_inds,
-                logp=logp,
-                supps=new_supps,
-                branch_supps=new_branch_supps,
+                supplimental=new_supps,
+                branch_supplimental=new_branch_supps,
             )
-            if not np.all(
-                np.abs(logl[logl != -1e300] - loglcheck[logl != -1e300]) < 1e-5
-            ):
+            state = self.update(state, new_state, accepted)
+
+            # apply delayed rejection to walkers that are +1
+            # TODO: need to reexamine this a bit. I have a feeling that only applying
+            # this to +1 may not be preserving detailed balance. You may need to
+            # "simulate it" for -1 similar to what we do in multiple try
+            if self.dr:
+                # for name, branch in state.branches.items():
+                #     # We have to work with the binaries added only.
+                #     # We need the a) rejected points, b) the model,
+                #     # c) the current state, d) the indices where we had +1 (True),
+                #     # and the e) factors.
+                state, accepted = self.dr.propose(
+                    lnpdiff,
+                    accepted,
+                    model,
+                    state,
+                    new_state,
+                    new_inds,
+                    inds_for_change,
+                    factors,
+                )  # model, state
+
+            # If RJ is true we control only on the in-model step, so no need to do it here as well
+            # In most cases, RJ proposal is has small acceptance rate, so in the end we end up
+            # switching back what was swapped in the previous in-model step.
+            # TODO: MLK: I think we should allow for swapping but no adaptation.
+
+            if self.temperature_control is not None and not self.prevent_swaps:
+                state = self.temperature_control.temper_comps(state, adapt=False)
+            if np.any(state.log_like > 1e10):
                 breakpoint()
 
-        else:
-            logp = model.compute_log_prior_fn(q, inds=new_inds)
+            # add to move-specific accepted information
+            self.accepted += accepted
+            self.num_proposals += 1
 
-            # pass ll values from special likelihoods in the proposal
-            # prevent ll values from being run again
-            # if "inds_here" in temp_transfer_info:
-            #    logp_keep = logp[temp_transfer_info["inds_here"]]
-            #    logp[temp_transfer_info["inds_here"]] = -np.inf
-
-            # if (new_branch_supps is not None or new_supps is not None) and self.adjust_supps_pre_logl_func is not None:
-            #    self.adjust_supps_pre_logl_func(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
-
-            # Compute the lnprobs of the proposed position.
-            logl, new_blobs = model.compute_log_like_fn(
-                q,
-                inds=new_inds,
-                logp=logp,
-                supps=new_supps,
-                branch_supps=new_branch_supps,
-            )
-
-            # pass ll values from special likelihoods in the proposal
-            # put int he correct values
-            # if "inds_here" in temp_transfer_info:
-            #    logp[temp_transfer_info["inds_here"]] = logp_keep
-            #    logl[temp_transfer_info["inds_here"]] = temp_transfer_info["ll"]
-
-        logP = self.compute_log_posterior(logl, logp)
-
-        prev_logl = state.log_like
-
-        prev_logp = state.log_prior
-
-        # TODO: check about prior = - inf
-        # takes care of tempering
-        prev_logP = self.compute_log_posterior(prev_logl, prev_logp)
-
-        # TODO: fix this
-        # this is where _metropolisk should come in
-        lnpdiff = factors + logP - prev_logP
-
-        accepted = lnpdiff > np.log(model.random.rand(ntemps, nwalkers))
-
-        # TODO: deal with blobs
-        new_state = State(
-            q,
-            log_like=logl,
-            log_prior=logp,
-            blobs=None,
-            inds=new_inds,
-            supplimental=new_supps,
-            branch_supplimental=new_branch_supps,
-        )
-        state = self.update(state, new_state, accepted)
-
-        # apply delayed rejection to walkers that are +1
-        # TODO: need to reexamine this a bit. I have a feeling that only applying
-        # this to +1 may not be preserving detailed balance. You may need to
-        # "simulate it" for -1 similar to what we do in multiple try
-        if self.dr:
-            # for name, branch in state.branches.items():
-            #     # We have to work with the binaries added only.
-            #     # We need the a) rejected points, b) the model,
-            #     # c) the current state, d) the indices where we had +1 (True),
-            #     # and the e) factors.
-            state, accepted = self.dr.propose(
-                lnpdiff,
-                accepted,
-                model,
-                state,
-                new_state,
-                new_inds,
-                inds_for_change,
-                factors,
-            )  # model, state
-
-        # If RJ is true we control only on the in-model step, so no need to do it here as well
-        # In most cases, RJ proposal is has small acceptance rate, so in the end we end up
-        # switching back what was swapped in the previous in-model step.
-        # TODO: MLK: I think we should allow for swapping but no adaptation.
-
-        if self.temperature_control is not None and not self.prevent_swaps:
-            state = self.temperature_control.temper_comps(state, adapt=False)
-        if np.any(state.log_like > 1e10):
-            breakpoint()
-
-        # add to move-specific accepted information
-        self.accepted += accepted
-        self.num_proposals += 1
-
-        return state, accepted
+            return state, accepted

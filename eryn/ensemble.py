@@ -410,7 +410,7 @@ class EnsembleSampler(object):
         self.info = info
 
         self.all_moves = (
-            self.moves if self.rj_moves is None else self.moves + self.rj_moves
+            self.moves if not self.has_reversible_jump else self.moves + self.rj_moves
         )
         # Deal with re-used backends
         if not self.backend.initialized:

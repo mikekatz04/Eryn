@@ -130,11 +130,6 @@ class RedBlueMove(Move, ABC):
                 "dimensions."
             )
 
-        if self.proposal_branch_names is not None:
-            proposal_branch_names = self.proposal_branch_names
-        else:
-            proposal_branch_names = list(state.branches.keys())
-
         # TODO: deal with more intensive acceptance fractions
         # Run any move-specific setup.
         self.setup(state.branches)
@@ -146,27 +141,26 @@ class RedBlueMove(Move, ABC):
         if self.randomize_split:
             [np.random.shuffle(x) for x in inds]
 
-        if self.gibbs_sampling_leaves_per is not None:
-            # setup for gibbs sampling
-            gibbs_splits = []
-            for name, branch in state.branches.items():
-                nleaves_max_here = branch.nleaves.max()
-                num_each = np.arange(0, nleaves_max_here)
+        all_branch_names = list(state.branches.keys())
 
-                split_inds = np.arange(
-                    self.gibbs_sampling_leaves_per,
-                    nleaves_max_here,
-                    self.gibbs_sampling_leaves_per,
-                )
+        ntemps, nwalkers, _, _ = state.branches[all_branch_names[0]].shape
 
-                num_each_splits = np.split(num_each, split_inds)
-                for each in num_each_splits:
-                    gibbs_splits.append([name, each, nleaves_max_here])
+        for (branch_names_run, inds_run) in self.proposal_branch_setup_iterator(
+            all_branch_names
+        ):
 
-        else:
-            gibbs_splits = [None]
+            (
+                coords_going_for_proposal,
+                inds_going_for_proposal,
+                at_least_one_proposal,
+            ) = self.setup_proposals(
+                branch_names_run, inds_run, state.branches_coords, state.branches_inds
+            )
 
-        for gs in gibbs_splits:
+            if not at_least_one_proposal:
+                continue
+
+            breakpoint()
             accepted_here = np.zeros((ntemps, nwalkers), dtype=bool)
             for split in range(self.nsplits):
                 S1 = inds == split
@@ -176,48 +170,30 @@ class RedBlueMove(Move, ABC):
                 all_inds_shaped = all_inds[S1].reshape(ntemps, nwalkers_here)
                 fixed_inds_shaped = all_inds[~S1].reshape(ntemps, nwalkers_here)
 
+                real_inds_subset = {
+                    name: np.take_along_axis(
+                        state.branches[name].inds, all_inds_shaped[:, :, None], axis=1,
+                    )
+                    for name in inds_going_for_proposal
+                }
+
                 new_inds = {
                     name: np.take_along_axis(
-                        state.branches[name].inds, all_inds_shaped[:, :, None], axis=1
+                        inds_going_for_proposal[name],
+                        all_inds_shaped[:, :, None],
+                        axis=1,
                     )
-                    for name in state.branches
+                    for name in inds_going_for_proposal
                 }
 
                 temp_coords = {
                     name: np.take_along_axis(
-                        state.branches[name].coords,
+                        coords_going_for_proposal[name],
                         all_inds_shaped[:, :, None, None],
                         axis=1,
                     )
-                    for name in state.branches
+                    for name in coords_going_for_proposal
                 }
-
-                # fix values in q that are not actually being tested here
-                # new_inds_adjust is used temporarily for this
-                new_inds_adjust = deepcopy(new_inds)
-                if gs is not None:
-                    # TODO: adjust to not one model at a time?
-                    # adjust new inds for gibbs sampling
-                    name_keep, inds_keep, nleaves_max_here = gs
-                    if name_keep not in proposal_branch_names:
-                        continue
-
-                    keep_arr = np.zeros_like(new_inds_adjust[name], dtype=bool)
-                    for name in new_inds_adjust:
-                        if name != name_keep:
-                            # not using any of these
-                            new_inds_adjust[name] = False
-
-                        else:
-                            inds_1 = np.cumsum(new_inds_adjust[name], axis=2) * (
-                                new_inds_adjust[name] == True
-                            )
-
-                            for ii in inds_keep:
-                                keep_inds = np.where(inds_1 == (ii + 1))
-                                keep_arr[keep_inds] = True
-
-                            new_inds_adjust[name] = keep_arr.copy()
 
                 sets = {
                     key: [
@@ -243,10 +219,10 @@ class RedBlueMove(Move, ABC):
                 # with Gibbs sampling if it is being used
 
                 temp_inds_s = {
-                    name: new_inds_adjust[name][:].reshape(
+                    name: new_inds[name][:].reshape(
                         (ntemps, -1,) + state.branches[name].coords.shape[2:3]
                     )
-                    for name in new_inds_adjust
+                    for name in new_inds
                 }
 
                 temp_inds_c = {
@@ -258,77 +234,18 @@ class RedBlueMove(Move, ABC):
                     for name in state.branches_inds
                 }
 
-                q_temp, factors_temp = self.get_proposal(
+                q, factors = self.get_proposal(
                     s, c, model.random, inds_s=temp_inds_s, inds_c=temp_inds_c
                 )
-                q = {}
-                for name in q_temp:
-                    q[name] = q_temp[
-                        name
-                    ]  # TODO: take this out? .reshape((ntemps, -1,) + state.branches[name].coords.shape[2:])
 
-                factors = factors_temp.reshape((ntemps, -1,))
-
-                new_inds_prior = deepcopy(new_inds)
-                if "model_indicator" in q:
-                    model_indicator = np.take_along_axis(
-                        state.branches["model_indicator"].coords,
-                        all_inds_shaped[:, :, None, None],
-                        axis=1,
-                    )
-
-                    # reset all model_indicators in q
-                    q["model_indicator"][:] = model_indicator.copy()
-
-                    model_indicator = model_indicator.squeeze().astype(int)
-
-                    if model_indicator.ndim == 1:
-                        model_indicator = model_indicator[None, :]
-
-                    unique_model_indicators = np.unique(model_indicator)
-                    model_names = list(q.keys())
-                    model_names.remove("model_indicator")
-                    assert model_indicator.dtype == int
-                    assert len(unique_model_indicators) <= len(model_names)
-
-                    # adjust indices
-                    for i in unique_model_indicators:
-                        new_inds_adjust[model_names[i]][(model_indicator != i)] = False
-
-                    new_inds_adjust["model_indicator"][:] = False
-
-                    # adjust factors
-                    if hasattr(self, "adjust_factors"):
-                        ndims = np.asarray([q[key].shape[-1] for key in model_names])
-                        # +1 is for the update of the model indicator
-                        ndims_old = np.full_like(factors, ndims.sum() + 1)
-                        ndims_new = ndims[model_indicator]
-                        self.adjust_factors(factors, ndims_old, ndims_new)
-
-                    for name in new_inds_prior:
-                        new_inds_prior[name][:] = True
-
-                for name in q:
-                    q[name] = q[name] * (
-                        new_inds_adjust[name][:, :, :, None]
-                    ) + temp_coords[name] * (~new_inds_adjust[name][:, :, :, None])
-
-                # add back coordinates for branches not tested here
-                # according to proposal_branch_names
-                for name in state.branches:
-                    if name in q:
-                        continue
-                    else:
-                        q[name] = temp_coords[name]
+                # account for gibbs sampling
+                self.cleanup_proposals_gibbs(branch_names_run, inds_run, q, state)
 
                 # Compute prior of the proposed position
                 # new_inds_prior is adjusted if product-space is used
-                logp = model.compute_log_prior_fn(q, inds=new_inds_prior)
+                logp = model.compute_log_prior_fn(q, inds=real_inds_subset)
 
-                # set logp for walkers with no leaves that are being tested
-                # in this gibbs run
-                if gs is not None:
-                    logp[np.where(np.sum(keep_arr, axis=-1) == 0)] = -np.inf
+                self.fix_logp_gibbs(branch_names_run, inds_run, logp, real_inds_subset)
 
                 # setup supplimental information
                 if state.supplimental is not None:
@@ -363,7 +280,7 @@ class RedBlueMove(Move, ABC):
                     }
                     for name in new_branch_supps:
                         new_branch_supps[name].add_objects(
-                            {"inds_keep": new_inds_adjust[name]}
+                            {"inds_keep": new_inds[name]}
                         )
 
                 else:
@@ -371,7 +288,7 @@ class RedBlueMove(Move, ABC):
                     if new_supps is not None:
                         new_branch_supps = {
                             name: BranchSupplimental(
-                                {"inds_keep": new_inds_adjust[name]},
+                                {"inds_keep": new_inds[name]},
                                 obj_contained_shape=new_inds[name].shape,
                                 copy=False,
                             )
@@ -385,7 +302,7 @@ class RedBlueMove(Move, ABC):
                 # Compute the lnprobs of the proposed position.
                 logl, new_blobs = model.compute_log_like_fn(
                     q,
-                    inds=new_inds,
+                    inds=real_inds_subset,
                     logp=logp,
                     supps=new_supps,
                     branch_supps=new_branch_supps,
@@ -446,13 +363,12 @@ class RedBlueMove(Move, ABC):
                     state, new_state, accepted_here, subset=all_inds_shaped
                 )
 
+            # add to move-specific accepted information
+            self.accepted += accepted
+            self.num_proposals += 1
+
         if self.temperature_control is not None:
             state = self.temperature_control.temper_comps(state)
 
-        # add to move-specific accepted information
-        self.accepted += accepted
-        self.num_proposals += 1
-
-        # make accepted move specific ?
         return state, accepted
 

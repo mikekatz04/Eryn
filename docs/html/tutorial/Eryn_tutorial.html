@@ -472,17 +472,6 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="o">%</span><span class="k">load_ext</span> autoreload
-<span class="o">%</span><span class="k">autoreload</span> 2
-
-</pre></div>
-</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 
 <span></span><span class="kn">import</span> <span class="nn">sys</span>
 <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;/Users/michaelkatz/Research/Eryn/&#39;</span><span class="p">)</span>
@@ -543,7 +532,7 @@ for as the number of “leafs” on each branch. So, if 1 walker has 3 Gaussians
 <div class="math notranslate nohighlight">
 \[\ln{\mathcal{L}}\propto -\frac{1}{2}(\vec{x} - \vec{\mu})^T \tilde{C}^{-1} (\vec{x} - \vec{\mu})\]</div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -557,7 +546,7 @@ for as the number of “leafs” on each branch. So, if 1 walker has 3 Gaussians
 </div>
 <p>Add the initial settings: number of dimensions and number of walkers. Then, generate a covariance matrix for the given dimensionality for the likelihood and a set of means for each component of the Gaussian.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -584,7 +573,7 @@ like this:</p>
 </pre></div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -600,7 +589,7 @@ like this:</p>
 <p>The object that directs everything in Eryn (like in <code class="docutils literal notranslate"><span class="pre">emcee</span></code>) is <code class="docutils literal notranslate"><span class="pre">`eryn.ensemble.EnsembleSampler</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/build/html/user/ensemble.html#eryn.ensemble.EnsembleSampler">https://mikekatz04.github.io/Eryn/build/html/user/ensemble.html#eryn.ensemble.EnsembleSampler</a>&gt;`__. It required arguments are number of walkers, dimensionality of inputs (for this simple case this is an integer), the log likelihood function, and the priors. Similar to <code class="docutils literal notranslate"><span class="pre">emcee</span></code>, you can add arguments and keyword arguments to the Likelihood function by providing the <code class="docutils literal notranslate"><span class="pre">args</span></code> and <code class="docutils literal notranslate"><span class="pre">kwargs</span></code> keyword
 arguments to the <code class="docutils literal notranslate"><span class="pre">EnsembleSampler</span></code>. In this case, we add the means and inverse of the covariance matrix as extra arguments.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -616,7 +605,7 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
 </div>
 <p>Now we will get starting positions for our walkers by sampling from the priors using the <code class="docutils literal notranslate"><span class="pre">rvs</span></code> method of the <code class="docutils literal notranslate"><span class="pre">PriorContainer</span></code> and then evaluating the associated Likelihood and prior values. The <code class="docutils literal notranslate"><span class="pre">rvs</span></code> method is also called like in <code class="docutils literal notranslate"><span class="pre">scipy.stats</span></code> distributions.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -695,13 +684,13 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
 </ul>
 <p>The total number of proposals the sampler will do is <code class="docutils literal notranslate"><span class="pre">nsteps</span> <span class="pre">*</span> <span class="pre">thin_by</span></code>. It will store <code class="docutils literal notranslate"><span class="pre">nsteps</span></code> samples.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">nsteps</span> <span class="o">=</span> <span class="mi">50</span>
+<span></span><span class="n">nsteps</span> <span class="o">=</span> <span class="mi">500</span>
 <span class="c1"># burn for 1000 steps</span>
-<span class="n">burn</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">burn</span> <span class="o">=</span> <span class="mi">100</span>
 <span class="c1"># thin by 5</span>
 <span class="n">thin_by</span> <span class="o">=</span> <span class="mi">5</span>
 <span class="n">out</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">nsteps</span><span class="p">,</span> <span class="n">burn</span><span class="o">=</span><span class="n">burn</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="n">thin_by</span><span class="p">)</span>
@@ -713,15 +702,15 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|██████████████████████████████████████████| 10/10 [00:00&lt;00:00, 189.11it/s]
-100%|████████████████████████████████████████| 250/250 [00:00&lt;00:00, 253.89it/s]
+100%|██████████████████████████████████████| 1000/1000 [00:03&lt;00:00, 265.07it/s]
+100%|████████████████████████████████████| 25000/25000 [01:37&lt;00:00, 255.26it/s]
 </pre></div></div>
 </div>
 <p>Similar to <code class="docutils literal notranslate"><span class="pre">emcee</span></code>, all of the sampler information is stored in a backend object. In the default case, this backend is <code class="docutils literal notranslate"><span class="pre">`eryn.backends.Backend</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/build/html/user/backend.html#eryn.backends.Backend">https://mikekatz04.github.io/Eryn/build/html/user/backend.html#eryn.backends.Backend</a>&gt;`__. To retrieve the samples from the backend, you call the <code class="docutils literal notranslate"><span class="pre">get_chain</span></code> method. This will return a dictionary with keys at the omdel names and a 5-dimensional array per model, which can be intimidating. We will cover that array just below. For now, just focus on
 the output of the sampler.</p>
 <p>We will first generate corner plot. In this initial example, we have not defined branch names, therefore, the sampler has assigned our problem default branch names <code class="docutils literal notranslate"><span class="pre">model_0</span></code>,…,<code class="docutils literal notranslate"><span class="pre">model_n</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -731,7 +720,7 @@ the output of the sampler.</p>
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -747,7 +736,7 @@ the output of the sampler.</p>
 </div>
 <p>Now we will plot the chains.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -776,7 +765,7 @@ for each sample. * <code class="docutils literal notranslate"><span class="pre">
 <p>Common properties to get from the backend: * <code class="docutils literal notranslate"><span class="pre">shape</span></code>: returns a dictionary with keys for each branch name and values as tuples representing the specific shape for each model (this shape will not include the <code class="docutils literal notranslate"><span class="pre">nsteps</span></code> outer dimension. * <code class="docutils literal notranslate"><span class="pre">iteration</span></code>: number of stored iterations in the backend.</p>
 <p>Now we will get the likelihood and prior. Notice the shape of the Likelihood is <code class="docutils literal notranslate"><span class="pre">(nsteps,</span> <span class="pre">ntemps,</span> <span class="pre">nwalkers)</span></code> (in this example we have 1 temperature). This will always be the shape of quantities that are a single value per walker (e.g. Likelihood, prior, posterior).</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -794,26 +783,26 @@ for each sample. * <code class="docutils literal notranslate"><span class="pre">
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Number of iterations 50
-(50, 1, 100) [[[-9.43378049 -1.02493852 -4.17726471 ... -5.41402824 -4.02673368
-   -6.18991868]]
+Number of iterations 5000
+(5000, 1, 100) [[[-1.98224284 -0.87039638 -1.54470588 ... -2.98792551 -3.13411122
+   -0.49574469]]
 
- [[-4.52526005 -1.62876958 -1.66639971 ... -5.29449201 -3.19307031
-   -3.09561382]]
+ [[-0.57952899 -2.37451334 -3.67889333 ... -3.08409154 -3.32105535
+   -3.20759563]]
 
- [[-2.47959226 -4.13212497 -3.8753185  ... -2.76500856 -6.39228333
-   -1.7003192 ]]
+ [[-4.45414793 -2.12120492 -3.21444427 ... -1.57862012 -1.83809883
+   -0.81767746]]
 
  ...
 
- [[-1.71557368 -1.9977553  -2.84171927 ... -1.4080743  -1.53589636
-   -1.1843373 ]]
+ [[-1.65695824 -2.9144867  -0.54879307 ... -4.07328331 -2.03831224
+   -1.66458118]]
 
- [[-1.16305075 -6.99215316 -1.59208011 ... -3.08587029 -1.62457723
-   -3.25310739]]
+ [[-0.7686407  -2.60406829 -0.6791302  ... -1.34366294 -2.50960982
+   -1.72462757]]
 
- [[-3.18607669 -1.1429558  -1.6589886  ... -1.47512843 -2.64662908
-   -0.39670766]]] [[[-11.51292546 -11.51292546 -11.51292546 ... -11.51292546 -11.51292546
+ [[-1.42749033 -1.16465795 -2.90248791 ... -1.15985077 -0.99315444
+   -4.36850174]]] [[[-11.51292546 -11.51292546 -11.51292546 ... -11.51292546 -11.51292546
    -11.51292546]]
 
  [[-11.51292546 -11.51292546 -11.51292546 ... -11.51292546 -11.51292546
@@ -840,7 +829,7 @@ Number of iterations 50
 model or leaf.</p>
 <p>In our simple example, we have 1 temperature and our maximum leaf count is 1.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -858,12 +847,12 @@ model or leaf.</p>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;class &#39;dict&#39;&gt; dict_keys([&#39;model_0&#39;]) (50, 1, 100, 1, 5)
+&lt;class &#39;dict&#39;&gt; dict_keys([&#39;model_0&#39;]) (5000, 1, 100, 1, 5)
 </pre></div></div>
 </div>
 <p>We can also get the shape information direct from the backend:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -872,7 +861,7 @@ model or leaf.</p>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -888,7 +877,7 @@ model or leaf.</p>
 <p>Output from the sampler above is the last state of the sampler <code class="docutils literal notranslate"><span class="pre">out</span></code>. This will include any additional objects passed through the sampler like <code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> objects that we will explain below.</p>
 <p>Another way to retrieve the last state is from the backend. That is what we will do here. However, please note, that supplimental information (discussed below) is not stored in the backend, so the state that is returned from the backend will have information that is stored in the backend, but not supplimental information that was passed through the sampler at runtime.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -907,7 +896,7 @@ model or leaf.</p>
 </div>
 <p>We can access the Likelihood and prior values as <code class="docutils literal notranslate"><span class="pre">State.log_like</span></code> and <code class="docutils literal notranslate"><span class="pre">State.log_prior</span></code>. We can also ask the state to give use the posterior probability with the <code class="docutils literal notranslate"><span class="pre">get_log_prob</span></code> method. Note that shape of these values is <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers)</span></code>. This is because <code class="docutils literal notranslate"><span class="pre">State</span></code> objects represent one moment in time in the sample, so they do not have the <code class="docutils literal notranslate"><span class="pre">nsteps</span></code> outer dimension that the backend has.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -920,23 +909,23 @@ model or leaf.</p>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(1, 100) [[-3.18607669 -1.1429558  -1.6589886  -1.60856068 -2.05237241 -2.80511361
-  -3.2820529  -0.48777215 -4.69744231 -4.54166543 -0.49613285 -2.57913187
-  -0.82081494 -3.15835422 -4.69374692 -1.36431241 -1.02297895 -3.81079257
-  -1.3500181  -2.69702179 -0.94306879 -0.68869336 -1.55075872 -1.77505016
-  -1.29913963 -0.47419261 -4.0502107  -4.29488605 -5.78437773 -5.5541193
-  -1.66435034 -5.32560629 -4.35274089 -4.13308071 -0.75070212 -0.51465938
-  -1.96452927 -2.96740213 -5.80681138 -4.45549403 -2.34328003 -1.40855724
-  -1.85349052 -0.6874936  -1.03817694 -1.38031118 -4.25650003 -3.3810526
-  -2.91694682 -1.83256203 -2.18093864 -4.73560743 -1.46391034 -2.48634414
-  -3.10277004 -4.19744949 -1.45608498 -2.77594935 -1.79394206 -2.81752866
-  -2.98090146 -3.03810478 -1.99565952 -0.66910034 -1.13193638 -1.67270637
-  -2.18410851 -0.32066335 -1.41987524 -1.47641726 -0.84826231 -1.45503317
-  -1.15618694 -3.20802127 -1.0925304  -2.32264582 -4.37653078 -0.70767912
-  -2.06409617 -1.07758357 -2.10580722 -1.84564786 -3.61425952 -1.68459496
-  -2.39591868 -5.65374059 -2.1732853  -4.77084663 -2.46614494 -1.42360664
-  -3.2575306  -2.05376261 -3.32153097 -2.44184142 -1.65441363 -7.02191783
-  -2.8051769  -1.47512843 -2.64662908 -0.39670766]] [[-11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+(1, 100) [[-1.42749033 -1.16465795 -2.90248791 -1.4205464  -1.73184035 -0.39578371
+  -0.89928881 -2.73063453 -5.05698648 -2.65102226 -3.12556428 -3.50663567
+  -5.04791932 -1.76103745 -1.07386527 -6.57840323 -2.29057934 -1.66957024
+  -4.51852613 -3.70260834 -2.36119413 -2.36890755 -1.98874125 -1.16826178
+  -2.15226652 -4.44816169 -1.32793447 -1.56123251 -2.89421365 -0.96710328
+  -1.37154053 -0.82806745 -1.37880472 -2.89903568 -1.54171462 -0.91201418
+  -3.27744205 -1.41227693 -2.87390058 -2.58689758 -1.63521366 -3.49999803
+  -1.00876715 -2.06648643 -2.60836479 -3.59342617 -1.27191883 -0.41782896
+  -2.1558409  -1.41475221 -1.14262253 -3.28587146 -1.01802268 -3.5767039
+  -2.37317013 -2.71393723 -4.17813968 -6.19328376 -2.31916484 -2.57155503
+  -0.95290218 -0.61869495 -1.80460387 -0.44283864 -1.50356618 -4.04067114
+  -0.36193275 -0.91386406 -2.14068647 -2.02976    -1.47348934 -1.24412132
+  -2.41360504 -1.39083394 -2.72885983 -3.00367995 -2.01058413 -3.41718136
+  -1.51099598 -1.40174721 -2.89822354 -3.29969113 -2.99498631 -0.34138926
+  -2.2302706  -3.74844506 -2.9570999  -0.87762859 -5.92761277 -1.22958784
+  -0.66157298 -1.34829214 -1.68768024 -1.30222919 -0.96393602 -1.90434747
+  -1.86802227 -1.15985077 -0.99315444 -4.36850174]] [[-11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
   -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
   -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
   -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
@@ -955,40 +944,40 @@ model or leaf.</p>
   -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
   -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
   -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
-  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546]] [[-14.6990021540539 -12.655881269058789 -13.17191406689161
-  -13.12148614396511 -13.5652978728914 -14.318039074525378
-  -14.794978368963069 -12.000697616071093 -16.21036777460609
-  -16.05459089268453 -12.009058310747992 -14.09205733316421
-  -12.333740402421263 -14.671279685052703 -16.206672383919198
-  -12.877237875605088 -12.535904414377118 -15.323718037268904
-  -12.862943563633566 -14.209947253912995 -12.455994255558881
-  -12.201618828385325 -13.063684185602074 -13.287975620845916
-  -12.812065097627617 -11.98711807655929 -15.56313616851288
-  -15.807811510546149 -17.2973031911239 -17.06704476331893
-  -13.177275804769963 -16.838531752608766 -15.865666352455646
-  -15.646006173265935 -12.263627585992179 -12.027584847542167
-  -13.477454735452302 -14.480327598172524 -17.319736841299754
-  -15.968419490353646 -13.856205494617711 -12.92148270602327
-  -13.366415981314853 -12.20041906602199 -12.551102404030136
-  -12.89323664751312 -15.769425499474632 -14.893978068157692
-  -14.429872284958009 -13.345487493852174 -13.693864100180623
-  -16.24853289649521 -12.97683580667583 -13.999269605668973
-  -14.615695504490748 -15.710374958113102 -12.969010441825302
-  -14.288874810370201 -13.306867527629654 -14.330454126226034
-  -14.493826923458506 -14.551030240748224 -13.508584980057442
-  -12.182025801962808 -12.644861845259639 -13.185631833515409
-  -13.697033973828631 -11.833588817748547 -12.932800709919292
-  -12.989342729251522 -12.361187774055535 -12.96795863879418
-  -12.6691124060966 -14.72094673416529 -12.605455861333246
-  -13.835571281559565 -15.889456246665725 -12.220604581103181
-  -13.577021635399863 -12.590509038171271 -13.618732680723763
-  -13.358573324153861 -15.12718498062653 -13.197520429651778
-  -13.908844140114212 -17.166666057493867 -13.686210760179495
-  -16.2837720949975 -13.979070401548165 -12.936532101543465
-  -14.770456067028594 -13.566688073600343 -14.834456434408597
-  -13.954766888488795 -13.167339094387502 -18.534843295419698
-  -14.318102365933672 -12.988053893367788 -14.15955454909765
-  -11.909633127086721]]
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546]] [[-12.940415792342908 -12.677583417587554 -14.415413377625214
+  -12.93347186157067 -13.244765815974956 -11.90870917107719
+  -12.412214273918567 -14.243559994626837 -16.569911943376745
+  -14.163947725995179 -14.638489746892098 -15.019561133785865
+  -16.560844781047933 -13.273962917169325 -12.586790731616567
+  -18.091328694187993 -13.803504807517804 -13.182495707716285
+  -16.031451593689045 -15.215533802332814 -13.874119597520234
+  -13.881833016685786 -13.501666712269909 -12.68118724623478
+  -13.665191986574257 -15.961087157977811 -12.84085993067434
+  -13.074157970517579 -14.407139117892207 -12.480028744896691
+  -12.88446599707569 -12.340992915495912 -12.891730189936121
+  -14.411961147899472 -13.054640088266552 -12.424939640090003
+  -14.790367511483751 -12.92520239671439 -14.38682604744076
+  -14.09982304339284 -13.148139120578165 -15.012923497905973
+  -12.52169261110424 -13.579411893178353 -14.121290250868226
+  -15.106351639206181 -12.784844298390535 -11.930754423765535
+  -13.668766361316992 -12.927677676095627 -12.655547999705611
+  -14.79879692762421 -12.530948142867862 -15.089629364057462
+  -13.886095599419718 -14.226862691870274 -15.69106514237642
+  -17.70620922875206 -13.832090303519264 -14.084480493540239
+  -12.465827644649963 -12.131620415821978 -13.317529334503991
+  -11.955764104187088 -13.016491649047339 -15.553596604052785
+  -11.874858218944018 -12.426789524988834 -13.653611935171906
+  -13.542685464914193 -12.98641480424607 -12.757046780762286
+  -13.9265305036547 -12.903759408126696 -14.241785299801581
+  -14.516605417919196 -13.52350959205911 -14.930106827649517
+  -13.023921443712878 -12.914672671465087 -14.411149000980558
+  -14.812616599091513 -14.50791177258283 -11.854314729318858
+  -13.743196062451103 -15.261370525621608 -14.47002536748588
+  -12.390554059324838 -17.440538231514108 -12.742513302541665
+  -12.174498443983364 -12.861217600530411 -13.20060570040374
+  -12.815154655047058 -12.47686148478496 -13.417272933845995
+  -13.380947730905843 -12.672776233075945 -12.506079906842217
+  -15.88142720644883]]
 </pre></div></div>
 </div>
 <section id="Branches">
@@ -996,7 +985,7 @@ model or leaf.</p>
 <p><code class="docutils literal notranslate"><span class="pre">State</span></code> objects store quantities at are single values per walker directly in the state as shown above (e.g. <code class="docutils literal notranslate"><span class="pre">State.log_like</span></code>). Information that gets down to the individual branch (or model type) level is stored in a <code class="docutils literal notranslate"><span class="pre">`Branch</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/state.html#eryn.state.Branch">https://mikekatz04.github.io/Eryn/html/user/state.html#eryn.state.Branch</a>&gt;`__ object. These <code class="docutils literal notranslate"><span class="pre">Branch</span></code> objects are stored in a dictionary within the <code class="docutils literal notranslate"><span class="pre">State</span></code> object with keys as branch names and values as the <code class="docutils literal notranslate"><span class="pre">Branch</span></code> object associated with that branch name. The
 branch objects can be accessed as <code class="docutils literal notranslate"><span class="pre">state.branches[model_name]</span></code>. With in the branch object, the coordinates are stored. A few other things are stored, but we will get to that later. If you want a dictionary with keys at the branch names and values as the current coordinates, you can also use the property: <code class="docutils literal notranslate"><span class="pre">state.branches_coords</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1005,16 +994,16 @@ branch objects can be accessed as <code class="docutils literal notranslate"><sp
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-{&#39;model_0&#39;: &lt;eryn.state.Branch at 0x176b2eca0&gt;}
+{&#39;model_0&#39;: &lt;eryn.state.Branch at 0x15d71c2e0&gt;}
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1026,310 +1015,310 @@ branch objects can be accessed as <code class="docutils literal notranslate"><sp
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([[[[-1.42033703e+00, -1.02810079e-01, -8.59592624e-01,
-           1.82272349e+00, -5.31982881e-01]],
+array([[[[-3.00415560e-01,  9.66854202e-01, -7.44153080e-01,
+           2.49559460e-01, -1.10176239e+00]],
 
-        [[-1.94132413e-01,  1.14762173e+00,  4.05768945e-01,
-           3.61701175e-01,  7.97315756e-01]],
+        [[-8.65303628e-01, -8.52344609e-01,  3.00482271e-01,
+          -7.84765063e-01, -3.84614619e-01]],
 
-        [[ 1.43261582e-01, -9.86631926e-01,  2.11648516e-01,
-          -1.27932905e+00,  8.01581470e-01]],
+        [[ 1.50532498e+00,  1.73707929e+00, -3.96257858e-01,
+          -5.42637175e-01,  2.64674677e-01]],
 
-        [[ 2.01818181e-01, -1.59802298e+00,  1.55396702e-01,
-           7.13028032e-01, -3.00260264e-01]],
+        [[-8.65566175e-01, -1.00097592e-01, -2.54061448e-01,
+          -4.36691708e-01,  1.35152565e+00]],
 
-        [[ 1.44705546e+00, -1.13931177e+00, -7.48192220e-01,
-          -3.45896320e-01,  1.82505165e-01]],
+        [[-4.91294554e-01, -4.13623880e-01,  1.42897010e+00,
+          -1.87007244e-01, -9.87065548e-01]],
 
-        [[-3.27195605e-01, -4.87979115e-01,  1.01553382e+00,
-          -2.05713856e+00,  4.38021849e-02]],
+        [[ 5.37080250e-01,  5.56235339e-01, -9.69168630e-02,
+           2.68460812e-01,  3.35037878e-01]],
 
-        [[-2.26384056e+00,  5.77714736e-01,  7.65492139e-01,
-          -7.20306761e-01,  2.36085913e-02]],
+        [[ 1.11414756e+00, -4.08860179e-01, -4.39117565e-01,
+           4.43204876e-01, -2.88337251e-02]],
 
-        [[ 6.22784602e-01,  2.28081336e-01,  3.35603738e-01,
-           3.17484741e-01,  5.67658450e-01]],
+        [[-2.18385428e+00,  4.36452428e-01,  4.02163329e-01,
+           5.44740263e-01,  2.07560868e-01]],
 
-        [[-1.81767283e+00,  1.34148567e+00, -1.28988890e+00,
-           1.21797001e+00, -1.06962704e+00]],
+        [[-2.04215974e+00, -8.33093842e-01, -6.25046956e-01,
+          -1.31236427e-01,  2.20036463e+00]],
 
-        [[ 1.21532719e-01,  1.49084468e+00, -1.25328121e+00,
-           9.09694216e-02, -2.29498444e+00]],
+        [[ 9.66081209e-01, -3.34844668e-01, -9.54626701e-01,
+          -1.77611443e+00, -4.36710487e-01]],
 
-        [[ 9.28593798e-01,  1.20643694e-01,  1.87775192e-01,
-          -1.96527418e-01,  2.03818056e-01]],
+        [[ 9.97569595e-01, -1.48740317e+00,  1.40723888e+00,
+          -4.69279256e-01,  9.18188976e-01]],
 
-        [[-1.05558931e+00,  1.30841482e+00, -1.49327275e+00,
-           2.97617279e-01, -1.16645058e-01]],
+        [[-4.19843966e-01, -3.84186827e-01, -9.95793077e-01,
+          -3.05854840e-01,  2.36733011e+00]],
 
-        [[ 3.77990117e-01,  1.00621098e-01,  6.29086764e-01,
-          -1.03941718e+00,  1.11760916e-01]],
+        [[-1.26228231e+00, -2.30521084e+00,  5.12410863e-01,
+          -1.60387058e-01,  1.70299620e+00]],
 
-        [[-1.07433212e+00,  2.81205977e-01, -1.74521436e+00,
-           1.15707218e+00, -8.35974252e-01]],
+        [[-1.38059281e+00, -1.65424314e-01,  7.55307482e-01,
+          -8.99907005e-01,  4.56455013e-01]],
 
-        [[ 4.56471961e-01,  8.13117452e-01,  2.51075629e+00,
-          -1.34093804e+00,  6.44945920e-01]],
+        [[ 1.86666104e-01,  9.00026281e-01,  2.44463918e-01,
+          -8.57115442e-01, -7.13042429e-01]],
 
-        [[ 1.23116377e+00,  9.60958324e-01,  5.03506137e-01,
-          -1.48936242e-01, -1.17129273e-01]],
+        [[-1.50486480e+00, -4.90749833e-02, -3.08112787e+00,
+          -3.05006891e-01, -1.14166627e+00]],
 
-        [[ 7.78887425e-01,  8.96698669e-01,  9.24996470e-02,
-           6.20561885e-01,  4.91498259e-01]],
+        [[ 1.38875939e+00, -4.75999949e-01, -1.52280154e-01,
+          -1.28243151e+00,  8.70695272e-01]],
 
-        [[-4.40405620e-01,  1.20957759e+00, -5.47709705e-01,
-           1.02994371e+00, -2.14564213e+00]],
+        [[-4.41640478e-01,  3.06326342e-01, -3.95749449e-01,
+          -7.87487471e-01, -1.50781438e+00]],
 
-        [[-2.80442144e-01, -9.97387226e-01,  1.14581788e+00,
-           3.18079950e-01,  4.61013717e-01]],
+        [[-7.84964814e-01,  4.18407121e-01, -4.54418055e-01,
+           4.49837495e-01, -2.79945860e+00]],
 
-        [[-1.40676226e+00,  4.22594825e-01, -7.56544639e-01,
-           1.19155909e+00,  1.11548387e+00]],
+        [[ 4.29590469e-01,  3.57597411e-01,  1.97152762e+00,
+           6.12498597e-01,  1.68247351e+00]],
 
-        [[ 1.02782671e+00, -6.52923152e-01, -4.24925736e-01,
-           2.37553076e-02, -4.71460501e-01]],
+        [[ 1.30483085e+00,  7.49480290e-01, -1.48555904e+00,
+          -2.07347146e-01,  4.56295447e-01]],
 
-        [[ 1.44942245e-01,  3.38898327e-01,  1.64608605e-01,
-          -1.10168603e+00,  2.68012127e-02]],
+        [[-1.53612124e+00,  1.94556930e-01,  8.95414781e-01,
+          -1.14056851e+00, -4.87473166e-01]],
 
-        [[ 6.09399014e-01, -6.05863401e-01,  1.00072210e-01,
-          -8.16219733e-01,  1.29878817e+00]],
+        [[-1.15501546e+00, -5.97964494e-01, -1.78744552e-01,
+           7.36173333e-01,  1.30841869e+00]],
 
-        [[-1.53493090e+00,  5.71553599e-01, -6.24880018e-01,
-          -2.91198680e-01,  6.26212594e-01]],
+        [[-3.55661849e-01,  6.41832592e-01, -8.82581464e-01,
+          -5.96815438e-01, -8.14211539e-01]],
 
-        [[-5.17446802e-01, -9.31173894e-01, -6.96807186e-01,
-           4.68860327e-01,  8.70673871e-01]],
+        [[-1.40670658e-01, -8.96208106e-01, -5.65670296e-01,
+          -1.08589100e+00,  1.40798214e+00]],
 
-        [[-3.08461540e-01, -1.73926351e-01,  8.88388151e-01,
-           1.83647521e-01, -5.13872889e-03]],
+        [[-6.60036471e-01, -2.56129283e+00,  3.65051109e-02,
+          -3.72681229e-01,  1.32673673e+00]],
 
-        [[ 1.25676420e+00,  2.46515268e+00,  2.93983680e-01,
-          -3.60372022e-01,  4.77171884e-01]],
+        [[-1.45356024e+00, -4.57436964e-01, -5.44352536e-01,
+          -2.59231145e-02,  1.91810552e-01]],
 
-        [[-1.45070815e+00, -1.55436774e-02, -3.19787576e-01,
-           1.85601841e+00,  1.71403265e+00]],
+        [[ 2.53715795e-01,  1.55018151e+00, -5.22405636e-01,
+          -5.91881105e-01, -1.78324748e-01]],
 
-        [[-3.91510758e-01, -1.56334330e+00, -2.62833193e+00,
-          -1.06342157e+00,  9.65628455e-01]],
+        [[-9.18580746e-01, -1.53631102e+00, -4.73332502e-01,
+          -1.45852593e+00,  4.82745909e-01]],
 
-        [[-3.96294124e-01, -6.23732861e-01, -1.93847662e+00,
-           9.40858203e-01, -2.43294906e+00]],
+        [[-5.55137581e-01,  9.79701615e-01, -5.47425172e-01,
+           6.05405402e-01,  4.85304034e-03]],
 
-        [[-1.64089788e-01, -1.11415875e+00, -6.83840707e-01,
-          -4.17195007e-01,  1.19110693e+00]],
+        [[-7.00258333e-01, -2.47870467e-01,  3.02709970e-01,
+           3.85207711e-01,  1.39687553e+00]],
 
-        [[-1.35450699e+00,  1.75566864e+00,  1.81860432e-01,
-          -1.70787041e+00,  1.66860914e+00]],
+        [[ 3.36858886e-01,  4.87112496e-01, -4.10823517e-01,
+           1.06585299e+00, -2.37454450e-02]],
 
-        [[ 2.19076129e-01, -1.41512418e+00, -7.73314318e-01,
-          -2.39808627e+00, -5.53243358e-01]],
+        [[-1.03633357e+00,  9.07910579e-01, -1.75540473e-01,
+          -4.63802524e-01, -7.83194304e-01]],
 
-        [[-6.55648912e-01,  9.72707650e-01,  4.82165991e-01,
-          -2.55864481e+00,  3.33134251e-01]],
+        [[-9.94403540e-01,  1.56254115e+00, -1.42901573e+00,
+           3.26946041e-01, -4.67673435e-01]],
 
-        [[-7.76238434e-01,  3.85099566e-01, -2.78326900e-01,
-          -7.68596832e-01,  2.86966036e-01]],
+        [[ 7.04059893e-01, -1.09745472e+00,  1.10973523e+00,
+           3.89614626e-01, -3.19536688e-03]],
 
-        [[ 3.64774635e-01, -3.76754498e-01,  7.89345017e-01,
-          -3.59926323e-01, -4.12524552e-02]],
+        [[-6.42716838e-01, -1.16281208e-01, -4.22701791e-01,
+           1.03778888e+00,  3.76483102e-01]],
 
-        [[ 3.71588695e-01,  8.86683865e-01, -1.55683814e+00,
-           3.30205814e-01,  6.87016183e-01]],
+        [[ 8.43812414e-01,  5.38359060e-01, -7.71644594e-01,
+          -2.20067486e+00,  3.38569061e-01]],
 
-        [[-8.27656854e-01,  9.65565609e-01,  6.27893539e-01,
-          -2.72273245e-01,  1.96190939e+00]],
+        [[ 2.65195416e-01, -1.25413546e-01, -1.48045115e+00,
+           4.35620898e-01,  5.97491026e-01]],
 
-        [[-8.09087148e-01, -1.30884375e-01,  3.63366721e-01,
-          -3.06476169e+00, -1.19040768e+00]],
+        [[ 1.23871748e+00, -1.50953938e+00, -7.00703721e-01,
+          -1.16660783e+00, -2.87596070e-01]],
 
-        [[ 2.71186437e-01,  2.60643860e-01,  2.73433945e+00,
-          -1.21170699e-01,  1.13058222e+00]],
+        [[-1.29462806e+00,  1.57556691e-02,  1.04060127e+00,
+          -1.04528463e+00, -1.14978873e+00]],
 
-        [[ 5.15555109e-01, -3.05250032e-01, -2.00424651e+00,
-          -3.23549404e-01,  4.53758866e-01]],
+        [[ 1.15281855e+00,  9.67456339e-01,  8.89508388e-01,
+           4.04079497e-01, -2.25742146e-01]],
 
-        [[-1.80881962e-01,  3.91686114e-01, -4.43806876e-02,
-           1.44791254e+00,  7.29765585e-01]],
+        [[ 6.58509213e-01, -6.87687523e-01, -4.02063511e-01,
+           2.03664105e+00, -1.33562185e+00]],
 
-        [[ 5.74792252e-01, -1.03650716e+00,  1.43150175e+00,
-           4.90949948e-01, -1.09629825e-01]],
+        [[-2.74332232e-01,  1.08972065e+00, -7.13371456e-01,
+           9.91101626e-02,  4.85863536e-01]],
 
-        [[ 1.24166756e-01, -2.71534795e-01, -5.35057026e-01,
-          -4.84306809e-01, -8.74642537e-01]],
+        [[-1.31265924e+00, -5.82939756e-01, -3.19386850e-01,
+          -1.08863681e+00, -8.84839953e-01]],
 
-        [[-4.24966713e-01,  2.26537623e-01,  1.13269287e+00,
-           6.50221170e-01,  3.72366977e-01]],
+        [[-1.45721127e+00,  1.78111484e-01,  1.68093794e+00,
+          -3.62558857e-01,  3.23326314e-01]],
 
-        [[-6.49096118e-01,  1.32852432e+00,  3.90794157e-01,
-           4.12819892e-01,  5.01178002e-01]],
+        [[-1.71591169e+00,  1.40379189e+00,  5.41024269e-01,
+           1.24177881e+00,  6.61170064e-01]],
 
-        [[-9.16374934e-01,  5.33428717e-01,  1.64012263e+00,
-          -1.30104845e-01,  2.16374244e+00]],
+        [[ 1.54904343e-01,  1.42713757e+00,  1.35281147e-01,
+           6.78421980e-01,  6.75521793e-02]],
 
-        [[ 1.11762275e+00, -6.16279022e-01, -5.85386034e-01,
-          -1.83626006e+00,  1.19109066e+00]],
+        [[ 5.64552551e-01,  8.12460226e-02,  4.97937541e-01,
+          -4.53817613e-01, -2.37581981e-01]],
 
-        [[ 3.07815586e-01,  1.71249158e-01,  1.99860468e+00,
-           3.64772976e-01,  1.25790976e+00]],
+        [[-1.10958692e-01, -1.33177716e+00, -1.19343427e-01,
+          -9.73546847e-01, -1.25048120e+00]],
 
-        [[-9.15368313e-01, -5.07718515e-01,  7.23569381e-01,
-           4.69792325e-01,  1.35099569e+00]],
+        [[ 6.32501712e-01,  2.80672811e-01, -1.09091644e+00,
+          -9.11792147e-01, -5.73764047e-01]],
 
-        [[ 2.56251993e-01, -6.84023913e-01, -3.75776470e-01,
-           1.41252563e+00,  1.30072552e+00]],
+        [[-8.29215180e-02, -3.64392983e-01,  3.00063231e-01,
+          -1.17814274e+00, -8.17024221e-01]],
 
-        [[ 9.27397055e-01,  2.45472342e+00,  7.51621258e-01,
-           8.01988682e-01, -1.17361073e+00]],
+        [[ 3.61644556e-01,  1.89453358e+00, -1.50706229e+00,
+           5.54549567e-01,  5.22433442e-01]],
 
-        [[ 5.18385793e-01,  2.81881055e-02,  3.11165507e-02,
-          -6.46832585e-02,  1.62884932e+00]],
+        [[-6.10984693e-01,  3.14912896e-01, -4.00285306e-01,
+          -9.68532718e-01,  6.82120940e-01]],
 
-        [[ 1.67607316e+00, -9.28257398e-01, -6.83144973e-01,
-           2.82048224e-01, -8.69233565e-01]],
+        [[-2.11517276e+00, -2.36174025e-01,  1.75942469e-02,
+           2.37462063e-01, -1.60217853e+00]],
 
-        [[ 4.53616891e-01,  9.53962538e-01, -2.07998188e+00,
-           3.14477472e-01, -8.15172714e-01]],
+        [[ 4.62601177e-01, -6.08135768e-02,  1.54922170e-01,
+          -1.51353046e+00, -1.48790685e+00]],
 
-        [[-6.37048819e-01, -1.08347249e+00, -9.91101685e-02,
-           2.53342255e+00, -6.22175612e-01]],
+        [[-1.72695257e+00, -6.72011715e-01, -1.26271186e+00,
+           6.23188655e-01, -1.05376380e-01]],
 
-        [[-1.24240432e+00,  4.29046058e-01,  4.08302135e-01,
-           6.28025486e-02, -1.00690921e+00]],
+        [[ 4.53745416e-01,  1.12334172e-01,  1.36300343e+00,
+          -2.38400800e+00, -7.72336054e-01]],
 
-        [[ 7.15382136e-01, -2.11741768e+00, -5.60843452e-01,
-          -1.27572764e-01,  4.75236033e-01]],
+        [[ 1.63480192e+00,  8.63646272e-01, -1.10021514e+00,
+          -6.46514840e-02, -2.78450214e+00]],
 
-        [[-1.58182769e+00, -3.13791318e-02,  3.81255552e-01,
-          -5.50717845e-01, -7.97542909e-01]],
+        [[-1.26194204e+00,  1.42023976e+00,  3.49580213e-01,
+          -3.08661847e-01, -9.00706674e-01]],
 
-        [[ 3.48307737e-01, -8.49325571e-02,  2.29756886e+00,
-           3.83707927e-01, -2.83674224e-01]],
+        [[-9.78378529e-01, -3.06272549e-01,  2.00532314e+00,
+           1.96111186e-01, -1.79727959e-01]],
 
-        [[ 1.52930255e+00,  9.29898692e-01,  1.41930255e+00,
-           7.95851013e-01, -3.32455253e-01]],
+        [[ 7.16434755e-01, -2.54678572e-01,  8.62355907e-01,
+          -7.03992104e-01, -2.97324458e-01]],
 
-        [[ 9.14088669e-01,  1.37694547e+00,  9.47739894e-01,
-           1.00355824e+00, -1.19972187e+00]],
+        [[-1.86154871e-02,  2.72798687e-01, -3.67401841e-01,
+          -4.02376155e-01, -9.30448042e-01]],
 
-        [[ 1.89401969e+00, -4.05072061e-01, -2.23946826e-01,
-          -2.69207360e-01, -3.42491300e-01]],
+        [[-1.04878307e+00,  3.69878716e-01, -1.36789564e+00,
+          -6.80906615e-01,  1.94111450e-01]],
 
-        [[ 1.06682120e-01, -5.75827593e-01, -7.98071728e-01,
-           4.71277870e-01, -3.69081114e-01]],
+        [[ 2.68644826e-01,  1.01108023e-01, -2.61110872e-01,
+          -8.56824020e-01, -3.09534213e-02]],
 
-        [[-8.37324714e-01, -1.02183692e+00,  1.77346437e-01,
-           6.34964354e-01, -2.89789397e-01]],
+        [[ 7.90179795e-01, -2.54953756e-01, -1.34037492e-01,
+           1.50582934e+00, -1.79607325e-01]],
 
-        [[ 4.50898646e-01,  2.11872863e-01,  5.60689686e-01,
-           4.08239210e-03, -1.66817968e+00]],
+        [[ 6.08848445e-01,  1.19062177e+00,  8.73358479e-01,
+           2.33859098e+00, -2.47594118e-01]],
 
-        [[ 9.44316586e-01,  1.07604525e+00,  7.98604619e-02,
-          -1.09590615e+00,  1.05414507e+00]],
+        [[ 5.18439675e-02, -6.61667049e-01, -1.13018535e-01,
+           1.65164536e-01,  4.93276711e-01]],
 
-        [[ 4.52265084e-01, -9.93705593e-02,  6.17669429e-01,
-          -4.07540432e-03,  2.13017273e-01]],
+        [[-5.40303641e-01,  7.27171867e-01,  6.91210565e-01,
+           2.54496012e-01,  6.81528360e-01]],
 
-        [[ 1.34700121e+00, -3.25166983e-01, -9.35775760e-01,
-          -1.13209592e-01,  1.76385853e-01]],
+        [[ 1.21488830e+00,  9.58975145e-01,  1.21887609e+00,
+           1.48455941e-01, -6.14888562e-01]],
 
-        [[ 9.85186078e-01,  7.74215381e-01,  8.15131637e-01,
-          -6.39804417e-01, -5.55917430e-01]],
+        [[-9.13478289e-01,  1.64060102e+00, -2.33440712e-01,
+          -3.31649850e-01, -6.07469773e-01]],
 
-        [[-6.87479598e-02,  1.80604546e-01,  1.19626951e+00,
-           1.89191623e-02,  4.77243825e-01]],
+        [[-1.13670751e+00, -2.69673968e-03, -1.26688858e+00,
+          -1.45745957e-01,  1.69171179e-01]],
 
-        [[-1.14687277e+00, -4.97471335e-04,  9.22345815e-01,
-          -4.43708370e-01, -7.39695904e-01]],
+        [[ 2.34650033e-01, -5.10014032e-01,  1.29826609e+00,
+          -4.21314491e-01,  5.56836555e-01]],
 
-        [[ 1.87142419e-02, -3.21885479e-01,  1.41877248e+00,
-           4.39634000e-01, -4.71168702e-02]],
+        [[-3.33895792e-01,  1.49429204e+00,  8.60136904e-01,
+          -1.29549056e+00, -2.54329909e-01]],
 
-        [[-1.52882067e+00, -5.33997936e-01, -9.55020633e-01,
-          -1.68572550e+00,  1.99652815e-01]],
+        [[-1.57518916e+00, -4.22690258e-01,  3.04713997e-01,
+           1.43575471e-01, -9.11889261e-02]],
 
-        [[ 2.05908606e-01,  7.93018257e-01,  6.01728659e-01,
-          -1.01625194e+00,  3.44875479e-01]],
+        [[ 1.42192762e+00, -9.24798388e-01, -1.37528127e-01,
+          -1.57107736e+00, -3.05600067e-01]],
 
-        [[-6.08498797e-01, -1.28645583e+00,  2.05321678e-01,
-          -1.60532864e+00, -2.85514981e-02]],
+        [[-1.53854951e+00, -6.61710802e-01,  1.14150032e+00,
+           1.31425561e+00,  4.14817250e-01]],
 
-        [[ 1.65893674e+00,  1.74975937e-01, -1.11517007e-01,
-          -1.98628034e+00, -1.41867129e+00]],
+        [[-7.70172149e-01, -2.99103348e-01,  2.55089779e-01,
+          -1.40363561e+00, -1.14161140e+00]],
 
-        [[-4.82039264e-01,  8.95338824e-01,  4.46679903e-01,
-           3.93757703e-01,  1.63696990e-01]],
+        [[ 6.26084660e-02,  2.25203441e+00, -2.95339326e-01,
+           2.98143929e-02, -1.29254389e+00]],
 
-        [[-1.61262512e-01, -5.02684440e-01,  8.02056507e-01,
-          -1.47503264e+00,  1.01512520e+00]],
+        [[ 3.36071478e-02,  2.24003121e-01, -7.84665032e-02,
+          -1.00909333e+00,  1.39508379e+00]],
 
-        [[-6.13343973e-01,  4.28364926e-01, -2.98407987e-01,
-          -9.20626445e-01,  8.11713884e-01]],
+        [[ 1.57135053e-02,  5.44913973e-01,  5.23552810e-01,
+           1.08094846e+00, -1.03138700e+00]],
 
-        [[-9.43994125e-02,  1.09020387e+00,  2.19432898e-01,
-          -6.39182477e-02,  1.72102364e+00]],
+        [[ 7.17174875e-02,  1.65166407e+00,  6.86581688e-01,
+           1.24684366e+00,  1.01847727e+00]],
 
-        [[ 9.17309062e-01,  1.29127772e+00, -6.00936261e-01,
-          -5.03045611e-01,  7.53831794e-01]],
+        [[ 1.04208485e+00, -2.31835559e-01, -2.42558724e-01,
+          -2.26592292e+00, -5.16190162e-01]],
 
-        [[ 5.83751514e-01, -2.07560063e+00,  8.51788170e-01,
-          -1.00909641e+00,  9.14230031e-01]],
+        [[ 4.01241694e-01, -1.31928203e+00, -1.25023728e+00,
+          -6.54337985e-01,  1.44817858e+00]],
 
-        [[-3.73536238e-01,  5.20145632e-01,  1.45358143e+00,
-          -6.26853894e-01,  6.73249095e-01]],
+        [[ 4.89179863e-02,  7.44450907e-02, -9.72793781e-02,
+          -7.79310472e-01, -2.40946880e-01]],
 
-        [[ 3.84399638e-01,  1.59718980e+00,  1.12038353e+00,
-          -6.94114150e-01, -5.96661796e-01]],
+        [[-1.09968137e-01, -9.15533553e-02,  4.27929940e-01,
+           1.33794112e-02,  2.06319246e+00]],
 
-        [[ 1.25229291e+00, -1.48482521e+00, -1.19151257e+00,
-          -2.23550445e+00,  1.05705033e+00]],
+        [[ 4.07575079e-01, -9.20335266e-01, -1.03577586e+00,
+          -7.62230778e-01, -2.19770978e+00]],
 
-        [[ 1.12754976e+00,  7.37669078e-01,  4.96359247e-01,
-          -1.24608739e+00, -8.55535020e-01]],
+        [[ 4.71774549e-01,  7.74178442e-01,  1.33041159e+00,
+           1.76852353e+00,  4.41141519e-01]],
 
-        [[ 9.91778555e-01,  1.70250364e+00, -3.78880880e-01,
-           2.34619739e+00,  1.06569268e-01]],
+        [[-8.50621043e-01,  7.33459070e-01, -2.55754487e-02,
+           3.34325987e-01,  6.17503726e-01]],
 
-        [[-5.86570709e-01, -2.39168564e-01,  1.50792402e-01,
-           1.87810588e+00, -9.90455969e-01]],
+        [[ 2.12605565e+00,  2.07694498e+00, -9.08787783e-01,
+           1.24009313e+00, -8.10978567e-01]],
 
-        [[-8.95322125e-01,  1.03567936e+00,  2.07620219e-01,
-          -3.93933135e-01, -8.80164964e-01]],
+        [[ 4.40473933e-01,  2.22869255e-01, -8.59904094e-01,
+          -6.89927933e-01,  1.00002604e+00]],
 
-        [[ 9.45552139e-01, -1.73642331e-01,  1.57327891e+00,
-          -1.68417687e+00, -5.28377176e-01]],
+        [[-1.04399089e+00,  2.65234979e-01, -1.02352829e-02,
+           1.84357791e-01,  3.58868816e-01]],
 
-        [[-8.64572810e-01, -3.86313009e-01, -8.69714113e-01,
-          -1.46900407e+00,  5.44449938e-01]],
+        [[-1.52422088e+00,  1.51925979e-01,  4.09692897e-01,
+          -2.62434324e-03, -4.27081148e-01]],
 
-        [[ 6.02363641e-01, -1.13119860e+00, -1.37398924e+00,
-           1.72401774e+00,  3.74868137e-01]],
+        [[ 1.85767035e-01,  4.88179242e-01,  1.64979008e+00,
+          -5.04126971e-01,  3.55781954e-01]],
 
-        [[-2.14187455e+00,  3.66391471e-01, -3.81923972e-01,
-           5.11030339e-02, -1.15481995e-01]],
+        [[-1.23857666e-01, -1.07454392e+00,  1.00688638e+00,
+           4.62451441e-01, -4.54743336e-01]],
 
-        [[ 6.62275731e-01,  1.46453754e+00, -1.26629311e-01,
-           2.30906695e-01,  8.09935189e-01]],
+        [[-8.76415573e-02,  1.62180258e-01, -1.03643200e+00,
+           7.15035841e-01,  5.55356652e-01]],
 
-        [[-2.34111542e+00, -4.30815264e-01,  2.75517653e+00,
-           5.75644713e-01, -6.74572396e-01]],
+        [[-1.28548770e+00, -6.01580704e-01, -2.72362700e-01,
+           1.22669034e+00, -4.64075808e-01]],
 
-        [[ 8.98349628e-01,  1.26536860e+00,  1.24904458e+00,
-           1.20830025e+00, -4.26687455e-01]],
+        [[-9.59146697e-01,  1.35463298e+00, -7.03817896e-01,
+           1.78083975e-01, -6.73778969e-01]],
 
-        [[ 2.23323422e-01,  1.04508277e+00, -7.66047342e-01,
-           6.61686543e-01,  8.85171116e-01]],
+        [[ 8.81762563e-01,  6.55363121e-01,  6.66444778e-01,
+          -5.26641287e-01,  6.25456481e-01]],
 
-        [[-5.52366152e-01, -1.28356937e-03, -5.48063082e-01,
-           1.12956698e+00,  1.84712031e+00]],
+        [[ 1.14940660e+00,  5.03617341e-02,  2.85808466e-01,
+           4.76878304e-01, -5.94590313e-01]],
 
-        [[-1.66468281e-01,  3.92067800e-01, -6.64619320e-01,
-           1.19625567e-03, -4.12633256e-01]]]])
+        [[ 2.24699687e-01,  2.90533996e-01,  2.14435207e+00,
+           1.12572491e+00, -1.65426755e+00]]]])
 </pre></div></div>
 </div>
 </section>
@@ -1355,7 +1344,7 @@ with fraction, <span class="math notranslate nohighlight">\(\alpha_T\)</span>:</
 <p>We can see from this how swapping is similar to the Metropolis-Hastings acceptance setup.If <span class="math notranslate nohighlight">\(\beta_1 &gt; \beta_2\)</span> (or <span class="math notranslate nohighlight">\(T_1 &lt;T_2\)</span>), the exponent is positive. In this case, if <span class="math notranslate nohighlight">\(\mathcal{L_{\beta_1}} &gt; \mathcal{L_{\beta_2}}\)</span>, the swap will always be accepted because we want the better likelihood to go to higher <span class="math notranslate nohighlight">\(\beta\)</span> (or lower <span class="math notranslate nohighlight">\(T\)</span>). If <span class="math notranslate nohighlight">\(\mathcal{L_{\beta_1}} &lt; \mathcal{L_{\beta_2}}\)</span>, the swap is accepted with a probability that reflects difference in the
 Likelihoods just like discussed above.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1397,22 +1386,22 @@ Likelihoods just like discussed above.</p>
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|███████████████████████████████████████| 1000/1000 [00:18&lt;00:00, 53.67it/s]
-100%|███████████████████████████████████████| 2500/2500 [00:42&lt;00:00, 59.22it/s]
+100%|███████████████████████████████████████| 1000/1000 [00:16&lt;00:00, 59.61it/s]
+100%|███████████████████████████████████████| 2500/2500 [00:42&lt;00:00, 58.73it/s]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;eryn.state.State at 0x176b535e0&gt;
+&lt;eryn.state.State at 0x15d71cd30&gt;
 </pre></div></div>
 </div>
 <p>We can plot our samples at different temperatures and see the differences in action.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1511,7 +1500,7 @@ Likelihoods just like discussed above.</p>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1597,7 +1586,7 @@ Likelihoods just like discussed above.</p>
 </div>
 <p>Likelihoods across temperatures:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1620,12 +1609,12 @@ Likelihoods just like discussed above.</p>
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x17a1400a0&gt;
+&lt;matplotlib.legend.Legend at 0x161a1c670&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1647,7 +1636,7 @@ Likelihoods just like discussed above.</p>
 <p>Reversible Jump proposals usually require specific implementations for each problem. We have one provided RJ proposal where we draw from the prior, which is the simplest and most generic reversible jump proposal for adding a nested model. In this case, the acceptance fraction just reduces to the Likelihood fraction.</p>
 <p>For this example, we will look at a set of 1D Gaussian pulses. We will inject a specific number, and then allow the sampler to determine the posterior probability on the model count, as well as the posterior on the parameters.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[77]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1704,12 +1693,12 @@ Likelihoods just like discussed above.</p>
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[77]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x178ab1550&gt;
+&lt;matplotlib.legend.Legend at 0x1625c8490&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1723,7 +1712,7 @@ Likelihoods just like discussed above.</p>
 <p>We also need to setup our <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays. <code class="docutils literal notranslate"><span class="pre">inds</span></code> is only needed when the dimensionality is changing (or more generally when not all leaves are used). <code class="docutils literal notranslate"><span class="pre">inds</span></code> is a boolean array with shape <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max)</span></code>. It indicates which leaves are being used. This allows us to use the array structures while have a variable number of leaves per walker.</p>
 <p>We are going to assume we have some knowledge of what is in the data, so we are going to start with 4 leaves for every walker. The burn-in will spread out the walkers both in terms of the parameters and in terms of the number of leaves per walker. Therefore, we are going to make the first four leaves in every walker <code class="docutils literal notranslate"><span class="pre">True</span></code> to indicate 4 binaries. We are going to then put coordinates near each of the true Gaussians into <code class="docutils literal notranslate"><span class="pre">coords</span></code>.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[78]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1752,7 +1741,7 @@ Likelihoods just like discussed above.</p>
 </div>
 <p>Priors are defined per model for a single model. It will take into account multiple models by summing the prior probability over the leaves.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[79]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1772,7 +1761,7 @@ Likelihoods just like discussed above.</p>
 covariance matrix that will be used in a multivariate Gaussian to propose new points that are centered on the current points (the means of the multivariate Gaussian will be the current point). This proposal is symmetric.</p>
 <p>In this case, we are going to use the stock RJ proposal: <code class="docutils literal notranslate"><span class="pre">`eryn.moves.PriorGenRj</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/moves.html#eryn.moves.PriorGenerateRJ">https://mikekatz04.github.io/Eryn/html/user/moves.html#eryn.moves.PriorGenerateRJ</a>&gt;`__. You can either pass this directly or you can set <code class="docutils literal notranslate"><span class="pre">rj_moves</span></code> to <code class="docutils literal notranslate"><span class="pre">True</span></code> (this is the default).</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[80]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1787,7 +1776,7 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 </div>
 <p>We will now initialize the sampler by adding the branch, tempering, leaf, and move information.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[81]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1812,7 +1801,7 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 </div>
 <p>Now we will setup a <code class="docutils literal notranslate"><span class="pre">State</span></code> object and will use the Likelihood (<code class="docutils literal notranslate"><span class="pre">compute_log_like</span></code>) and prior functions (<code class="docutils literal notranslate"><span class="pre">compute_log_prior</span></code>) that are built into the sampler. The Likelihood function in the sampler will check the prior and only run walkers that exist entirely within the prior distribution. We can avoid redoing this computation by passing the prior as the <code class="docutils literal notranslate"><span class="pre">logp</span></code> kwarg to <code class="docutils literal notranslate"><span class="pre">compute_log_like</span></code>. The <code class="docutils literal notranslate"><span class="pre">[0]</span></code> at the end of the line is to grab the log Likelihood and leave behind any blobs.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[82]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1835,38 +1824,38 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[[-270.49319205 -267.4656174  -262.2152666  -264.74611391 -264.43089899
-  -268.2202441  -269.06367523 -263.91061131 -264.8632288  -266.73677204
-  -267.93246276 -265.76766096 -263.52756069 -265.84428819 -264.87592613
-  -265.21390653 -262.68129557 -265.50302913 -266.87971641 -267.9270051 ]
- [-263.97741651 -263.38771552 -264.03072253 -263.58258706 -268.73576044
-  -264.50219898 -264.14036497 -262.55589352 -264.8314706  -264.32136396
-  -264.39534823 -266.98759525 -267.5878718  -262.45501733 -263.86500102
-  -265.89969473 -264.71138576 -267.98336677 -268.15417091 -265.10394143]
- [-261.45139984 -264.2547571  -264.96623152 -261.77883756 -264.09962617
-  -264.16239854 -263.28979424 -267.98604371 -263.82139066 -266.81927503
-  -282.67872909 -266.47617573 -263.26745653 -263.71073879 -264.00836317
-  -268.5352871  -262.6110218  -264.96801159 -265.86550441 -266.71953877]
- [-264.31592252 -263.55537859 -263.32628089 -268.60831151 -263.05658826
-  -263.39836835 -266.06949485 -272.7331105  -263.25850048 -264.90103157
-  -262.15663865 -267.82880414 -264.04391652 -265.59716783 -264.58737989
-  -264.93093989 -265.08566881 -269.27803182 -265.18608748 -265.64513805]
- [-262.46205718 -265.26577729 -267.96238219 -268.07488828 -266.94692032
-  -264.73093382 -264.47934893 -264.10013931 -265.98856046 -260.94303734
-  -263.07011619 -268.06936174 -263.83104632 -267.55304679 -266.5753543
-  -260.96829061 -267.69817352 -263.89441841 -265.04682309 -264.06948703]
- [-265.07772754 -264.6826517  -262.04741001 -265.36614532 -269.17354057
-  -262.73027871 -265.81467945 -263.24056721 -263.71705214 -263.4046687
-  -262.77942587 -264.1660058  -268.9532109  -264.92678989 -265.38420845
-  -265.81746744 -269.77981563 -263.17034166 -263.21511588 -263.99525818]
- [-267.53278373 -264.41906695 -267.37351791 -264.12845003 -265.40233242
-  -263.74760085 -262.18443707 -268.57478754 -267.93846479 -261.79562502
-  -265.50946647 -262.12528801 -262.35926625 -261.58633915 -265.26755842
-  -272.0899207  -263.29077219 -264.55805905 -265.58587088 -264.62291378]
- [-264.06197214 -264.48325865 -264.52315011 -265.78414071 -268.87169892
-  -270.43292079 -267.20396514 -263.9262103  -265.03712957 -262.96974264
-  -270.19418517 -267.43165947 -265.28855055 -266.89450311 -261.98362058
-  -265.07119967 -264.55125076 -263.0169796  -263.15066602 -265.21255318]] [[3.66516293 3.66516293 3.66516293 3.66516293 3.66516293 3.66516293
+[[-276.73098648 -278.16907507 -275.71434217 -276.61800004 -274.75928123
+  -277.69176003 -275.98146339 -273.83652286 -274.65924818 -275.94893546
+  -276.09577899 -274.87491752 -274.89522646 -277.96412044 -276.42046542
+  -280.19171799 -274.87278656 -279.70015548 -278.72737909 -278.72827274]
+ [-277.80825075 -278.12967818 -276.36568961 -276.30088806 -278.73533818
+  -279.22516202 -276.70640669 -275.65262805 -273.76469604 -279.56741958
+  -276.7064569  -276.43440397 -276.27134788 -276.44496003 -275.53182148
+  -275.46582235 -280.41404972 -276.26268199 -281.76019484 -273.35791229]
+ [-275.81230348 -283.40675493 -274.02139424 -277.8975312  -274.5771202
+  -280.01900442 -277.19312704 -276.42934571 -275.50910806 -274.10550909
+  -277.83673942 -282.5110014  -276.54751785 -274.29108684 -283.55959284
+  -279.13211986 -278.70274453 -275.56266279 -275.15711238 -273.86514215]
+ [-274.51669408 -278.06824089 -276.34514996 -279.24216524 -275.85623823
+  -277.4116664  -276.97439327 -274.1028994  -281.9099354  -277.58748298
+  -276.57170804 -276.20327499 -276.06449811 -276.55245489 -276.63010178
+  -277.8547527  -279.65714237 -279.60258295 -280.85753756 -276.47640408]
+ [-273.99762161 -273.79881606 -275.94816613 -273.69139951 -276.29586808
+  -275.40596822 -278.39121379 -282.66793822 -273.84580381 -277.20981927
+  -278.36298545 -281.08807608 -274.51959354 -276.56090434 -280.34821487
+  -275.8274073  -275.86138763 -277.57526228 -274.56046513 -278.84539284]
+ [-275.79381564 -276.05763367 -278.5669222  -274.72847425 -279.65677961
+  -275.58609512 -273.34746775 -277.20300325 -274.23069486 -279.71149647
+  -275.34041723 -274.98377029 -276.05259079 -274.85895311 -276.17007461
+  -278.20181081 -279.23751121 -276.95063228 -274.66366606 -275.72836976]
+ [-274.24415251 -276.57350865 -276.12350216 -273.0682653  -276.51465012
+  -275.48161239 -274.0188211  -274.47052518 -277.46568838 -281.85703554
+  -278.35727851 -275.40037889 -274.77744077 -274.97789592 -275.06201379
+  -275.55218321 -281.30549804 -276.56424656 -276.54277054 -276.57012499]
+ [-275.64188147 -277.90627179 -282.768205   -274.90755293 -277.88921013
+  -276.39783498 -274.23204134 -278.16266963 -276.57890304 -278.80318237
+  -276.33613686 -278.03182745 -275.47772264 -276.13888541 -276.8650892
+  -279.62419937 -280.67345405 -279.30159972 -273.92424857 -279.07804469]] [[3.66516293 3.66516293 3.66516293 3.66516293 3.66516293 3.66516293
   3.66516293 3.66516293 3.66516293 3.66516293 3.66516293 3.66516293
   3.66516293 3.66516293 3.66516293 3.66516293 3.66516293 3.66516293
   3.66516293 3.66516293]
@@ -1902,7 +1891,7 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 </div>
 <p>Run the sampler</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[83]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1917,13 +1906,13 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|███████████████████████████████████████| 1000/1000 [00:31&lt;00:00, 32.22it/s]
-100%|███████████████████████████████████████| 2000/2000 [01:01&lt;00:00, 32.56it/s]
+100%|███████████████████████████████████████| 1000/1000 [00:28&lt;00:00, 34.91it/s]
+100%|███████████████████████████████████████| 2000/2000 [00:56&lt;00:00, 35.15it/s]
 </pre></div></div>
 </div>
 <p>Let’s look at the last sample in terms of the <code class="docutils literal notranslate"><span class="pre">nleaves</span></code> array.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[84]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1932,23 +1921,23 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[84]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([[3, 3, 3, 4, 3, 3, 4, 3, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-       [3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4],
-       [3, 3, 3, 3, 3, 3, 4, 3, 4, 3, 3, 3, 3, 3, 3, 4, 4, 3, 3, 5],
-       [3, 3, 4, 3, 3, 4, 4, 4, 2, 3, 2, 3, 4, 3, 3, 4, 4, 3, 2, 3],
-       [3, 3, 4, 2, 4, 3, 4, 3, 3, 3, 3, 3, 4, 4, 4, 3, 4, 4, 2, 2],
-       [5, 1, 2, 4, 3, 4, 5, 3, 3, 3, 2, 2, 3, 3, 3, 4, 4, 2, 3, 2],
-       [4, 2, 4, 4, 2, 4, 4, 3, 3, 3, 3, 2, 7, 2, 6, 3, 6, 3, 4, 3],
-       [5, 7, 7, 2, 4, 2, 3, 1, 2, 4, 5, 4, 2, 4, 7, 8, 4, 6, 6, 6]])
+array([[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 4, 5, 4, 4, 4],
+       [4, 4, 5, 4, 4, 4, 4, 3, 3, 4, 3, 3, 4, 3, 5, 4, 4, 5, 4, 3],
+       [3, 4, 3, 3, 4, 3, 3, 3, 4, 3, 3, 3, 3, 4, 5, 4, 3, 4, 4, 3],
+       [3, 3, 3, 3, 3, 4, 3, 3, 4, 2, 2, 3, 2, 3, 3, 3, 3, 3, 2, 5],
+       [5, 3, 3, 3, 3, 3, 2, 3, 3, 3, 2, 4, 5, 4, 6, 2, 2, 3, 2, 3],
+       [3, 4, 4, 4, 5, 5, 4, 3, 4, 2, 2, 4, 2, 2, 4, 4, 3, 4, 3, 2],
+       [2, 3, 4, 3, 4, 2, 2, 3, 4, 3, 5, 3, 1, 3, 1, 1, 3, 3, 2, 3],
+       [4, 2, 3, 4, 2, 1, 2, 5, 8, 4, 5, 5, 1, 5, 6, 2, 1, 7, 2, 3]])
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[85]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1971,7 +1960,7 @@ array([[3, 3, 3, 4, 3, 3, 4, 3, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-max ll: -257.99616410964427
+max ll: -264.28397773302584
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1983,7 +1972,7 @@ max ll: -257.99616410964427
 </div>
 <p>To get the samples, we need remove any binaries that were not used. We can combine <code class="docutils literal notranslate"><span class="pre">coords</span></code> and <code class="docutils literal notranslate"><span class="pre">inds</span></code> or we can remove anywhere where the backend returns <code class="docutils literal notranslate"><span class="pre">Nan</span></code>. Backends store <code class="docutils literal notranslate"><span class="pre">Nan</span></code> for the coordinates that belong to binaries that are not currently used (<code class="docutils literal notranslate"><span class="pre">inds</span> <span class="pre">==</span> <span class="pre">False</span></code>).</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[86]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -2015,7 +2004,7 @@ max ll: -257.99616410964427
 <h2>Add multiple branches<a class="headerlink" href="#Add-multiple-branches" title="Permalink to this headline">¶</a></h2>
 <p>Now we will add another model to our reversible jump problem. We will add a sine wave model.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -2095,12 +2084,12 @@ max ll: -257.99616410964427
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x176c72a00&gt;
+&lt;matplotlib.legend.Legend at 0x160b94cd0&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -2112,7 +2101,7 @@ max ll: -257.99616410964427
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">coords</span></code> and <code class="docutils literal notranslate"><span class="pre">inds</span></code></p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -2155,7 +2144,7 @@ max ll: -257.99616410964427
 </div>
 <p>Priors are defined per model for a single model. It will take into account multiple models by summing the prior probability over the leaves.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -2177,7 +2166,7 @@ max ll: -257.99616410964427
 </div>
 <p>You can add multiple covariance matrices. One for each branch. We will keep it the same for simplicity.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -2195,7 +2184,7 @@ max ll: -257.99616410964427
 </div>
 <p>We will now initialize the sampler by adding the branch, tempering, leaf, and move information.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[35]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -2220,7 +2209,7 @@ max ll: -257.99616410964427
 </div>
 <p>Prior, Likelihood, and initial state.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -2243,38 +2232,38 @@ max ll: -257.99616410964427
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[[-254.93617087 -257.15669854 -254.3590739  -257.90672811 -257.48556462
-  -254.35501397 -255.42335224 -258.04944587 -256.24336862 -261.80630253
-  -256.2680307  -257.26609719 -256.53758328 -257.53498484 -256.52035691
-  -255.98833468 -257.10448213 -254.74820669 -254.26932617 -258.97130003]
- [-253.64291762 -256.55248843 -259.48034413 -255.46510771 -257.47822275
-  -254.33857328 -254.4619571  -255.80648945 -267.28293757 -254.54051736
-  -257.3617434  -254.7064171  -253.60701902 -254.61471923 -255.67171265
-  -255.11565557 -254.75610192 -256.740411   -259.52969945 -254.24102094]
- [-255.91978619 -253.68864866 -261.58642135 -256.54398122 -256.21260882
-  -253.93368225 -254.65572213 -255.48142556 -255.5307129  -254.80464407
-  -257.57305006 -254.34208623 -254.70318615 -254.52844452 -255.42449864
-  -256.6008862  -261.62361872 -257.57562898 -257.27584614 -259.40469647]
- [-256.05419785 -263.12421732 -254.55816942 -258.35580202 -255.45240582
-  -253.83356187 -256.12306169 -254.53501928 -254.77932684 -256.94279945
-  -256.87476175 -254.40716819 -254.6538159  -254.59043892 -256.00188107
-  -255.40056384 -258.1313997  -254.15569567 -253.80369805 -259.05030769]
- [-264.30750289 -255.67264745 -256.6621098  -253.22420867 -258.1320248
-  -255.73566292 -263.1788726  -254.484542   -254.39148292 -254.56936256
-  -255.81177115 -257.74355546 -255.7510932  -258.41071771 -257.04069567
-  -254.2326665  -253.85721918 -257.36092541 -255.10216663 -257.85835684]
- [-257.65081422 -257.87829664 -258.53854537 -254.95067524 -259.06022752
-  -259.26326598 -258.55263323 -258.50029456 -255.57570191 -255.79096956
-  -256.52570614 -258.18245068 -256.1700525  -254.3832096  -256.62606333
-  -255.62266552 -255.34670913 -253.88843451 -256.63873459 -257.04032153]
- [-256.16333866 -254.04735455 -254.81564471 -261.61366821 -255.50582011
-  -254.96586759 -256.58372164 -253.96734705 -255.21173398 -259.10083807
-  -255.68858321 -256.25179942 -255.8120124  -255.80506277 -254.04506049
-  -260.73187563 -262.51375714 -260.61946474 -256.99634593 -254.63733227]
- [-255.38096195 -254.47971666 -261.70544064 -257.00740639 -255.2852161
-  -258.70312233 -261.29360407 -259.55168792 -257.11235991 -260.04597044
-  -256.29821082 -253.22317183 -256.51725736 -256.38482248 -256.78096451
-  -254.42205802 -253.61749241 -256.07935817 -254.44308949 -256.73855264]] [[-5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916
+[[-270.18222328 -273.91483163 -272.46651627 -269.81289525 -269.90527322
+  -268.5631434  -269.28556934 -270.72567978 -274.48361286 -277.7611585
+  -272.32687579 -267.55112232 -269.55139788 -279.17201886 -269.8368919
+  -268.70932497 -272.46377168 -270.33703176 -269.65656691 -268.012328  ]
+ [-270.95662303 -268.96498389 -273.13449296 -275.23386433 -269.48374723
+  -273.95875502 -268.70399136 -280.89455029 -268.37657779 -269.66814296
+  -269.41757529 -275.55932847 -278.52390119 -268.29349209 -267.40245718
+  -268.87149849 -271.5265131  -272.29613475 -269.68238612 -270.62308891]
+ [-270.44004897 -268.5942155  -271.81207629 -269.09211719 -268.67720588
+  -267.29900502 -269.31793641 -268.53732661 -270.67002611 -269.39505669
+  -271.1131799  -270.09496514 -272.80362829 -268.00816866 -267.28100697
+  -277.14318176 -268.90379138 -266.69112728 -271.52032743 -269.35917109]
+ [-271.85238347 -270.25091262 -269.59173328 -271.33091727 -271.33862164
+  -271.53428125 -269.38550154 -274.50893561 -276.47167734 -273.2540056
+  -274.00443977 -270.27861629 -272.1942677  -275.41783191 -269.03269294
+  -267.82833124 -271.49576289 -267.94385382 -268.798468   -276.03173086]
+ [-270.26836692 -270.52305452 -270.90306018 -267.78294141 -269.5870663
+  -271.93091632 -268.63858748 -269.46260887 -274.05938426 -270.47087664
+  -272.67406144 -269.29803605 -269.82740993 -269.50317304 -269.63030838
+  -268.07243875 -271.59457607 -269.55099287 -271.51397519 -269.01448414]
+ [-267.89563166 -279.3330612  -268.46177198 -271.20877421 -270.03393325
+  -268.65230833 -271.09135884 -268.84551574 -270.61321328 -268.13110448
+  -269.95299147 -268.89811995 -275.61753676 -268.3713304  -272.35323413
+  -271.35596381 -268.31565016 -268.41655652 -270.19262726 -272.29746794]
+ [-269.00560379 -270.65755309 -275.81454804 -268.71429805 -270.13970655
+  -302.31669161 -273.21285936 -273.09415384 -276.14998396 -268.6436378
+  -268.19129668 -273.13880537 -272.33600739 -272.81488805 -270.52338548
+  -272.37147871 -269.63060647 -272.12135163 -271.15892496 -284.34958776]
+ [-267.22329041 -278.88580446 -269.2570073  -269.76031394 -270.43745164
+  -268.09683891 -271.58593258 -267.9211962  -270.19527835 -268.10018974
+  -267.45267864 -269.28350835 -272.56683874 -268.72050046 -270.2126153
+  -270.51532408 -276.21992792 -274.0324881  -273.89850751 -268.63744382]] [[-5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916
   -5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916
   -5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916
   -5.89946916 -5.89946916]
@@ -2310,7 +2299,7 @@ max ll: -257.99616410964427
 </div>
 <p>Run the sampler</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[37]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -2319,17 +2308,17 @@ max ll: -257.99616410964427
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[37]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-{&#39;gauss&#39;: &lt;eryn.state.Branch at 0x176b5f850&gt;,
- &#39;sine&#39;: &lt;eryn.state.Branch at 0x176b5f730&gt;}
+{&#39;gauss&#39;: &lt;eryn.state.Branch at 0x160b4e550&gt;,
+ &#39;sine&#39;: &lt;eryn.state.Branch at 0x1618ab1f0&gt;}
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[38]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -2344,13 +2333,13 @@ max ll: -257.99616410964427
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|███████████████████████████████████████| 1000/1000 [00:49&lt;00:00, 20.34it/s]
-100%|█████████████████████████████████████| 5000/5000 [2:20:29&lt;00:00,  1.69s/it]
+100%|███████████████████████████████████████| 1000/1000 [00:44&lt;00:00, 22.41it/s]
+100%|███████████████████████████████████████| 5000/5000 [03:41&lt;00:00, 22.59it/s]
 </pre></div></div>
 </div>
 <p>Let’s look at the last sample in terms of the <code class="docutils literal notranslate"><span class="pre">nleaves</span></code> array for both branches in the cold chain.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[39]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -2359,13 +2348,15 @@ max ll: -257.99616410964427
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[39]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 array([[4, 2],
        [4, 2],
+       [5, 1],
+       [4, 4],
        [4, 2],
        [4, 2],
        [4, 2],
@@ -2380,14 +2371,12 @@ array([[4, 2],
        [4, 2],
        [4, 2],
        [4, 2],
-       [4, 2],
-       [4, 2],
-       [5, 3],
+       [7, 1],
        [4, 2]])
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -2413,16 +2402,16 @@ array([[4, 2],
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-max ll: -242.75574947256985
+max ll: -257.1050154143706
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x176f77f70&gt;
+&lt;matplotlib.legend.Legend at 0x15fa40250&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -2434,7 +2423,7 @@ max ll: -242.75574947256985
 </div>
 <p>To get the samples, we need remove any binaries that were not used. We can combine <code class="docutils literal notranslate"><span class="pre">coords</span></code> and <code class="docutils literal notranslate"><span class="pre">inds</span></code> or we can remove anywhere where the backend returns <code class="docutils literal notranslate"><span class="pre">Nan</span></code>. Backends store <code class="docutils literal notranslate"><span class="pre">Nan</span></code> for the coordinates that belong to binaries that are not currently used (<code class="docutils literal notranslate"><span class="pre">inds</span> <span class="pre">==</span> <span class="pre">False</span></code>).</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[86]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[41]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -2469,8 +2458,8 @@ max ll: -242.75574947256985
 <h2>Transform Container<a class="headerlink" href="#Transform-Container" title="Permalink to this headline">¶</a></h2>
 <p>Transform containers are primary used in likelihood functions to transform the arrays incoming from the sampler to the proper setup for likelihood computation. It can transform parameters based on transform functions and fill values into a final array for any value that is fixed during sampling.</p>
 <p>It can be passed to the likeihood function as an <code class="docutils literal notranslate"><span class="pre">arg</span></code> or <code class="docutils literal notranslate"><span class="pre">kwarg</span></code>.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[42]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -2498,9 +2487,56 @@ max ll: -242.75574947256985
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[[-8.89824600e+00  2.75758048e-01 -2.09331349e+01]
+ [ 1.02492326e-02  1.32772775e+01  1.75345322e-01]
+ [-2.81279324e+00  9.14271804e+00 -1.83355615e+00]
+ [ 4.07418397e-01  6.42259918e-01  4.87400928e+00]
+ [-3.48989745e+00  4.70139219e-02 -2.78947139e+01]
+ [ 4.93180412e-01  3.82208706e+00  7.05874949e-01]
+ [-5.80739413e-02  5.50305988e+00 -9.16114086e+01]
+ [ 1.85092106e-02  1.51885887e-02  8.97722522e-01]
+ [ 1.02252084e+01  8.24620718e+00  6.07759460e+00]
+ [ 3.31476465e+00  5.53780669e+00  1.82282099e+00]
+ [ 2.07561361e-01  4.87225744e-01  1.58798660e-01]
+ [ 9.37869669e-01  9.13213783e-01  2.47727995e+01]
+ [ 2.12881693e+00  1.51298347e+01  2.62247546e+00]
+ [ 2.27993071e-02  5.79348414e+00  1.53860020e-01]
+ [ 2.56863395e+00  3.84163824e+00  2.36049137e+00]
+ [ 5.75727221e+00  1.73481940e+00  3.27124518e+00]
+ [ 6.36614125e+00  3.00705547e-02  4.19023730e+00]
+ [ 2.65703779e+00  1.96439673e-02  3.20887239e+00]
+ [ 1.44122169e+00  1.17216981e+01  1.27049419e+00]
+ [ 2.37199099e-01  2.72218284e+00  3.82731038e-01]
+ [ 4.57728566e-01  1.60909766e+00  1.87976175e+00]
+ [-3.26100428e+00  1.10266855e+01 -1.42615262e+01]
+ [ 1.16785325e+00  8.11980880e-01  7.90309504e+00]
+ [ 9.29154964e+00  9.79386760e+00  8.70209707e+00]
+ [ 8.68811812e+00  8.60287505e+00  7.95976383e+00]
+ [ 1.44566213e+01  2.07672853e+00  1.49903908e+01]
+ [ 7.48013935e+00  8.60681557e+00  2.01650855e+01]
+ [ 6.96361528e+00  1.19269308e+01  2.41088987e+01]
+ [ 1.34545605e+00  1.31263341e+01  1.25599247e+00]
+ [ 2.08020121e-01  9.88718542e-02  1.57497312e+01]
+ [-5.19306610e-02  4.44199127e+00 -2.52010277e+01]
+ [ 2.49646857e+00  1.94517770e+00  1.40627517e+01]
+ [ 7.20331569e+00  7.03272081e+00  1.13078176e+01]
+ [-2.92496271e+00  1.56717511e+01 -4.19225985e+00]
+ [ 3.26949671e+00  1.82888187e+00  1.46711772e+01]
+ [-3.04587362e-01  7.76705784e-01 -1.20637203e-01]
+ [ 5.79070427e+00  1.06061179e+01  8.49930387e+00]
+ [ 2.12904725e+01  1.28296723e+00  1.11995112e+01]
+ [ 4.55772389e+00  2.03411610e+00  2.96299913e+00]
+ [ 4.24447822e-01  4.73427344e+00  2.02518868e+01]]
+</pre></div></div>
+</div>
 <p>If you have mutliple branches in your sampler, you can add more than one <code class="docutils literal notranslate"><span class="pre">Transform</span> <span class="pre">Container</span></code>.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[43]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -2551,6 +2587,132 @@ max ll: -242.75574947256985
 
 </pre></div>
 </div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[array([[ 1.29219658,  0.89103652,  0.        ,  1.        ,  1.59175421,
+        -1.        ],
+       [-0.64343493,  2.749268  ,  0.        ,  1.        ,  1.73521835,
+        -1.        ],
+       [ 0.60380671,  2.83535257,  0.        ,  1.        ,  0.67350255,
+        -1.        ],
+       [ 0.49766419,  1.49693707,  0.        ,  1.        ,  2.87178732,
+        -1.        ],
+       [ 1.15240521,  0.42166027,  0.        ,  1.        ,  1.26487705,
+        -1.        ],
+       [ 1.35974848,  3.90306073,  0.        ,  1.        ,  0.23891919,
+        -1.        ],
+       [ 1.27390424,  0.56240086,  0.        ,  1.        ,  3.15331684,
+        -1.        ],
+       [ 1.16158241,  3.02091525,  0.        ,  1.        ,  1.19717386,
+        -1.        ],
+       [ 0.46917265,  1.88663526,  0.        ,  1.        ,  0.74725524,
+        -1.        ],
+       [ 1.3318928 ,  3.60261829,  0.        ,  1.        ,  1.66753246,
+        -1.        ],
+       [-2.23547549,  2.78488996,  0.        ,  1.        ,  2.22360197,
+        -1.        ],
+       [ 1.37729934,  1.21653633,  0.        ,  1.        ,  2.92146055,
+        -1.        ],
+       [ 1.38255117,  1.04055599,  0.        ,  1.        ,  3.61528113,
+        -1.        ],
+       [-0.17255025,  0.30856284,  0.        ,  1.        ,  2.33266672,
+        -1.        ],
+       [-0.72191913,  0.97264439,  0.        ,  1.        ,  3.68262329,
+        -1.        ],
+       [ 1.14663581,  2.24664567,  0.        ,  1.        ,  2.38873411,
+        -1.        ],
+       [ 1.02781403,  0.43212754,  0.        ,  1.        ,  3.06706675,
+        -1.        ],
+       [ 1.34773401,  2.28539547,  0.        ,  1.        ,  0.57915313,
+        -1.        ],
+       [-0.01212452,  3.43080904,  0.        ,  1.        ,  2.18485058,
+        -1.        ],
+       [ 1.37741496,  2.61295912,  0.        ,  1.        ,  0.99911576,
+        -1.        ],
+       [ 1.36319339,  3.59038342,  0.        ,  1.        ,  1.46118363,
+        -1.        ],
+       [ 0.34493979,  3.7176707 ,  0.        ,  1.        ,  3.44514314,
+        -1.        ],
+       [ 0.45381328,  3.56148359,  0.        ,  1.        ,  1.70383736,
+        -1.        ],
+       [ 0.65790767,  3.11433413,  0.        ,  1.        ,  0.81669409,
+        -1.        ],
+       [ 0.63333776,  2.40394457,  0.        ,  1.        ,  1.93194405,
+        -1.        ],
+       [ 1.02930373,  0.23359119,  0.        ,  1.        ,  0.78541837,
+        -1.        ],
+       [ 0.2493433 ,  2.40272271,  0.        ,  1.        ,  1.79710943,
+        -1.        ],
+       [ 0.82469172,  2.00277215,  0.        ,  1.        ,  3.6803279 ,
+        -1.        ],
+       [ 0.08781097,  0.53659263,  0.        ,  1.        ,  1.41142981,
+        -1.        ],
+       [ 0.38777842,  3.97038431,  0.        ,  1.        ,  2.92767041,
+        -1.        ],
+       [-0.02539442,  0.82891016,  0.        ,  1.        ,  2.6328635 ,
+        -1.        ],
+       [ 0.28760736,  1.7093836 ,  0.        ,  1.        ,  0.87388842,
+        -1.        ],
+       [ 0.89039136,  3.27760158,  0.        ,  1.        ,  2.30801658,
+        -1.        ],
+       [ 0.92086951,  3.06000948,  0.        ,  1.        ,  3.59079707,
+        -1.        ],
+       [-1.27772507,  3.7485542 ,  0.        ,  1.        ,  3.63956984,
+        -1.        ],
+       [ 0.77428597,  2.00576165,  0.        ,  1.        ,  2.25413429,
+        -1.        ],
+       [ 1.27951051,  0.45114069,  0.        ,  1.        ,  0.66948651,
+        -1.        ],
+       [ 0.77521708,  3.83689982,  0.        ,  1.        ,  3.20104287,
+        -1.        ],
+       [ 0.23424483,  1.6296988 ,  0.        ,  1.        ,  0.48615737,
+        -1.        ],
+       [ 1.05356139,  1.28560494,  0.        ,  1.        ,  1.23577008,
+        -1.        ]]), array([[ 1.64300873, -1.        ,  0.59067396,  5.68827437,  1.53200262],
+       [ 1.5388902 , -1.        ,  5.29411884,  0.19822197,  2.63367709],
+       [ 2.44764633, -1.        , 12.64799394,  8.47760581,  3.84009573],
+       [ 2.35235349, -1.        ,  1.51215884,  4.37857264,  3.18555067],
+       [ 2.94264702, -1.        , 14.69989749,  1.72018709,  2.52698783],
+       [ 2.15787055, -1.        ,  0.8062175 ,  0.02428886,  1.08047564],
+       [ 0.29827033, -1.        ,  8.9589593 ,  3.25168148,  3.95449299],
+       [ 3.67777923, -1.        , 12.69540869, 11.90671516,  3.28801972],
+       [ 3.41890905, -1.        ,  1.61653802, 10.93412664,  1.54696024],
+       [ 3.44813104, -1.        ,  8.42774624, 13.18792008,  1.25919773],
+       [ 1.42555218, -1.        , 11.44608534,  0.96435291,  0.13296387],
+       [ 3.25713217, -1.        ,  2.54918892,  2.19626224,  1.12285216],
+       [ 1.75924246, -1.        , 14.82600988,  9.0739916 ,  2.01847671],
+       [ 2.4973196 , -1.        ,  8.74334826,  1.55928923,  2.50322982],
+       [ 3.23708121, -1.        ,  4.18772427,  2.40352723,  1.75110317],
+       [ 3.15851227, -1.        ,  1.09093877,  0.9108759 ,  3.32200093],
+       [ 0.29644844, -1.        ,  1.56143305,  0.13123834,  1.92921904],
+       [ 3.70476966, -1.        , 13.77193467,  2.32975678,  2.34812269],
+       [ 3.30503404, -1.        ,  0.95561718,  0.12567715,  0.63200636],
+       [ 1.67070509, -1.        , 11.84122934,  0.66002489,  2.63852803],
+       [ 1.88955402, -1.        ,  1.4747871 ,  4.77070558,  2.55907293],
+       [ 1.7348029 , -1.        ,  1.56267019,  1.55564241,  0.86717339],
+       [ 2.65570265, -1.        ,  2.08760241,  6.05350797,  2.25193914],
+       [ 3.46788276, -1.        , 14.03513446,  0.01958937,  2.85263237],
+       [ 0.36014983, -1.        ,  1.16486787, 14.04108398,  2.19285315],
+       [ 2.91636965, -1.        ,  4.52575249, 15.7700388 ,  2.54460023],
+       [ 3.28783694, -1.        ,  9.25899901,  1.05105911,  1.3659882 ],
+       [ 0.18323737, -1.        ,  7.49302013,  1.18537872,  1.4288355 ],
+       [ 3.62878203, -1.        , 10.63137335,  9.85593519,  2.47557962],
+       [ 0.64901942, -1.        ,  4.72662085,  3.6125627 ,  3.02126463],
+       [ 3.4839235 , -1.        ,  0.67364661, 15.8420466 ,  3.57426471],
+       [ 1.28576575, -1.        ,  2.28912333,  1.53900105,  0.92908138],
+       [ 1.08709262, -1.        , 14.71185903,  6.80664724,  3.64687844],
+       [ 2.72523565, -1.        ,  5.67281342,  7.33440311,  1.66137126],
+       [ 2.90378581, -1.        ,  0.15555878,  4.16496782,  0.42433314],
+       [ 2.10882072, -1.        ,  1.54515096, 14.44684236,  3.51387029],
+       [ 3.96891511, -1.        , 11.94279961,  9.87830896,  2.21046981],
+       [ 2.69191174, -1.        ,  0.12023958,  6.1567565 ,  2.35930423],
+       [ 3.94001608, -1.        ,  0.8861932 ,  2.22457447,  3.25644715],
+       [ 0.99428275, -1.        ,  3.78857496, 15.46633608,  3.05543778]])]
+</pre></div></div>
 </div>
 </section>
 </section>

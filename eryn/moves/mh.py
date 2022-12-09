@@ -51,88 +51,103 @@ class MHMove(Move):
             :class:`State`: State of sampler after proposal is complete.
 
         """
-        # Check to make sure that the dimensions match.
-        ntemps, nwalkers, _, _ = state.branches[list(state.branches.keys())[0]].shape
 
-        # setup supplimental information
-        if not np.all(np.asarray(list(state.branches_supplimental.values())) == None):
-            new_branch_supps = deepcopy(state.branches_supplimental)
-        else:
-            new_branch_supps = None
+        all_branch_names = list(state.branches.keys())
 
-        if state.supplimental is not None:
-            # TODO: should there be a copy?
-            new_supps = deepcopy(state.supplimental)
-        else:
-            new_supps = None
+        ntemps, nwalkers, _, _ = state.branches[all_branch_names[0]].shape
 
-        # Get the move-specific proposal.
-        q, factors = self.get_proposal(
-            state.branches_coords,
-            state.branches_inds,
-            model.random,
-            supps=new_supps,
-            branch_supps=new_branch_supps,
-        )
+        for (branch_names_run, inds_run) in self.proposal_branch_setup_iterator(
+            all_branch_names
+        ):
 
-        if self.proposal_branch_names is not None:
-            # return all branches not tested back to
-            for name in state.branches:
-                if name not in self.proposal_branch_names:
-                    q[name][:] = state.branches_coords[name][:]
+            # setup supplimental information
+            if not np.all(
+                np.asarray(list(state.branches_supplimental.values())) == None
+            ):
+                new_branch_supps = deepcopy(state.branches_supplimental)
+            else:
+                new_branch_supps = None
 
-        # Compute prior of the proposed position
-        logp = model.compute_log_prior_fn(q, inds=state.branches_inds)
+            if state.supplimental is not None:
+                # TODO: should there be a copy?
+                new_supps = deepcopy(state.supplimental)
+            else:
+                new_supps = None
 
-        # if new_branch_supps is not None or new_supps is not None:
-        #   self.adjust_supps_pre_logl_func(q, inds=state.branches_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps)
+            (
+                coords_going_for_proposal,
+                inds_going_for_proposal,
+                at_least_one_proposal,
+            ) = self.setup_proposals(
+                branch_names_run, inds_run, state.branches_coords, state.branches_inds
+            )
 
-        # Compute the lnprobs of the proposed position.
-        # Can adjust supplimentals in place
-        logl, new_blobs = model.compute_log_like_fn(
-            q,
-            inds=state.branches_inds,
-            logp=logp,
-            supps=new_supps,
-            branch_supps=new_branch_supps,
-        )
+            if not at_least_one_proposal:
+                continue
 
-        if new_branch_supps is not None:
-            for key, value in new_branch_supps.items():
-                if isinstance(value, dict) and "inds_keep" in value:
-                    del value["inds_keep"]
+            # Get the move-specific proposal.
+            q, factors = self.get_proposal(
+                coords_going_for_proposal,
+                inds_going_for_proposal,
+                model.random,
+                supps=new_supps,
+                branch_supps=new_branch_supps,
+            )
 
-        logP = self.compute_log_posterior(logl, logp)
+            # account for gibbs sampling
+            self.cleanup_proposals_gibbs(branch_names_run, inds_run, q, state)
 
-        prev_logl = state.log_like
+            # Compute prior of the proposed position
+            logp = model.compute_log_prior_fn(q, inds=state.branches_inds)
 
-        prev_logp = state.log_prior
+            self.fix_logp_gibbs(branch_names_run, inds_run, logp, state.branches_inds)
 
-        # TODO: check about prior = - inf
-        # takes care of tempering
-        prev_logP = self.compute_log_posterior(prev_logl, prev_logp)
+            # Compute the lnprobs of the proposed position.
+            # Can adjust supplimentals in place
+            logl, new_blobs = model.compute_log_like_fn(
+                q,
+                inds=state.branches_inds,
+                logp=logp,
+                supps=new_supps,
+                branch_supps=new_branch_supps,
+            )
 
-        lnpdiff = factors + logP - prev_logP
+            if new_branch_supps is not None:
+                for key, value in new_branch_supps.items():
+                    if isinstance(value, dict) and "inds_keep" in value:
+                        del value["inds_keep"]
 
-        accepted = lnpdiff > np.log(model.random.rand(ntemps, nwalkers))
+            logP = self.compute_log_posterior(logl, logp)
 
-        # Update the parameters
-        new_state = State(
-            q,
-            log_like=logl,
-            log_prior=logp,
-            blobs=new_blobs,
-            inds=state.branches_inds,
-            supplimental=new_supps,
-            branch_supplimental=new_branch_supps,
-        )
-        state = self.update(state, new_state, accepted)
+            prev_logl = state.log_like
+
+            prev_logp = state.log_prior
+
+            # TODO: check about prior = - inf
+            # takes care of tempering
+            prev_logP = self.compute_log_posterior(prev_logl, prev_logp)
+
+            lnpdiff = factors + logP - prev_logP
+
+            accepted = lnpdiff > np.log(model.random.rand(ntemps, nwalkers))
+
+            # Update the parameters
+            new_state = State(
+                q,
+                log_like=logl,
+                log_prior=logp,
+                blobs=new_blobs,
+                inds=state.branches_inds,
+                supplimental=new_supps,
+                branch_supplimental=new_branch_supps,
+            )
+            state = self.update(state, new_state, accepted)
+
+            # add to move-specific accepted information
+            self.accepted += accepted
+            self.num_proposals += 1
 
         if self.temperature_control is not None:
             state = self.temperature_control.temper_comps(state)
-
-        # add to move-specific accepted information
-        self.accepted += accepted
-        self.num_proposals += 1
 
         return state, accepted
