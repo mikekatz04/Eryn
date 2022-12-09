@@ -409,6 +409,9 @@ class EnsembleSampler(object):
 
         self.info = info
 
+        self.all_moves = (
+            self.moves if self.rj_moves is None else self.moves + self.rj_moves
+        )
         # Deal with re-used backends
         if not self.backend.initialized:
             self._previous_state = None
@@ -417,6 +420,7 @@ class EnsembleSampler(object):
                 ntemps=self.ntemps,
                 nleaves_max=nleaves_max,
                 rj=self.has_reversible_jump,
+                moves=self.all_moves,
                 **info
             )
             state = np.random.get_state()
@@ -788,11 +792,16 @@ class EnsembleSampler(object):
 
                     # Save the new step
                     if store and (i + 1) % checkpoint_step == 0:
+
+                        moves_accepted_fraction = [
+                            move_tmp.acceptance_fraction for move_tmp in self.all_moves
+                        ]
                         self.backend.save_step(
                             state,
                             accepted,
                             rj_accepted=rj_accepted,
                             swaps_accepted=in_model_swaps,
+                            moves_accepted_fraction=moves_accepted_fraction,
                         )
 
                     pbar.update(1)

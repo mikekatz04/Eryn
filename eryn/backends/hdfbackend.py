@@ -155,6 +155,7 @@ class HDFBackend(Backend):
         ntemps=1,
         branch_names=None,
         rj=False,
+        moves=None,
         **info,
     ):
         """Clear the state of the chain and empty the backend
@@ -173,6 +174,8 @@ class HDFBackend(Backend):
                 (default: ``None``)
             rj (bool, optional): If True, reversible-jump techniques are used.
                 (default: ``False``)
+            moves (list, optional): List of all of the move classes input into the sampler.
+                (default: ``None``)
             **info (dict, optional): Any other key-value pairs to be added
                 as attributes to the backend. These are also added to the HDF5 file.
 
@@ -191,6 +194,7 @@ class HDFBackend(Backend):
                 ntemps=ntemps,
                 branch_names=branch_names,
                 rj=rj,
+                moves=moves,
                 info=info,
             )
 
@@ -340,6 +344,36 @@ class HDFBackend(Backend):
                     compression_opts=self.compression_opts,
                 )
 
+            # store move specific information
+            if moves is not None:
+                move_group = g.create_group("moves")
+                # setup info and keys
+                self.move_keys = []
+                for move in moves:
+                    # get out of tuple if weights are given
+                    if isinstance(move, tuple):
+                        move = move[0]
+
+                    # get the name of the class instance as a string
+                    move_name = move.__class__.__name__
+                    single_move = move_group.create_group(move_name)
+
+                    # prepare information dictionary
+                    single_move.create_dataset(
+                        "acceptance_fraction",
+                        (ntemps, nwalkers),
+                        maxshape=(ntemps, nwalkers),
+                        dtype=self.dtype,
+                        compression=self.compression,
+                        compression_opts=self.compression_opts,
+                    )
+
+                    # update the move keys to keep proper order
+                    self.move_keys.append(move_name)
+
+            else:
+                self.move_info = None
+
             self.blobs = None
 
     def has_blobs(self):
@@ -407,6 +441,28 @@ class HDFBackend(Backend):
             v = g[name][slice_vals]
 
             return v
+
+    def get_move_info(self):
+        """Get move information.
+        
+        Returns:
+            dict: Keys are move names and values are dictionaries with information on the moves.
+        
+        """
+        # setup output dictionary
+        move_info_out = {}
+        with self.open() as f:
+            g = f[self.name]
+
+            # iterate through everything and produce a dictionary
+            for move_name in g["moves"]:
+                move_info_out[move_name] = {}
+                for info_name in g["moves"][move_name]:
+                    move_info_out[move_name][info_name] = g["moves"][move_name][
+                        info_name
+                    ][:]
+
+        return move_info_out
 
     @property
     def shape(self):
@@ -517,7 +573,12 @@ class HDFBackend(Backend):
                 g.attrs["has_blobs"] = True
 
     def save_step(
-        self, state, accepted, rj_accepted=None, swaps_accepted=None,
+        self,
+        state,
+        accepted,
+        rj_accepted=None,
+        swaps_accepted=None,
+        moves_accepted_fraction=None,
     ):
         """Save a step to the backend
 
@@ -532,6 +593,10 @@ class HDFBackend(Backend):
                 is False, then rj_accepted must be None, which is the default.
             swaps_accepted (ndarray, optional): 1D array with number of swaps accepted
                 for the in-model step. (default: ``None``)
+            moves_accepted_fraction (list, optional): List of acceptance fraction arrays for all of the 
+                moves in the sampler. This list must have the same length as ``self.move_keys``
+                and be in the same order.
+                (default: ``None``)
 
         """
         # open for appending in with statement
@@ -586,6 +651,25 @@ class HDFBackend(Backend):
                 g.attrs["random_state_{0}".format(i)] = v
 
             g.attrs["iteration"] = iteration + 1
+
+            # moves
+            if moves_accepted_fraction is not None:
+                if "moves" not in g:
+                    raise ValueError(
+                        """moves_accepted_fraction was passed, but moves_info was not initialized. Use the moves kwarg 
+                        in the reset function."""
+                    )
+
+                # make sure they are the same length
+                assert len(moves_accepted_fraction) == len(self.move_keys)
+
+                # update acceptance fractions
+                for move_key, move_accepted_fraction in zip(
+                    self.move_keys, moves_accepted_fraction
+                ):
+                    g["moves"][move_key]["acceptance_fraction"][
+                        :
+                    ] = move_accepted_fraction[:]
 
 
 class TempHDFBackend(object):

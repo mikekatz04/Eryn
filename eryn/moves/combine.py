@@ -49,9 +49,17 @@ class CombineMove(Move):
 
     @property
     def acceptance_fraction(self):
+        """get acceptance fraction averaged over all moves"""
+        acceptance_fraction_out = np.mean(
+            [move.acceptance_fraction for move in self.moves], axis=0
+        )
+        return acceptance_fraction_out
+
+    @property
+    def acceptance_fraction_separate(self):
         """get acceptance fraction from each move"""
         acceptance_fraction_out = [move.acceptance_fraction for move in self.moves]
-        return self.accepted / self.num_proposals
+        return acceptance_fraction_out
 
     @property
     def temperature_control(self):

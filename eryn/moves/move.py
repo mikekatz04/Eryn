@@ -3,6 +3,8 @@
 from ..state import BranchSupplimental
 import numpy as np
 
+from copy import deepcopy
+
 try:
     import cupy as xp
 except (ModuleNotFoundError, ImportError):
@@ -43,7 +45,7 @@ class Move(object):
         self,
         temperature_control=None,
         periodic=None,
-        proposal_branch_names=None,
+        proposal_branch_setup=None,
         prevent_swaps=False,
         skip_supp_names_update=[],
     ):
@@ -52,14 +54,56 @@ class Move(object):
         self.periodic = periodic
         self.skip_supp_names_update = skip_supp_names_update
         self.prevent_swaps = prevent_swaps
-        self.proposal_branch_names = proposal_branch_names
+        self.proposal_branch_setup = proposal_branch_setup
 
         # setup proposal branches properly
-        if self.proposal_branch_names is not None:
-            if isinstance(self.proposal_branch_names, str):
-                self.proposal_branch_names = [self.proposal_branch_names]
-            elif not isinstance(self.proposal_branch_names, list):
-                raise ValueError("proposal_branch_names must be string or list of str.")
+        if self.proposal_branch_setup is not None:
+            if isinstance(self.proposal_branch_setup, str):
+                self.proposal_branch_setup = [self.proposal_branch_setup]
+
+            elif isinstance(self.proposal_branch_setup, dict):
+                self.proposal_branch_setup = [
+                    (key, value) for key, value in self.proposal_branch_setup.items()
+                ]
+
+            elif isinstance(self.proposal_branch_setup, tuple):
+                assert len(self.proposal_branch_setup) == 2 and isinstance(
+                    self.proposal_branch_setup[1], np.ndarray
+                )
+                proposal_branch_setup_tmp.append(self.proposal_branch_setupf)
+
+            elif not isinstance(self.proposal_branch_setup, list):
+                raise ValueError(
+                    "proposal_branch_setup must be string, dict, tuple, or list."
+                )
+
+            else:
+                # it is a list
+                proposal_branch_setup_tmp = []
+                for item in self.proposal_branch_setup:
+
+                    # parse and prepare gibbs style input
+
+                    if isinstance(item, str):
+                        proposal_branch_setup_tmp.append(item)
+                    elif isinstance(item, dict):
+                        for key, value in item.items():
+                            proposal_branch_setup_tmp.append((key, value))
+
+                    elif isinstance(item, tuple):
+                        assert len(item) == 2 and isinstance(item[1], np.ndarray)
+                        proposal_branch_setup_tmp.append(item)
+
+                    else:
+                        raise ValueError(
+                            "If providing a list for proposal_branch_setup, each item needs to be a string, tuple, or dict."
+                        )
+
+                # copy the original for information if needed
+                proposal_branch_setup_input = deepcopy(self.proposal_branch_setup)
+
+                # store as the setup that all proposals will follow
+                self.proposal_branch_setup = proposal_branch_setup_tmp
 
         self.num_proposals = 0
 

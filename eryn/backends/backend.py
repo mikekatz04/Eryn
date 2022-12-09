@@ -39,6 +39,8 @@ class Backend(object):
             (nsteps, nwalkers, ntemps).
         log_like (3D double np.ndarray): Log of the likelihood values. Shape is
             (nsteps, nwalkers, ntemps).
+        move_info (dict): Dictionary containing move info.
+        move_keys (list): List of keys for ``move_info``. 
         nbranches (int): Number of branches.
         ndims (1D int np.ndarray): Dimensionality of each branch.
         nleaves_max (1D int np.ndarray): Maximum allowable leaves for each branch.
@@ -74,6 +76,7 @@ class Backend(object):
         ntemps=1,
         branch_names=None,
         rj=False,
+        moves=None,
         **info,
     ):
         """Clear the state of the chain and empty the backend
@@ -90,6 +93,8 @@ class Backend(object):
                 (default: ``None``)
             rj (bool, optional): If True, reversible-jump techniques are used.
                 (default: ``False``)
+            moves (list, optional): List of all of the move classes input into the sampler.
+                (default: ``None``)
             **info (dict, optional): Any other key-value pairs to be added
                 as attributes to the backend.
 
@@ -101,6 +106,7 @@ class Backend(object):
             ntemps=ntemps,
             branch_names=branch_names,
             rj=rj,
+            moves=moves,
             info=info,
         )
 
@@ -197,6 +203,32 @@ class Backend(object):
 
         self.random_state = None
         self.initialized = True
+
+        # store move specific information
+        if moves is not None:
+            # setup info and keys
+            self.move_info = {}
+            self.move_keys = []
+            for move in moves:
+                # get out of tuple if weights are given
+                if isinstance(move, tuple):
+                    move = move[0]
+
+                # get the name of the class instance as a string
+                move_name = move.__class__.__name__
+
+                # prepare information dictionary
+                self.move_info[move_name] = {
+                    "acceptance_fraction": np.zeros(
+                        (self.ntemps, self.nwalkers), dtype=self.dtype
+                    )
+                }
+
+                # update the move keys to keep proper order
+                self.move_keys.append(move_name)
+
+        else:
+            self.move_info = None
 
     def has_blobs(self):
         """Returns ``True`` if the model includes blobs"""
@@ -757,8 +789,22 @@ class Backend(object):
         if state.betas is not None and state.betas.shape != (ntemps,):
             raise ValueError("invalid beta size; expected {0}".format(ntemps))
 
+    def get_move_info(self):
+        """Get move information.
+        
+        Returns:
+            dict: Keys are move names and values are dictionaries with information on the moves.
+        
+        """
+        return self.move_info
+
     def save_step(
-        self, state, accepted, rj_accepted=None, swaps_accepted=None,
+        self,
+        state,
+        accepted,
+        rj_accepted=None,
+        swaps_accepted=None,
+        moves_accepted_fraction=None,
     ):
         """Save a step to the backend
 
@@ -773,6 +819,10 @@ class Backend(object):
                 is False, then rj_accepted must be None, which is the default.
             swaps_accepted (ndarray, optional): 1D array with number of swaps accepted
                 for the in-model step. (default: ``None``)
+            moves_accepted_fraction (list, optional): List of acceptance fraction arrays for all of the 
+                moves in the sampler. This list must have the same length as ``self.move_keys``
+                and be in the same order.
+                (default: ``None``)
 
         """
         # check to make sure all information in the state is okay
@@ -807,6 +857,25 @@ class Backend(object):
             self.swaps_accepted += swaps_accepted
         if self.rj:
             self.rj_accepted += rj_accepted
+
+        # moves
+        if moves_accepted_fraction is not None:
+            if self.move_info is None:
+                raise ValueError(
+                    """moves_accepted_fraction was passed, but moves_info was not initialized. Use the moves kwarg 
+                    in the reset function."""
+                )
+
+            # make sure they are the same length
+            assert len(moves_accepted_fraction) == len(self.move_keys)
+
+            # update acceptance fractions
+            for move_key, move_accepted_fraction in zip(
+                self.move_keys, moves_accepted_fraction
+            ):
+                self.move_info[move_key]["acceptance_fraction"][
+                    :
+                ] = move_accepted_fraction[:]
 
         self.random_state = state.random_state
         self.iteration += 1
