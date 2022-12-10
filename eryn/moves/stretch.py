@@ -85,7 +85,7 @@ class StretchMove(RedBlueMove):
         c_temp = self.xp.take_along_axis(c, rint[:, :, None, None], axis=1)
         return c_temp
 
-    def get_proposal(self, s_all, c_all, random, inds_s=None, inds_c=None, **kwargs):
+    def get_proposal(self, s_all, c_all, random, gibbs_ndim=None, **kwargs):
         """Generate stretch proposal
 
         # TODO: add log proposal from ptemcee
@@ -96,13 +96,7 @@ class StretchMove(RedBlueMove):
             c_all (dict): Keys are ``branch_names`` and values are lists. These
                 lists contain all the complement array values.
             random (object): Random state object.
-            inds_s (dict, optional): Keys are ``branch_names`` and values are
-                np.ndarray[nwalkers, nleaves_max] that indicate which leaves
-                are currently being used in :code:`s_all`. (default: ``None``)
-            inds_c (dict, optional): Keys are ``branch_names`` and values are
-                np.ndarray[nwalkers, nleaves_max] that indicate which leaves
-                are currently being used in :code:`s_all`. (default: ``None``)
-
+            
         Returns:
             tuple: First entry is new positions. Second entry is detailed balance factors.
 
@@ -124,14 +118,12 @@ class StretchMove(RedBlueMove):
         
             Ns, Nc = s.shape[1], c.shape[1]
             # gets rid of any values of exactly zero
-            if inds_s is None:
-                ndim_temp = s_all[name].shape[-1] * s_all[name].shape[-2]
-            else:
-                ndim_temp = inds_s[name].sum(axis=(2)) * s_all[name].shape[-1]
-            
+            ndim_temp = nleaves_max * ndim_here
+
             if i == 0:
                 ndim = ndim_temp
                 Ns_check = Ns
+                # only choose z once per walker temp
                 zz = ((self.a - 1.0) * random_number_generator.rand(ntemps, Ns) + 1) ** 2.0 / self.a
             else:
                 ndim += ndim_temp
@@ -167,6 +159,9 @@ class StretchMove(RedBlueMove):
         factors = (ndim - 1.0) * self.xp.log(zz)
         if self.use_gpu and not self.return_gpu:
             factors = factors.get()
+
+        if gibbs_ndims is not None:
+            factors = self.adjust_factors(factors, ndim, gibbs_ndims)
         
         return newpos, factors
 
