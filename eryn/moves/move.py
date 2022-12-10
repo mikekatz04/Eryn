@@ -77,6 +77,7 @@ class Move(object):
 
         # keep track of the number of proposals
         self.num_proposals = 0
+        self.time = 0
 
     def _initialize_branch_setup(self, gibbs_sampling_setup, is_rj=False):
         """Initialize the gibbs setup properly."""
