@@ -77,8 +77,11 @@ class GroupMove(Move, ABC):
         self.gibbs_sampling_leaves_per = gibbs_sampling_leaves_per
         self.iter = 0
 
-    def find_friends(self, *args, **kwargs):
+    def find_friends(self, name, s):
         raise NotImplementedError
+
+    def choose_c_vals(self, name, s):
+        return self.find_friends(name, s)
 
     def setup(self, branches):
         """Any setup necessary for the proposal"""
@@ -203,9 +206,6 @@ class GroupMove(Move, ABC):
                     new_inds_adjust[name] = keep_arr.copy()
 
             points_to_move = state.branches_coords[name_keep][keep_arr]
-            points_for_move = self.find_friends(points_to_move, state.branches) #  state.branches_supplimental[name_keep][keep_arr][
-            #     "group_move_points"
-            # ]
 
             points_to_move = points_to_move.reshape(-1, points_to_move.shape[-1])
             points_for_move = points_for_move.reshape(

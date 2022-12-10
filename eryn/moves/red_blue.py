@@ -160,7 +160,6 @@ class RedBlueMove(Move, ABC):
             if not at_least_one_proposal:
                 continue
 
-            breakpoint()
             accepted_here = np.zeros((ntemps, nwalkers), dtype=bool)
             for split in range(self.nsplits):
                 S1 = inds == split
@@ -234,14 +233,20 @@ class RedBlueMove(Move, ABC):
                     for name in state.branches_inds
                 }
 
-                gibbs_ndim = sum([inds_run_tmp.sum() for inds_run_tmp in inds_run])
+                gibbs_ndim = 0
+                for brn, ir in zip(branch_names_run, inds_run):
+                    if ir is not None:
+                        gibbs_ndim += ir.sum()
+                    else:
+                        # nleaves * ndim
+                        gibbs_ndim += np.prod(state.branches[brn].shape[-2:])
 
-                q, factors_temp = self.get_proposal(
+                q, factors = self.get_proposal(
                     s, c, model.random, gibbs_ndim=gibbs_ndim
                 )
 
                 # account for gibbs sampling
-                self.cleanup_proposals_gibbs(branch_names_run, inds_run, q, state)
+                self.cleanup_proposals_gibbs(branch_names_run, inds_run, q, temp_coords)
 
                 # Compute prior of the proposed position
                 # new_inds_prior is adjusted if product-space is used

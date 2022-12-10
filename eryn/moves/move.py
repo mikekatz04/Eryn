@@ -262,14 +262,14 @@ class Move(object):
             at_least_one_proposal,
         )
 
-    def cleanup_proposals_gibbs(self, branch_names_run, inds_run, q, state):
+    def cleanup_proposals_gibbs(self, branch_names_run, inds_run, q, branches_coords):
         # add back any parameters that are fixed for this round
         for bnr, ir in zip(branch_names_run, inds_run):
             if ir is not None:
-                q[bnr][:, :, ~ir] = state.branches_coords[bnr][:, :, ~ir]
+                q[bnr][:, :, ~ir] = branches_coords[bnr][:, :, ~ir]
 
         # add other models that were not included
-        for key, value in state.branches_coords.items():
+        for key, value in branches_coords.items():
             if key not in q:
                 q[key] = value
 

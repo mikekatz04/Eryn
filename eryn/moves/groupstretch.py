@@ -7,6 +7,7 @@ except (ModuleNotFoundError, ImportError):
 import numpy as np
 
 from .group import GroupMove
+from .stretch import StretchMove
 
 __all__ = ["GroupStretchMove"]
 
@@ -26,27 +27,16 @@ class GroupStretchMove(GroupMove):
         a (double): The stretch scale parameter.
     """
 
-    def __init__(self, a=2.0, use_gpu=False, return_gpu=False, random_seed=None, **kwargs):
-        self.a = a
-        if use_gpu:
-            self.xp = xp
-        else:
-            self.xp = np
-
-        if random_seed is not None:
-            self.xp.random.seed(random_seed)
-
-        self.use_gpu = use_gpu
-        self.return_gpu = return_gpu
-
-        super(GroupStretchMove, self).__init__(**kwargs)
+    def __init__(self, **kwargs):
+        GroupStretchMove.__init__(self, **kwargs)
+        StretchMove.__init__(self, **kwargs)
 
     def adjust_factors(self, factors, ndims_old, ndims_new):
         # adjusts in place
-        logzz = factors / (ndims_old - 1.0) 
+        logzz = factors / (ndims_old - 1.0)
         factors[:] = logzz * (ndims_new - 1.0)
 
-    def get_proposal(self, s_all, random, **kwargs):
+    def get_proposal(self, s_all, random, gibbs_ndim=None, **kwargs):
         """Generate stretch proposal
 
         # TODO: add log proposal from ptemcee
@@ -75,39 +65,35 @@ class GroupStretchMove(GroupMove):
 
         newpos = {}
         for i, name in enumerate(s_all):
-            if i > 0:
-                # TODO: check?
-                raise NotImplementedError
-
             s = self.xp.asarray(s_all[name])
 
-            nwalkers, ndim_here = s.shape
+            ntemps, nwalkers, nleaves_max, ndim_here = s.shape
 
-            Ns, Nc = nwalkers, c.shape[-2]
-            
-            ndim = ndim_here
-            zz = ((self.a - 1.0) * random_number_generator.rand(nwalkers) + 1) ** 2.0 / self.a
+            Ns = nwalkers
+            c_temp = self.choose_c_vals(name, s)
 
-            c_temp = self.choose_c_vals(name, s, c=None)
+            # gets rid of any values of exactly zero
+            ndim_temp = nleaves_max * ndim_here
+            if i == 0:
+                ndim = ndim_temp
+                Ns_check = Ns
 
-            if self.periodic is not None:
-                diff = self.periodic.distance(
-                    s.reshape(nwalkers, 1, ndim_here), 
-                    c_temp.reshape(nwalkers, 1, ndim_here), 
-                    names=[name],
-                    xp=self.xp
-                )[name].reshape(nwalkers, ndim_here)
             else:
-                diff = c_temp - s
+                ndim += ndim_temp
+                if Ns_check != Ns:
+                    raise ValueError("Different number of walkers across models.")
 
-            temp = c_temp - (diff) * zz[:, None]
-
-            if self.periodic is not None:
-                temp = self.periodic.wrap(temp.reshape(nwalkers, 1, ndim_here), names=[name], xp=self.xp)[name].reshape(nwalkers, ndim_here)
-
-            newpos[name] = temp
-
+            newpos[name] = self.get_new_points(
+                name, s, c_temp, Ns, s.shape, i, random_number_generator
+            )
         # proper factors
-        factors = (ndim - 1.0) * self.xp.log(zz)
+        factors = (ndim - 1.0) * self.xp.log(self.zz)
+        if self.use_gpu and not self.return_gpu:
+            factors = factors.get()
+
+        if gibbs_ndim is not None:
+            # adjust factors in place
+            self.adjust_factors(factors, ndim, gibbs_ndim)
+
         return newpos, factors
 

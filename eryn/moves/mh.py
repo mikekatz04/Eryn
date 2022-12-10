@@ -95,7 +95,9 @@ class MHMove(Move):
             )
 
             # account for gibbs sampling
-            self.cleanup_proposals_gibbs(branch_names_run, inds_run, q, state)
+            self.cleanup_proposals_gibbs(
+                branch_names_run, inds_run, q, state.branches_coords
+            )
 
             # Compute prior of the proposed position
             logp = model.compute_log_prior_fn(q, inds=state.branches_inds)
