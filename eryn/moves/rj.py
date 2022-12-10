@@ -225,7 +225,7 @@ class ReversibleJump(Move):
 
         ntemps, nwalkers, _, _ = state.branches[all_branch_names[0]].shape
 
-        for (branch_names_run, inds_run) in self.proposal_branch_setup_iterator(
+        for (branch_names_run, inds_run) in self.gibbs_sampling_setup_iterator(
             all_branch_names
         ):
 

@@ -25,7 +25,22 @@ class Move(object):
             This object holds periodic information and methods for periodic parameters. It is passed to the parent class
             to moves so that all proposals can share and use periodic information.
             (default: ``None``)
-        proposal_branch_setup (list or str, optional): Branch names to run with this move class.
+        gibbs_sampling_setup (str, tuple, dict, or list, optional): This sets the Gibbs Sampling setup if 
+            desired. The Gibbs sampling setup is completely customizable down to the leaf and parameters.
+            All of the separate Gibbs sampling splits will be run within 1 call to this proposal. 
+            If ``None``, run all branches and all parameters. If ``str``, run all parameters within the 
+            branch given as the string. To enter a branch with a specific set of parameters, you can 
+            provide a 2-tuple with the first entry as the branch name and the second entry as a 2D
+            boolean array of shape ``(nleaves_max, ndim)`` that indicates which leaves and/or parameters
+            you want to run. ``None`` can also be entered in the second entry if all parameters are to be run. 
+            A dictionary is also possible with keys as branch names and values as the same 2D boolean array 
+            of shape ``(nleaves_max, ndim)`` that indicates which leaves and/or parameters
+            you want to run. ``None`` can also be entered in the value of the dictionary
+            if all parameters are to be run. If multiple keys are provided in the dictionary, those 
+            branches will be run simultaneously in the proposal as one iteration of the proposing loop. 
+            The final option is a list. This is how you make sure to run all the Gibbs splits. Each entry 
+            of the list can be a string, 2-tuple, or dictionary as described above. The list controls 
+            the order in which all of these splits are run. (default: ``None``) 
         prevent_swaps (bool, optional): If ``True``, do not perform temperature swaps in this move.
         skip_supp_names_update (list, optional): List of names (`str`), that can be in any 
             :class:`eryn.state.BranchSupplimental`,
@@ -39,6 +54,7 @@ class Move(object):
         Note: All kwargs are stored as attributes.
         num_proposals (int): the number of times this move has been run. This is needed to 
             compute the acceptance fraction.
+        gibbs_sampling_setup (list): All of the Gibbs sampling splits as described above. 
 
     """
 
@@ -46,7 +62,7 @@ class Move(object):
         self,
         temperature_control=None,
         periodic=None,
-        proposal_branch_setup=None,
+        gibbs_sampling_setup=None,
         prevent_swaps=False,
         skip_supp_names_update=[],
         is_rj=False,
@@ -57,10 +73,14 @@ class Move(object):
         self.skip_supp_names_update = skip_supp_names_update
         self.prevent_swaps = prevent_swaps
 
-        self.initialize_branch_setup(proposal_branch_setup, is_rj=is_rj)
+        self._initialize_branch_setup(gibbs_sampling_setup, is_rj=is_rj)
 
-    def initialize_branch_setup(self, proposal_branch_setup, is_rj=False):
-        self.proposal_branch_setup = proposal_branch_setup
+        # keep track of the number of proposals
+        self.num_proposals = 0
+
+    def _initialize_branch_setup(self, gibbs_sampling_setup, is_rj=False):
+        """Initialize the gibbs setup properly."""
+        self.gibbs_sampling_setup = gibbs_sampling_setup
 
         message_rj = """inputting gibbs indexing at the leaf/parameter level is not allowed 
                                         with an RJ proposal. Only branch names."""
@@ -68,134 +88,151 @@ class Move(object):
         message_non_rj = """When inputing gibbs indexing and using a 2-tuple, second item must be None or 2D np.ndarray of shape (nleaves_max, ndim)."""
 
         # setup proposal branches properly
-        if self.proposal_branch_setup is not None:
-            if isinstance(self.proposal_branch_setup, str):
-                self.proposal_branch_setup = [self.proposal_branch_setup]
-
-            elif isinstance(self.proposal_branch_setup, tuple):
-                assert len(self.proposal_branch_setup) == 2
-                if self.proposal_branch_setup[1] is not None and is_rj:
-                    raise ValueError(message_rj)
-
-                elif (
-                    not isinstance(self.proposal_branch_setup[1], np.ndarray)
-                    and self.proposal_branch_setup[1] is not None
-                ) or (
-                    isinstance(self.proposal_branch_setup[1], np.ndarray)
-                    and self.proposal_branch_setup[1].ndim != 2
-                ):
-                    raise ValueError(message_non_rj)
-
-                self.proposal_branch_setup = [self.proposal_branch_setup]
-
-            elif isinstance(self.proposal_branch_setup, dict):
-                self.proposal_branch_setup = [[]]
-                for key, value in self.proposal_branch_setup.items():
-                    if value is not None and is_rj:
-                        raise ValueError(message_rj)
-
-                    elif (not isinstance(value, np.ndarray) and value is not None) or (
-                        isinstance(value, np.ndarray) and value.ndim != 2
-                    ):
-                        raise ValueError(message_non_rj)
-
-                    self.proposal_branch_setup[0].append((key, value))
-
-            elif not isinstance(self.proposal_branch_setup, list):
+        if self.gibbs_sampling_setup is not None:
+            # string indicates one branch (all of it)
+            if type(self.gibbs_sampling_setup) not in [str, tuple, list, dict]:
                 raise ValueError(
-                    "proposal_branch_setup must be string, dict, tuple, or list."
+                    "gibbs_sampling_setup must be string, dict, tuple, or list."
                 )
 
-            else:
-                # it is a list
-                proposal_branch_setup_tmp = []
-                for item in self.proposal_branch_setup:
+            if not isinstance(self.gibbs_sampling_setup, list):
+                self.gibbs_sampling_setup = [self.gibbs_sampling_setup]
 
-                    # parse and prepare gibbs style input
-                    if isinstance(item, str):
-                        proposal_branch_setup_tmp.append(item)
+            gibbs_sampling_setup_tmp = []
+            for item in self.gibbs_sampling_setup:
 
-                    elif isinstance(item, tuple):
-                        assert len(item) == 2
-                        if item is not None and is_rj:
+                # all the arguments are treated
+
+                # strings indicate single branch all parameters
+                if isinstance(item, str):
+                    gibbs_sampling_setup_tmp.append(item)
+
+                # tuple is one branch with a split in the parameters
+                elif isinstance(item, tuple):
+                    # check inputs
+                    assert len(item) == 2
+                    if item is not None and is_rj:
+                        raise ValueError(message_rj)
+
+                    elif (
+                        not isinstance(item[1], np.ndarray) and item[1] is not None
+                    ) or (isinstance(item[1], np.ndarray) and item[1].ndim != 2):
+                        breakpoint()
+                        raise ValueError(message_non_rj)
+
+                    gibbs_sampling_setup_tmp.append(item)
+
+                # dict can include multiple models and parameter splits
+                # these will all be in one iteration
+                elif isinstance(item, dict):
+                    tmp = []
+                    for key, value in item.items():
+                        # check inputs
+                        if value is not None and is_rj:
                             raise ValueError(message_rj)
 
                         elif (
-                            not isinstance(item[1], np.ndarray) and item[1] is not None
-                        ) or (isinstance(item[1], np.ndarray) and item[1].ndim != 2):
-                            breakpoint()
+                            not isinstance(value, np.ndarray) and value is not None
+                        ) or (isinstance(value, np.ndarray) and value.ndim != 2):
                             raise ValueError(message_non_rj)
 
-                        proposal_branch_setup_tmp.append(item)
+                        tmp.append((key, value))
 
-                    elif isinstance(item, dict):
-                        tmp = []
-                        for key, value in item.items():
+                    gibbs_sampling_setup_tmp.append(tmp)
 
-                            if value is not None and is_rj:
-                                raise ValueError(message_rj)
+                else:
+                    raise ValueError(
+                        "If providing a list for gibbs_sampling_setup, each item needs to be a string, tuple, or dict."
+                    )
 
-                            elif (
-                                not isinstance(value, np.ndarray) and value is not None
-                            ) or (isinstance(value, np.ndarray) and value.ndim != 2):
-                                raise ValueError(message_non_rj)
+            # copy the original for information if needed
+            self.gibbs_sampling_setup_input = deepcopy(self.gibbs_sampling_setup)
 
-                            tmp.append((key, value))
+            # store as the setup that all proposals will follow
+            self.gibbs_sampling_setup = gibbs_sampling_setup_tmp
 
-                        proposal_branch_setup_tmp.append(tmp)
+            # now that we have everything out of the input
+            # sort into branch names and indices to be run
+            branch_names_run_all = []
+            inds_run_all = []
 
-                    else:
-                        raise ValueError(
-                            "If providing a list for proposal_branch_setup, each item needs to be a string, tuple, or dict."
-                        )
+            # for each split in the gibbs splits
+            for prop_i, proposal_iteration in enumerate(self.gibbs_sampling_setup):
+                # break out
+                if isinstance(proposal_iteration, tuple):
+                    # tuple is 1 entry loop
+                    branch_names_run_all.append([proposal_iteration[0]])
+                    inds_run_all.append([proposal_iteration[1]])
+                elif isinstance(proposal_iteration, str):
+                    # string is 1 entry loop
+                    branch_names_run_all.append([proposal_iteration])
+                    inds_run_all.append([None])
 
-                # copy the original for information if needed
-                proposal_branch_setup_input = deepcopy(self.proposal_branch_setup)
+                elif isinstance(proposal_iteration, list):
+                    # list allows more branches at the same time
+                    branch_names_run_all.append([])
+                    inds_run_all.append([])
+                    for item in proposal_iteration:
+                        if isinstance(item, str):
+                            branch_names_run_all[prop_i].append(item)
+                            inds_run_all[prop_i].append(None)
+                        elif isinstance(proposal_iteration, tuple):
+                            branch_names_run_all[prop_i].append(item[0])
+                            inds_run_all[prop_i].append(item[1])
 
-                # store as the setup that all proposals will follow
-                self.proposal_branch_setup = proposal_branch_setup_tmp
+            # store information
+            self.branch_names_run_all = branch_names_run_all
+            self.inds_run_all = inds_run_all
 
         else:
-            self.proposal_branch_setup = [None]
+            # no Gibbs sampling
+            self.branch_names_run_all = [None]
+            self.inds_run_all = [None]
 
-        self.num_proposals = 0
+    def gibbs_sampling_setup_iterator(self, all_branch_names):
+        """Iterate through the gibbs splits as a generator
+        
+        Args:
+            all_branch_names (list): List of all branch names.
 
-    def proposal_branch_setup_iterator(self, all_branch_names):
-        for proposal_iteration in self.proposal_branch_setup:
-            if isinstance(proposal_iteration, tuple):
-                branch_names_run = [proposal_iteration[0]]
-                inds_run = [proposal_iteration[1]]
-            elif isinstance(proposal_iteration, str):
-                branch_name_run = [proposal_iteration]
-                inds_run = [None]
-            elif isinstance(proposal_iteration, list):
-                branch_names_run = []
-                inds_run = []
-                for item in proposal_iteration:
-                    if isinstance(item, str):
-                        branch_names_run.append(item)
-                        inds_run.append(None)
-                    elif isinstance(proposal_iteration, tuple):
-                        branch_names_run.append(item[0])
-                        inds_run.append(item[1])
-            elif proposal_iteration is None:
-                branch_names_run = None
-                inds_run = None
+        Yields:
+            2-tuple: Gibbs sampling split.
+                        First entry is the branch names to run and the second entry is the index
+                        into the leaves/parameters for this Gibbs split. 
 
-            else:
-                raise ValueError(
-                    "Items in proposal_branch_setup must be 2-tuple, string, None, or list."
-                )
+        Raises:
+            ValueError: Incorrect inputs.
 
+        """
+        for (branch_names_run, inds_run) in zip(
+            self.branch_names_run_all, self.inds_run_all
+        ):
             if branch_names_run is None:
                 branch_names_run = all_branch_names
                 inds_run = [None for _ in branch_names_run]
-
             yield (branch_names_run, inds_run)
 
     def setup_proposals(
         self, branch_names_run, inds_run, branches_coords, branches_inds
     ):
+        """Setup proposals when gibbs sampling.
+        
+        Get inputs into the proposal including Gibbs split information.
+
+        Args:
+            branch_names_run (list): List of branch names to run concurrently.
+            inds_run (list): List of ``inds`` arrays including Gibbs sampling information.
+            branches_coords (list): List of coordinate arrays for all branches.
+            branches_inds (list): List of ``inds`` arrays for all branches.
+
+        Returns:
+            tuple:  (coords, inds, at_least_one_proposal)
+                        * Coords including Gibbs sampling info.
+                        * ``inds`` including Gibbs sampling info.
+                        * ``at_least_one_proposal`` is boolean. It is passed out to 
+                            indicate there is at least one leaf available for the requested branch names.
+        
+        """
         inds_going_for_proposal = {}
         coords_going_for_proposal = {}
 
@@ -235,6 +272,25 @@ class Move(object):
             if key not in q:
                 q[key] = value
 
+    def fix_logp_gibbs(self, branch_names_run, inds_run, logp, inds):
+        total_leaves = np.zeros_like(logp)
+        for bnr, ir in zip(branch_names_run, inds_run):
+            if ir is not None:
+                tmp = np.zeros_like(inds[bnr], dtype=bool)
+
+                # flatten coordinates to the leaves dimension
+                ir_keep = ir.astype(int).sum(axis=-1).astype(bool)
+                tmp[:, :, ir_keep] = True
+                # make sure leavdes that are actually not there are not counted
+                tmp[~inds[bnr]] = False
+
+            else:
+                tmp = inds[bnr]
+
+            total_leaves += tmp.sum(axis=-1)
+
+        logp[total_leaves == 0] = -np.inf
+
     @property
     def accepted(self):
         """Accepted counts for this move."""
@@ -273,25 +329,6 @@ class Move(object):
             )
 
             self.ntemps = self.temperature_control.ntemps
-
-    def fix_logp_gibbs(self, branch_names_run, inds_run, logp, inds):
-        total_leaves = np.zeros_like(logp)
-        for bnr, ir in zip(branch_names_run, inds_run):
-            if ir is not None:
-                tmp = np.zeros_like(inds[bnr], dtype=bool)
-
-                # flatten coordinates to the leaves dimension
-                ir_keep = ir.astype(int).sum(axis=-1).astype(bool)
-                tmp[:, :, ir_keep] = True
-                # make sure leavdes that are actually not there are not counted
-                tmp[~inds[bnr]] = False
-
-            else:
-                tmp = inds[bnr]
-
-            total_leaves += tmp.sum(axis=-1)
-
-        logp[total_leaves == 0] = -np.inf
 
     def compute_log_posterior_basic(self, logl, logp):
         """Compute the log of posterior
