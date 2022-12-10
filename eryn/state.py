@@ -373,9 +373,9 @@ class Branch(object):
 
         if branch_supplimental is not None:
             # make sure branch_supplimental shape matches
-            if branch_supplimental.shape != self.inds.shape:
+            if branch_supplimental.base_shape != self.inds.shape:
                 raise ValueError(
-                    f"branch_supplimental shape ( {branch_supplimental.shape} ) does not match inds shape ( {self.inds.shape} )."
+                    f"branch_supplimental shape ( {branch_supplimental.base_shape} ) does not match inds shape ( {self.inds.shape} )."
                 )
 
         # store
