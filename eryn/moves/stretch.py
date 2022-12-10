@@ -80,6 +80,11 @@ class StretchMove(RedBlueMove):
         logzz = factors / (ndims_old - 1.0) 
         factors[:] = logzz * (ndims_new - 1.0)
 
+    def choose_c_vals(self, c, Nc, Ns, ntemps, **kwargs):
+        rint = random_number_generator.randint(Nc, size=(ntemps, Ns,))
+        c_temp = self.xp.take_along_axis(c, rint[:, :, None, None], axis=1)
+        return c_temp
+
     def get_proposal(self, s_all, c_all, random, inds_s=None, inds_c=None, **kwargs):
         """Generate stretch proposal
 
@@ -133,8 +138,7 @@ class StretchMove(RedBlueMove):
                 if Ns_check != Ns:
                     raise ValueError("Different number of walkers across models.")
 
-            rint = random_number_generator.randint(Nc, size=(ntemps, Ns,))
-            c_temp = self.xp.take_along_axis(c, rint[:, :, None, None], axis=1)
+            c_temp = choose_c_vals(c, Nc, Ns, ntemps)
 
             if self.periodic is not None:
                 diff = self.periodic.distance(

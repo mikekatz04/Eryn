@@ -234,9 +234,16 @@ class RedBlueMove(Move, ABC):
                     for name in state.branches_inds
                 }
 
-                q, factors = self.get_proposal(
+                q, factors_temp = self.get_proposal(
                     s, c, model.random, inds_s=temp_inds_s, inds_c=temp_inds_c
                 )
+
+                ndim_old = sum([np.prod(inds_run_tmp.shape) for inds_run_tmp in inds_run])
+
+                ndim_new = sum([inds_run_tmp.sum() for inds_run_tmp in inds_run])
+
+                # adjust factors for dimensionality in Gibbs sampling
+                factors = self.adjust_factors(factors_temp, ndim_old, ndim_new)
 
                 # account for gibbs sampling
                 self.cleanup_proposals_gibbs(branch_names_run, inds_run, q, state)

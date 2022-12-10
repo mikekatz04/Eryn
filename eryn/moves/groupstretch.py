@@ -46,7 +46,7 @@ class GroupStretchMove(GroupMove):
         logzz = factors / (ndims_old - 1.0) 
         factors[:] = logzz * (ndims_new - 1.0)
 
-    def get_proposal(self, s_all, c_all, random, **kwargs):
+    def get_proposal(self, s_all, random, **kwargs):
         """Generate stretch proposal
 
         # TODO: add log proposal from ptemcee
@@ -79,7 +79,6 @@ class GroupStretchMove(GroupMove):
                 # TODO: check?
                 raise NotImplementedError
 
-            c = self.xp.asarray(c_all[name])
             s = self.xp.asarray(s_all[name])
 
             nwalkers, ndim_here = s.shape
@@ -89,9 +88,7 @@ class GroupStretchMove(GroupMove):
             ndim = ndim_here
             zz = ((self.a - 1.0) * random_number_generator.rand(nwalkers) + 1) ** 2.0 / self.a
 
-            rint = random_number_generator.randint(Nc, size=(nwalkers,))
-
-            c_temp = np.take_along_axis(c, rint[:, None, None], axis=1)[:, 0, :]
+            c_temp = self.choose_c_vals(name, s, c=None)
 
             if self.periodic is not None:
                 diff = self.periodic.distance(
