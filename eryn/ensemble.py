@@ -1400,7 +1400,7 @@ class _FunctionWrapper(object):
         self, f, args, kwargs,
     ):
         self.f = f
-        self.args = () if args is None else args
+        self.args = [] if args is None else args
         self.kwargs = {} if kwargs is None else kwargs
 
     def __call__(self, args_and_kwargs):
@@ -1414,7 +1414,7 @@ class _FunctionWrapper(object):
         args_in_add, kwargs_in_add = args_and_kwargs
 
         try:
-            args_in = type(args_in_add)(self.args) + self.args
+            args_in = args_in_add + type(args_in_add)(self.args)
             kwargs_in = {**kwargs_in_add, **self.kwargs}
             # TODO: this may have pickle issue with multiprocessing (kwargs_in)
 
