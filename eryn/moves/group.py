@@ -80,8 +80,8 @@ class GroupMove(Move, ABC):
     def find_friends(self, name, s):
         raise NotImplementedError
 
-    def choose_c_vals(self, name, s):
-        return self.find_friends(name, s)
+    def choose_c_vals(self, name, s, s_inds=None):
+        return self.find_friends(name, s, s_inds=s_inds)
 
     def setup(self, branches):
         """Any setup necessary for the proposal"""
