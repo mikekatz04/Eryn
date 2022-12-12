@@ -1259,6 +1259,10 @@ class EnsembleSampler(object):
         ll = np.full(nwalkers_all, -1e300)
         inds_fix_zeros = np.delete(np.arange(nwalkers_all), unique_groups)
 
+        # make sure second dimension is not 1
+        if results.ndim == 2 and results.shape[1] == 1:
+            results = np.squeeze(results)
+
         # parse the results if it has blobs
         if results.ndim == 2:
             # get the results and put into groups that were analyzed
