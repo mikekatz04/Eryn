@@ -7,6 +7,7 @@ from ..prior import PriorContainer
 
 __all__ = ["PriorGenerateRJ"]
 
+
 class PriorGenerateRJ(ReversibleJump):
     """Generate Revesible-Jump proposals from prior
 
@@ -15,6 +16,7 @@ class PriorGenerateRJ(ReversibleJump):
             and ``rvs`` methods.
 
     """
+
     def __init__(self, priors, *args, **kwargs):
 
         for key in priors:
@@ -24,7 +26,9 @@ class PriorGenerateRJ(ReversibleJump):
 
         super(PriorGenerateRJ, self).__init__(*args, **kwargs)
 
-    def get_proposal(self, all_coords, all_inds, all_inds_for_change, random, **kwargs):
+    def get_proposal(
+        self, all_coords, all_inds, min_k_all, max_k_all, random, **kwargs
+    ):
         """Make a proposal
 
         Args:
@@ -59,6 +63,19 @@ class PriorGenerateRJ(ReversibleJump):
         """
         q = {}
         new_inds = {}
+        all_inds_for_change = {}
+
+        assert len(min_k_all)
+        assert len(all_coords.keys()) == len(max_k_all)
+        for (name, inds), min_k, max_k in zip(all_inds.items(), min_k_all, max_k_all):
+            if min_k == max_k:
+                continue
+            elif min_k > max_k:
+                raise ValueError("min_k is greater than max_k. Not allowed.")
+
+            all_inds_for_change[name] = self.get_model_change_proposal(
+                inds, random, min_k, max_k
+            )
 
         for i, (name, coords, inds, inds_for_change) in enumerate(
             zip(

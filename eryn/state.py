@@ -531,6 +531,11 @@ class State(object):
             name: branch.branch_supplimental for name, branch in self.branches.items()
         }
 
+    @property
+    def branch_names(self):
+        """Get the branch names in this state."""
+        return list(self.branches.keys())
+
     def copy_into_self(self, state_to_copy):
         for name in state_to_copy.__slots__:
             setattr(self, name, getattr(state_to_copy, name))

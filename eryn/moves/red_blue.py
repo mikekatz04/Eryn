@@ -23,11 +23,9 @@ class RedBlueMove(Move, ABC):
             sub-ensemble is updated in parallel using the other sets as the
             complementary ensemble. The default value is ``2`` and you
             probably won't need to change that.
-
         randomize_split (bool, optional): Randomly shuffle walkers between
             sub-ensembles. The same number of walkers will be assigned to
             each sub-ensemble on each iteration. (default: ``True``)
-
         live_dangerously (bool, optional): By default, an update will fail with
             a ``RuntimeError`` if the number of walkers is smaller than twice
             the dimension of the problem because the walkers would then be
@@ -55,7 +53,7 @@ class RedBlueMove(Move, ABC):
         pass
 
     @classmethod
-    def get_proposal(self, sample, complement, random, gibbs_ndim=None):
+    def get_proposal(self, sample, complement, random, ntemps=1, gibbs_ndim=None):
         """Make a proposal
 
         Args:
@@ -66,6 +64,10 @@ class RedBlueMove(Move, ABC):
                 all other subsets. This is the compliment whose ``coords`` are
                 used to form the proposal for the ``sample`` subset.
             random (object): Current random state of the sampler.
+            ntemps (int, optional): Number of temperatures. This helps make compliment arrays 
+                per temperature. If ``ntemps == 1`` and the real temperature count is greater 
+                than 1, it will just put all the inputs as a possible compliment. 
+                (default: ``1``)
             gibbs_ndim (int or np.ndarray, optional): If Gibbs sampling, this indicates
                 the true dimension. If given as an array, must have shape ``(ntemps, nwalkers)``.
                 See the tutorial for more information.
@@ -110,7 +112,6 @@ class RedBlueMove(Move, ABC):
                 "dimensions."
             )
 
-        # TODO: deal with more intensive acceptance fractions
         # Run any move-specific setup.
         self.setup(state.branches)
 
@@ -125,10 +126,12 @@ class RedBlueMove(Move, ABC):
 
         ntemps, nwalkers, _, _ = state.branches[all_branch_names[0]].shape
 
+        # get gibbs sampling information
         for (branch_names_run, inds_run) in self.gibbs_sampling_setup_iterator(
             all_branch_names
         ):
 
+            # setup proposals based on Gibbs sampling
             (
                 coords_going_for_proposal,
                 inds_going_for_proposal,
@@ -140,8 +143,11 @@ class RedBlueMove(Move, ABC):
             if not at_least_one_proposal:
                 continue
 
+            # prepare accepted fraction
             accepted_here = np.zeros((ntemps, nwalkers), dtype=bool)
             for split in range(self.nsplits):
+
+                # get split information
                 S1 = inds == split
                 num_total_here = np.sum(inds == split)
                 nwalkers_here = np.sum(S1[0])
@@ -149,6 +155,7 @@ class RedBlueMove(Move, ABC):
                 all_inds_shaped = all_inds[S1].reshape(ntemps, nwalkers_here)
                 fixed_inds_shaped = all_inds[~S1].reshape(ntemps, nwalkers_here)
 
+                # the actual inds for the subset
                 real_inds_subset = {
                     name: np.take_along_axis(
                         state.branches[name].inds, all_inds_shaped[:, :, None], axis=1,
@@ -156,6 +163,7 @@ class RedBlueMove(Move, ABC):
                     for name in inds_going_for_proposal
                 }
 
+                # inds including gibbs information
                 new_inds = {
                     name: np.take_along_axis(
                         inds_going_for_proposal[name],
@@ -165,6 +173,7 @@ class RedBlueMove(Move, ABC):
                     for name in inds_going_for_proposal
                 }
 
+                # actual coordinates of subset
                 temp_coords = {
                     name: np.take_along_axis(
                         coords_going_for_proposal[name],
@@ -174,25 +183,23 @@ class RedBlueMove(Move, ABC):
                     for name in coords_going_for_proposal
                 }
 
+                # prepare the sets for each model
+                # goes into the proposal as (ntemps * (nwalkers / subset size), nleaves_max, ndim)
                 sets = {
                     key: [
                         np.take_along_axis(
-                            state.branches[key].coords.reshape(
-                                (-1,) + state.branches[key].coords.shape[-2:]
-                            ),
-                            all_inds[inds == j][:, None, None],
-                            axis=0,
+                            state.branches[key].coords,
+                            all_inds[inds == j].reshape(ntemps, -1)[:, :, None, None],
+                            axis=1,
                         )
                         for j in range(self.nsplits)
                     ]
                     for key in state.branches
                 }
 
+                # setup s and c based on splits
                 s = {key: sets[key][split] for key in sets}
                 c = {key: sets[key][:split] + sets[key][split + 1 :] for key in sets}
-
-                # Get the move-specific proposal.
-                # Get the move-specific proposal.
 
                 # need to trick stretch proposal into using the dimenionality associated
                 # with Gibbs sampling if it is being used
@@ -204,14 +211,10 @@ class RedBlueMove(Move, ABC):
                         # nleaves * ndim
                         gibbs_ndim += np.prod(state.branches[brn].shape[-2:])
 
+                # Get the move-specific proposal.
                 q, factors = self.get_proposal(
-                    s, c, model.random, gibbs_ndim=gibbs_ndim
+                    s, c, model.random, gibbs_ndim=gibbs_ndim, ntemps=ntemps
                 )
-
-                for name in q:
-                    q[name] = q[name].reshape(
-                        (ntemps, -1) + state.branches[name].coords.shape[-2:]
-                    )
 
                 # account for gibbs sampling
                 self.cleanup_proposals_gibbs(branch_names_run, inds_run, q, temp_coords)
@@ -253,22 +256,9 @@ class RedBlueMove(Move, ABC):
                         )
                         for name in new_branch_supps
                     }
-                    for name in new_branch_supps:
-                        new_branch_supps[name].add_objects(
-                            {"inds_keep": new_inds[name]}
-                        )
 
                 else:
                     new_branch_supps = None
-                    if new_supps is not None:
-                        new_branch_supps = {
-                            name: BranchSupplimental(
-                                {"inds_keep": new_inds[name]},
-                                obj_contained_shape=new_inds[name].shape,
-                                copy=False,
-                            )
-                            for name in new_branch_supps
-                        }
 
                 # TODO: add supplimental prepare step
                 # if (new_branch_supps is not None or new_supps is not None) and self.adjust_supps_pre_logl_func is not None:
@@ -283,16 +273,6 @@ class RedBlueMove(Move, ABC):
                     branch_supps=new_branch_supps,
                 )
 
-                if (
-                    new_branch_supps is not None
-                    and not np.all(np.asarray(list(new_branch_supps.values())) == None)
-                ) or new_supps is not None:
-                    if new_branch_supps is not None:
-                        for name in new_branch_supps:
-                            new_branch_supps[name].remove_objects("inds_keep")
-                    elif new_supps is not None:
-                        pass  # del new_branch_supps
-
                 # catch and warn about nans
                 if np.any(np.isnan(logl)):
                     logl[np.isnan(logl)] = -1e300
@@ -304,11 +284,9 @@ class RedBlueMove(Move, ABC):
 
                 prev_logp = np.take_along_axis(state.log_prior, all_inds_shaped, axis=1)
 
-                # TODO: check about prior = - inf
                 # takes care of tempering
                 prev_logP = self.compute_log_posterior(prev_logl, prev_logp)
 
-                # TODO: think about factors in tempering
                 lnpdiff = factors + logP - prev_logP
 
                 keep = lnpdiff > np.log(model.random.rand(ntemps, nwalkers_here))
@@ -323,7 +301,7 @@ class RedBlueMove(Move, ABC):
                 accepted = (accepted.astype(int) + accepted_here.astype(int)).astype(
                     bool
                 )
-
+                # new state
                 new_state = State(
                     q,
                     log_like=logl,
@@ -334,6 +312,7 @@ class RedBlueMove(Move, ABC):
                     branch_supplimental=new_branch_supps,
                 )
 
+                # update state
                 state = self.update(
                     state, new_state, accepted_here, subset=all_inds_shaped
                 )
@@ -342,6 +321,7 @@ class RedBlueMove(Move, ABC):
             self.accepted += accepted
             self.num_proposals += 1
 
+        # temp swaps
         if self.temperature_control is not None:
             state = self.temperature_control.temper_comps(state)
 
