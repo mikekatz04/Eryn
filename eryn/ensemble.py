@@ -1414,7 +1414,7 @@ class _FunctionWrapper(object):
         args_in_add, kwargs_in_add = args_and_kwargs
 
         try:
-            args_in = args_in_add + self.args
+            args_in = args_in_add + list(self.args
             kwargs_in = {**kwargs_in_add, **self.kwargs}
             # TODO: this may have pickle issue with multiprocessing (kwargs_in)
 
