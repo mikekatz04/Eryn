@@ -177,11 +177,11 @@ class RedBlueMove(Move, ABC):
                 sets = {
                     key: [
                         np.take_along_axis(
-                            state.branches[key].coords,
-                            all_inds[inds == j].reshape(ntemps, nwalkers_here)[
-                                :, :, None, None
-                            ],
-                            axis=1,
+                            state.branches[key].coords.reshape(
+                                (-1,) + state.branches[key].coords.shape[-2:]
+                            ),
+                            all_inds[inds == j][:, None, None],
+                            axis=0,
                         )
                         for j in range(self.nsplits)
                     ]
@@ -196,23 +196,6 @@ class RedBlueMove(Move, ABC):
 
                 # need to trick stretch proposal into using the dimenionality associated
                 # with Gibbs sampling if it is being used
-
-                temp_inds_s = {
-                    name: new_inds[name][:].reshape(
-                        (ntemps, -1,) + state.branches[name].coords.shape[2:3]
-                    )
-                    for name in new_inds
-                }
-
-                temp_inds_c = {
-                    name: np.take_along_axis(
-                        state.branches[name].inds,
-                        all_inds[inds != split].reshape(ntemps, -1, 1),
-                        axis=1,
-                    )
-                    for name in state.branches_inds
-                }
-
                 gibbs_ndim = 0
                 for brn, ir in zip(branch_names_run, inds_run):
                     if ir is not None:
@@ -224,6 +207,11 @@ class RedBlueMove(Move, ABC):
                 q, factors = self.get_proposal(
                     s, c, model.random, gibbs_ndim=gibbs_ndim
                 )
+
+                for name in q:
+                    q[name] = q[name].reshape(
+                        (ntemps, -1) + state.branches[name].coords.shape[-2:]
+                    )
 
                 # account for gibbs sampling
                 self.cleanup_proposals_gibbs(branch_names_run, inds_run, q, temp_coords)

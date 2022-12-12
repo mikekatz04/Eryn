@@ -83,42 +83,34 @@ class StretchMove(RedBlueMove):
         logzz = factors / (ndims_old - 1.0)
         factors[:] = logzz * (ndims_new - 1.0)
 
-    def choose_c_vals(self, c, Nc, Ns, ntemps, random_number_generator, **kwargs):
-        rint = random_number_generator.randint(Nc, size=(ntemps, Ns,))
-        c_temp = self.xp.take_along_axis(c, rint[:, :, None, None], axis=1)
+    def choose_c_vals(self, c, Nc, Ns, random_number_generator, **kwargs):
+        rint = random_number_generator.randint(Nc, size=(Ns,))
+        c_temp = self.xp.take_along_axis(c, rint[:, None, None], axis=1)
         return c_temp
 
     def get_new_points(
         self, name, s, c_temp, Ns, branch_shape, branch_i, random_number_generator
     ):
-        ntemps, nwalkers, nleaves_max, ndim_here = branch_shape
+        nwalkers, nleaves_max, ndim_here = branch_shape
 
         if branch_i == 0:
             self.zz = (
-                (self.a - 1.0) * random_number_generator.rand(ntemps, Ns) + 1
+                (self.a - 1.0) * random_number_generator.rand(Ns) + 1
             ) ** 2.0 / self.a
 
         if self.periodic is not None:
-            diff = self.periodic.distance(
-                s.reshape(ntemps * nwalkers, nleaves_max, ndim_here),
-                c_temp.reshape(ntemps * nwalkers, nleaves_max, ndim_here),
-                names=[name],
-                xp=self.xp,
-            )[name].reshape(ntemps, nwalkers, nleaves_max, ndim_here)
+            diff = self.periodic.distance(s, c_temp, names=[name], xp=self.xp,)[name]
         else:
             diff = c_temp - s
 
-        temp = c_temp - (diff) * self.zz[:, :, None, None]
+        temp = c_temp - (diff) * self.zz[:, None, None]
 
         if self.periodic is not None:
-            temp = self.periodic.wrap(
-                temp.reshape(ntemps * nwalkers, nleaves_max, ndim_here),
-                names=[name],
-                xp=self.xp,
-            )[name].reshape(ntemps, nwalkers, nleaves_max, ndim_here)
+            temp = self.periodic.wrap(temp, names=[name], xp=self.xp,)[name]
 
         if self.use_gpu and not self.return_gpu:
             temp = temp.get()
+
         return temp
 
     def get_proposal(self, s_all, c_all, random, gibbs_ndim=None, **kwargs):
@@ -149,7 +141,7 @@ class StretchMove(RedBlueMove):
 
             c = [self.xp.asarray(c_tmp) for c_tmp in c_all[name]]
 
-            ntemps, nwalkers, nleaves_max, ndim_here = s.shape
+            nwalkers, nleaves_max, ndim_here = s.shape
             c = self.xp.concatenate(c, axis=1)
 
             Ns, Nc = s.shape[1], c.shape[1]
@@ -165,7 +157,7 @@ class StretchMove(RedBlueMove):
                 if Ns_check != Ns:
                     raise ValueError("Different number of walkers across models.")
 
-            c_temp = self.choose_c_vals(c, Nc, Ns, ntemps, random_number_generator)
+            c_temp = self.choose_c_vals(c, Nc, Ns, random_number_generator)
 
             newpos[name] = self.get_new_points(
                 name, s, c_temp, Ns, s.shape, i, random_number_generator
