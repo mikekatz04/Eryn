@@ -62,7 +62,7 @@ class GroupStretchMove(GroupMove):
 
         """
         random_number_generator = random if not self.use_gpu else self.xp.random
-
+        self.zz = None
         newpos = {}
         for i, name in enumerate(s_all):
             s = self.xp.asarray(s_all[name])
