@@ -12,7 +12,7 @@ from .stretch import StretchMove
 __all__ = ["GroupStretchMove"]
 
 
-class GroupStretchMove(GroupMove):
+class GroupStretchMove(GroupMove, StretchMove):
     """Affine-Invariant Proposal
 
     A `Goodman & Weare (2010)
@@ -28,7 +28,7 @@ class GroupStretchMove(GroupMove):
     """
 
     def __init__(self, **kwargs):
-        GroupStretchMove.__init__(self, **kwargs)
+        GroupMove.__init__(self, **kwargs)
         StretchMove.__init__(self, **kwargs)
 
     def adjust_factors(self, factors, ndims_old, ndims_new):
@@ -36,7 +36,7 @@ class GroupStretchMove(GroupMove):
         logzz = factors / (ndims_old - 1.0)
         factors[:] = logzz * (ndims_new - 1.0)
 
-    def get_proposal(self, s_all, random, gibbs_ndim=None, **kwargs):
+    def get_proposal(self, s_all, random, gibbs_ndim=None, s_inds_all=None, **kwargs):
         """Generate stretch proposal
 
         # TODO: add log proposal from ptemcee
@@ -66,11 +66,15 @@ class GroupStretchMove(GroupMove):
         newpos = {}
         for i, name in enumerate(s_all):
             s = self.xp.asarray(s_all[name])
+            if s_inds_all is not None:
+                s_inds = self.xp.asarray(s_inds_all[name])
+            else:
+                s_inds = None
 
             ntemps, nwalkers, nleaves_max, ndim_here = s.shape
 
             Ns = nwalkers
-            c_temp = self.choose_c_vals(name, s)
+            c_temp = self.choose_c_vals(name, s, s_inds=s_inds)
 
             # gets rid of any values of exactly zero
             ndim_temp = nleaves_max * ndim_here

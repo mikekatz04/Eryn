@@ -66,6 +66,7 @@ class Move(object):
         prevent_swaps=False,
         skip_supp_names_update=[],
         is_rj=False,
+        **kwargs
     ):
         # store all information
         self.temperature_control = temperature_control
