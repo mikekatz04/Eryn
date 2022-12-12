@@ -92,8 +92,8 @@ class MHMove(Move):
             # Get the move-specific proposal.
             q, factors = self.get_proposal(
                 coords_going_for_proposal,
-                inds_going_for_proposal,
                 model.random,
+                branches_inds=inds_going_for_proposal,
                 supps=new_supps,
                 branch_supps=new_branch_supps,
             )
@@ -151,7 +151,7 @@ class MHMove(Move):
             self.accepted += accepted
             self.num_proposals += 1
 
-        # temperature swaps 
+        # temperature swaps
         if self.temperature_control is not None:
             state = self.temperature_control.temper_comps(state)
 
