@@ -52,10 +52,13 @@ class MHMove(Move):
 
         """
 
+        # get all branch names for gibbs setup
         all_branch_names = list(state.branches.keys())
 
+        # get initial shape information
         ntemps, nwalkers, _, _ = state.branches[all_branch_names[0]].shape
 
+        # iterate through gibbs setup
         for (branch_names_run, inds_run) in self.gibbs_sampling_setup_iterator(
             all_branch_names
         ):
@@ -69,11 +72,11 @@ class MHMove(Move):
                 new_branch_supps = None
 
             if state.supplimental is not None:
-                # TODO: should there be a copy?
                 new_supps = deepcopy(state.supplimental)
             else:
                 new_supps = None
 
+            # setup information according to gibbs info
             (
                 coords_going_for_proposal,
                 inds_going_for_proposal,
@@ -82,6 +85,7 @@ class MHMove(Move):
                 branch_names_run, inds_run, state.branches_coords, state.branches_inds
             )
 
+            # if no walkers are actually being proposed
             if not at_least_one_proposal:
                 continue
 
@@ -114,23 +118,21 @@ class MHMove(Move):
                 branch_supps=new_branch_supps,
             )
 
-            if new_branch_supps is not None:
-                for key, value in new_branch_supps.items():
-                    if isinstance(value, dict) and "inds_keep" in value:
-                        del value["inds_keep"]
-
+            # get log posterior
             logP = self.compute_log_posterior(logl, logp)
 
+            # get previous information
             prev_logl = state.log_like
 
             prev_logp = state.log_prior
 
-            # TODO: check about prior = - inf
             # takes care of tempering
             prev_logP = self.compute_log_posterior(prev_logl, prev_logp)
 
+            # difference
             lnpdiff = factors + logP - prev_logP
 
+            # draw against acceptance fraction
             accepted = lnpdiff > np.log(model.random.rand(ntemps, nwalkers))
 
             # Update the parameters
@@ -149,6 +151,7 @@ class MHMove(Move):
             self.accepted += accepted
             self.num_proposals += 1
 
+        # temperature swaps 
         if self.temperature_control is not None:
             state = self.temperature_control.temper_comps(state)
 

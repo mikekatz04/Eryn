@@ -16,7 +16,7 @@ class RedBlueMove(Move, ABC):
     An abstract red-blue ensemble move with parallelization as described in
     `Foreman-Mackey et al. (2013) <https://arxiv.org/abs/1202.3665>`_.
 
-    # TODO: think about this for reversible jump.
+    This class is heavily based on the original from ``emcee``. 
 
     Args:
         nsplits (int, optional): The number of sub-ensembles to use. Each
@@ -26,7 +26,7 @@ class RedBlueMove(Move, ABC):
 
         randomize_split (bool, optional): Randomly shuffle walkers between
             sub-ensembles. The same number of walkers will be assigned to
-            each sub-ensemble on each iteration. By default, this is ``True``.
+            each sub-ensemble on each iteration. (default: ``True``)
 
         live_dangerously (bool, optional): By default, an update will fail with
             a ``RuntimeError`` if the number of walkers is smaller than twice
@@ -35,24 +35,13 @@ class RedBlueMove(Move, ABC):
             switching between the stretch move and, for example, a
             Metropolis-Hastings step. If you want to do this and suppress the
             error, set ``live_dangerously = True``. Thanks goes (once again)
-            to @dstndstn for this wonderful terminology.
-        gibbs_sampling_leaves_per (int, optional): Number of individual leaves
-            to sample over during Gibbs Sampling. ``None`` means there will be
-            no Gibbs sampling. Currently, if you specify anything other than ``None``,
-            it will split up different branches automatically and then Gibbs sample
-            over each branch indivudally. Default is ``None``.
-
-    ``kwargs`` are passed to :class:`Move` class.
+            to @dstndstn for this wonderful terminology. (default: ``False``)
+        **kwargs (dict, optional): Kwargs for parent classes.
 
     """
 
     def __init__(
-        self,
-        nsplits=2,
-        randomize_split=True,
-        gibbs_sampling_leaves_per=None,
-        live_dangerously=False,
-        **kwargs
+        self, nsplits=2, randomize_split=True, live_dangerously=False, **kwargs
     ):
 
         # TODO: have each move keep track of its own acceptance fraction
@@ -61,40 +50,31 @@ class RedBlueMove(Move, ABC):
         self.live_dangerously = live_dangerously
         self.randomize_split = randomize_split
 
-        if gibbs_sampling_leaves_per is not None:
-            if (
-                not isinstance(gibbs_sampling_leaves_per, int)
-                or gibbs_sampling_leaves_per < 1
-            ):
-                raise ValueError(
-                    "gibbs_sampling_leaves_per must be an integer greater than zero."
-                )
-
-        self.gibbs_sampling_leaves_per = gibbs_sampling_leaves_per
-
     def setup(self, coords):
         """Any setup necessary for the proposal"""
         pass
 
     @classmethod
-    def get_proposal(self, sample, complement, random, inds=None):
+    def get_proposal(self, sample, complement, random, gibbs_ndim=None):
         """Make a proposal
 
         Args:
             sample (dict): Keys are ``branch_names``. Values are
-                np.ndarray[subset size, nleaves_max, ndim]. This is the subset
-                whose ``coords`` are being proposed.
+                np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. 
             complement (dict): Keys are ``branch_names``. Values are lists of other
-                other np.ndarray[nwalkers - subset size, nleaves_max, ndim] from
+                other np.ndarray[ntemps, nwalkers - subset size, nleaves_max, ndim] from
                 all other subsets. This is the compliment whose ``coords`` are
                 used to form the proposal for the ``sample`` subset.
             random (object): Current random state of the sampler.
-            inds (dict, optional): # TODO check this.
+            gibbs_ndim (int or np.ndarray, optional): If Gibbs sampling, this indicates
+                the true dimension. If given as an array, must have shape ``(ntemps, nwalkers)``.
+                See the tutorial for more information.
+                (default: ``None``)
 
         Returns:
             tuple: Tuple contained proposal information.
                 First entry is the new coordinates as a dictionary with keys
-                as ``branch_names`` and values as np.ndarray[subset size, ndim * nleaves_max]
+                as ``branch_names`` and values as np.ndarray[ntemps, nwalkers, nleaves_max, ndim]
                 of new coordinates. Second entry is the factors associated with the
                 proposal necessary for detailed balance. This is effectively
                 any term in the detailed balance fraction. +log of factors if

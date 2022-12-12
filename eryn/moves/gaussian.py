@@ -10,20 +10,24 @@ __all__ = ["GaussianMove"]
 class GaussianMove(MHMove):
     """A Metropolis step with a Gaussian proposal function.
 
+    This class is heavily based on the same class in ``emcee``. 
+
     Args:
-        cov: The covariance of the proposal function. This can be a scalar,
+        cov (dict): The covariance of the proposal function. The keys are branch names and the 
+            values are covariance information. This information can be provided as a scalar,
             vector, or matrix and the proposal will be assumed isotropic,
-            axis-aligned, or general respectively.
-        mode (Optional): Select the method used for updating parameters. This
+            axis-aligned, or general, respectively.
+        mode (str, optional): Select the method used for updating parameters. This
             can be one of ``"vector"``, ``"random"``, or ``"sequential"``. The
             ``"vector"`` mode updates all dimensions simultaneously,
             ``"random"`` randomly selects a dimension and only updates that
             one, and ``"sequential"`` loops over dimensions and updates each
-            one in turn.
-        factor (Optional[float]): If provided the proposal will be made with a
+            one in turn. (default: ``"vector"``)
+        factor (float, optional): If provided the proposal will be made with a
             standard deviation uniformly selected from the range
             ``exp(U(-log(factor), log(factor))) * cov``. This is invalid for
-            the ``"vector"`` mode.
+            the ``"vector"`` mode. (default: ``None``)
+        **kwargs (dict, optional): Kwargs for parent classes. (default: ``{}``)
 
     Raises:
         ValueError: If the proposal dimensions are invalid or if any of any of
@@ -62,30 +66,46 @@ class GaussianMove(MHMove):
 
         super(GaussianMove, self).__init__(**kwargs)
 
-    def get_proposal(self, branches_coords, branches_inds, random, **kwargs):
+    def get_proposal(self, branches_coords, random, branches_inds=None, **kwargs):
         """Get proposal from Gaussian distribution
 
         Args:
             branches_coords (dict): Keys are ``branch_names`` and values are
-                np.ndarray[nwalkers, nleaves_max, ndim] representing
+                np.ndarray[ntemps, nwalkers, nleaves_max, ndim] representing
                 coordinates for walkers.
-            branches_inds (dict): Keys are ``branch_names`` and values are
-                np.ndarray[nwalkers, nleaves_max] representing which
-                leaves are currently being used.
             random (object): Current random state object.
+            branches_inds (dict, optional): Keys are ``branch_names`` and values are
+                np.ndarray[ntemps, nwalkers, nleaves_max] representing which
+                leaves are currently being used. (default: ``None``)
+            **kwargs (ignored): This is added for compatibility. It is ignored in this function.
+
+        Returns:
+            tuple: (Proposed coordinates, factors) -> (dict, np.ndarray)
 
         """
 
+        # initialize ouput
         q = {}
-        for name, coords, inds in zip(
-            branches_coords.keys(), branches_coords.values(), branches_inds.values()
-        ):
-            ntemps, nwalkers, _, _ = coords.shape
+        for name, coords in zip(branches_coords.keys(), branches_coords.values()):
+            ntemps, nwalkers, nleaves_max, ndim = coords.shape
+
+            # setup inds accordingly
+            if branches_inds is None:
+                inds = np.ones((ntemps, nwalkers, nleaves_max), dtype=bool)
+            else:
+                inds = branches_inds[name]
+
+            # get the proposal for this branch
             proposal_fn = self.all_proposal[name]
             inds_here = np.where(inds == True)
 
+            # copy coords
             q[name] = coords.copy()
+
+            # get new points
             new_coords, _ = proposal_fn(coords[inds_here], random)
+
+            # put into coords in proper location
             q[name][inds_here] = new_coords.copy()
 
         return q, np.zeros((ntemps, nwalkers))
@@ -94,6 +114,7 @@ class GaussianMove(MHMove):
 class _isotropic_proposal(object):
 
     allowed_modes = ["vector", "random", "sequential"]
+    # TODO: document this?
 
     def __init__(self, scale, factor, mode):
         self.index = 0

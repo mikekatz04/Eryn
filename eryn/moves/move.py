@@ -46,6 +46,7 @@ class Move(object):
             :class:`eryn.state.BranchSupplimental`,
             to skip when updating states (:func:`Move.update`). This is useful if a 
             large amount of memory is stored in the branch supplimentals.
+        is_rj (bool, optional): If using RJ, this should be ``True``. (default: ``False``)
 
     Raises:
         ValueError: Incorrect inputs.
@@ -209,9 +210,11 @@ class Move(object):
         for (branch_names_run, inds_run) in zip(
             self.branch_names_run_all, self.inds_run_all
         ):
+            # adjust if branch_names_run is None
             if branch_names_run is None:
                 branch_names_run = all_branch_names
                 inds_run = [None for _ in branch_names_run]
+            # yield to the iterator
             yield (branch_names_run, inds_run)
 
     def setup_proposals(
@@ -224,8 +227,8 @@ class Move(object):
         Args:
             branch_names_run (list): List of branch names to run concurrently.
             inds_run (list): List of ``inds`` arrays including Gibbs sampling information.
-            branches_coords (list): List of coordinate arrays for all branches.
-            branches_inds (list): List of ``inds`` arrays for all branches.
+            branches_coords (dict): Dictionary of coordinate arrays for all branches.
+            branches_inds (dict): Dictionary of ``inds`` arrays for all branches.
 
         Returns:
             tuple:  (coords, inds, at_least_one_proposal)
@@ -264,6 +267,15 @@ class Move(object):
         )
 
     def cleanup_proposals_gibbs(self, branch_names_run, inds_run, q, branches_coords):
+        """Set all not Gibbs-sampled parameters back
+        
+        Args:
+            branch_names_run (list): List of branch names to run concurrently.
+            inds_run (list): List of ``inds`` arrays including Gibbs sampling information.
+            q (dict): Dictionary of new coordinate arrays for all branches.
+            branches_coords (dict): Dictionary of old coordinate arrays for all branches.
+            
+        """
         # add back any parameters that are fixed for this round
         for bnr, ir in zip(branch_names_run, inds_run):
             if ir is not None:
@@ -275,6 +287,15 @@ class Move(object):
                 q[key] = value
 
     def fix_logp_gibbs(self, branch_names_run, inds_run, logp, inds):
+        """Set any walker with no leaves to have logp = -np.inf
+        
+        Args:
+            branch_names_run (list): List of branch names to run concurrently.
+            inds_run (list): List of ``inds`` arrays including Gibbs sampling information.
+            logp (np.ndarray): Log of the prior going into final posterior computation.
+            inds (dict): Dictionary of ``inds`` arrays for all branches.
+            
+        """
         total_leaves = np.zeros_like(logp)
         for bnr, ir in zip(branch_names_run, inds_run):
             if ir is not None:
@@ -283,7 +304,7 @@ class Move(object):
                 # flatten coordinates to the leaves dimension
                 ir_keep = ir.astype(int).sum(axis=-1).astype(bool)
                 tmp[:, :, ir_keep] = True
-                # make sure leavdes that are actually not there are not counted
+                # make sure leaves that are actually not there are not counted
                 tmp[~inds[bnr]] = False
 
             else:
@@ -291,6 +312,7 @@ class Move(object):
 
             total_leaves += tmp.sum(axis=-1)
 
+        # adjust
         logp[total_leaves == 0] = -np.inf
 
     @property
@@ -390,6 +412,12 @@ class Move(object):
                 np.arange(old_state.log_like.shape[1]), (old_state.log_like.shape[0], 1)
             )
 
+        # each computation is similar
+        # 1. Take subset of values from old information (take_along_axis)
+        # 2. Set new information
+        # 3. Combine into a new temporary quantity based on accepted or not
+        # 4. Put new combined subset back into full arrays (put_along_axis)
+
         # take_along_axis is necessary to do this all in higher dimensions
         accepted_temp = np.take_along_axis(accepted, subset, axis=1)
 
@@ -463,9 +491,12 @@ class Move(object):
 
                     tmp = {}
                     for key in old_branch_supplimental:
+                        # need to check to see if we should skip anything
                         if key in self.skip_supp_names_update:
                             continue
                         accepted_temp_here = accepted_temp.copy()
+
+                        # have adjust if it is an object array or a regular array
                         if new_branch_supplimental[key].dtype.name != "object":
                             for _ in range(
                                 new_branch_supplimental[key].ndim
@@ -475,6 +506,7 @@ class Move(object):
                                     accepted_temp_here, (-1,)
                                 )
 
+                        # adjust for GPUs
                         try:
                             tmp[key] = new_branch_supplimental[key] * (
                                 accepted_temp_here
@@ -516,8 +548,11 @@ class Move(object):
 
             temp_change_suppliment = {}
             for name in old_suppliment:
+                # make sure to get rid of specific supps if requested
                 if name in self.skip_supp_names_update:
                     continue
+
+                # adjust if it is not an object array
                 if old_suppliment[name].dtype.name != "object":
                     for _ in range(old_suppliment[name].ndim - accepted_temp_here.ndim):
                         accepted_temp_here = np.expand_dims(accepted_temp_here, (-1,))
