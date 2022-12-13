@@ -324,7 +324,7 @@ applies if <code class="docutils literal notranslate"><span class="pre">plot_gen
 <li><p><strong>periodic</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code>. Values are dictionaries
 that have (key: value) pairs as (index to parameter: period). Periodic
 parameters are treated as having periodic boundary conditions in proposals.</p></li>
-<li><p><strong>update_fn</strong> (<em>callable</em><em>, </em><em>optional</em>) – <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.utils.updates.AdjustStretchProposalScale</span></code>
+<li><p><strong>update_fn</strong> (<em>callable</em><em>, </em><em>optional</em>) – <a class="reference internal" href="utils.html#eryn.utils.AdjustStretchProposalScale" title="eryn.utils.updates.AdjustStretchProposalScale"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.utils.updates.AdjustStretchProposalScale</span></code></a>
 object that allows the user to update the sampler in any preferred way
 every <code class="docutils literal notranslate"><span class="pre">update_iterations</span></code> sampler iterations. The callable must have signature:
 <code class="docutils literal notranslate"><span class="pre">(sampler</span> <span class="pre">iteration,</span> <span class="pre">last</span> <span class="pre">sample</span> <span class="pre">state</span> <span class="pre">object,</span> <span class="pre">EnsembleSampler</span> <span class="pre">object)</span></code>.</p></li>
@@ -332,7 +332,7 @@ every <code class="docutils literal notranslate"><span class="pre">update_iterat
 updates using <code class="docutils literal notranslate"><span class="pre">update_fn</span></code>. Updates are only performed at the thinning rate.
 If <code class="docutils literal notranslate"><span class="pre">thin_by&gt;1</span></code> when <a class="reference internal" href="#eryn.ensemble.EnsembleSampler.run_mcmc" title="eryn.ensemble.EnsembleSampler.run_mcmc"><code class="xref py py-func docutils literal notranslate"><span class="pre">EnsembleSampler.run_mcmc()</span></code></a> is used, the sampler
 is updated every <code class="docutils literal notranslate"><span class="pre">thin_by</span> <span class="pre">*</span> <span class="pre">update_iterations</span></code> iterations.</p></li>
-<li><p><strong>stopping_fn</strong> (<em>callable</em><em>, </em><em>optional</em>) – <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.utils.stopping.Stopping</span></code> object that
+<li><p><strong>stopping_fn</strong> (<em>callable</em><em>, </em><em>optional</em>) – <a class="reference internal" href="utils.html#eryn.utils.Stopping" title="eryn.utils.stopping.Stopping"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.utils.stopping.Stopping</span></code></a> object that
 allows the user to end the sampler if specified criteria are met.
 The callable must have signature:
 <code class="docutils literal notranslate"><span class="pre">(sampler</span> <span class="pre">iteration,</span> <span class="pre">last</span> <span class="pre">sample</span> <span class="pre">state</span> <span class="pre">object,</span> <span class="pre">EnsembleSampler</span> <span class="pre">object)</span></code>.</p></li>

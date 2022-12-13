@@ -6,8 +6,18 @@ import numpy as np
 
 
 class Update(ABC, object):
+    """Update the sampler."""
+
     @classmethod
     def __call__(self, iter, last_sample, sampler):
+        """Call update function.
+
+        Args:
+            iter (int): Iteration of the sampler.
+            last_sample (obj): Last state of sampler (:class:`eryn.state.State`).
+            sampler (obj): Full sampler oject (:class:`eryn.ensemble.EnsembleSampler`).
+
+        """
         raise NotImplementedError
 
 
