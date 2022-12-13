@@ -31,6 +31,11 @@ Implemented MH Moves
     :show-inheritance:
     :inherited-members:
 
+.. autoclass:: eryn.moves.DistributionGenerate
+    :members:
+    :show-inheritance:
+    :inherited-members:
+
 Red-Blue Moves
 ~~~~~~~~~~~~~~~~~~
 
@@ -63,7 +68,7 @@ Reversible Jump Parent Class
 Implemented Reversible Jump Moves
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: eryn.moves.PriorGenerate
+.. autoclass:: eryn.moves.DistributionGenerateRJ
     :members:
     :show-inheritance:
     :inherited-members:

@@ -3,10 +3,10 @@ Priors
 
 Prior distributions.
 
-Prior Container
-~~~~~~~~~~~~~~~~
+Probability Distribution Container
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: eryn.prior.PriorContainer
+.. autoclass:: eryn.prior.ProbDistContainer
     :members:
     :show-inheritance:
     :inherited-members:

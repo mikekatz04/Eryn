@@ -15,7 +15,7 @@ except (ModuleNotFoundError, ImportError):
     gpu_available = False
 
 from .rj import ReversibleJump
-from ..prior import PriorContainer
+from ..prior import ProbDistContainer
 from ..utils.utility import groups_from_inds
 
 ___ = ["MultipleTryMove"]
@@ -25,7 +25,7 @@ class MultipleTryMove:
     """Generate multiple proposal tries.
 
     Args:
-        priors (object): :class:`PriorContainer` object that has ``logpdf``
+        priors (object): :class:`ProbDistContainer` object that has ``logpdf``
             and ``rvs`` methods.
 
     """

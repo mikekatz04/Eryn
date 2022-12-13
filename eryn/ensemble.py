@@ -8,10 +8,10 @@ from copy import deepcopy
 
 from .backends import Backend, HDFBackend
 from .model import Model
-from .moves import StretchMove, TemperatureControl, PriorGenerateRJ, GaussianMove
+from .moves import StretchMove, TemperatureControl, DistributionGenerateRJ, GaussianMove
 from .pbar import get_progress_bar
 from .state import State
-from .prior import PriorContainer
+from .prior import ProbDistContainer
 from .utils import PlotContainer
 from .utils import PeriodicContainer
 from .utils.utility import groups_from_inds
@@ -76,11 +76,11 @@ class EnsembleSampler(object):
             1) A dictionary with keys as int or tuple containing the int or tuple of int
             that describe the parameter number over which to assess the prior, and values that
             are prior probability distributions that must have a ``logpdf`` class method.
-            2) A :class:`eryn.prior.PriorContainer` object.
+            2) A :class:`eryn.prior.ProbDistContainer` object.
             3) A dictionary with keys that are ``branch_names`` and values that are dictionaries for
             each branch as described for (1).
             4) A dictionary with keys that are ``branch_names`` and values are
-            :class:`eryn.prior.PriorContainer` objects.
+            :class:`eryn.prior.ProbDistContainer` objects.
         provide_groups (bool, optional): If ``True``, provide groups as described in ``log_like_fn`` above.
             A group parameter is added for each branch. (default: ``False``)
         provide_supplimental (bool, optional): If ``True``, it will provide keyword arguments to 
@@ -108,10 +108,10 @@ class EnsembleSampler(object):
             (default: ``None``)
         rj_moves (list or object, optional): If ``None`` or ``False``, reversible jump will not be included in the run.
             This can be a single move object, a list of moves,
-            or a "weighted" list of the form ``[(eryn.moves.PriorGenerateRJ(),
+            or a "weighted" list of the form ``[(eryn.moves.DistributionGenerateRJ(),
             0.1), ...]``. When running, the sampler will randomly select a
             move from this list (optionally with weights) for each proposal.
-            If ``True``, it defaults to :class:`PriorGenerateRJ`.
+            If ``True``, it defaults to :class:`DistributionGenerateRJ`.
             (default: ``None``)
         dr_moves (bool, optional): If ``None`` ot ``False``, delayed rejection when proposing "birth"
             of new components/models will be switched off for this run. Requires ``rj_moves`` set to ``True``.
@@ -335,8 +335,8 @@ class EnsembleSampler(object):
 
                 assert len(self.nleaves_min) == self.nbranches
 
-                # default to PriorGenerateRJ
-                rj_move = PriorGenerateRJ(
+                # default to DistributionGenerateRJ
+                rj_move = DistributionGenerateRJ(
                     self.priors,
                     self.nleaves_max,
                     self.nleaves_min,
@@ -540,22 +540,22 @@ class EnsembleSampler(object):
                                 )
                             )
                 self._priors = {
-                    name: PriorContainer(priors_temp)
+                    name: ProbDistContainer(priors_temp)
                     for name, priors_temp in priors.items()
                 }
 
-            elif isinstance(test, PriorContainer):
+            elif isinstance(test, ProbDistContainer):
                 self._priors = priors
 
             elif hasattr(test, "logpdf"):
-                self._priors = {"model_0": PriorContainer(priors)}
+                self._priors = {"model_0": ProbDistContainer(priors)}
 
             else:
                 raise ValueError(
-                    "priors dictionary items must be dictionaries with prior information or instances of the PriorContainer class."
+                    "priors dictionary items must be dictionaries with prior information or instances of the ProbDistContainer class."
                 )
 
-        elif isinstance(priors, PriorContainer):
+        elif isinstance(priors, ProbDistContainer):
             self._priors = {"model_0": priors}
 
         else:

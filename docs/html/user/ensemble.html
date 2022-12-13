@@ -253,11 +253,11 @@ If <code class="docutils literal notranslate"><span class="pre">N</span> <span c
 1) A dictionary with keys as int or tuple containing the int or tuple of int
 that describe the parameter number over which to assess the prior, and values that
 are prior probability distributions that must have a <code class="docutils literal notranslate"><span class="pre">logpdf</span></code> class method.
-2) A <a class="reference internal" href="prior.html#eryn.prior.PriorContainer" title="eryn.prior.PriorContainer"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.prior.PriorContainer</span></code></a> object.
+2) A <a class="reference internal" href="prior.html#eryn.prior.ProbDistContainer" title="eryn.prior.ProbDistContainer"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.prior.ProbDistContainer</span></code></a> object.
 3) A dictionary with keys that are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values that are dictionaries for
 each branch as described for (1).
 4) A dictionary with keys that are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are
-<a class="reference internal" href="prior.html#eryn.prior.PriorContainer" title="eryn.prior.PriorContainer"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.prior.PriorContainer</span></code></a> objects.</p></li>
+<a class="reference internal" href="prior.html#eryn.prior.ProbDistContainer" title="eryn.prior.ProbDistContainer"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.prior.ProbDistContainer</span></code></a> objects.</p></li>
 <li><p><strong>provide_groups</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, provide groups as described in <code class="docutils literal notranslate"><span class="pre">log_like_fn</span></code> above.
 A group parameter is added for each branch. (default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
 <li><p><strong>provide_supplimental</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, it will provide keyword arguments to
@@ -283,10 +283,10 @@ If <code class="docutils literal notranslate"><span class="pre">None</span></cod
 (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 <li><p><strong>rj_moves</strong> (<em>list</em><em> or </em><em>object</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">None</span></code> or <code class="docutils literal notranslate"><span class="pre">False</span></code>, reversible jump will not be included in the run.
 This can be a single move object, a list of moves,
-or a “weighted” list of the form <code class="docutils literal notranslate"><span class="pre">[(eryn.moves.PriorGenerateRJ(),</span>
+or a “weighted” list of the form <code class="docutils literal notranslate"><span class="pre">[(eryn.moves.DistributionGenerateRJ(),</span>
 <span class="pre">0.1),</span> <span class="pre">...]</span></code>. When running, the sampler will randomly select a
 move from this list (optionally with weights) for each proposal.
-If <code class="docutils literal notranslate"><span class="pre">True</span></code>, it defaults to <code class="xref py py-class docutils literal notranslate"><span class="pre">PriorGenerateRJ</span></code>.
+If <code class="docutils literal notranslate"><span class="pre">True</span></code>, it defaults to <code class="xref py py-class docutils literal notranslate"><span class="pre">DistributionGenerateRJ</span></code>.
 (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 <li><p><strong>dr_moves</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">None</span></code> ot <code class="docutils literal notranslate"><span class="pre">False</span></code>, delayed rejection when proposing “birth”
 of new components/models will be switched off for this run. Requires <code class="docutils literal notranslate"><span class="pre">rj_moves</span></code> set to <code class="docutils literal notranslate"><span class="pre">True</span></code>.

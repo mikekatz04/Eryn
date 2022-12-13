@@ -53,7 +53,7 @@ class RedBlueMove(Move, ABC):
         pass
 
     @classmethod
-    def get_proposal(self, sample, complement, random, ntemps=1, gibbs_ndim=None):
+    def get_proposal(self, sample, complement, random, gibbs_ndim=None):
         """Make a proposal
 
         Args:
@@ -64,10 +64,6 @@ class RedBlueMove(Move, ABC):
                 all other subsets. This is the compliment whose ``coords`` are
                 used to form the proposal for the ``sample`` subset.
             random (object): Current random state of the sampler.
-            ntemps (int, optional): Number of temperatures. This helps make compliment arrays 
-                per temperature. If ``ntemps == 1`` and the real temperature count is greater 
-                than 1, it will just put all the inputs as a possible compliment. 
-                (default: ``1``)
             gibbs_ndim (int or np.ndarray, optional): If Gibbs sampling, this indicates
                 the true dimension. If given as an array, must have shape ``(ntemps, nwalkers)``.
                 See the tutorial for more information.
@@ -213,7 +209,7 @@ class RedBlueMove(Move, ABC):
 
                 # Get the move-specific proposal.
                 q, factors = self.get_proposal(
-                    s, c, model.random, gibbs_ndim=gibbs_ndim, ntemps=ntemps
+                    s, c, model.random, gibbs_ndim=gibbs_ndim
                 )
 
                 # account for gibbs sampling

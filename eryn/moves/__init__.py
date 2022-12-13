@@ -13,8 +13,8 @@ from .stretch import StretchMove
 # from .walk import WalkMove
 from .tempering import TemperatureControl
 from .rj import ReversibleJump
-from .priorgenrj import PriorGenerateRJ
-from .priorgen import PriorGenerate
+from .distgenrj import DistributionGenerateRJ
+from .distgen import DistributionGenerate
 from .multipletry import MultipleTryMove
 from .group import GroupMove
 from .groupstretch import GroupStretchMove
@@ -26,8 +26,8 @@ __all__ = [
     "GaussianMove",
     "RedBlueMove",
     "StretchMove",
-    "PriorGenerateRJ",
-    "PriorGenerate",
+    "DistributionGenerateRJ",
+    "DistributionGenerate",
     "TemperatureControl",
     "ReversibleJump",
     "MultipleTryMove",

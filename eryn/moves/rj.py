@@ -6,7 +6,7 @@ from copy import deepcopy
 from ..state import State
 from .move import Move
 from .delayedrejection import DelayedRejection
-from .priorgen import PriorGenerate
+from .distgen import DistributionGenerate
 
 __all__ = ["ReversibleJump"]
 
@@ -59,7 +59,7 @@ class ReversibleJump(Move):
         if self.dr is not None and self.dr is not False:
             if self.dr is True:  # Check if it's a boolean, then we just generate
                 # from prior (kills the purpose, but yields "healther" chains)
-                dr_proposal = PriorGenerate(
+                dr_proposal = DistributionGenerate(
                     self.priors, temperature_control=self.temperature_control
                 )
             else:
@@ -82,15 +82,10 @@ class ReversibleJump(Move):
             all_inds (dict): Keys are ``branch_names``. Values are
                 np.ndarray[ntemps, nwalkers, nleaves_max]. These are the boolean
                 arrays marking which leaves are currently used within each walker.
-            all_inds_for_change (dict): Keys are ``branch_names``. Values are
-                dictionaries. These dictionaries have keys ``"+1"`` and ``"-1"``,
-                indicating waklkers that are adding or removing a leafm respectively.
-                The values for these dicts are ``int`` np.ndarray[..., 3]. The "..." indicates
-                the number of walkers in all temperatures that fall under either adding
-                or removing a leaf. The second dimension, 3, is the indexes into
-                the three-dimensional arrays within ``all_inds`` of the specific leaf
-                that is being added or removed from those leaves currently considered.
+            min_k_all (list): Minimum values of leaf ount for each model. Must have same order as ``all_cords``. 
+            max_k_all (list): Maximum values of leaf ount for each model. Must have same order as ``all_cords``. 
             random (object): Current random state of the sampler.
+            **kwargs (dict, optional): Kwargs for modularity. 
 
         Returns:
             tuple: Tuple containing proposal information.

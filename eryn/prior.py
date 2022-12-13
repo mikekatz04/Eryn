@@ -114,7 +114,7 @@ class MappedUniformDistribution:
         return self.max + (temp - 1.0) * self.diff
 
 
-class PriorContainer:
+class ProbDistContainer:
     """Container for holding and generating prior info
 
     Args:

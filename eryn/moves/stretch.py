@@ -90,10 +90,15 @@ class StretchMove(RedBlueMove):
         changing.
 
         Args:
-            c (np.ndarray): Possible compliment values with shape ``(..., nleaves_max, ndim)``.
+            c (np.ndarray): Possible compliment values with shape ``(ntemps, Nc, nleaves_max, ndim)``.
+            Nc (int): Length of the ``...``: the subset of walkers proposed to move now (usually nwalkers/2).
+            Ns (int): Number of generation points.
+            ntemps (int): Number of temperatures.
+            random_number_generator (object): Random state object.
+            **kwargs (ignored): Ignored here. For modularity.
 
         Returns:
-            np.ndarray: 
+            np.ndarray: Compliment values to use with shape ``(ntemps, Ns, nleaves_max, ndim)``.
         
         """
         rint = random_number_generator.randint(Nc, size=(ntemps, Ns,))
@@ -103,12 +108,34 @@ class StretchMove(RedBlueMove):
     def get_new_points(
         self, name, s, c_temp, Ns, branch_shape, branch_i, random_number_generator
     ):
+        """Get mew points in stretch move.
+        
+        Takes compliment and uses it to get new points for those being proposed.
+
+        Args:
+            name (str): Branch name.
+            s (np.ndarray): Points to be moved with shape ``(ntemps, Ns, nleaves_max, ndim)``. 
+            c (np.ndarray): Compliment to move points with shape ``(ntemps, Ns, nleaves_max, ndim)``.
+            Ns (int): Number to generate.  
+            branch_shape (tuple): Full branch shape.
+            branch_i (int): Which branch in the order is being run now. This ensures that the 
+                randomly generated quantity per walker remains the same over branches.
+            random_number_generator (object): Random state object.
+
+        Returns:
+            np.ndarray: New proposed points with shape ``(ntemps, Ns, nleaves_max, ndim)``.
+            
+        
+        """
         ntemps, nwalkers, nleaves_max, ndim_here = branch_shape
 
+        # only for the first branch do we draw for zz
         if branch_i == 0:
             self.zz = (
                 (self.a - 1.0) * random_number_generator.rand(ntemps, Ns) + 1
             ) ** 2.0 / self.a
+
+        # get proper distance
 
         if self.periodic is not None:
             diff = self.periodic.distance(
@@ -122,6 +149,8 @@ class StretchMove(RedBlueMove):
 
         temp = c_temp - (diff) * self.zz[:, :, None, None]
 
+        # wrap periodic values
+
         if self.periodic is not None:
             temp = self.periodic.wrap(
                 temp.reshape(ntemps * nwalkers, nleaves_max, ndim_here),
@@ -129,6 +158,7 @@ class StretchMove(RedBlueMove):
                 xp=self.xp,
             )[name].reshape(ntemps, nwalkers, nleaves_max, ndim_here)
 
+        # get from gpu or not
         if self.use_gpu and not self.return_gpu:
             temp = temp.get()
         return temp
@@ -144,7 +174,11 @@ class StretchMove(RedBlueMove):
             c_all (dict): Keys are ``branch_names`` and values are lists. These
                 lists contain all the complement array values.
             random (object): Random state object.
-            
+            gibbs_ndim (int or np.ndarray, optional): If Gibbs sampling, this indicates
+                the true dimension. If given as an array, must have shape ``(ntemps, nwalkers)``.
+                See the tutorial for more information.
+                (default: ``None``)
+
         Returns:
             tuple: First entry is new positions. Second entry is detailed balance factors.
 
@@ -156,9 +190,13 @@ class StretchMove(RedBlueMove):
         self.zz = None
         random_number_generator = random if not self.use_gpu else self.xp.random
         newpos = {}
+
+        # iterate over branches
         for i, name in enumerate(s_all):
+            # get points to move
             s = self.xp.asarray(s_all[name])
 
+            # get compliment possibilities
             c = [self.xp.asarray(c_tmp) for c_tmp in c_all[name]]
 
             ntemps, nwalkers, nleaves_max, ndim_here = s.shape
@@ -168,6 +206,7 @@ class StretchMove(RedBlueMove):
             # gets rid of any values of exactly zero
             ndim_temp = nleaves_max * ndim_here
 
+            # need to properly handle ndim
             if i == 0:
                 ndim = ndim_temp
                 Ns_check = Ns
@@ -177,8 +216,10 @@ class StretchMove(RedBlueMove):
                 if Ns_check != Ns:
                     raise ValueError("Different number of walkers across models.")
 
+            # get actual compliment values
             c_temp = self.choose_c_vals(c, Nc, Ns, ntemps, random_number_generator)
 
+            # use stretch to get new proposals
             newpos[name] = self.get_new_points(
                 name, s, c_temp, Ns, s.shape, i, random_number_generator
             )
