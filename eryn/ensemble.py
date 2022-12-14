@@ -1081,7 +1081,7 @@ class EnsembleSampler(object):
                 branch_supps_in = {}
 
         # determine groupings from inds
-        groups = groups_from_inds(inds)
+        groups = groups_from_inds(inds_copy)
 
         # need to map group inds properly
         # this is the unique group indexes
@@ -1109,7 +1109,7 @@ class EnsembleSampler(object):
             nwalkers_all = ntemps * nwalkers
 
             # fill x_values properly into dictionary
-            x_in[name] = coords_i[inds[name]]
+            x_in[name] = coords_i[inds_copy[name]]
 
             # prepare branch supplimentals for each branch
             if self.provide_supplimental:
@@ -1117,7 +1117,7 @@ class EnsembleSampler(object):
                     if branch_supps[name] is not None:
                         # index the branch supps
                         # it will carry in a dictionary of information
-                        branch_supps_in[name] = branch_supps[name][inds[name]]
+                        branch_supps_in[name] = branch_supps[name][inds_copy[name]]
                     else:
                         # fill with None if this branch does not have a supplimental
                         branch_supps_in[name] = None
@@ -1296,7 +1296,7 @@ class EnsembleSampler(object):
                             inds_back = branch_supps[name][:]["inds_keep"]
                             inds_back2 = branch_supps_in[name]["inds_keep"]
                         else:
-                            inds_back = inds[name]
+                            inds_back = inds_copy[name]
                             inds_back2 = slice(None)
                         try:
                             branch_supps[name][inds_back] = {
