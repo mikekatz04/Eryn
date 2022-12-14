@@ -152,8 +152,7 @@ class StretchMove(RedBlueMove):
 
         if self.periodic is not None:
             temp = self.periodic.wrap(
-                temp.reshape(ntemps * nwalkers, nleaves_max, ndim_here),
-                names=[name],
+                {name: temp.reshape(ntemps * nwalkers, nleaves_max, ndim_here)},
                 xp=self.xp,
             )[name].reshape(ntemps, nwalkers, nleaves_max, ndim_here)
 

@@ -108,6 +108,21 @@ class GaussianMove(MHMove):
             # put into coords in proper location
             q[name][inds_here] = new_coords.copy()
 
+        # handle periodic parameters
+        if self.periodic is not None:
+            q = self.periodic.wrap(
+                {
+                    name: tmp.reshape(ntemps * nwalkers, nleaves_max, ndim)
+                    for name, tmp in q.items()
+                },
+                xp=self.xp,
+            )
+
+            q = {
+                name: tmp.reshape(ntemps, nwalkers, nleaves_max, ndim)
+                for name, tmp in q.items()
+            }
+
         return q, np.zeros((ntemps, nwalkers))
 
 
