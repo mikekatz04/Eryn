@@ -139,9 +139,8 @@ class StretchMove(RedBlueMove):
 
         if self.periodic is not None:
             diff = self.periodic.distance(
-                s.reshape(ntemps * nwalkers, nleaves_max, ndim_here),
-                c_temp.reshape(ntemps * nwalkers, nleaves_max, ndim_here),
-                names=[name],
+                {name: s.reshape(ntemps * nwalkers, nleaves_max, ndim_here)},
+                {name: c_temp.reshape(ntemps * nwalkers, nleaves_max, ndim_here)},
                 xp=self.xp,
             )[name].reshape(ntemps, nwalkers, nleaves_max, ndim_here)
         else:
