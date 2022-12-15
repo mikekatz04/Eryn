@@ -417,8 +417,10 @@ class TemperatureControl(object):
             x_temp = {name: np.copy(x[name]) for name in x}
             if inds is not None:
                 inds_temp = {name: np.copy(inds[name]) for name in inds}
-            # if branch_supps is not None:
-            #    branch_supps_temp = {name: deepcopy(branch_supps[name]) for name in branch_supps}
+            if branch_supps is not None:
+                branch_supps_temp = {
+                    name: deepcopy(branch_supps[name]) for name in branch_supps
+                }
 
             logl_temp = np.copy(logl[i, iperm[sel]])
             logp_temp = np.copy(logp[i, iperm[sel]])
@@ -441,8 +443,12 @@ class TemperatureControl(object):
                 # that is heavy to copy
                 if branch_supps[name] is not None:
 
-                    # where the inds are alive in the current permutation
-                    inds_i = np.where(inds[name][i][iperm[sel]])
+                    branch_supps[name][i, iperm[sel], :] = branch_supps[name][
+                        i - 1, i1perm[sel], :
+                    ]
+                    """# where the inds are alive in the current permutation
+                    # need inds_temp because that is the original
+                    inds_i = np.where(inds_temp[name][i][iperm[sel]])
 
                     # gives the associated walker for each spot in the permuted array
                     walker_inds_i = iperm[sel][inds_i[0]]
@@ -454,7 +460,8 @@ class TemperatureControl(object):
                     temp_inds_i = np.full_like(leaf_inds_i, i)
 
                     # repeat all for the i1 permutated temperature
-                    inds_i1 = np.where(inds[name][i - 1][i1perm[sel]])
+                    # need inds_temp because that is the original
+                    inds_i1 = np.where(inds_temp[name][i - 1][i1perm[sel]])
                     walker_inds_i1 = i1perm[sel][inds_i1[0]]
                     leaf_inds_i1 = inds_i1[1]
                     temp_inds_i1 = np.full_like(leaf_inds_i1, i - 1)
@@ -480,7 +487,7 @@ class TemperatureControl(object):
                         # make switch from i to i1
                         branch_supps[name].holder[name2][
                             (temp_inds_i1, walker_inds_i1, leaf_inds_i1)
-                        ] = bring_back_branch_supps
+                        ] = bring_back_branch_supps"""
 
             # switch everythin else from i1 to i
             logl[i, iperm[sel]] = logl[i - 1, i1perm[sel]]
@@ -500,10 +507,10 @@ class TemperatureControl(object):
                     inds[name][i - 1, i1perm[sel], :] = inds_temp[name][
                         i, iperm[sel], :
                     ]
-                # if branch_supps[name] is not None:
-                #    branch_supps[name][i - 1, i1perm[sel], :] = branch_supps_temp[name][
-                #        i, iperm[sel], :
-                #    ]
+                if branch_supps[name] is not None:
+                    branch_supps[name][i - 1, i1perm[sel], :] = branch_supps_temp[name][
+                        i, iperm[sel], :
+                    ]
 
             # switch the rest from i to i1
             logl[i - 1, i1perm[sel]] = logl_temp
