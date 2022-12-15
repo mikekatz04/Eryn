@@ -21,17 +21,21 @@ class MHMove(Move):
         Move.__init__(self, **kwargs)
         # TODO: check ndim stuff
 
-    def get_proposal(self, branches_coords, branches_inds, random):
-        """Get proposal from distribution for MH proposal
+    def get_proposal(self, branches_coords, random, branches_inds=None, **kwargs):
+        """Get proposal
 
         Args:
             branches_coords (dict): Keys are ``branch_names`` and values are
-                np.ndarray[nwalkers, nleaves_max, ndim] representing
+                np.ndarray[ntemps, nwalkers, nleaves_max, ndim] representing
                 coordinates for walkers.
-            branches_inds (dict): Keys are ``branch_names`` and values are
-                np.ndarray[nwalkers, nleaves_max] representing which
-                leaves are currently being used.
             random (object): Current random state object.
+            branches_inds (dict, optional): Keys are ``branch_names`` and values are
+                np.ndarray[ntemps, nwalkers, nleaves_max] representing which
+                leaves are currently being used. (default: ``None``)
+            **kwargs (ignored): This is added for compatibility. It is ignored in this function.
+
+        Returns:
+            tuple: (Proposed coordinates, factors) -> (dict, np.ndarray)
 
         Raises:
             NotImplementedError: If proposal is not implemented in a subclass.
