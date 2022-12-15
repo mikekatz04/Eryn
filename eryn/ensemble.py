@@ -1212,7 +1212,13 @@ class EnsembleSampler(object):
 
                     if inds_keep.shape[0] > 0:
                         # get parameters
+
                         params = params_in[branch_i][inds_keep]
+
+                        # if leaf count is constant and leaf count is 1
+                        # just give 1D parameters
+                        if not self.has_reversible_jump and params.shape[0] == 1:
+                            params = params[0]
 
                         # add them to the specific args for this Likelihood
                         arg_i[branch_i] = params
@@ -1330,7 +1336,6 @@ class EnsembleSampler(object):
     def swap_acceptance_fraction(self):
         """The fraction of proposed steps that were accepted"""
         # print(self.backend.iteration) # np.sum(self.backend.accepted)
-        # breakpoint()
         return self.backend.swaps_accepted / float(self.backend.iteration)
 
     @property
