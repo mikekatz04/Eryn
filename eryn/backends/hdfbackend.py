@@ -349,6 +349,7 @@ class HDFBackend(Backend):
                 move_group = g.create_group("moves")
                 # setup info and keys
                 self.move_keys = []
+                current_indices_move_keys = {}
                 for move in moves:
                     # get out of tuple if weights are given
                     if isinstance(move, tuple):
@@ -356,7 +357,20 @@ class HDFBackend(Backend):
 
                     # get the name of the class instance as a string
                     move_name = move.__class__.__name__
-                    single_move = move_group.create_group(move_name)
+
+                    # need to keep track how many times each type of move class has been used
+                    if move_name not in current_indices_move_keys:
+                        current_indices_move_keys[move_name] = 0
+
+                    else:
+                        current_indices_move_keys[move_name] += 1
+
+                    # get the full name including the index
+                    full_move_name = (
+                        move_name + f"_{current_indices_move_keys[move_name]}"
+                    )
+
+                    single_move = move_group.create_group(full_move_name)
 
                     # prepare information dictionary
                     single_move.create_dataset(
@@ -369,7 +383,7 @@ class HDFBackend(Backend):
                     )
 
                     # update the move keys to keep proper order
-                    self.move_keys.append(move_name)
+                    self.move_keys.append(full_move_name)
 
             else:
                 self.move_info = None
