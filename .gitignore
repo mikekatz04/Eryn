@@ -2,7 +2,6 @@ Eryn.egg-info/
 build/
 dist/
 __pycache__/
-_version.py
 .ipynb_checkpoints/
 *.h5
 *.hdf5
