@@ -192,7 +192,7 @@ class proposal_template(object):
 
     def AMMove(self, x0, rng):
         """
-        Adaptive Metropolis 
+        Adaptive Jump Proposal
         """
         new_pos = x0.copy()
         if self.hypermod:
@@ -200,13 +200,28 @@ class proposal_template(object):
         else:
             xtemp = x0.copy()
         
-        # x0 = x0[:-1]
         nw, nd = xtemp.shape
 
         # calculate covariance and make SVD decomposition
         try:
             
             U, S, v = np.linalg.svd(np.cov(xtemp, rowvar=False))
+
+            # adjust step size
+            prob = rng.random()
+
+            # large jump
+            if prob > 0.97:
+                scale = 10.0
+
+            # small jump
+            elif prob > 0.9:
+                scale = 0.2
+
+            # standard medium jump
+            else:
+                scale = 1.0
+            
             
             # go in eigen basis
             y = np.asarray([np.dot(U.T, xtemp[i]) for i in range(nw)])
