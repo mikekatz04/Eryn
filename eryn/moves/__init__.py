@@ -19,6 +19,7 @@ from .multipletry import MultipleTryMove
 from .group import GroupMove
 from .groupstretch import GroupStretchMove
 from .combine import CombineMove
+from .mymove import MyMove
 
 __all__ = [
     "Move",
@@ -34,4 +35,6 @@ __all__ = [
     "GroupMove",
     "GroupStretchMove",
     "CombineMove",
+    "MyMove"
+
 ]
