@@ -129,6 +129,8 @@ class GroupMove(Move, ABC):
 
         import time
 
+        # TODO: need to set it up so that it updates group after the proposal is made to the preproposal coords
+
         # st = time.perf_counter()
         # Check that the dimensions are compatible.
         ndim_total = 0
