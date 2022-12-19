@@ -801,7 +801,7 @@ class EnsembleSampler(object):
                             accepted,
                             rj_accepted=rj_accepted,
                             swaps_accepted=in_model_swaps,
-                            moves_accepted_fraction=moves_accepted_fraction,
+                            # moves_accepted_fraction=moves_accepted_fraction,
                         )
 
                     pbar.update(1)
