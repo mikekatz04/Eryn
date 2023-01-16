@@ -674,6 +674,9 @@ class HDFBackend(Backend):
                         in the reset function."""
                     )
 
+                if not hasattr(self, "move_keys"):
+                    self.move_keys = list(g["moves"])
+
                 # make sure they are the same length
                 assert len(moves_accepted_fraction) == len(self.move_keys)
 
