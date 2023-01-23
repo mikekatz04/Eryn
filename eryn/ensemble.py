@@ -1091,7 +1091,7 @@ class EnsembleSampler(object):
 
         # if all points are outside the prior
         if np.all(np.isinf(logp)):
-            warnings.warn(
+            print(
                 "All points input for the Likelihood have a log prior of -inf."
             )
             return np.full_like(logp, -1e300), None
