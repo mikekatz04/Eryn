@@ -63,7 +63,7 @@ class PlotContainer:
         self.parameter_transforms = parameter_transforms
         self.corner_kwargs = corner_kwargs
 
-        self.injection = self.backend.truth
+        self.injection = None#self.backend.truth
         if self.injection is not None and len(self.injection) == 0:
             self.injection = None
 
@@ -551,12 +551,12 @@ class PlotContainer:
             close_file = False
 
         # make a trace plot for each temperature
-        ntemps = info["log_prob"].shape[1]
+        ntemps = info["log_like"].shape[1]
         # Define a colormap
         clrs = plt.cm.viridis(np.linspace(0, 1, ntemps))
         for temp in range(ntemps):
             # get the samples to plot
-            post = info["log_prob"][:, temp, :].flatten()
+            post = info["log_like"][:, temp, :].flatten()
             # Build the figure.
             fig = plt.figure(figsize=(12, 6))
             plt.scatter(
@@ -995,7 +995,7 @@ class PlotContainer:
                 title_str += f"{key}: {info[key]}\n"
 
             elif key == "max logl":
-                title_str += f"{key}: {info['log_prob'].max()}\n"
+                title_str += f"{key}: {info['log_like'].max()}\n"
 
             elif key == "shapes":
                 for key, shape in info["shapes"].items():

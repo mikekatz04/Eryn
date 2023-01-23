@@ -100,6 +100,7 @@ class MHMove(Move):
                 branches_inds=inds_going_for_proposal,
                 supps=new_supps,
                 branch_supps=new_branch_supps,
+                inds_run=inds_run,
             )
 
             # account for gibbs sampling

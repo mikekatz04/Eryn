@@ -68,13 +68,19 @@ class MyMove(MHMove):
 
             q[name] = coords.copy()
             # self.get_bf_proposal instead of proposal_fn
-            by_temp = np.asarray([proposal_fn(coords[tt,:,0,:], random)[0] for tt in range(ntemps)])
+            by_temp = coords.copy()
+            running_coords = kwargs["inds_run"][0]
+            if running_coords is not None:
+                by_temp[:,:,running_coords] = np.asarray([proposal_fn(coords[tt,:,running_coords].T, random)[0] for tt in range(ntemps)])
+            else:
+                by_temp[:,:,0,:] = np.asarray([proposal_fn(coords[tt,:,0,:], random)[0] for tt in range(ntemps)])
+            
             # by_temp_check = by_temp.copy()
             if self.sky_per is not None:
                     correct_extrinsic_array(by_temp.reshape(ntemps * nwalkers, ndim_here) , self.sky_per)
             # print("check", np.sum(by_temp_check - by_temp))
 
-            q[name] = by_temp[:,:,None,:]
+            q[name] = by_temp.copy()
             
             if self.periodic is not None:
                 temp = q[name].copy()
@@ -211,7 +217,7 @@ class proposal_template(object):
             prob = rng.random()
 
             # large jump
-            if prob > 0.97:
+            if prob > 0.99:
                 scale = 10.0
 
             # small jump
