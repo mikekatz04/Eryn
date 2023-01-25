@@ -233,6 +233,10 @@ class TemperatureControl(object):
             This can become complicated when using the repeating proposal options, so the 
             user must be careful and verify constant temperatures in the backend.
             (default: -1)
+        permute (bool, optional): If ``True``, permute the walkers in each temperature during 
+            swaps. (default: ``True``)
+        skip_swap_supp_names (list, optional): List of strings that indicate supplimental keys that are not to be swapped.
+            (default: ``[]``)
     
 
     """
@@ -249,6 +253,8 @@ class TemperatureControl(object):
         adaptation_lag=10000,
         adaptation_time=100,
         stop_adaptation=-1,
+        permute=True,
+        skip_swap_supp_names=[],
     ):
         # force ndims and nleaves_max to be a list of ints
         if isinstance(ndims, int):
@@ -280,6 +286,8 @@ class TemperatureControl(object):
         self.nwalkers = nwalkers
         self.betas = betas
         self.ntemps = ntemps = len(betas)
+        self.permute = permute
+        self.skip_swap_supp_names = skip_swap_supp_names
 
         # number of times adapted
         self.time = 0
@@ -400,8 +408,14 @@ class TemperatureControl(object):
             dbeta = bi1 - bi
 
             # permute the indices for the walkers in each temperature to randomize swap positions
-            iperm = np.random.permutation(nwalkers)
-            i1perm = np.random.permutation(nwalkers)
+            if self.permute:
+                iperm = np.random.permutation(nwalkers)
+                i1perm = np.random.permutation(nwalkers)
+
+            # do not permute if desired
+            else:
+                iperm = np.arange(nwalkers)
+                i1perm = np.arange(nwalkers)
 
             # random draw that produces log of the acceptance fraction
             raccept = np.log(np.random.uniform(size=nwalkers))
@@ -442,10 +456,14 @@ class TemperatureControl(object):
                 # do something special for branch_supps in case in contains a large amount of data
                 # that is heavy to copy
                 if branch_supps[name] is not None:
-
-                    branch_supps[name][i, iperm[sel], :] = branch_supps[name][
+                    tmp = branch_supps[name][
                         i - 1, i1perm[sel], :
                     ]
+
+                    for key in self.skip_swap_supp_names:
+                        tmp.pop(key)
+
+                    branch_supps[name][i, iperm[sel], :] = tmp
                     """# where the inds are alive in the current permutation
                     # need inds_temp because that is the original
                     inds_i = np.where(inds_temp[name][i][iperm[sel]])
@@ -498,7 +516,10 @@ class TemperatureControl(object):
             if blobs is not None:
                 blobs[i, iperm[sel]] = blobs[i - 1, i1perm[sel]]
             if supps is not None:
-                supps[i, iperm[sel]] = supps[i - 1, i1perm[sel]]
+                tmp_supps = supps[i - 1, i1perm[sel]]
+                for key in self.skip_swap_supp_names:
+                    tmp_supps.pop(key)
+                supps[i, iperm[sel]] = tmp_supps
 
             # switch x from i to i1
             for name in x:
@@ -508,9 +529,13 @@ class TemperatureControl(object):
                         i, iperm[sel], :
                     ]
                 if branch_supps[name] is not None:
-                    branch_supps[name][i - 1, i1perm[sel], :] = branch_supps_temp[name][
+                    tmp = branch_supps_temp[name][
                         i, iperm[sel], :
                     ]
+
+                    for key in self.skip_swap_supp_names:
+                        tmp.pop(key)
+                    branch_supps[name][i - 1, i1perm[sel], :] = tmp
 
             # switch the rest from i to i1
             logl[i - 1, i1perm[sel]] = logl_temp
@@ -520,7 +545,10 @@ class TemperatureControl(object):
             if blobs is not None:
                 blobs[i - 1, i1perm[sel]] = blobs_temp
             if supps is not None:
-                supps[i - 1, i1perm[sel]] = supps_temp
+                tmp_supps = supps_temp
+                for key in self.skip_swap_supp_names:
+                    tmp_supps.pop(key)
+                supps[i - 1, i1perm[sel]] = tmp_supps
 
         return (x, logP, logl, logp, inds, blobs, supps, branch_supps)
 

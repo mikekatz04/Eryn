@@ -226,7 +226,7 @@ class RedBlueMove(Move, ABC):
                     # TODO: should there be a copy?
                     new_supps = BranchSupplimental(
                         state.supplimental.take_along_axis(all_inds_shaped, axis=1),
-                        obj_contained_shape=(ntemps, nwalkers),
+                        base_shape=(ntemps, nwalkers),
                         copy=False,
                     )
 

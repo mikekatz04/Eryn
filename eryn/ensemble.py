@@ -1225,7 +1225,7 @@ class EnsembleSampler(object):
                         if self.provide_supplimental:
                             if supps is not None:
                                 # supps are specific to each group
-                                kwarg_i["supps"] = supps_in[group_i]
+                                kwarg_i["supps"] = {key: supps_in[key][group_i] for key in supps_in}
                             if branch_supps is not None:
                                 # make sure there is a dictionary ready in this kwarg dictionary
                                 if "branch_supps" not in kwarg_i:
