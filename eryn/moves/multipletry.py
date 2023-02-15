@@ -41,20 +41,18 @@ class MultipleTryMove:
     """
 
     def __init__(
-        self, num_try, take_max_ll=False, return_accepted_info=False, xp=None,
+        self, base_proposal, num_try, take_max_ll=False, xp=None,
     ):
         # TODO: make priors optional like special generate function?
         self.num_try = num_try
         self.take_max_ll = take_max_ll
-        self.return_accepted_info = return_accepted_info
+
+        self.base_proposal_fn = base_proposal.propose
 
         if xp is None:
             xp = np
 
         self.xp = xp
-
-        if self.return_accepted_info:
-            assert hasattr(self, "special_prior_func")
 
     def get_mt_log_posterior(self, ll, lp, betas=None):
         if betas is None:
@@ -75,8 +73,8 @@ class MultipleTryMove:
     def get_mt_proposal(
         self,
         coords,
+        inds,
         nwalkers,
-        inds_reverse,
         random,
         args_generate=(),
         kwargs_generate={},
@@ -84,7 +82,6 @@ class MultipleTryMove:
         kwargs_like={},
         args_prior=(),
         kwargs_prior={},
-        rj_info={},
         betas=None,
     ):
         """Make a proposal
@@ -119,10 +116,6 @@ class MultipleTryMove:
                 in the numerator. -log of factors if in the denominator.
 
         """
-
-        # prep reverse info
-        # must put them in the zero position
-        inds_reverse_tuple = (inds_reverse, self.xp.zeros_like(inds_reverse))
 
         # generate new points and get detailed balance info
         generated_points, log_proposal_pdf = self.special_generate_func(

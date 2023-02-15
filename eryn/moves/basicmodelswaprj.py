@@ -16,7 +16,7 @@ class BasicSymmetricModelSwapRJMove(ReversibleJump):
 
     """
 
-    def __init__(self, generate_dist, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
 
         super(BasicSymmetricModelSwapRJMove, self).__init__(*args, **kwargs)
 
