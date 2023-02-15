@@ -58,7 +58,7 @@ class BasicSymmetricModelSwapRJMove(ReversibleJump):
         # loop over the models included here
         assert len(all_coords.keys()) == len(max_k_all)
 
-        ntemps, nwalkers, _ = all_inds[list(all_inds.keys())[0]]
+        ntemps, nwalkers, _ = all_inds[list(all_inds.keys())[0]].shape
         
         num_models = len(max_k_all)
 
@@ -74,8 +74,7 @@ class BasicSymmetricModelSwapRJMove(ReversibleJump):
             ndims.append(all_coords[name].shape[-1])
             if inds.shape[-1] > 1:
                 raise ValueError("When using the basic model swap rj proposal, each model in the proposal can only have 1 leaf maximum.")
-
-            total_leaves_check[:, :, i] = inds
+            total_leaves_check[:, :, i] = inds[:, :, 0]
 
         # confirm they all have the same dimension
         assert np.all(np.asarray(ndims) == ndims[0])
@@ -87,7 +86,7 @@ class BasicSymmetricModelSwapRJMove(ReversibleJump):
 
         old_leaves_info = np.where(total_leaves_check)
         old_leaves_inds_highlight = old_leaves_info[-1]
-        new_leaves_inds_highlight = (old_leaves_inds_highlight + switch) % num_models
+        new_leaves_inds_highlight = (old_leaves_inds_highlight + switch.flatten()) % num_models
         new_leaves_info = old_leaves_info[:-1] + (new_leaves_inds_highlight,)
 
         # get old coords
@@ -96,7 +95,7 @@ class BasicSymmetricModelSwapRJMove(ReversibleJump):
             zip(all_inds.keys(), all_coords.values(), all_inds.values(),)
         ):
             coords_trans = np.where(old_leaves_inds_highlight == i)
-            transfer_coords[(old_leaves_info[0][coords_trans], old_leaves_info[1][coords_trans], np.zeros_like(old_leaves_info[0][coords_trans]))] = coords[(old_leaves_info[0][coords_trans], old_leaves_info[1][coords_trans], np.zeros_like(old_leaves_info[0][coords_trans]))]
+            transfer_coords[(old_leaves_info[0][coords_trans], old_leaves_info[1][coords_trans])] = coords[(old_leaves_info[0][coords_trans], old_leaves_info[1][coords_trans], np.zeros_like(old_leaves_info[0][coords_trans]))]
 
         for i, (name, coords, inds) in enumerate(
             zip(all_inds.keys(), all_coords.values(), all_inds.values(),)
@@ -107,7 +106,7 @@ class BasicSymmetricModelSwapRJMove(ReversibleJump):
             change = np.where(new_leaves_inds_highlight == i)
             new_inds[name][(new_leaves_info[0][change], new_leaves_info[1][change], np.zeros_like(new_leaves_info[0][change]))] = True
 
-            q[name][(new_leaves_info[0][change], new_leaves_info[1][change], np.zeros_like(new_leaves_info[0][change]))] = transfer_coords[(new_leaves_info[0][change], new_leaves_info[1][change], np.zeros_like(new_leaves_info[0][change]))]
+            q[name][(new_leaves_info[0][change], new_leaves_info[1][change], np.zeros_like(new_leaves_info[0][change]))] = transfer_coords[(new_leaves_info[0][change], new_leaves_info[1][change])]
 
         # assumes symmetric
         factors = np.zeros((ntemps, nwalkers))
