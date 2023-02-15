@@ -574,6 +574,20 @@ class TemperatureControl(object):
         # Don't mutate the ladder here; let the client code do that.
         return betas - betas0
 
+    def adapt_temps(self):
+                # determine ratios of swaps accepted to swaps proposed (the ladder is fixed)
+        ratios = self.swaps_accepted / self.swaps_proposed
+
+        # adapt if desired
+        if self.adaptive and self.ntemps > 1:
+            if self.stop_adaptation < 0 or self.time < self.stop_adaptation:
+                dbetas = self._get_ladder_adjustment(self.time, self.betas, ratios)
+                self.betas += dbetas
+
+            # only increase time if it is adaptive.
+            self.time += 1
+
+
     def temper_comps(self, state, adapt=True):
         """Perfrom temperature-related operations on a state.
         
@@ -608,17 +622,8 @@ class TemperatureControl(object):
             branch_supps=state.branches_supplimental,
         )
 
-        # determine ratios of swaps accepted to swaps proposed (the ladder is fixed)
-        ratios = self.swaps_accepted / self.swaps_proposed
-
-        # adapt if desired
         if adapt and self.adaptive and self.ntemps > 1:
-            if self.stop_adaptation < 0 or self.time < self.stop_adaptation:
-                dbetas = self._get_ladder_adjustment(self.time, self.betas, ratios)
-                self.betas += dbetas
-
-            # only increase time if it is adaptive.
-            self.time += 1
+            self.adapt_temps()
 
         # create a new state out of the swapped information
         # TODO: make this more memory efficient?

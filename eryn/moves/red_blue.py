@@ -259,7 +259,7 @@ class RedBlueMove(Move, ABC):
                 # TODO: add supplimental prepare step
                 # if (new_branch_supps is not None or new_supps is not None) and self.adjust_supps_pre_logl_func is not None:
                 #    self.adjust_supps_pre_logl_func(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps, inds_keep=new_inds_adjust)
-
+                
                 # Compute the lnprobs of the proposed position.
                 logl, new_blobs = model.compute_log_like_fn(
                     q,

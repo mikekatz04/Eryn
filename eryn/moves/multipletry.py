@@ -3,7 +3,7 @@
 from multiprocessing.sharedctypes import Value
 import numpy as np
 import warnings
-from scipy.special import logsumexp
+# from scipy.special import logsumexp
 
 try:
     import cupy as xp
@@ -20,6 +20,16 @@ from ..utils.utility import groups_from_inds
 
 ___ = ["MultipleTryMove"]
 
+def logsumexp(a, axis=None, xp=None):
+    if xp is None:
+        xp = np
+    
+    max = xp.max(a, axis=axis)
+    ds = a - max[:, None]
+
+    sum_of_exp = xp.exp(ds).sum(axis=axis)
+    return max + xp.log(sum_of_exp)
+
 
 class MultipleTryMove:
     """Generate multiple proposal tries.
@@ -31,12 +41,17 @@ class MultipleTryMove:
     """
 
     def __init__(
-        self, num_try, take_max_ll=False, return_accepted_info=False,
+        self, num_try, take_max_ll=False, return_accepted_info=False, xp=None,
     ):
         # TODO: make priors optional like special generate function?
         self.num_try = num_try
         self.take_max_ll = take_max_ll
         self.return_accepted_info = return_accepted_info
+
+        if xp is None:
+            xp = np
+
+        self.xp = xp
 
         if self.return_accepted_info:
             assert hasattr(self, "special_prior_func")
@@ -45,14 +60,17 @@ class MultipleTryMove:
         if betas is None:
             ll_temp = ll.copy()
         else:
-            assert isinstance(betas, np.ndarray)
+            assert isinstance(betas, self.xp.ndarray)
             if ll.ndim > 1:
-                betas_tmp = np.expand_dims(betas, ll.ndim - 1)
+                betas_tmp = self.xp.expand_dims(betas, ll.ndim - 1)
             else:
                 betas_tmp = betas
             ll_temp = betas_tmp * ll
 
         return ll_temp + lp
+
+    def readout_adjustment(self, out_vals, all_vals_prop, aux_all_vals, inds_reverse):
+        pass
 
     def get_mt_proposal(
         self,
@@ -104,7 +122,7 @@ class MultipleTryMove:
 
         # prep reverse info
         # must put them in the zero position
-        inds_reverse_tuple = (inds_reverse, np.zeros_like(inds_reverse))
+        inds_reverse_tuple = (inds_reverse, self.xp.zeros_like(inds_reverse))
 
         # generate new points and get detailed balance info
         generated_points, log_proposal_pdf = self.special_generate_func(
@@ -128,25 +146,27 @@ class MultipleTryMove:
 
             # need old likelihood before removal added to array of likelihoods in case of 1e-300s
             # without snr limit, this should be the same always
-            ll[inds_reverse, 0] = aux_ll[inds_reverse]
+
+            # ll[inds_reverse, 0] = aux_ll[inds_reverse]
 
         if self.take_max_ll:
             # get max
-            inds_keep = np.argmax(ll, axis=-1)
+            inds_keep = self.xp.argmax(ll, axis=-1)
 
-            factors = np.zeros((nwalkers,))
+            factors = self.xp.zeros((nwalkers,))
             return generated_points_out, ll_out, factors
 
         else:
-            if np.any(np.isnan(ll)):
+            if self.xp.any(self.xp.isnan(ll)):
                 warnings.warn("Getting nans for ll in multiple try.")
-                ll[np.isnan(ll)] = -1e300
+                ll[self.xp.isnan(ll)] = -1e300
 
             if hasattr(self, "special_prior_func"):
                 lp = self.special_prior_func(
                     generated_points, *args_prior, **kwargs_prior
                 )
-                if rj_info != {} and np.any(inds_reverse):
+
+                if rj_info != {} and self.xp.any(inds_reverse):
                     # fix prior for inds_reverse
                     # fake new point difference was added to prior that
                     # already has it so need to remove prior of removal binary
@@ -158,33 +178,38 @@ class MultipleTryMove:
                 logP = self.get_mt_log_posterior(ll, lp, betas=betas)
 
             else:
-                lp = np.zeros_like(ll)
+                lp = self.xp.zeros_like(ll)
                 logP = self.get_mt_log_posterior(ll, lp, betas=betas)
+
+            # TODO: fix this somehow while mainting global fit
+            log_proposal_pdf[inds_reverse, 0] = 0.0
+            log_proposal_pdf[inds_reverse, 1:] += self.special_aux_lp[:, None]
 
             log_importance_weights = logP - log_proposal_pdf
 
-            log_sum_weights = logsumexp(log_importance_weights, axis=-1)
+            log_sum_weights = logsumexp(log_importance_weights, axis=-1, xp=self.xp)
 
             log_of_probs = log_importance_weights - log_sum_weights[:, None]
-            probs = np.exp(log_of_probs)
+            probs = self.xp.exp(log_of_probs)
 
             # draw based on likelihood
             inds_keep = (
-                probs.cumsum(1) > np.random.rand(probs.shape[0])[:, None]
+                probs.cumsum(1) > self.xp.random.rand(probs.shape[0])[:, None]
             ).argmax(1)
 
             inds_keep[inds_reverse] = 0
 
-            # log_like_factors = np.log(probs[:, ind_keep])
-            inds_tuple = (np.arange(len(inds_keep)), inds_keep)
+            # log_like_factors = self.xp.log(probs[:, ind_keep])
+            inds_tuple = (self.xp.arange(len(inds_keep)), inds_keep)
             logP_out = logP[inds_tuple]
-            self.ll_out = ll[inds_tuple]
+            ll_out = ll[inds_tuple]
             # ll_out represents the chosen likelihood of the next point
             # need to update ll_out for removals to reflect the removed likelihood (special_aux_ll)
-            self.ll_out[inds_reverse] = self.special_aux_ll
-
+            # ll_out[inds_reverse] = self.special_aux_ll
             if hasattr(self, "special_prior_func"):
-                self.lp_out = lp[inds_tuple]
+                lp_out = lp[inds_tuple]
+                # lp_out[inds_reverse] = self.special_aux_lp
+
             generated_points_out = generated_points[inds_tuple].copy()  # theta^j
             log_proposal_pdf_out = log_proposal_pdf[inds_tuple]
 
@@ -223,24 +248,21 @@ class MultipleTryMove:
 
                 # sub in the old ll values for the reverse cases
                 aux_ll[inds_reverse] = self.special_aux_ll
+                aux_lp[inds_reverse] = self.special_aux_lp
 
                 # aux_lp[inds_reverse]  # do not need to do this because the inds reflect the removed case already.
                 aux_logP = self.get_mt_log_posterior(aux_ll, aux_lp, betas=betas)
-                aux_log_proposal_pdf = np.zeros_like(aux_logP)
+                aux_log_proposal_pdf = self.xp.zeros_like(aux_logP)
                 aux_log_importance_weights = aux_logP - aux_log_proposal_pdf
 
-                self.log_diff = logsumexp(ll, axis=-1) - logsumexp(
-                    np.repeat(aux_ll[:, None], self.num_try, axis=-1), axis=-1
-                )
-
                 # scale out
-                aux_log_importance_weights = np.repeat(
+                aux_log_importance_weights = self.xp.repeat(
                     aux_log_importance_weights[:, None], self.num_try, axis=-1
                 )
 
-            aux_log_sum_weights = logsumexp(aux_log_importance_weights, axis=-1)
+            aux_log_sum_weights = logsumexp(aux_log_importance_weights, axis=-1, xp=self.xp)
 
-            # aux_log_proposal_pdf = np.zeros_like(log_proposal_pdf_out)
+            # aux_log_proposal_pdf = self.xp.zeros_like(log_proposal_pdf_out)
             # this is setup to make clear with the math.
             # setting up factors properly means the
             # final lnpdiff will be effectively be the ratio of the sums
@@ -257,18 +279,27 @@ class MultipleTryMove:
                 + log_proposal_pdf_out
             )
 
+            self.log_sum_weights = log_sum_weights
+            self.aux_log_sum_weights = aux_log_sum_weights
+
             # factors = (aux_logP - aux_log_proposal_pdf - aux_log_sum_weights) - (logP_out - log_proposal_pdf_out - log_sum_weights) - log_proposal_pdf_out
-            self.log_proposal_pdf_out = log_proposal_pdf_out
+            
             # stop pretending, reverse factors for reverse case
             factors[inds_reverse] *= -1.0
-            # if np.any(factors > 0.0):
-            self.logP_out = logP_out.copy()
+            # if self.xp.any(factors > 0.0):
 
-            # if np.any((log_sum_weights - aux_log_sum_weights) > 0.0):
+            # if self.xp.any((log_sum_weights - aux_log_sum_weights) > 0.0):
             #    breakpoint()
+            out_vals = [logP_out, ll_out, lp_out, log_proposal_pdf_out, log_sum_weights]
+            all_vals_prop = [logP, ll, lp, log_proposal_pdf, log_sum_weights]
+            aux_all_vals = [aux_logP, aux_ll, aux_lp, aux_log_proposal_pdf, aux_log_sum_weights]
+            self.readout_adjustment(out_vals, all_vals_prop, aux_all_vals, inds_reverse)
+            
+            keep_now = self.xp.ones(generated_points_out.shape[0], dtype=bool)
+            keep_now[inds_reverse] = False
 
             return (
-                generated_points_out[np.delete(np.arange(nwalkers), inds_reverse)],
+                generated_points_out[keep_now],
                 logP_out,
                 factors,
             )

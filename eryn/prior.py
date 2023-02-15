@@ -1,28 +1,97 @@
 import numpy as np
 from scipy import stats
 
+try:
+    import cupy as cp
 
-def uniform_dist(min, max):
+except (ModuleNotFoundError, ImportError) as e:
+    pass
+
+
+class UniformDistribution(object):
     """Generate uniform distribution between ``min`` and ``max``
 
     Args:
         min (double): Minimum in the uniform distribution
         max (double): Maximum in the uniform distribution
+        use_cupy (bool, optional): If ``True``, use CuPy. If ``False`` use Numpy.
+            (default: ``False``)
 
-    Returns:
-        scipy distribution object: Uniform distribution built from
-            `scipy.stats.uniform <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.uniform.html>_`.
+    Raises:
+        ValueError: Issue with inputs. 
 
     """
-    # adjust ordering if needed
-    if min > max:
-        temp = min
-        min = max
-        max = temp
+    def __init__(self, min_val, max_val, use_cupy=False):
 
-    # setup quantities for scipy
-    sig = max - min
-    dist = stats.uniform(min, sig)
+        if min_val > max_val:
+            tmp = min_val
+            min_val = max_val
+            max_val = tmp
+        elif min_val == max_val:
+            raise ValueError("Min and max values are the same.")
+
+        self.min_val = min_val
+        self.max_val = max_val
+        self.diff = max_val - min_val
+
+        self.pdf_val = 1 / self.diff
+        self.logpdf_val = np.log(self.pdf_val)
+
+        self.use_cupy = use_cupy
+        if use_cupy:
+            try:
+                cp.abs(1.0)
+            except NameError:
+                raise ValueError("CuPy not found.")
+
+    def rvs(self, size=1):
+
+        if not isinstance(size, int) and not isinstance(size, tuple):
+            raise ValueError("size must be an integer or tuple of ints.")
+
+        if isinstance(size, int):
+            size = (size,)
+
+        xp = np if not self.use_cupy else cp
+
+        rand_unif = xp.random.rand(*size)
+        
+        out = rand_unif * self.diff + self.min_val
+
+        return out
+
+    def pdf(self, x):
+
+        out = self.pdf_val * ((x >= self.min_val) & (x <= self.max_val))
+
+        return out
+
+    def logpdf(self, x):
+
+        xp = np if not self.use_cupy else cp
+
+        out = xp.zeros_like(x)
+        out[(x >= self.min_val) & (x <= self.max_val)] = self.logpdf_val
+        out[(x < self.min_val) | (x > self.max_val)] = -np.inf
+        return out
+    
+
+def uniform_dist(min, max, use_cupy=False):
+    """Generate uniform distribution between ``min`` and ``max``
+
+    Args:
+        min (double): Minimum in the uniform distribution
+        max (double): Maximum in the uniform distribution
+        use_cupy (bool, optional): If ``True``, use CuPy. If ``False`` use Numpy.
+            (default: ``False``)
+
+    Returns:
+        :class:`UniformDistribution`: Uniform distribution.
+
+
+    """
+    dist = UniformDistribution(min, max, use_cupy=use_cupy)
+
     return dist
 
 
@@ -62,6 +131,8 @@ class MappedUniformDistribution:
     Args:
         min (double): Minimum in the uniform distribution
         max (double): Maximum in the uniform distribution
+        use_cupy (bool, optional): If ``True``, use CuPy. If ``False`` use Numpy.
+            (default: ``False``)
 
     Raises:
         ValueError: If ``min`` is greater than ``max``.
@@ -69,13 +140,13 @@ class MappedUniformDistribution:
 
     """
 
-    def __init__(self, min, max):
+    def __init__(self, min, max, use_cupy=False):
         self.min, self.max = min, max
         self.diff = self.max - self.min
         if self.min > self.max:
             raise ValueError("min must be less than max.")
 
-        self.dist = uniform_dist(0.0, 1.0)
+        self.dist = uniform_dist(0.0, 1.0, use_cupy=use_cupy)
 
     def logpdf(self, x):
         """Get the log of the pdf value for this distribution.
@@ -129,13 +200,15 @@ class ProbDistContainer:
         priors (list): list of indexes and their associated distributions arranged
             in a list.
         ndim (int): Full dimensionality.
+        use_cupy (bool, optional): If ``True``, use CuPy. If ``False`` use Numpy.
+            (default: ``False``)
 
     Raises:
         ValueError: Missing parameters or incorrect index keys.
 
     """
 
-    def __init__(self, priors_in):
+    def __init__(self, priors_in, use_cupy=False):
 
         # copy to have
         self.priors_in = priors_in.copy()
@@ -173,6 +246,11 @@ class ProbDistContainer:
 
         self.ndim = uni_inds.max() + 1
 
+        self.use_cupy = use_cupy
+
+        for key, item in self.priors_in.items():
+            item.use_cupy = use_cupy
+
     def logpdf(self, x):
         """Get logpdf by summing logpdf of individual distributions
 
@@ -185,6 +263,7 @@ class ProbDistContainer:
 
         """
         # TODO: check if mutliple index prior will work
+        xp = np if not self.use_cupy else cp
 
         # make sure at least 2D
         if x.ndim == 1:
@@ -196,7 +275,7 @@ class ProbDistContainer:
         else:
             squeeze = False
 
-        prior_vals = np.zeros(x.shape[0])
+        prior_vals = xp.zeros(x.shape[0])
 
         # sum the logs (assumes parameters are independent)
         for i, (inds, prior_i) in enumerate(self.priors):
@@ -229,10 +308,12 @@ class ProbDistContainer:
         if groups is not None:
             raise NotImplementedError
 
+        xp = np if not self.use_cupy else cp
+
         # TODO: check if mutliple index prior will work
         is_1d = x.ndim == 1
-        x = np.atleast_2d(x)
-        out_vals = np.zeros_like(x)
+        x = xp.atleast_2d(x)
+        out_vals = xp.zeros_like(x)
 
         # sum the logs (assumes parameters are independent)
         for i, (inds, prior_i) in enumerate(self.priors):
@@ -276,11 +357,13 @@ class ProbDistContainer:
         elif not isinstance(size, tuple):
             raise ValueError("Size must be int or tuple of ints.")
 
+        xp = np if not self.use_cupy else cp
+
         # setup the slicing to probably sample points
         out_inds = tuple([slice(None) for _ in range(len(size))])
 
         # setup output and loop through priors
-        out = np.zeros(size + (self.ndim,))
+        out = xp.zeros(size + (self.ndim,))
         for i, (inds, prior_i) in enumerate(self.priors):
             # guard against extra prior functions without rvs methods
             if not hasattr(prior_i, "rvs"):
