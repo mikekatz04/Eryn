@@ -73,7 +73,7 @@ We use `SemVer <http://semver.org/>`__ for versioning. For the versions
 available, see the `tags on this
 repository <https://github.com/BlackHolePerturbationToolkit/FastEMRIWaveforms/tags>`__.
 
-Current Version: 0.2.1
+Current Version: 0.2.2
 
 Authors
 -------
