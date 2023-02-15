@@ -126,73 +126,7 @@ class ReversibleJump(Move):
         
         """
 
-        ntemps, nwalkers, _ = inds.shape
-
-        nleaves = inds.sum(axis=-1)
-
-        # choose whether to add or remove
-        if self.fix_change is None:
-            change = random.choice([-1, +1], size=nleaves.shape)
-        else:
-            change = np.full(nleaves.shape, self.fix_change)
-
-        # fix edge cases
-        change = (
-            change * ((nleaves != min_k) & (nleaves != max_k))
-            + (+1) * (nleaves == min_k)
-            + (-1) * (nleaves == max_k)
-        )
-
-        # setup storage for this information
-        inds_for_change = {}
-        num_increases = np.sum(change == +1)
-        inds_for_change["+1"] = np.zeros((num_increases, 3), dtype=int)
-        num_decreases = np.sum(change == -1)
-        inds_for_change["-1"] = np.zeros((num_decreases, 3), dtype=int)
-
-        # TODO: not loop ? Is it necessary?
-        # TODO: might be able to subtract new inds from old inds type of thing
-        # fill the inds_for_change
-        increase_i = 0
-        decrease_i = 0
-        for t in range(ntemps):
-            for w in range(nwalkers):
-                # check if add or remove
-                change_tw = change[t][w]
-                # inds array from specific walker
-                inds_tw = inds[t][w]
-
-                # adding
-                if change_tw == +1:
-                    # find where leaves are not currently used
-                    inds_false = np.where(inds_tw == False)[0]
-                    # decide which spot to add
-                    ind_change = random.choice(inds_false)
-                    # put in the indexes into inds arrays
-                    inds_for_change["+1"][increase_i] = np.array(
-                        [t, w, ind_change], dtype=int
-                    )
-                    # count increases
-                    increase_i += 1
-
-                # removing
-                elif change_tw == -1:
-                    # change_tw == -1
-                    # find which leavs are used
-                    inds_true = np.where(inds_tw == True)[0]
-                    # choose which to remove
-                    ind_change = random.choice(inds_true)
-                    # add indexes into inds
-                    if inds_for_change["-1"].shape[0] > 0:
-                        inds_for_change["-1"][decrease_i] = np.array(
-                            [t, w, ind_change], dtype=int
-                        )
-                        decrease_i += 1
-                    # do not care currently about what we do with discarded coords, they just sit in the state
-                # model component number not changing
-                else:
-                    pass
-        return inds_for_change
+        raise NotImplementedError
 
     def propose(self, model, state):
         """Use the move to generate a proposal and compute the acceptance
