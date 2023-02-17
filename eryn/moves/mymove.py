@@ -66,13 +66,18 @@ class MyMove(MHMove):
             ntemps, nwalkers, nleaves_max, ndim_here = coords.shape
             proposal_fn = self.all_proposal[name]
 
+            # copy coords
             q[name] = coords.copy()
-            # self.get_bf_proposal instead of proposal_fn
+            
+            # coordinates holder by temperature
             by_temp = coords.copy()
+
+            # if running gibbs, make sure we pass to the proposal function only the correct indeces
             running_coords = kwargs["inds_run"][0]
             if running_coords is not None:
                 by_temp[:,:,running_coords] = np.asarray([proposal_fn(coords[tt,:,running_coords].T, random)[0] for tt in range(ntemps)])
             else:
+                # assuming number of leaves is only one
                 by_temp[:,:,0,:] = np.asarray([proposal_fn(coords[tt,:,0,:], random)[0] for tt in range(ntemps)])
             
             # by_temp_check = by_temp.copy()
