@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from multiprocessing.sharedctypes import Value
 import numpy as np
 import warnings
@@ -33,26 +31,26 @@ def logsumexp(a, axis=None, xp=None):
 
 class MultipleTryMove:
     """Generate multiple proposal tries.
-
     Args:
         priors (object): :class:`ProbDistContainer` object that has ``logpdf``
             and ``rvs`` methods.
-
     """
 
     def __init__(
-        self, base_proposal, num_try, take_max_ll=False, xp=None,
+        self, num_try, take_max_ll=False, return_accepted_info=False, xp=None,
     ):
         # TODO: make priors optional like special generate function?
         self.num_try = num_try
         self.take_max_ll = take_max_ll
-
-        self.base_proposal_fn = base_proposal.propose
+        self.return_accepted_info = return_accepted_info
 
         if xp is None:
             xp = np
 
         self.xp = xp
+
+        if self.return_accepted_info:
+            assert hasattr(self, "special_prior_func")
 
     def get_mt_log_posterior(self, ll, lp, betas=None):
         if betas is None:
@@ -73,8 +71,8 @@ class MultipleTryMove:
     def get_mt_proposal(
         self,
         coords,
-        inds,
         nwalkers,
+        inds_reverse,
         random,
         args_generate=(),
         kwargs_generate={},
@@ -82,10 +80,10 @@ class MultipleTryMove:
         kwargs_like={},
         args_prior=(),
         kwargs_prior={},
+        rj_info={},
         betas=None,
     ):
         """Make a proposal
-
         Args:
             coords (dict): Keys are ``branch_names``. Values are
                 np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent
@@ -102,7 +100,6 @@ class MultipleTryMove:
                 the three-dimensional arrays within ``inds`` of the specific leaf
                 that is being added or removed from those leaves currently considered.
             random (object): Current random state of the sampler.
-
         Returns:
             tuple: Tuple containing proposal information.
                 First entry is the new coordinates as a dictionary with keys
@@ -114,8 +111,11 @@ class MultipleTryMove:
                 proposal necessary for detailed balance. This is effectively
                 any term in the detailed balance fraction. +log of factors if
                 in the numerator. -log of factors if in the denominator.
-
         """
+
+        # prep reverse info
+        # must put them in the zero position
+        inds_reverse_tuple = (inds_reverse, self.xp.zeros_like(inds_reverse))
 
         # generate new points and get detailed balance info
         generated_points, log_proposal_pdf = self.special_generate_func(
@@ -296,4 +296,3 @@ class MultipleTryMove:
                 logP_out,
                 factors,
             )
-
