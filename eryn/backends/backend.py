@@ -509,7 +509,7 @@ class Backend(object):
                 name: temp[0]
                 for name, temp in self.get_inds(discard=it - 1, thin=thin).items()
             },
-            betas=self.get_betas(discard=it - 1, thin=thin).sqeeze(),
+            betas=self.get_betas(discard=it - 1, thin=thin).squeeze(),
             blobs=blobs,
             random_state=self.random_state,
         )
