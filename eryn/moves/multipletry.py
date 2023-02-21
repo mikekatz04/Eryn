@@ -288,6 +288,7 @@ class MultipleTryMove:
             aux_all_vals = [aux_logP, aux_ll, aux_lp, aux_log_proposal_pdf, aux_log_sum_weights]
             self.readout_adjustment(out_vals, all_vals_prop, aux_all_vals, inds_reverse)
             
+            # working I think for everything
             keep_now = self.xp.ones(generated_points_out.shape[0], dtype=bool)
             keep_now[inds_reverse] = False
             return (
