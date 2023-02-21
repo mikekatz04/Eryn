@@ -290,7 +290,6 @@ class MultipleTryMove:
             
             keep_now = self.xp.ones(generated_points_out.shape[0], dtype=bool)
             keep_now[inds_reverse] = False
-
             return (
                 generated_points_out[keep_now],
                 logP_out,
