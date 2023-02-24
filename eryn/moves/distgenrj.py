@@ -176,20 +176,20 @@ class DistributionGenerateRJ(ReversibleJump):
         for i, (name, coords, inds) in enumerate(
             zip(all_coords.keys(), all_coords.values(), all_inds.values(),)
         ):
+            # put in base information
+            ntemps, nwalkers, nleaves_max, ndim = coords.shape
+            new_inds[name] = inds.copy()
+            q[name] = coords.copy()
+            
             if i == 0:
                 factors = np.zeros((ntemps, nwalkers))
-                
+
             # if not included
             if name not in all_inds_for_change:
                 continue
 
             # inds changing for this branch
             inds_for_change = all_inds_for_change[name]
-
-            # put in base information
-            ntemps, nwalkers, nleaves_max, ndim = coords.shape
-            new_inds[name] = inds.copy()
-            q[name] = coords.copy()
 
             # adjust inds
 
