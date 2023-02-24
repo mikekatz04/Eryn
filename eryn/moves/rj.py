@@ -196,7 +196,7 @@ class ReversibleJump(Move):
             )
             # account for gibbs sampling
             self.cleanup_proposals_gibbs(
-                branch_names_run, inds_run, q, state.branches_coords, new_inds=new_inds, branches_inds=state.branches_inds
+                branch_names_run, inds_run, q, state.branches_coords
             )
 
             # put back any branches that were left out from Gibbs split
