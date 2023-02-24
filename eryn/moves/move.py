@@ -285,9 +285,9 @@ class Move(object):
         for key, value in branches_coords.items():
             if key not in q:
                 q[key] = value.copy()
-                if new_inds is not None:
-                    assert branches_inds is not None
-                    new_inds[key] = branches_inds[key].copy()
+            if new_inds is not None and key not in new_inds:
+                assert branches_inds is not None
+                new_inds[key] = branches_inds[key].copy()
 
 
     def fix_logp_gibbs(self, branch_names_run, inds_run, logp, inds):
