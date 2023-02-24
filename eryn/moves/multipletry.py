@@ -315,8 +315,8 @@ class MultipleTryMoveRJ(MultipleTryMove):
         inds_reverse_rj = all_inds_for_change["-1"] 
 
         breakpoint()
-        coords_in = branches_coords[key_in][]
-        generated_points, factors = self.get_mt_proposal(, random, betas=betas_here, ll_in=ll_here, lp_in=lp_here)
+        """coords_in = branches_coords[key_in][]
+        generated_points, factors = self.get_mt_proposal(, random, betas=betas_here, ll_in=ll_here, lp_in=lp_here)"""
 
         self.mt_ll = self.mt_ll.reshape(ntemps, nwalkers)
         self.mt_lp = self.mt_lp.reshape(ntemps, nwalkers)
