@@ -369,6 +369,11 @@ class EnsembleSampler(object):
             self.rj_weights = np.atleast_1d(self.rj_weights).astype(float)
             self.rj_weights /= np.sum(self.rj_weights)
 
+            # warn if base stretch is used
+            for move in self.moves:
+                if type(move) == StretchMove:
+                    warnings.warn("If using revisible jump, using the Stretch Move for in-model proposals is not advised. It will run and work, but it will not be using the correct complientary group of parameters meaning it will most likely be very inefficient.")
+
         # make sure moves have temperature module
         if self.temperature_control is not None:
             for move in self.moves:

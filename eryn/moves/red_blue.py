@@ -172,11 +172,11 @@ class RedBlueMove(Move, ABC):
                 # actual coordinates of subset
                 temp_coords = {
                     name: np.take_along_axis(
-                        coords_going_for_proposal[name],
+                        state.branches_coords[name],
                         all_inds_shaped[:, :, None, None],
                         axis=1,
                     )
-                    for name in coords_going_for_proposal
+                    for name in state.branches_coords
                 }
 
                 # prepare the sets for each model
@@ -190,7 +190,7 @@ class RedBlueMove(Move, ABC):
                         )
                         for j in range(self.nsplits)
                     ]
-                    for key in state.branches
+                    for key in branch_names_run
                 }
 
                 # setup s and c based on splits

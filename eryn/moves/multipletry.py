@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from multiprocessing.sharedctypes import Value
 import numpy as np
 import warnings
@@ -33,21 +31,19 @@ def logsumexp(a, axis=None, xp=None):
 
 class MultipleTryMove:
     """Generate multiple proposal tries.
-
     Args:
         priors (object): :class:`ProbDistContainer` object that has ``logpdf``
             and ``rvs`` methods.
-
     """
 
     def __init__(
-        self, base_proposal, num_try, take_max_ll=False, xp=None,
+        self, num_try=1, independent=False, symmetric=False, xp=None, **kwargs
     ):
         # TODO: make priors optional like special generate function?
         self.num_try = num_try
-        self.take_max_ll = take_max_ll
-
-        self.base_proposal_fn = base_proposal.propose
+        
+        self.independent = independent
+        self.symmetric = symmetric
 
         if xp is None:
             xp = np
@@ -67,15 +63,14 @@ class MultipleTryMove:
 
         return ll_temp + lp
 
-    def readout_adjustment(self, out_vals, all_vals_prop, aux_all_vals, inds_reverse):
+    def readout_adjustment(self, out_vals, all_vals_prop, aux_all_vals):
         pass
 
     def get_mt_proposal(
         self,
         coords,
-        inds,
-        nwalkers,
         random,
+        inds_rj_reverse=None,
         args_generate=(),
         kwargs_generate={},
         args_like=(),
@@ -83,217 +78,173 @@ class MultipleTryMove:
         args_prior=(),
         kwargs_prior={},
         betas=None,
+        ll_in=None,
+        lp_in=None,
     ):
         """Make a proposal
-
-        Args:
-            coords (dict): Keys are ``branch_names``. Values are
-                np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent
-                coordinates for all the walkers.
-            inds (dict): Keys are ``branch_names``. Values are
-                np.ndarray[ntemps, nwalkers, nleaves_max]. These are the boolean
-                arrays marking which leaves are currently used within each walker.
-            inds_for_change (dict): Keys are ``branch_names``. Values are
-                dictionaries. These dictionaries have keys ``"+1"`` and ``"-1"``,
-                indicating waklkers that are adding or removing a leafm respectively.
-                The values for these dicts are ``int`` np.ndarray[..., 3]. The "..." indicates
-                the number of walkers in all temperatures that fall under either adding
-                or removing a leaf. The second dimension, 3, is the indexes into
-                the three-dimensional arrays within ``inds`` of the specific leaf
-                that is being added or removed from those leaves currently considered.
-            random (object): Current random state of the sampler.
-
-        Returns:
-            tuple: Tuple containing proposal information.
-                First entry is the new coordinates as a dictionary with keys
-                as ``branch_names`` and values as
-                ``double `` np.ndarray[ntemps, nwalkers, nleaves_max, ndim] containing
-                proposed coordinates. Second entry is the new ``inds`` array with
-                boolean values flipped for added or removed sources. Third entry
-                is the factors associated with the
-                proposal necessary for detailed balance. This is effectively
-                any term in the detailed balance fraction. +log of factors if
-                in the numerator. -log of factors if in the denominator.
-
         """
 
         # generate new points and get detailed balance info
         generated_points, log_proposal_pdf = self.special_generate_func(
             coords,
-            nwalkers,
+            random,
             *args_generate,
-            random=random,
             size=self.num_try,
-            fill=coords[inds_reverse],
-            fill_inds=inds_reverse_tuple,
             **kwargs_generate
         )
+        
         ll = self.special_like_func(generated_points, *args_like, **kwargs_like)
 
-        if rj_info != {}:
-            assert "ll" in rj_info
-            assert "lp" in rj_info
+        if self.xp.any(self.xp.isnan(ll)):
+            warnings.warn("Getting nans for ll in multiple try.")
+            ll[self.xp.isnan(ll)] = -1e300
 
-            aux_ll = rj_info["ll"]
-            aux_lp = rj_info["lp"]
+        lp = self.special_prior_func(
+            generated_points, *args_prior, **kwargs_prior
+        )
 
-            # need old likelihood before removal added to array of likelihoods in case of 1e-300s
-            # without snr limit, this should be the same always
-
-            # ll[inds_reverse, 0] = aux_ll[inds_reverse]
-
-        if self.take_max_ll:
-            # get max
-            inds_keep = self.xp.argmax(ll, axis=-1)
-
-            factors = self.xp.zeros((nwalkers,))
-            return generated_points_out, ll_out, factors
-
+        logP = self.get_mt_log_posterior(ll, lp, betas=betas)
+        
+        if self.symmetric:
+            log_importance_weights = logP
         else:
-            if self.xp.any(self.xp.isnan(ll)):
-                warnings.warn("Getting nans for ll in multiple try.")
-                ll[self.xp.isnan(ll)] = -1e300
-
-            if hasattr(self, "special_prior_func"):
-                lp = self.special_prior_func(
-                    generated_points, *args_prior, **kwargs_prior
-                )
-
-                if rj_info != {} and self.xp.any(inds_reverse):
-                    # fix prior for inds_reverse
-                    # fake new point difference was added to prior that
-                    # already has it so need to remove prior of removal binary
-                    diff = lp[inds_reverse, :] - aux_lp[inds_reverse, None]
-                    # index zero for this is the real final point
-                    aux_lp[inds_reverse] -= diff[:, 0]
-                    lp[inds_reverse] = aux_lp[inds_reverse, None] + diff
-
-                logP = self.get_mt_log_posterior(ll, lp, betas=betas)
-
-            else:
-                lp = self.xp.zeros_like(ll)
-                logP = self.get_mt_log_posterior(ll, lp, betas=betas)
-
-            # TODO: fix this somehow while mainting global fit
-            log_proposal_pdf[inds_reverse, 0] = 0.0
-            log_proposal_pdf[inds_reverse, 1:] += self.special_aux_lp[:, None]
-
             log_importance_weights = logP - log_proposal_pdf
 
-            log_sum_weights = logsumexp(log_importance_weights, axis=-1, xp=self.xp)
+        log_sum_weights = logsumexp(log_importance_weights, axis=-1, xp=self.xp)
 
-            log_of_probs = log_importance_weights - log_sum_weights[:, None]
-            probs = self.xp.exp(log_of_probs)
+        log_of_probs = log_importance_weights - log_sum_weights[:, None]
+        probs = self.xp.exp(log_of_probs)
 
-            # draw based on likelihood
-            inds_keep = (
-                probs.cumsum(1) > self.xp.random.rand(probs.shape[0])[:, None]
-            ).argmax(1)
+        # draw based on likelihood
+        inds_keep = (
+            probs.cumsum(1) > self.xp.random.rand(probs.shape[0])[:, None]
+        ).argmax(1)
 
-            inds_keep[inds_reverse] = 0
+        inds_tuple = (self.xp.arange(len(inds_keep)), inds_keep)
+        lp_out = lp[inds_tuple]
+        ll_out = ll[inds_tuple]
+        logP_out = logP[inds_tuple]
 
-            # log_like_factors = self.xp.log(probs[:, ind_keep])
-            inds_tuple = (self.xp.arange(len(inds_keep)), inds_keep)
-            logP_out = logP[inds_tuple]
-            ll_out = ll[inds_tuple]
-            # ll_out represents the chosen likelihood of the next point
-            # need to update ll_out for removals to reflect the removed likelihood (special_aux_ll)
-            # ll_out[inds_reverse] = self.special_aux_ll
-            if hasattr(self, "special_prior_func"):
-                lp_out = lp[inds_tuple]
-                # lp_out[inds_reverse] = self.special_aux_lp
+        self.mt_lp = lp_out
+        self.mt_ll = ll_out
 
-            generated_points_out = generated_points[inds_tuple].copy()  # theta^j
-            log_proposal_pdf_out = log_proposal_pdf[inds_tuple]
+        generated_points_out = generated_points[inds_tuple].copy()  # theta^j
+        log_proposal_pdf_out = log_proposal_pdf[inds_tuple]
+       
+        if self.independent:
+            aux_ll = ll.copy()
+            aux_lp = lp.copy()
+            
+            aux_log_proposal_pdf_sub = self.special_generate_logpdf(coords)
 
-            if rj_info == {}:
-                # generate auxillary points
-                aux_generated_points, aux_log_proposal_pdf = self.special_generate_func(
-                    generated_points_out,
-                    nwalkers,
-                    *args_generate,
-                    random=random,
-                    size=self.num_try,
-                    fill=generated_points_out,
-                    fill_inds=inds_tuple,
-                    **kwargs_generate
-                )
-
-                aux_ll = self.special_like_func(
-                    aux_generated_points, *args_like, **kwargs_like
-                )
-
-                if hasattr(self, "special_prior_func"):
-                    aux_lp = self.special_prior_func(aux_generated_points)
-                    aux_logP = self.get_mt_log_posterior(aux_ll, aux_lp, betas=betas)
-
-                else:
-                    aux_logP = aux_ll
-
-                aux_log_importance_weights = aux_logP - aux_log_proposal_pdf
+            if ll_in is None:
+                aux_ll_sub = self.special_generate_like(coords)
 
             else:
+                assert ll_in.shape[0] == coords.shape[0]
+                aux_ll_sub = ll_in
+    
+            if lp_in is None:
+                aux_lp_sub = self.special_generate_prior(coords)
 
-                if not hasattr(self, "special_aux_ll"):
-                    raise ValueError(
-                        "If using RJ, must have special_aux_ll attribute that gives the aux_ll for reverse proposals."
-                    )
+            else:
+                assert lp_in.shape[0] == coords.shape[0]
+                aux_lp_sub = lp_in
 
-                # sub in the old ll values for the reverse cases
-                aux_ll[inds_reverse] = self.special_aux_ll
-                aux_lp[inds_reverse] = self.special_aux_lp
+            aux_ll[inds_tuple] = aux_ll_sub
+            aux_lp[inds_tuple] = aux_lp_sub
 
-                # aux_lp[inds_reverse]  # do not need to do this because the inds reflect the removed case already.
-                aux_logP = self.get_mt_log_posterior(aux_ll, aux_lp, betas=betas)
-                aux_log_proposal_pdf = self.xp.zeros_like(aux_logP)
-                aux_log_importance_weights = aux_logP - aux_log_proposal_pdf
+            aux_logP = self.get_mt_log_posterior(aux_ll, aux_lp, betas=betas)
+            
+            aux_log_proposal_pdf = log_proposal_pdf.copy()
+            aux_log_proposal_pdf[inds_tuple] = aux_log_proposal_pdf_sub
 
-                # scale out
-                aux_log_importance_weights = self.xp.repeat(
-                    aux_log_importance_weights[:, None], self.num_try, axis=-1
-                )
+            aux_log_importance_weights = aux_logP - aux_log_proposal_pdf
 
-            aux_log_sum_weights = logsumexp(aux_log_importance_weights, axis=-1, xp=self.xp)
-
-            # aux_log_proposal_pdf = self.xp.zeros_like(log_proposal_pdf_out)
-            # this is setup to make clear with the math.
-            # setting up factors properly means the
-            # final lnpdiff will be effectively be the ratio of the sums
-            # of the weights
-
-            # IMPORTANT: logP_out must be subtracted against log_sum_weights before anything else due to -1e300s.
-            factors = (
-                (aux_logP - aux_log_sum_weights)
-                - aux_log_proposal_pdf
-                + aux_log_proposal_pdf
-            ) - (
-                (logP_out - log_sum_weights)
-                - log_proposal_pdf_out
-                + log_proposal_pdf_out
+        else:
+            # generate auxillary points
+            aux_generated_points, aux_log_proposal_pdf = self.special_generate_func(
+                generated_points_out,
+                random,
+                *args_generate,
+                size=self.num_try,
+                fill_tuple=inds_tuple,
+                fill_values=generated_points_out,
+                **kwargs_generate
+            )
+            aux_ll = self.special_like_func(
+                aux_generated_points, *args_like, **kwargs_like
             )
 
-            self.log_sum_weights = log_sum_weights
-            self.aux_log_sum_weights = aux_log_sum_weights
+            aux_lp = self.special_prior_func(aux_generated_points)
 
-            # factors = (aux_logP - aux_log_proposal_pdf - aux_log_sum_weights) - (logP_out - log_proposal_pdf_out - log_sum_weights) - log_proposal_pdf_out
-            
-            # stop pretending, reverse factors for reverse case
-            factors[inds_reverse] *= -1.0
-            # if self.xp.any(factors > 0.0):
+            aux_logP = self.get_mt_log_posterior(aux_ll, aux_lp, betas=betas)
 
-            # if self.xp.any((log_sum_weights - aux_log_sum_weights) > 0.0):
-            #    breakpoint()
-            out_vals = [logP_out, ll_out, lp_out, log_proposal_pdf_out, log_sum_weights]
-            all_vals_prop = [logP, ll, lp, log_proposal_pdf, log_sum_weights]
-            aux_all_vals = [aux_logP, aux_ll, aux_lp, aux_log_proposal_pdf, aux_log_sum_weights]
-            self.readout_adjustment(out_vals, all_vals_prop, aux_all_vals, inds_reverse)
-            
-            keep_now = self.xp.ones(generated_points_out.shape[0], dtype=bool)
-            keep_now[inds_reverse] = False
+            if not self.symmetric:
+                aux_log_importance_weights = aux_logP - aux_log_proposal_pdf_sub
+            else:
+                aux_log_importance_weights = aux_logP
 
-            return (
-                generated_points_out[keep_now],
-                logP_out,
-                factors,
-            )
+        aux_logP_out = aux_logP[inds_tuple]
+        aux_log_sum_weights = logsumexp(aux_log_importance_weights, axis=-1, xp=self.xp)
 
+        aux_log_proposal_pdf_out = aux_log_proposal_pdf[inds_tuple]
+        # this is setup to make clear with the math.
+        # setting up factors properly means the
+        # final lnpdiff will be effectively be the ratio of the sums
+        # of the weights
+
+        # IMPORTANT: logP_out must be subtracted against log_sum_weights before anything else due to -1e300s.
+        factors = (
+            (aux_logP_out - aux_log_sum_weights)
+            - aux_log_proposal_pdf_out
+            + aux_log_proposal_pdf_out
+        ) - (
+            (logP_out - log_sum_weights)
+            - log_proposal_pdf_out
+            + log_proposal_pdf_out
+        )
+
+        self.aux_logP_out = aux_logP_out
+        self.logP_out = logP_out
+        
+        self.log_sum_weights = log_sum_weights
+        self.aux_log_sum_weights = aux_log_sum_weights
+
+        out_vals = [logP_out, ll_out, lp_out, log_proposal_pdf_out, log_sum_weights]
+        all_vals_prop = [logP, ll, lp, log_proposal_pdf, log_sum_weights]
+        aux_all_vals = [aux_logP, aux_ll, aux_lp, aux_log_proposal_pdf, aux_log_sum_weights]
+        self.readout_adjustment(out_vals, all_vals_prop, aux_all_vals)
+
+        return (
+            generated_points_out,
+            factors,
+        )
+
+    def get_proposal(self, branches_coords, random, branches_inds=None, **kwargs):
+        
+        if len(list(branches_coords.keys())) > 1:
+            raise ValueError("Can only propose change to one model at a time with MT.")
+
+        key_in = list(branches_coords.keys())[0]
+
+        if branches_inds is None:
+            branches_inds = {}
+            branches_inds[key_in] = np.ones(branches_coords[key_in].shape[:-1], dtype=bool)
+
+        if np.any(branches_inds[key_in].sum(axis=-1) > 1):
+            raise ValueError
+
+        ntemps, nwalkers, _, _ = branches_coords[key_in].shape
+        
+        betas_here = np.repeat(self.temperature_control.betas[:, None], np.prod(branches_coords[key_in].shape[1:-1])).reshape(branches_inds[key_in].shape)[branches_inds[key_in]]
+
+        ll_here = np.repeat(self.current_state.log_like[:, :, None], branches_coords[key_in].shape[2], axis=-1).reshape(branches_inds[key_in].shape)[branches_inds[key_in]]
+        lp_here = np.repeat(self.current_state.log_prior[:, :, None], branches_coords[key_in].shape[2], axis=-1).reshape(branches_inds[key_in].shape)[branches_inds[key_in]]
+
+        generated_points, factors = self.get_mt_proposal(branches_coords[key_in][branches_inds[key_in]], random, betas=betas_here, ll_in=ll_here, lp_in=lp_here)
+
+        self.mt_ll = self.mt_ll.reshape(ntemps, nwalkers)
+        self.mt_lp = self.mt_lp.reshape(ntemps, nwalkers)
+        # TODO: check this with multiple leaves gibbs ndim
+        return {key_in: generated_points.reshape(ntemps, nwalkers, 1, -1)}, factors.reshape(ntemps, nwalkers)

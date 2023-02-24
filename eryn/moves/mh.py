@@ -93,6 +93,9 @@ class MHMove(Move):
             if not at_least_one_proposal:
                 continue
 
+            self.current_model = model
+            self.current_state = state
+
             # Get the move-specific proposal.
             q, factors = self.get_proposal(
                 coords_going_for_proposal,
@@ -107,20 +110,28 @@ class MHMove(Move):
                 branch_names_run, inds_run, q, state.branches_coords
             )
 
-            # Compute prior of the proposed position
-            logp = model.compute_log_prior_fn(q, inds=state.branches_inds)
+            # if not wrapping with mutliple try (normal route)
+            if not hasattr(self, "mt_ll") or not hasattr(self, "mt_lp"):
+                # Compute prior of the proposed position
+                logp = model.compute_log_prior_fn(q, inds=state.branches_inds)
 
-            self.fix_logp_gibbs(branch_names_run, inds_run, logp, state.branches_inds)
+                self.fix_logp_gibbs(branch_names_run, inds_run, logp, state.branches_inds)
 
-            # Compute the lnprobs of the proposed position.
-            # Can adjust supplimentals in place
-            logl, new_blobs = model.compute_log_like_fn(
-                q,
-                inds=state.branches_inds,
-                logp=logp,
-                supps=new_supps,
-                branch_supps=new_branch_supps,
-            )
+                # Compute the lnprobs of the proposed position.
+                # Can adjust supplimentals in place
+                logl, new_blobs = model.compute_log_like_fn(
+                    q,
+                    inds=state.branches_inds,
+                    logp=logp,
+                    supps=new_supps,
+                    branch_supps=new_branch_supps,
+                )
+
+            else:
+                # if already computed in multiple try
+                logl = self.mt_ll
+                logp = self.mt_lp
+                new_blobs = None
 
             # get log posterior
             logP = self.compute_log_posterior(logl, logp)

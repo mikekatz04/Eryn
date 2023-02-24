@@ -54,6 +54,24 @@ Implemented Red-Blue Moves
     :show-inheritance:
     :inherited-members:
 
+Group Moves
+~~~~~~~~~~~~~~
+
+Group Parent Class
+^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: eryn.moves.GroupMove
+    :members:
+    :show-inheritance:
+    :inherited-members:
+
+Implemented Group Moves
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: eryn.moves.GroupStretchMove
+    :members:
+    :show-inheritance:
+    :inherited-members:
+
 
 Reversible Jump Moves
 ~~~~~~~~~~~~~~~~~~~~~~~
