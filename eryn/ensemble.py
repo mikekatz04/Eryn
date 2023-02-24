@@ -1068,6 +1068,7 @@ class EnsembleSampler(object):
             # if inds_keep in branch supps, indicate which to not keep
             if (
                 branch_supps is not None
+                and key in branch_supps
                 and branch_supps[key] is not None
                 and "inds_keep" in branch_supps[key]
             ):
