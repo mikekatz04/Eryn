@@ -37,13 +37,14 @@ class MultipleTryMove:
     """
 
     def __init__(
-        self, num_try=1, independent=False, symmetric=False, xp=None, **kwargs
+        self, num_try=1, independent=False, symmetric=False, rj=False, xp=None, **kwargs
     ):
         # TODO: make priors optional like special generate function?
         self.num_try = num_try
         
         self.independent = independent
         self.symmetric = symmetric
+        self.rj = rj
 
         if xp is None:
             xp = np
@@ -70,7 +71,6 @@ class MultipleTryMove:
         self,
         coords,
         random,
-        inds_rj_reverse=None,
         args_generate=(),
         kwargs_generate={},
         args_like=(),
@@ -80,9 +80,20 @@ class MultipleTryMove:
         betas=None,
         ll_in=None,
         lp_in=None,
+        inds_leaves_rj=None,
+        inds_rj_reverse=None,
     ):
         """Make a proposal
         """
+
+        if self.rj:
+            assert inds_leaves_rj is not None and inds_rj_reverse is not None
+            # if using reversible jump, fill first spot with values that are proposed to remove
+            fill_tuple = (inds_rj_reverse, np.zeros_like(inds_rj_reverse))
+            fill_values = coords[(inds_rj_reverse, [inds_leaves_rj[inds_rj_reverse]])]
+        else:
+            fill_tuple = None
+            fill_values = None
 
         # generate new points and get detailed balance info
         generated_points, log_proposal_pdf = self.special_generate_func(
@@ -90,10 +101,12 @@ class MultipleTryMove:
             random,
             *args_generate,
             size=self.num_try,
+            fill_values=fill_values,
+            fill_tuple=fill_tuple,
             **kwargs_generate
         )
         
-        ll = self.special_like_func(generated_points, *args_like, **kwargs_like)
+        ll = self.special_like_func(generated_points, *args_like, inds_leaves_rj=inds_leaves_rj, **kwargs_like)
 
         if self.xp.any(self.xp.isnan(ll)):
             warnings.warn("Getting nans for ll in multiple try.")
@@ -243,6 +256,67 @@ class MultipleTryMove:
         lp_here = np.repeat(self.current_state.log_prior[:, :, None], branches_coords[key_in].shape[2], axis=-1).reshape(branches_inds[key_in].shape)[branches_inds[key_in]]
 
         generated_points, factors = self.get_mt_proposal(branches_coords[key_in][branches_inds[key_in]], random, betas=betas_here, ll_in=ll_here, lp_in=lp_here)
+
+        self.mt_ll = self.mt_ll.reshape(ntemps, nwalkers)
+        self.mt_lp = self.mt_lp.reshape(ntemps, nwalkers)
+        # TODO: check this with multiple leaves gibbs ndim
+        return {key_in: generated_points.reshape(ntemps, nwalkers, 1, -1)}, factors.reshape(ntemps, nwalkers)
+
+
+class MultipleTryMoveRJ(MultipleTryMove):
+    def get_proposal(
+        self, branches_coords, branches_inds, min_k_all, max_k_all, random, **kwargs
+    ):
+
+        if len(list(branches_coords.keys())) > 1:
+            raise ValueError("Can only propose change to one model at a time with MT.")
+
+        key_in = list(branches_coords.keys())[0]
+
+        if branches_inds is None:
+            raise ValueError("In MT RJ proposal, branches_inds cannot be None.")
+
+        ntemps, nwalkers, nleaves_max, _ = branches_coords[key_in].shape
+        
+        betas_here = np.repeat(self.temperature_control.betas[:, None], np.prod(branches_coords[key_in].shape[1:-1])).reshape(branches_inds[key_in].shape)[branches_inds[key_in]]
+
+        ll_here = np.repeat(self.current_state.log_like[:, :, None], branches_coords[key_in].shape[2], axis=-1).reshape(branches_inds[key_in].shape)[branches_inds[key_in]]
+        lp_here = np.repeat(self.current_state.log_prior[:, :, None], branches_coords[key_in].shape[2], axis=-1).reshape(branches_inds[key_in].shape)[branches_inds[key_in]]
+
+
+        # do rj setup
+        assert len(min_k_all) == 1 and len(max_k_all) == 1
+        min_k = min_k_all[0]
+        max_k = max_k_all[0]
+
+        if min_k == max_k:
+            raise ValueError("MT RJ proposal requires that min_k != max_k.")
+        elif min_k > max_k:
+            raise ValueError("min_k is greater than max_k. Not allowed.")
+
+        # get the inds adjustment information
+        all_inds_for_change = self.get_model_change_proposal(
+            branches_inds[key_in], random, min_k, max_k
+        )
+
+        inds_leaves_rj = np.zeros(ntemps * nwalkers, dtype=int)
+        coords_in = np.zeros((ntemps * nwalkers, ))
+        inds_reverse_rj = None
+        for change in all_inds_for_change.keys():
+            temp_inds = all_inds_for_change[change][:, 0]
+            walker_inds = all_inds_for_change[change][:, 1]
+            leaf_inds = all_inds_for_change[change][:, 2]
+
+            inds_leaves_rj[temp_inds * nwalkers + walker_inds] = leaf_inds
+
+            if change == "-1":
+                inds_reverse_rj = temp_inds * nwalkers + nwalker_inds
+
+        inds_reverse_rj = all_inds_for_change["-1"] 
+
+        breakpoint()
+        coords_in = branches_coords[key_in][]
+        generated_points, factors = self.get_mt_proposal(, random, betas=betas_here, ll_in=ll_here, lp_in=lp_here)
 
         self.mt_ll = self.mt_ll.reshape(ntemps, nwalkers)
         self.mt_lp = self.mt_lp.reshape(ntemps, nwalkers)

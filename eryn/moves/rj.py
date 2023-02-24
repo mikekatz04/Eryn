@@ -141,8 +141,6 @@ class ReversibleJump(Move):
         """
         # TODO: check if temperatures are properly repeated after reset
         # this exposes anywhere in the proposal class to this information
-        self.current_state = state
-        self.current_model = model
 
         # Run any move-specific setup.
         self.setup(state.branches)
@@ -184,6 +182,8 @@ class ReversibleJump(Move):
                 max_k_all.append(self.max_k[ind_keep_here])
                 min_k_all.append(self.min_k[ind_keep_here])
 
+            self.current_model = model
+            self.current_state = state
             # propose new sources and coordinates
             q, new_inds, factors = self.get_proposal(
                 coords_propose_in,
@@ -261,25 +261,25 @@ class ReversibleJump(Move):
 
             # supp info
 
-            if hasattr(self, "new_supps_for_transfer"):
+            if hasattr(self, "mt_supps"):
                 # logp = self.lp_for_transfer.reshape(ntemps, nwalkers)
-                new_supps = self.new_supps_for_transfer
+                new_supps = self.mt_supps
 
-            if hasattr(self, "new_branch_supps_for_transfer"):
+            if hasattr(self, "mt_branch_supps"):
                 # logp = self.lp_for_transfer.reshape(ntemps, nwalkers)
-                new_branch_supps = self.new_branch_supps_for_transfer
+                new_branch_supps = self.mt_branch_supps
 
             # logp and logl
 
             # Compute prior of the proposed position
-            if hasattr(self, "lp_for_transfer"):
-                logp = self.lp_for_transfer.reshape(ntemps, nwalkers)
+            if hasattr(self, "mt_lp"):
+                logp = self.mt_lp.reshape(ntemps, nwalkers)
 
             else:
                 logp = model.compute_log_prior_fn(q, inds=new_inds)
 
-            if hasattr(self, "ll_for_transfer"):
-                logl = self.ll_for_transfer.reshape(ntemps, nwalkers)
+            if hasattr(self, "mt_ll"):
+                logl = self.mt_ll.reshape(ntemps, nwalkers)
 
             else:
                 # Compute the ln like of the proposed position.
