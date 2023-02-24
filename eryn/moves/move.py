@@ -266,7 +266,7 @@ class Move(object):
             at_least_one_proposal,
         )
 
-    def cleanup_proposals_gibbs(self, branch_names_run, inds_run, q, branches_coords):
+    def cleanup_proposals_gibbs(self, branch_names_run, inds_run, q, branches_coords, branches_inds=None, new_inds=None):
         """Set all not Gibbs-sampled parameters back
         
         Args:
@@ -284,7 +284,11 @@ class Move(object):
         # add other models that were not included
         for key, value in branches_coords.items():
             if key not in q:
-                q[key] = value
+                q[key] = value.copy()
+                if new_inds is not None:
+                    assert branches_inds is not None
+                    new_inds[key] = branches_inds[key].copy()
+
 
     def fix_logp_gibbs(self, branch_names_run, inds_run, logp, inds):
         """Set any walker with no leaves to have logp = -np.inf

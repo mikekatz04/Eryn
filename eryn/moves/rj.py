@@ -194,6 +194,10 @@ class ReversibleJump(Move):
                 branch_supps=branches_supp_propose_in,
                 supps=state.supplimental,
             )
+            # account for gibbs sampling
+            self.cleanup_proposals_gibbs(
+                branch_names_run, inds_run, q, state.branches_coords, new_inds=new_inds, branches_inds=state.branches_inds
+            )
 
             # put back any branches that were left out from Gibbs split
             for name, branch in state.branches.items():
@@ -277,6 +281,8 @@ class ReversibleJump(Move):
 
             else:
                 logp = model.compute_log_prior_fn(q, inds=new_inds)
+
+            self.fix_logp_gibbs(branch_names_run, inds_run, logp, new_inds)
 
             if hasattr(self, "mt_ll"):
                 logl = self.mt_ll.reshape(ntemps, nwalkers)
