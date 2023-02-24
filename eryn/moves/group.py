@@ -182,6 +182,8 @@ class GroupMove(Move, ABC):
                     # nleaves * ndim
                     gibbs_ndim += np.prod(state.branches[brn].shape[-2:])
 
+            self.current_model = model
+            self.current_state = state
             # Get the move-specific proposal.
             q, factors = self.get_proposal(
                 coords_going_for_proposal, model.random, gibbs_ndim=gibbs_ndim, s_inds_all=inds_going_for_proposal
