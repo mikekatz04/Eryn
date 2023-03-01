@@ -20,6 +20,9 @@ from .group import GroupMove
 from .groupstretch import GroupStretchMove
 from .combine import CombineMove
 from .basicmodelswaprj import BasicSymmetricModelSwapRJMove
+from .mtdistgen import MTDistGenMove
+from .mtdistgenrj import MTDistGenMoveRJ
+from .multipletry import MultipleTryMove
 
 __all__ = [
     "Move",

@@ -1,6 +1,8 @@
 from multiprocessing.sharedctypes import Value
 import numpy as np
 import warnings
+from copy import deepcopy
+from abc import ABC
 # from scipy.special import logsumexp
 
 try:
@@ -29,29 +31,122 @@ def logsumexp(a, axis=None, xp=None):
     return max + xp.log(sum_of_exp)
 
 
-class MultipleTryMove:
+class MultipleTryMove(ABC):
     """Generate multiple proposal tries.
+
+    This class should be inherited by another proposal class 
+    with the ``@classmethods`` overwritten. See :class:`eryn.moves.MTDistGenMove`
+    and :class:`MTDistGenRJ` for examples.
+
     Args:
-        priors (object): :class:`ProbDistContainer` object that has ``logpdf``
-            and ``rvs`` methods.
+        num_try (int, optional): Number of tries. (default: 1)
+        independent (bool, optional): Set to ``True`` if the proposal is independent of the current points. 
+            (default: ``False``). 
+        symmetric (bool, optional): Set to ``True`` if the proposal is symmetric. 
+            (default: ``False``). 
+        rj (bool, optional): Set to ``True`` if this is a nested reversible jump proposal. 
+            (default: ``False``). 
+        **kwargs (dict, optional): for compatibility with other proposals.
+
+        Raisees:
+            ValueError: Input issues. 
+        
     """
 
     def __init__(
         self, num_try=1, independent=False, symmetric=False, rj=False, xp=None, **kwargs
     ):
-        # TODO: make priors optional like special generate function?
+        # TODO: add in xp
         self.num_try = num_try
         
         self.independent = independent
         self.symmetric = symmetric
         self.rj = rj
 
+        if self.rj:
+            if self.symmetric or self.independent:
+                raise ValueError("If rj==True, symmetric and independt must both be False.")
+
         if xp is None:
             xp = np
 
         self.xp = xp
 
+    @classmethod
+    def special_like_func(self, generated_coords, *args, inds_leaves_rj=None, **kwargs):
+        """Calculate the Likelihood for sampled points.
+        
+        Args:
+            generated_coords (np.ndarray): Generated coordinates with shape ``(number of independent walkers, num_try)``. 
+            *args (tuple, optional): additional arguments passed by overwriting the 
+                ``get_proposal`` function and passing ``args_like`` keyword argument.
+            inds_leaves_rj (np.ndarray): Index into each individual walker giving the
+                leaf index associated with this proposal. Should only be used if ``self.rj is True``. (default: ``None``)
+            **kwargs (tuple, optional): additional keyword arguments passed by overwriting the 
+                ``get_proposal`` function and passing ``kwargs_like`` keyword argument.
+
+        Returns:
+            np.ndarray: Likelihood values with shape ``(generated_coords.shape[0], num_try).``
+        
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def special_prior_func(self, generated_coords, *args, **kwargs):
+        """Calculate the Prior for sampled points.
+        
+        Args:
+            generated_coords (np.ndarray): Generated coordinates with shape ``(number of independent walkers, num_try)``. 
+            *args (tuple, optional): additional arguments passed by overwriting the 
+                ``get_proposal`` function and passing ``args_prior`` keyword argument.
+            inds_leaves_rj (np.ndarray): Index into each individual walker giving the
+                leaf index associated with this proposal. Should only be used if ``self.rj is True``. (default: ``None``)
+            **kwargs (tuple, optional): additional keyword arguments passed by overwriting the 
+                ``get_proposal`` function and passing ``kwargs_prior`` keyword argument.
+
+        Returns:
+            np.ndarray: Prior values with shape ``(generated_coords.shape[0], num_try).``
+        
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def special_generate_func(coords, random, size=1, *args, fill_tuple=None, fill_values=None, **kwargs):
+        """Generate samples and calculate the logpdf of their proposal function.
+        
+        Args:
+            coords (np.ndarray): Current coordinates of walkers. 
+            random (obj): Random generator.
+            *args (tuple, optional): additional arguments passed by overwriting the 
+                ``get_proposal`` function and passing ``args_generate`` keyword argument.
+            size (int, optional): Number of tries to generate. 
+            fill_tuple (tuple, optional): Length 2 tuple with the indexing of which values to fill
+                when generating. Can be used for auxillary proposals or reverse RJ proposals. First index is the index into walkers and the second index is 
+                the index into the number of tries. (default: ``None``)
+            fill_values (np.ndarray): values to fill associated with ``fill_tuple``. Should 
+                have size ``(len(fill_tuple[0]), ndim)``. (default: ``None``).
+            **kwargs (tuple, optional): additional keyword arguments passed by overwriting the 
+                ``get_proposal`` function and passing ``kwargs_generate`` keyword argument.
+
+        Returns:
+            tuple: (generated points, logpdf of generated points).
+        
+        """
+        raise NotImplementedError
+
     def get_mt_log_posterior(self, ll, lp, betas=None):
+        """Calculate the log of the posterior for all tries.
+
+        Args:
+            ll (np.ndarray): Log Likelihood values with shape ``(nwalkers, num_tries)``. 
+            lp (np.ndarray): Log Prior values with shape ``(nwalkers, num_tries)``.
+            betas (np.ndarray, optional): Inverse temperatures to include in log Posterior computation.
+                (default: ``None``)
+
+        Returns:
+            np.ndarray: Log of the Posterior with shape ``(nwalkers, num_tries)``.
+
+        """
         if betas is None:
             ll_temp = ll.copy()
         else:
@@ -65,6 +160,16 @@ class MultipleTryMove:
         return ll_temp + lp
 
     def readout_adjustment(self, out_vals, all_vals_prop, aux_all_vals):
+        """Read out values from the proposal.
+        
+        Allows the user to read out any values from the proposal that may be needed elsewhere. This function must be overwritten. 
+        
+        Args:
+            out_vals (list): ``[logP_out, ll_out, lp_out, log_proposal_pdf_out, log_sum_weights]``. 
+            all_vals_prop (list): ``[logP, ll, lp, log_proposal_pdf, log_sum_weights]``.
+            aux_all_vals (list): ``[aux_logP, aux_ll, aux_lp, aux_log_proposal_pdf, aux_log_sum_weights]``.
+        
+        """
         pass
 
     def get_mt_proposal(
@@ -81,16 +186,59 @@ class MultipleTryMove:
         ll_in=None,
         lp_in=None,
         inds_leaves_rj=None,
-        inds_rj_reverse=None,
+        inds_reverse_rj=None,
     ):
-        """Make a proposal
+        """Make a multiple-try proposal
+
+        Here, ``nwalkers`` refers to all independent walkers which generally
+        will mean ``nwalkers * ntemps`` in terms of the rest of the sampler.
+
+        Args:
+            coords (np.ndarray): Current coordinates of walkers. 
+            random (obj): Random generator.
+            args_generate (tuple, optional): Additional ``*args`` to pass to generate function. 
+                Must overwrite ``get_proposal`` function to use these. 
+                (default: ``()``)
+            kwargs_generate (dict, optional): Additional ``**kwargs`` to pass to generate function. 
+                (default: ``{}``)
+                Must overwrite ``get_proposal`` function to use these.
+            args_like (tuple, optional): Additional ``*args`` to pass to Likelihood function. 
+                Must overwrite ``get_proposal`` function to use these. 
+                (default: ``()``)
+            kwargs_like (dict, optional): Additional ``**kwargs`` to pass to Likelihood function. 
+                Must overwrite ``get_proposal`` function to use these. 
+                (default: ``{}``)
+            args_prior (tuple, optional): Additional ``*args`` to pass to Prior function. 
+                Must overwrite ``get_proposal`` function to use these. 
+                (default: ``()``)
+            kwargs_prior (dict, optional): Additional ``**kwargs`` to pass to Prior function. 
+                Must overwrite ``get_proposal`` function to use these. 
+                (default: ``{}``)
+            betas (np.ndarray, optional): Inverse temperatures passes to the proposal with shape ``(nwalkers,)``. 
+            ll_in (np.ndarray, optional): Log Likelihood values coming in for current coordinates. Must be provided 
+                if ``self.rj is True``. Useful if ``self.independent is True``. (default: ``None``)
+            lp_in (np.ndarray, optional): Log Prior values coming in for current coordinates. Must be provided 
+                if ``self.rj is True``. Useful if ``self.independent is True``. (default: ``None``)
+            inds_leaves_rj (np.ndarray, optional): Array giving the leaf index of each incoming walker. 
+                Must be provided if ``self.rj is True``. (default: ``None``)
+            inds_reverse_rj (np.ndarray, optional): Array giving the walker index for which proposals are 
+                reverse proposal removing a leaf. 
+                Must be provided if ``self.rj is True``. (default: ``None``)
+
+        Returns:
+            tuple: (generated points, factors).
+
+        Raises:
+            AssertionError: Inputs are incorrect. 
+
         """
 
         if self.rj:
-            assert inds_leaves_rj is not None and inds_rj_reverse is not None
+            assert ll_in is not None and lp_in is not None
+            assert inds_leaves_rj is not None and inds_reverse_rj is not None
             # if using reversible jump, fill first spot with values that are proposed to remove
-            fill_tuple = (inds_rj_reverse, np.zeros_like(inds_rj_reverse))
-            fill_values = coords[(inds_rj_reverse, [inds_leaves_rj[inds_rj_reverse]])]
+            fill_tuple = (inds_reverse_rj, np.zeros_like(inds_reverse_rj))
+            fill_values = coords[inds_reverse_rj]
         else:
             fill_tuple = None
             fill_values = None
@@ -113,7 +261,7 @@ class MultipleTryMove:
             ll[self.xp.isnan(ll)] = -1e300
 
         lp = self.special_prior_func(
-            generated_points, *args_prior, **kwargs_prior
+            generated_points, *args_prior, inds_leaves_rj=inds_leaves_rj, **kwargs_prior
         )
 
         logP = self.get_mt_log_posterior(ll, lp, betas=betas)
@@ -174,6 +322,16 @@ class MultipleTryMove:
 
             aux_log_importance_weights = aux_logP - aux_log_proposal_pdf
 
+        elif self.rj:
+            aux_ll = np.repeat(ll_in[:, None], self.num_try, axis=-1)
+            aux_lp = np.repeat(lp_in[:, None], self.num_try, axis=-1)
+            
+            aux_log_proposal_pdf = np.zeros_like(aux_ll)
+
+            aux_logP = self.get_mt_log_posterior(aux_ll, aux_lp, betas=betas)
+            
+            aux_log_importance_weights = aux_logP - aux_log_proposal_pdf
+
         else:
             # generate auxillary points
             aux_generated_points, aux_log_proposal_pdf = self.special_generate_func(
@@ -217,6 +375,9 @@ class MultipleTryMove:
             - log_proposal_pdf_out
             + log_proposal_pdf_out
         )
+
+        if self.rj:
+            factors[inds_reverse_rj] *= -1
 
         self.aux_logP_out = aux_logP_out
         self.logP_out = logP_out
@@ -276,13 +437,12 @@ class MultipleTryMoveRJ(MultipleTryMove):
         if branches_inds is None:
             raise ValueError("In MT RJ proposal, branches_inds cannot be None.")
 
-        ntemps, nwalkers, nleaves_max, _ = branches_coords[key_in].shape
+        ntemps, nwalkers, nleaves_max, ndim = branches_coords[key_in].shape
         
-        betas_here = np.repeat(self.temperature_control.betas[:, None], np.prod(branches_coords[key_in].shape[1:-1])).reshape(branches_inds[key_in].shape)[branches_inds[key_in]]
+        betas_here = np.repeat(self.temperature_control.betas[:, None], nwalkers, axis=-1).flatten()
 
-        ll_here = np.repeat(self.current_state.log_like[:, :, None], branches_coords[key_in].shape[2], axis=-1).reshape(branches_inds[key_in].shape)[branches_inds[key_in]]
-        lp_here = np.repeat(self.current_state.log_prior[:, :, None], branches_coords[key_in].shape[2], axis=-1).reshape(branches_inds[key_in].shape)[branches_inds[key_in]]
-
+        ll_here = self.current_state.log_like.flatten()
+        lp_here = self.current_state.log_prior.flatten()
 
         # do rj setup
         assert len(min_k_all) == 1 and len(max_k_all) == 1
@@ -300,25 +460,38 @@ class MultipleTryMoveRJ(MultipleTryMove):
         )
 
         inds_leaves_rj = np.zeros(ntemps * nwalkers, dtype=int)
-        coords_in = np.zeros((ntemps * nwalkers, ))
+        coords_in = np.zeros((ntemps * nwalkers, ndim))
         inds_reverse_rj = None
+        new_inds = deepcopy(branches_inds)
+        q = deepcopy(branches_coords)
         for change in all_inds_for_change.keys():
+            if change not in ["+1", "-1"]:
+                raise ValueError("MT RJ is only implemented for +1/-1 moves.")
             temp_inds = all_inds_for_change[change][:, 0]
             walker_inds = all_inds_for_change[change][:, 1]
             leaf_inds = all_inds_for_change[change][:, 2]
 
             inds_leaves_rj[temp_inds * nwalkers + walker_inds] = leaf_inds
+            coords_in[temp_inds * nwalkers + walker_inds] = branches_coords[key_in][(temp_inds, walker_inds, leaf_inds)]
+
+            new_val = {"+1": True, "-1": False}[change]
+
+            new_inds[key_in][(temp_inds, walker_inds, leaf_inds)] = new_val
 
             if change == "-1":
-                inds_reverse_rj = temp_inds * nwalkers + nwalker_inds
+                inds_reverse_rj = temp_inds * nwalkers + walker_inds
 
-        inds_reverse_rj = all_inds_for_change["-1"] 
-
-        breakpoint()
-        """coords_in = branches_coords[key_in][]
-        generated_points, factors = self.get_mt_proposal(, random, betas=betas_here, ll_in=ll_here, lp_in=lp_here)"""
+        generated_points, factors = self.get_mt_proposal(coords_in, random, betas=betas_here, ll_in=ll_here, lp_in=lp_here, inds_leaves_rj=inds_leaves_rj, inds_reverse_rj=inds_reverse_rj)
 
         self.mt_ll = self.mt_ll.reshape(ntemps, nwalkers)
         self.mt_lp = self.mt_lp.reshape(ntemps, nwalkers)
+
+        inds_forward_rj = np.delete(np.arange(coords_in.shape[0]), inds_reverse_rj)
+
+        temp_inds = all_inds_for_change["+1"][:, 0]
+        walker_inds = all_inds_for_change["+1"][:, 1]
+        leaf_inds = all_inds_for_change["+1"][:, 2]
+        q[key_in][(temp_inds, walker_inds, leaf_inds)] = generated_points[inds_forward_rj]
+
         # TODO: check this with multiple leaves gibbs ndim
-        return {key_in: generated_points.reshape(ntemps, nwalkers, 1, -1)}, factors.reshape(ntemps, nwalkers)
+        return q, new_inds, factors.reshape(ntemps, nwalkers)

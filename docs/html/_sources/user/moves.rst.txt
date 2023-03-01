@@ -91,6 +91,33 @@ Implemented Reversible Jump Moves
     :show-inheritance:
     :inherited-members:
 
+Mutliple Try Moves
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Mutliple Try Parent Class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: eryn.moves.MultipleTryMove
+    :members:
+    :show-inheritance:
+    :inherited-members:
+
+Implemented Multiple Try Moves
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: eryn.moves.MTDistGenMove
+    :members:
+    :show-inheritance:
+    :inherited-members:
+
+Implemented Multiple Try RJ Moves
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: eryn.moves.MTDistGenMoveRJ
+    :members:
+    :show-inheritance:
+    :inherited-members:
+
+
 Utility Moves
 ~~~~~~~~~~~~~~~~~~~~~~~
 

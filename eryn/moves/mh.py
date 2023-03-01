@@ -110,6 +110,10 @@ class MHMove(Move):
                 branch_names_run, inds_run, q, state.branches_coords
             )
 
+            # order everything properly                
+            q, _, new_branch_supps = self.ensure_ordering(list(state.branches.keys()), q, state.branches_inds, new_branch_supps)
+
+
             # if not wrapping with mutliple try (normal route)
             if not hasattr(self, "mt_ll") or not hasattr(self, "mt_lp"):
                 # Compute prior of the proposed position

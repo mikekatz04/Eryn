@@ -194,6 +194,8 @@ class ReversibleJump(Move):
                 branch_supps=branches_supp_propose_in,
                 supps=state.supplimental,
             )
+
+            branches_supps_new = {key: item for key, item in branches_supp_propose_in.items()}
             # account for gibbs sampling
             self.cleanup_proposals_gibbs(
                 branch_names_run, inds_run, q, state.branches_coords
@@ -205,6 +207,9 @@ class ReversibleJump(Move):
                     q[name] = state.branches[name].coords[:].copy()
                 if name not in new_inds:
                     new_inds[name] = state.branches[name].inds[:].copy()
+
+                if name not in branches_supps_new:
+                    branches_supps_new[name] = state.branches_supplimental[name]
 
             # TODO: check this
             edge_factors = np.zeros((ntemps, nwalkers))
@@ -294,7 +299,7 @@ class ReversibleJump(Move):
                     inds=new_inds,
                     logp=logp,
                     supps=new_supps,
-                    branch_supps=branches_supp_propose_in,
+                    branch_supps=branches_supps_new,
                 )
 
             # posterior and previous info
@@ -321,7 +326,7 @@ class ReversibleJump(Move):
                 blobs=None,
                 inds=new_inds,
                 supplimental=new_supps,
-                branch_supplimental=branches_supp_propose_in,
+                branch_supplimental=branches_supps_new,
             )
             state = self.update(state, new_state, accepted)
 

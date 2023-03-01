@@ -213,7 +213,7 @@
 <h2>Probability Distribution Container<a class="headerlink" href="#probability-distribution-container" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="eryn.prior.ProbDistContainer">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.prior.</span></span><span class="sig-name descname"><span class="pre">ProbDistContainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">priors_in</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.ProbDistContainer" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.prior.</span></span><span class="sig-name descname"><span class="pre">ProbDistContainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">priors_in</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cupy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.ProbDistContainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Container for holding and generating prior info</p>
 <dl class="field-list simple">
@@ -255,6 +255,18 @@ in a list.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="eryn.prior.ProbDistContainer.use_cupy">
+<span class="sig-name descname"><span class="pre">use_cupy</span></span><a class="headerlink" href="#eryn.prior.ProbDistContainer.use_cupy" title="Permalink to this definition">¶</a></dt>
+<dd><p>If <code class="docutils literal notranslate"><span class="pre">True</span></code>, use CuPy. If <code class="docutils literal notranslate"><span class="pre">False</span></code> use Numpy.
+(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>bool, optional</p>
 </dd>
 </dl>
 </dd></dl>
@@ -330,24 +342,22 @@ sources from prior distributions.</p>
 <h2>Available Probability Distributions<a class="headerlink" href="#available-probability-distributions" title="Permalink to this headline">¶</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="eryn.prior.uniform_dist">
-<span class="sig-prename descclassname"><span class="pre">eryn.prior.</span></span><span class="sig-name descname"><span class="pre">uniform_dist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.uniform_dist" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">eryn.prior.</span></span><span class="sig-name descname"><span class="pre">uniform_dist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cupy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.uniform_dist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate uniform distribution between <code class="docutils literal notranslate"><span class="pre">min</span></code> and <code class="docutils literal notranslate"><span class="pre">max</span></code></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>min</strong> (<em>double</em>) – Minimum in the uniform distribution</p></li>
 <li><p><strong>max</strong> (<em>double</em>) – Maximum in the uniform distribution</p></li>
+<li><p><strong>use_cupy</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, use CuPy. If <code class="docutils literal notranslate"><span class="pre">False</span></code> use Numpy.
+(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><dl class="simple">
-<dt>Uniform distribution built from</dt><dd><p><cite>scipy.stats.uniform &lt;https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.uniform.html&gt;_</cite>.</p>
-</dd>
-</dl>
-</p>
+<dd class="field-even"><p>Uniform distribution.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>scipy distribution object</p>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">UniformDistribution</span></code></p>
 </dd>
 </dl>
 </dd></dl>
@@ -378,7 +388,7 @@ sources from prior distributions.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="eryn.prior.MappedUniformDistribution">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.prior.</span></span><span class="sig-name descname"><span class="pre">MappedUniformDistribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.MappedUniformDistribution" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.prior.</span></span><span class="sig-name descname"><span class="pre">MappedUniformDistribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cupy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.prior.MappedUniformDistribution" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Maps uniform distribution to zero to 1.</p>
 <p>This is a modified uniform distribution that maps
@@ -391,6 +401,8 @@ and <code class="docutils literal notranslate"><span class="pre">-np.inf</span><
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>min</strong> (<em>double</em>) – Minimum in the uniform distribution</p></li>
 <li><p><strong>max</strong> (<em>double</em>) – Maximum in the uniform distribution</p></li>
+<li><p><strong>use_cupy</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, use CuPy. If <code class="docutils literal notranslate"><span class="pre">False</span></code> use Numpy.
+(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises</dt>

@@ -266,14 +266,18 @@ class Move(object):
             at_least_one_proposal,
         )
 
-    def cleanup_proposals_gibbs(self, branch_names_run, inds_run, q, branches_coords, branches_inds=None, new_inds=None):
+    def cleanup_proposals_gibbs(self, branch_names_run, inds_run, q, branches_coords, new_inds=None, branches_inds=None, new_branch_supps=None, branches_supplimental=None):
         """Set all not Gibbs-sampled parameters back
         
         Args:
             branch_names_run (list): List of branch names to run concurrently.
             inds_run (list): List of ``inds`` arrays including Gibbs sampling information.
-            q (dict): Dictionary of new coordinate arrays for all branches.
+            q (dict): Dictionary of new coordinate arrays for all proposal branches.
             branches_coords (dict): Dictionary of old coordinate arrays for all branches.
+            new_inds (dict, optional): Dictionary of new inds arrays for all proposal branches.
+            branches_inds (dict, optional): Dictionary of old inds arrays for all branches.
+            new_branch_supps (dict, optional): Dictionary of new branches supplimental for all proposal branches.
+            branches_supplimental (dict, optional): Dictionary of old branches supplimental for all branches.
             
         """
         # add back any parameters that are fixed for this round
@@ -289,6 +293,33 @@ class Move(object):
                 assert branches_inds is not None
                 new_inds[key] = branches_inds[key].copy()
 
+            if new_branch_supps is not None and key not in new_branch_supps:
+                assert branches_supplimental is not None
+                new_branch_supps[key] = branches_supplimental[key].copy()
+
+    def ensure_ordering(self, correct_key_order, q, new_inds, new_branch_supps):
+        """Ensure proper order of key in dictionaries.
+        
+        Args:
+            correct_key_order (list): Keys in correct order.
+            q (dict): Dictionary of new coordinate arrays for all branches.
+            new_inds (dict): Dictionary of new inds arrays for all branches.
+            new_branch_supps (dict or None): Dictionary of new branches supplimental for all proposal branches.
+
+        Returns:
+            Tuple: (q, new_inds, new_branch_supps) in correct key order.
+       
+        """
+        if list(q.keys()) != correct_key_order:
+            q = {key: q[key] for key in correct_key_order}
+
+        if list(new_inds.keys()) != correct_key_order:
+            new_inds = {key: new_inds[key] for key in correct_key_order}
+
+        if new_branch_supps is not None and list(new_branch_supps.keys()) != correct_key_order:
+            new_branch_supps = {key: new_branch_supps[key] for key in correct_key_order}
+
+        return q, new_inds, new_branch_supps
 
     def fix_logp_gibbs(self, branch_names_run, inds_run, logp, inds):
         """Set any walker with no leaves to have logp = -np.inf
@@ -318,6 +349,8 @@ class Move(object):
 
         # adjust
         logp[total_leaves == 0] = -np.inf
+
+    
 
     @property
     def accepted(self):

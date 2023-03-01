@@ -118,6 +118,12 @@
 <li class="toctree-l3"><a class="reference internal" href="#implemented-reversible-jump-moves">Implemented Reversible Jump Moves</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#mutliple-try-moves">Mutliple Try Moves</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mutliple-try-parent-class">Mutliple Try Parent Class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#implemented-multiple-try-moves">Implemented Multiple Try Moves</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#implemented-multiple-try-rj-moves">Implemented Multiple Try RJ Moves</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#utility-moves">Utility Moves</a></li>
 </ul>
 </li>
@@ -364,7 +370,7 @@ into the leaves/parameters for this Gibbs split.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.Move.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.Move.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.Move.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -558,7 +564,7 @@ leaves are currently being used. (default: <code class="docutils literal notrans
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.MHMove.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -796,7 +802,7 @@ leaves are currently being used. (default: <code class="docutils literal notrans
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.GaussianMove.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GaussianMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GaussianMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -982,18 +988,18 @@ primary ensemble in a <a class="reference internal" href="#eryn.moves.RedBlueMov
 
 <dl class="py class">
 <dt class="sig sig-object py" id="eryn.moves.DistributionGenerate">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">DistributionGenerate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">priors</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerate" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">DistributionGenerate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">generate_dist</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#eryn.moves.MHMove" title="eryn.moves.mh.MHMove"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.mh.MHMove</span></code></a></p>
-<p>Generate proposals from prior</p>
+<p>Generate proposals from a distribution</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>priors</strong> (<em>object</em>) – <code class="xref py py-class docutils literal notranslate"><span class="pre">ProbDistContainer</span></code> object that has <code class="docutils literal notranslate"><span class="pre">logpdf</span></code>
+<dd class="field-odd"><p><strong>generate_dist</strong> (<em>object</em>) – <code class="xref py py-class docutils literal notranslate"><span class="pre">ProbDistContainer</span></code> object that has <code class="docutils literal notranslate"><span class="pre">logpdf</span></code>
 and <code class="docutils literal notranslate"><span class="pre">rvs</span></code> methods.</p>
 </dd>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.DistributionGenerate.get_proposal">
-<span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerate.get_proposal" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerate.get_proposal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make a proposal</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1010,9 +1016,8 @@ arrays marking which leaves are currently used within each walker.</p></li>
 <dd class="field-even"><p><dl class="simple">
 <dt>Tuple containing proposal information.</dt><dd><p>First entry is the new coordinates as a dictionary with keys
 as <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values as
-<code class="docutils literal notranslate"><span class="pre">double</span> <span class="pre">``</span> <span class="pre">np.ndarray[ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max,</span> <span class="pre">ndim]</span> <span class="pre">containing</span>
-<span class="pre">proposed</span> <span class="pre">coordinates.</span> <span class="pre">Second</span> <span class="pre">entry</span> <span class="pre">is</span> <span class="pre">the</span> <span class="pre">new</span> <span class="pre">``inds</span></code> array with
-boolean values flipped for added or removed sources. Third entry
+<a href="#id1"><span class="problematic" id="id2">``</span></a>double `` np.ndarray[ntemps, nwalkers, nleaves_max, ndim] containing
+proposed coordinates. Second entry
 is the factors associated with the
 proposal necessary for detailed balance. This is effectively
 any term in the detailed balance fraction. +log of factors if
@@ -1041,7 +1046,7 @@ in the numerator. -log of factors if in the denominator.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.DistributionGenerate.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerate.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerate.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1343,7 +1348,7 @@ The second return value is the accepted count array.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.RedBlueMove.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1528,7 +1533,7 @@ Use <code class="docutils literal notranslate"><span class="pre">NumPy</span></c
 the returned arrays will be returned as <code class="docutils literal notranslate"><span class="pre">CuPy</span></code> arrays. (default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
 <li><p><strong>random_seed</strong> (<em>int</em><em>, </em><em>optional</em>) – Set the random seed in <code class="docutils literal notranslate"><span class="pre">CuPy/NumPy</span></code> if not <code class="docutils literal notranslate"><span class="pre">None</span></code>.
 (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
-<li><p><strong>kwargs</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional keyword arguments passed down through <a href="#id2"><span class="problematic" id="id3">:class:`RedRedBlueMove`_</span></a>.</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional keyword arguments passed down through <a href="#id4"><span class="problematic" id="id5">:class:`RedRedBlueMove`_</span></a>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1662,7 +1667,7 @@ randomly generated quantity per walker remains the same over branches.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.StretchMove.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1896,38 +1901,54 @@ primary ensemble in a <a class="reference internal" href="#eryn.moves.RedBlueMov
 <h3>Group Parent Class<a class="headerlink" href="#group-parent-class" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="eryn.moves.GroupMove">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">GroupMove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nfriends</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gibbs_sampling_leaves_per</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_iter_update</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">live_dangerously</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_branches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupMove" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">GroupMove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nfriends</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_iter_update</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupMove" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#eryn.moves.Move" title="eryn.moves.move.Move"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.move.Move</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
-<p>An abstract red-blue ensemble move with parallelization as described in
-<a class="reference external" href="https://arxiv.org/abs/1202.3665">Foreman-Mackey et al. (2013)</a>.</p>
-<p># TODO: think about this for reversible jump.</p>
+<p>A “group” ensemble move based on the <a class="reference internal" href="#eryn.moves.RedBlueMove" title="eryn.moves.RedBlueMove"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.RedBlueMove</span></code></a>.</p>
+<p>In moves like the <a class="reference internal" href="#eryn.moves.StretchMove" title="eryn.moves.StretchMove"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.StretchMove</span></code></a>, the complimentary
+group for which the proposal is used is chosen from the current points in
+the ensemble. In “group” moves the complimentary group is a stationary group
+that is updated every <cite>n_iter_update</cite> iterations. This update is performed with the
+last set of coordinates to maintain detailed balance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>nfriends</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of sub-ensembles to use. Each
-sub-ensemble is updated in parallel using the other sets as the
-complementary ensemble. The default value is <code class="docutils literal notranslate"><span class="pre">2</span></code> and you
-probably won’t need to change that.</p></li>
-<li><p><strong>randomize_split</strong> (<em>bool</em><em>, </em><em>optional</em>) – Randomly shuffle walkers between
-sub-ensembles. The same number of walkers will be assigned to
-each sub-ensemble on each iteration. By default, this is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
-<li><p><strong>live_dangerously</strong> (<em>bool</em><em>, </em><em>optional</em>) – By default, an update will fail with
-a <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code> if the number of walkers is smaller than twice
-the dimension of the problem because the walkers would then be
-stuck on a low dimensional subspace. This can be avoided by
-switching between the stretch move and, for example, a
-Metropolis-Hastings step. If you want to do this and suppress the
-error, set <code class="docutils literal notranslate"><span class="pre">live_dangerously</span> <span class="pre">=</span> <span class="pre">True</span></code>. Thanks goes (once again)
-to &#64;dstndstn for this wonderful terminology.</p></li>
-<li><p><strong>gibbs_sampling_leaves_per</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of individual leaves
-to sample over during Gibbs Sampling. <code class="docutils literal notranslate"><span class="pre">None</span></code> means there will be
-no Gibbs sampling. Currently, if you specify anything other than <code class="docutils literal notranslate"><span class="pre">None</span></code>,
-it will split up different branches automatically and then Gibbs sample
-over each branch indivudally. Default is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>nfriends</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of friends to draw from as the complimentary
+ensemble. This group is determined from the stationary group. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, it will
+be set to the number of walkers. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>n_iter_update</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of iterations to run before updating the
+stationary distribution. (default: 100).</p></li>
 </ul>
 </dd>
 </dl>
 <p><code class="docutils literal notranslate"><span class="pre">kwargs</span></code> are passed to <a class="reference internal" href="#eryn.moves.Move" title="eryn.moves.Move"><code class="xref py py-class docutils literal notranslate"><span class="pre">Move</span></code></a> class.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.GroupMove.find_friends">
+<span class="sig-name descname"><span class="pre">find_friends</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupMove.find_friends" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for finding friends.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Branch name for proposal coordinates.</p></li>
+<li><p><strong>s</strong> (<em>np.ndarray</em>) – Coordinates array for the points to be moved.</p></li>
+<li><p><strong>s_inds</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays that represent which leaves are present.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Complimentary values.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.GroupMove.choose_c_vals">
+<span class="sig-name descname"><span class="pre">choose_c_vals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupMove.choose_c_vals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the complimentary values.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.GroupMove.setup">
 <span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branches</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupMove.setup" title="Permalink to this definition">¶</a></dt>
@@ -1935,37 +1956,42 @@ over each branch indivudally. Default is <code class="docutils literal notransla
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.GroupMove.setup_friends">
+<span class="sig-name descname"><span class="pre">setup_friends</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branches</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupMove.setup_friends" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup anything for finding friends.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>branches</strong> (<em>dict</em>) – Dictionary with all the current branches in the sampler.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.GroupMove.get_proposal">
-<em class="property"><span class="pre">classmethod</span> </em><span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">complement</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupMove.get_proposal" title="Permalink to this definition">¶</a></dt>
-<dd><p>Make a proposal</p>
+<em class="property"><span class="pre">classmethod</span> </em><span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gibbs_ndim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_inds_all</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupMove.get_proposal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate group stretch proposal coordinates</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>sample</strong> (<em>dict</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code>. Values are
-np.ndarray[subset size, nleaves_max, ndim]. This is the subset
-whose <code class="docutils literal notranslate"><span class="pre">coords</span></code> are being proposed.</p></li>
-<li><p><strong>complement</strong> (<em>dict</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code>. Values are lists of other
-other np.ndarray[nwalkers - subset size, nleaves_max, ndim] from
-all other subsets. This is the compliment whose <code class="docutils literal notranslate"><span class="pre">coords</span></code> are
-used to form the proposal for the <code class="docutils literal notranslate"><span class="pre">sample</span></code> subset.</p></li>
-<li><p><strong>random</strong> (<em>object</em>) – Current random state of the sampler.</p></li>
-<li><p><strong>inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – # TODO check this.</p></li>
+<li><p><strong>s_all</strong> (<em>dict</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are coordinates
+for which a proposal is to be generated.</p></li>
+<li><p><strong>random</strong> (<em>object</em>) – Random state object.</p></li>
+<li><p><strong>gibbs_ndim</strong> (<em>int</em><em> or </em><em>np.ndarray</em><em>, </em><em>optional</em>) – If Gibbs sampling, this indicates
+the true dimension. If given as an array, must have shape <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers)</span></code>.
+See the tutorial for more information.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>s_inds_all</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are
+<code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays indicating which leaves are currently used. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><dl class="simple">
-<dt>Tuple contained proposal information.</dt><dd><p>First entry is the new coordinates as a dictionary with keys
-as <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values as np.ndarray[subset size, ndim * nleaves_max]
-of new coordinates. Second entry is the factors associated with the
-proposal necessary for detailed balance. This is effectively
-any term in the detailed balance fraction. +log of factors if
-in the numerator. -log of factors if in the denominator.</p>
-</dd>
-</dl>
-</p>
+<dd class="field-even"><p>First entry is new positions. Second entry is detailed balance factors.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>tuple</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – Issues with dimensionality.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1982,10 +2008,15 @@ in the numerator. -log of factors if in the denominator.</p>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>State of sampler after proposal is complete.</p>
+<dd class="field-even"><p><dl class="simple">
+<dt>(state, accepted)</dt><dd><p>The first return is the state of the sampler after the move.
+The second return value is the accepted count array.</p>
+</dd>
+</dl>
+</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code></p>
+<dd class="field-odd"><p>tuple</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2004,7 +2035,7 @@ in the numerator. -log of factors if in the denominator.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.GroupMove.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2175,62 +2206,33 @@ primary ensemble in a <a class="reference internal" href="#eryn.moves.RedBlueMov
 <dt class="sig sig-object py" id="eryn.moves.GroupStretchMove">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">GroupStretchMove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupStretchMove" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#eryn.moves.GroupMove" title="eryn.moves.group.GroupMove"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.group.GroupMove</span></code></a>, <a class="reference internal" href="#eryn.moves.StretchMove" title="eryn.moves.stretch.StretchMove"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.stretch.StretchMove</span></code></a></p>
-<p>Affine-Invariant Proposal</p>
-<p>A <a class="reference external" href="https://msp.org/camcos/2010/5-1/p04.xhtml">Goodman &amp; Weare (2010)</a> “stretch move” with
-parallelization as described in <a class="reference external" href="https://arxiv.org/abs/1202.3665">Foreman-Mackey et al. (2013)</a>.</p>
+<p>Proposal like stretch with stationary compliment.</p>
+<p>This move uses the stretch proposal method and math, but the compliment
+of walkers used to propose a new point is chosen from a stationary group
+rather than the current walkers in the ensemble.</p>
+<p>This move allows for “stretch”-like proposal to be used in Reversible Jump MCMC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>a</strong> (<em>double</em><em>, </em><em>optional</em>) – The stretch scale parameter. (default: <code class="docutils literal notranslate"><span class="pre">2.0</span></code>)</p>
+<dd class="field-odd"><p><strong>**kwargs</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keyword arguments passed to <a class="reference internal" href="#eryn.moves.GroupMove" title="eryn.moves.GroupMove"><code class="xref py py-class docutils literal notranslate"><span class="pre">GroupMove</span></code></a> and
+<a class="reference internal" href="#eryn.moves.StretchMove" title="eryn.moves.StretchMove"><code class="xref py py-class docutils literal notranslate"><span class="pre">StretchMove</span></code></a>.</p>
 </dd>
 </dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="eryn.moves.GroupStretchMove.a">
-<span class="sig-name descname"><span class="pre">a</span></span><a class="headerlink" href="#eryn.moves.GroupStretchMove.a" title="Permalink to this definition">¶</a></dt>
-<dd><p>The stretch scale parameter.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>double</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.GroupStretchMove.adjust_factors">
-<span class="sig-name descname"><span class="pre">adjust_factors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">factors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndims_old</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndims_new</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupStretchMove.adjust_factors" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adjust the <code class="docutils literal notranslate"><span class="pre">factors</span></code> based on changing dimensions.</p>
-<p><code class="docutils literal notranslate"><span class="pre">factors</span></code> is adjusted in place.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>factors</strong> (<em>xp.ndarray</em>) – Array of <code class="docutils literal notranslate"><span class="pre">factors</span></code> values. It is adjusted in place.</p></li>
-<li><p><strong>ndims_old</strong> (<em>int</em><em> or </em><em>xp.ndarray</em>) – Old dimension. If given as an <code class="docutils literal notranslate"><span class="pre">xp.ndarray</span></code>,
-must be broadcastable with <code class="docutils literal notranslate"><span class="pre">factors</span></code>.</p></li>
-<li><p><strong>ndims_new</strong> (<em>int</em><em> or </em><em>xp.ndarray</em>) – New dimension. If given as an <code class="docutils literal notranslate"><span class="pre">xp.ndarray</span></code>,
-must be broadcastable with <code class="docutils literal notranslate"><span class="pre">factors</span></code>.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.GroupStretchMove.get_proposal">
 <span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gibbs_ndim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_inds_all</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupStretchMove.get_proposal" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate stretch proposal</p>
-<p># TODO: add log proposal from ptemcee</p>
+<dd><p>Generate group stretch proposal coordinates</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>s_all</strong> (<em>dict</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are coordinates
 for which a proposal is to be generated.</p></li>
-<li><p><strong>c_all</strong> (<em>dict</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are lists. These
-lists contain all the complement array values.</p></li>
 <li><p><strong>random</strong> (<em>object</em>) – Random state object.</p></li>
-<li><p><strong>inds_s</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are
-np.ndarray[nwalkers, nleaves_max] that indicate which leaves
-are currently being used in <code class="code docutils literal notranslate"><span class="pre">s_all</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
-<li><p><strong>inds_c</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are
-np.ndarray[nwalkers, nleaves_max] that indicate which leaves
-are currently being used in <code class="code docutils literal notranslate"><span class="pre">s_all</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>gibbs_ndim</strong> (<em>int</em><em> or </em><em>np.ndarray</em><em>, </em><em>optional</em>) – If Gibbs sampling, this indicates
+the true dimension. If given as an array, must have shape <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers)</span></code>.
+See the tutorial for more information.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>s_inds_all</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are
+<code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays indicating which leaves are currently used. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -2258,8 +2260,32 @@ are currently being used in <code class="code docutils literal notranslate"><spa
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.GroupStretchMove.adjust_factors">
+<span class="sig-name descname"><span class="pre">adjust_factors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">factors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndims_old</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndims_new</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupStretchMove.adjust_factors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adjust the <code class="docutils literal notranslate"><span class="pre">factors</span></code> based on changing dimensions.</p>
+<p><code class="docutils literal notranslate"><span class="pre">factors</span></code> is adjusted in place.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>factors</strong> (<em>xp.ndarray</em>) – Array of <code class="docutils literal notranslate"><span class="pre">factors</span></code> values. It is adjusted in place.</p></li>
+<li><p><strong>ndims_old</strong> (<em>int</em><em> or </em><em>xp.ndarray</em>) – Old dimension. If given as an <code class="docutils literal notranslate"><span class="pre">xp.ndarray</span></code>,
+must be broadcastable with <code class="docutils literal notranslate"><span class="pre">factors</span></code>.</p></li>
+<li><p><strong>ndims_new</strong> (<em>int</em><em> or </em><em>xp.ndarray</em>) – New dimension. If given as an <code class="docutils literal notranslate"><span class="pre">xp.ndarray</span></code>,
+must be broadcastable with <code class="docutils literal notranslate"><span class="pre">factors</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.GroupStretchMove.choose_c_vals">
+<span class="sig-name descname"><span class="pre">choose_c_vals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupStretchMove.choose_c_vals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the complimentary values.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.GroupStretchMove.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupStretchMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupStretchMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2291,6 +2317,28 @@ are currently being used in <code class="code docutils literal notranslate"><spa
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.GroupStretchMove.find_friends">
+<span class="sig-name descname"><span class="pre">find_friends</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupStretchMove.find_friends" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for finding friends.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Branch name for proposal coordinates.</p></li>
+<li><p><strong>s</strong> (<em>np.ndarray</em>) – Coordinates array for the points to be moved.</p></li>
+<li><p><strong>s_inds</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays that represent which leaves are present.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Complimentary values.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2372,10 +2420,15 @@ into the leaves/parameters for this Gibbs split.</p>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>State of sampler after proposal is complete.</p>
+<dd class="field-even"><p><dl class="simple">
+<dt>(state, accepted)</dt><dd><p>The first return is the state of the sampler after the move.
+The second return value is the accepted count array.</p>
+</dd>
+</dl>
+</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code></p>
+<dd class="field-odd"><p>tuple</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2384,6 +2437,17 @@ into the leaves/parameters for this Gibbs split.</p>
 <dt class="sig sig-object py" id="eryn.moves.GroupStretchMove.setup">
 <span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branches</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupStretchMove.setup" title="Permalink to this definition">¶</a></dt>
 <dd><p>Any setup necessary for the proposal</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.GroupStretchMove.setup_friends">
+<span class="sig-name descname"><span class="pre">setup_friends</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branches</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupStretchMove.setup_friends" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup anything for finding friends.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>branches</strong> (<em>dict</em>) – Dictionary with all the current branches in the sampler.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -2603,7 +2667,7 @@ The length 3 is the index into each of the <code class="docutils literal notrans
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.ReversibleJump.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJump.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJump.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2776,15 +2840,51 @@ primary ensemble in a <a class="reference internal" href="#eryn.moves.RedBlueMov
 <h3>Implemented Reversible Jump Moves<a class="headerlink" href="#implemented-reversible-jump-moves" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="eryn.moves.DistributionGenerateRJ">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">DistributionGenerateRJ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">priors</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerateRJ" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">DistributionGenerateRJ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">generate_dist</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerateRJ" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#eryn.moves.ReversibleJump" title="eryn.moves.rj.ReversibleJump"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.rj.ReversibleJump</span></code></a></p>
-<p>Generate Revesible-Jump proposals from prior</p>
+<p>Generate Revesible-Jump proposals from a distribution.</p>
+<p>The prior can be entered as the <code class="docutils literal notranslate"><span class="pre">generate_dist</span></code> to generate proposals directly from the prior.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>priors</strong> (<em>object</em>) – <code class="xref py py-class docutils literal notranslate"><span class="pre">ProbDistContainer</span></code> object that has <code class="docutils literal notranslate"><span class="pre">logpdf</span></code>
-and <code class="docutils literal notranslate"><span class="pre">rvs</span></code> methods.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>generate_dist</strong> (<em>dict</em>) – Keys are branch names and values are <code class="xref py py-class docutils literal notranslate"><span class="pre">ProbDistContainer</span></code> objects
+that have <code class="docutils literal notranslate"><span class="pre">logpdf</span></code> and <code class="docutils literal notranslate"><span class="pre">rvs</span></code> methods. If you</p></li>
+<li><p><strong>*args</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Additional arguments to pass to parent classes.</p></li>
+<li><p><strong>**kwargs</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keyword arguments passed to parent classes.</p></li>
+</ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.DistributionGenerateRJ.get_model_change_proposal">
+<span class="sig-name descname"><span class="pre">get_model_change_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_k</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerateRJ.get_model_change_proposal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function for changing the model count by 1.</p>
+<p>This helper function works with nested models where you want to add or remove
+one leaf at a time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inds</strong> (<em>np.ndarray</em>) – <code class="docutils literal notranslate"><span class="pre">inds</span></code> values for this specific branch with shape
+<code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max)</span></code>.</p></li>
+<li><p><strong>random</strong> (<em>object</em>) – Current random state of the sampler.</p></li>
+<li><p><strong>min_k</strong> (<em>int</em>) – Minimum allowable leaf count for this branch.</p></li>
+<li><p><strong>max_k</strong> (<em>int</em>) – Maximum allowable leaf count for this branch.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Keys are <code class="docutils literal notranslate"><span class="pre">&quot;+1&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;-1&quot;</span></code>. Values are indexing information.</dt><dd><p><code class="docutils literal notranslate"><span class="pre">&quot;+1&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;-1&quot;</span></code> indicate if a source is being added or removed, respectively.
+The indexing information is a 2D array with shape <code class="docutils literal notranslate"><span class="pre">(number</span> <span class="pre">changing,</span> <span class="pre">3)</span></code>.
+The length 3 is the index into each of the <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max)</span></code>.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.DistributionGenerateRJ.get_proposal">
 <span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_k_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_k_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerateRJ.get_proposal" title="Permalink to this definition">¶</a></dt>
@@ -2798,15 +2898,10 @@ coordinates for all the walkers.</p></li>
 <li><p><strong>all_inds</strong> (<em>dict</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code>. Values are
 np.ndarray[ntemps, nwalkers, nleaves_max]. These are the boolean
 arrays marking which leaves are currently used within each walker.</p></li>
-<li><p><strong>all_inds_for_change</strong> (<em>dict</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code>. Values are
-dictionaries. These dictionaries have keys <code class="docutils literal notranslate"><span class="pre">&quot;+1&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;-1&quot;</span></code>,
-indicating waklkers that are adding or removing a leafm respectively.
-The values for these dicts are <code class="docutils literal notranslate"><span class="pre">int</span></code> np.ndarray[…, 3]. The “…” indicates
-the number of walkers in all temperatures that fall under either adding
-or removing a leaf. The second dimension, 3, is the indexes into
-the three-dimensional arrays within <code class="docutils literal notranslate"><span class="pre">all_inds</span></code> of the specific leaf
-that is being added or removed from those leaves currently considered.</p></li>
+<li><p><strong>min_k_all</strong> (<em>list</em>) – Minimum values of leaf ount for each model. Must have same order as <code class="docutils literal notranslate"><span class="pre">all_cords</span></code>.</p></li>
+<li><p><strong>max_k_all</strong> (<em>list</em>) – Maximum values of leaf ount for each model. Must have same order as <code class="docutils literal notranslate"><span class="pre">all_cords</span></code>.</p></li>
 <li><p><strong>random</strong> (<em>object</em>) – Current random state of the sampler.</p></li>
+<li><p><strong>**kwargs</strong> (<em>ignored</em>) – For modularity.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -2844,7 +2939,7 @@ in the numerator. -log of factors if in the denominator.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.DistributionGenerateRJ.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerateRJ.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerateRJ.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2892,37 +2987,6 @@ in the numerator. -log of factors if in the denominator.</p>
 <li><p><strong>logp</strong> (<em>np.ndarray</em>) – Log of the prior going into final posterior computation.</p></li>
 <li><p><strong>inds</strong> (<em>dict</em>) – Dictionary of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays for all branches.</p></li>
 </ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.DistributionGenerateRJ.get_model_change_proposal">
-<span class="sig-name descname"><span class="pre">get_model_change_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_k</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerateRJ.get_model_change_proposal" title="Permalink to this definition">¶</a></dt>
-<dd><p>Helper function for changing the model count by 1.</p>
-<p>This helper function works with nested models where you want to add or remove
-one leaf at a time.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>inds</strong> (<em>np.ndarray</em>) – <code class="docutils literal notranslate"><span class="pre">inds</span></code> values for this specific branch with shape
-<code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max)</span></code>.</p></li>
-<li><p><strong>random</strong> (<em>object</em>) – Current random state of the sampler.</p></li>
-<li><p><strong>min_k</strong> (<em>int</em>) – Minimum allowable leaf count for this branch.</p></li>
-<li><p><strong>max_k</strong> (<em>int</em>) – Maximum allowable leaf count for this branch.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><dl class="simple">
-<dt>Keys are <code class="docutils literal notranslate"><span class="pre">&quot;+1&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;-1&quot;</span></code>. Values are indexing information.</dt><dd><p><code class="docutils literal notranslate"><span class="pre">&quot;+1&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;-1&quot;</span></code> indicate if a source is being added or removed, respectively.
-The indexing information is a 2D array with shape <code class="docutils literal notranslate"><span class="pre">(number</span> <span class="pre">changing,</span> <span class="pre">3)</span></code>.
-The length 3 is the index into each of the <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max)</span></code>.</p>
-</dd>
-</dl>
-</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>dict</p>
 </dd>
 </dl>
 </dd></dl>
@@ -3061,6 +3125,994 @@ primary ensemble in a <a class="reference internal" href="#eryn.moves.RedBlueMov
 
 </section>
 </section>
+<section id="mutliple-try-moves">
+<h2>Mutliple Try Moves<a class="headerlink" href="#mutliple-try-moves" title="Permalink to this headline">¶</a></h2>
+<section id="mutliple-try-parent-class">
+<h3>Mutliple Try Parent Class<a class="headerlink" href="#mutliple-try-parent-class" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="eryn.moves.MultipleTryMove">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">MultipleTryMove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_try</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">independent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symmetric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MultipleTryMove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<p>Generate multiple proposal tries.</p>
+<p>This class should be inherited by another proposal class
+with the <code class="docutils literal notranslate"><span class="pre">&#64;classmethods</span></code> overwritten. See <a class="reference internal" href="#eryn.moves.MTDistGenMove" title="eryn.moves.MTDistGenMove"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.MTDistGenMove</span></code></a>
+and <code class="xref py py-class docutils literal notranslate"><span class="pre">MTDistGenRJ</span></code> for examples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_try</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of tries. (default: 1)</p></li>
+<li><p><strong>independent</strong> (<em>bool</em><em>, </em><em>optional</em>) – Set to <code class="docutils literal notranslate"><span class="pre">True</span></code> if the proposal is independent of the current points.
+(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>).</p></li>
+<li><p><strong>symmetric</strong> (<em>bool</em><em>, </em><em>optional</em>) – Set to <code class="docutils literal notranslate"><span class="pre">True</span></code> if the proposal is symmetric.
+(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>).</p></li>
+<li><p><strong>rj</strong> (<em>bool</em><em>, </em><em>optional</em>) – Set to <code class="docutils literal notranslate"><span class="pre">True</span></code> if this is a nested reversible jump proposal.
+(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>).</p></li>
+<li><p><strong>**kwargs</strong> (<em>dict</em><em>, </em><em>optional</em>) – for compatibility with other proposals.</p></li>
+<li><p><strong>Raisees</strong> – ValueError: Input issues.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MultipleTryMove.special_like_func">
+<em class="property"><span class="pre">classmethod</span> </em><span class="sig-name descname"><span class="pre">special_like_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">generated_coords</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_leaves_rj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MultipleTryMove.special_like_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the Likelihood for sampled points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>generated_coords</strong> (<em>np.ndarray</em>) – Generated coordinates with shape <code class="docutils literal notranslate"><span class="pre">(number</span> <span class="pre">of</span> <span class="pre">independent</span> <span class="pre">walkers,</span> <span class="pre">num_try)</span></code>.</p></li>
+<li><p><strong>*args</strong> (<em>tuple</em><em>, </em><em>optional</em>) – additional arguments passed by overwriting the
+<code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function and passing <code class="docutils literal notranslate"><span class="pre">args_like</span></code> keyword argument.</p></li>
+<li><p><strong>inds_leaves_rj</strong> (<em>np.ndarray</em>) – Index into each individual walker giving the
+leaf index associated with this proposal. Should only be used if <code class="docutils literal notranslate"><span class="pre">self.rj</span> <span class="pre">is</span> <span class="pre">True</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>**kwargs</strong> (<em>tuple</em><em>, </em><em>optional</em>) – additional keyword arguments passed by overwriting the
+<code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function and passing <code class="docutils literal notranslate"><span class="pre">kwargs_like</span></code> keyword argument.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Likelihood values with shape <code class="docutils literal notranslate"><span class="pre">(generated_coords.shape[0],</span> <span class="pre">num_try).</span></code></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MultipleTryMove.special_prior_func">
+<em class="property"><span class="pre">classmethod</span> </em><span class="sig-name descname"><span class="pre">special_prior_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">generated_coords</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MultipleTryMove.special_prior_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the Prior for sampled points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>generated_coords</strong> (<em>np.ndarray</em>) – Generated coordinates with shape <code class="docutils literal notranslate"><span class="pre">(number</span> <span class="pre">of</span> <span class="pre">independent</span> <span class="pre">walkers,</span> <span class="pre">num_try)</span></code>.</p></li>
+<li><p><strong>*args</strong> (<em>tuple</em><em>, </em><em>optional</em>) – additional arguments passed by overwriting the
+<code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function and passing <code class="docutils literal notranslate"><span class="pre">args_prior</span></code> keyword argument.</p></li>
+<li><p><strong>inds_leaves_rj</strong> (<em>np.ndarray</em>) – Index into each individual walker giving the
+leaf index associated with this proposal. Should only be used if <code class="docutils literal notranslate"><span class="pre">self.rj</span> <span class="pre">is</span> <span class="pre">True</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>**kwargs</strong> (<em>tuple</em><em>, </em><em>optional</em>) – additional keyword arguments passed by overwriting the
+<code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function and passing <code class="docutils literal notranslate"><span class="pre">kwargs_prior</span></code> keyword argument.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Prior values with shape <code class="docutils literal notranslate"><span class="pre">(generated_coords.shape[0],</span> <span class="pre">num_try).</span></code></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MultipleTryMove.special_generate_func">
+<em class="property"><span class="pre">classmethod</span> </em><span class="sig-name descname"><span class="pre">special_generate_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_tuple</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MultipleTryMove.special_generate_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate samples and calculate the logpdf of their proposal function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coords</strong> (<em>np.ndarray</em>) – Current coordinates of walkers.</p></li>
+<li><p><strong>random</strong> (<em>obj</em>) – Random generator.</p></li>
+<li><p><strong>*args</strong> (<em>tuple</em><em>, </em><em>optional</em>) – additional arguments passed by overwriting the
+<code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function and passing <code class="docutils literal notranslate"><span class="pre">args_generate</span></code> keyword argument.</p></li>
+<li><p><strong>size</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of tries to generate.</p></li>
+<li><p><strong>fill_tuple</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Length 2 tuple with the indexing of which values to fill
+when generating. Can be used for auxillary proposals or reverse RJ proposals. First index is the index into walkers and the second index is
+the index into the number of tries. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>fill_values</strong> (<em>np.ndarray</em>) – values to fill associated with <code class="docutils literal notranslate"><span class="pre">fill_tuple</span></code>. Should
+have size <code class="docutils literal notranslate"><span class="pre">(len(fill_tuple[0]),</span> <span class="pre">ndim)</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>).</p></li>
+<li><p><strong>**kwargs</strong> (<em>tuple</em><em>, </em><em>optional</em>) – additional keyword arguments passed by overwriting the
+<code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function and passing <code class="docutils literal notranslate"><span class="pre">kwargs_generate</span></code> keyword argument.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(generated points, logpdf of generated points).</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MultipleTryMove.get_mt_log_posterior">
+<span class="sig-name descname"><span class="pre">get_mt_log_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ll</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MultipleTryMove.get_mt_log_posterior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the log of the posterior for all tries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ll</strong> (<em>np.ndarray</em>) – Log Likelihood values with shape <code class="docutils literal notranslate"><span class="pre">(nwalkers,</span> <span class="pre">num_tries)</span></code>.</p></li>
+<li><p><strong>lp</strong> (<em>np.ndarray</em>) – Log Prior values with shape <code class="docutils literal notranslate"><span class="pre">(nwalkers,</span> <span class="pre">num_tries)</span></code>.</p></li>
+<li><p><strong>betas</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Inverse temperatures to include in log Posterior computation.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Log of the Posterior with shape <code class="docutils literal notranslate"><span class="pre">(nwalkers,</span> <span class="pre">num_tries)</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MultipleTryMove.readout_adjustment">
+<span class="sig-name descname"><span class="pre">readout_adjustment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out_vals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_vals_prop</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_all_vals</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MultipleTryMove.readout_adjustment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read out values from the proposal.</p>
+<p>Allows the user to read out any values from the proposal that may be needed elsewhere. This function must be overwritten.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>out_vals</strong> (<em>list</em>) – <code class="docutils literal notranslate"><span class="pre">[logP_out,</span> <span class="pre">ll_out,</span> <span class="pre">lp_out,</span> <span class="pre">log_proposal_pdf_out,</span> <span class="pre">log_sum_weights]</span></code>.</p></li>
+<li><p><strong>all_vals_prop</strong> (<em>list</em>) – <code class="docutils literal notranslate"><span class="pre">[logP,</span> <span class="pre">ll,</span> <span class="pre">lp,</span> <span class="pre">log_proposal_pdf,</span> <span class="pre">log_sum_weights]</span></code>.</p></li>
+<li><p><strong>aux_all_vals</strong> (<em>list</em>) – <code class="docutils literal notranslate"><span class="pre">[aux_logP,</span> <span class="pre">aux_ll,</span> <span class="pre">aux_lp,</span> <span class="pre">aux_log_proposal_pdf,</span> <span class="pre">aux_log_sum_weights]</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MultipleTryMove.get_mt_proposal">
+<span class="sig-name descname"><span class="pre">get_mt_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args_generate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs_generate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args_like</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs_like</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args_prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs_prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ll_in</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lp_in</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_leaves_rj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_reverse_rj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MultipleTryMove.get_mt_proposal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a multiple-try proposal</p>
+<p>Here, <code class="docutils literal notranslate"><span class="pre">nwalkers</span></code> refers to all independent walkers which generally
+will mean <code class="docutils literal notranslate"><span class="pre">nwalkers</span> <span class="pre">*</span> <span class="pre">ntemps</span></code> in terms of the rest of the sampler.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coords</strong> (<em>np.ndarray</em>) – Current coordinates of walkers.</p></li>
+<li><p><strong>random</strong> (<em>obj</em>) – Random generator.</p></li>
+<li><p><strong>args_generate</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Additional <code class="docutils literal notranslate"><span class="pre">*args</span></code> to pass to generate function.
+Must overwrite <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function to use these.
+(default: <code class="docutils literal notranslate"><span class="pre">()</span></code>)</p></li>
+<li><p><strong>kwargs_generate</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> to pass to generate function.
+(default: <code class="docutils literal notranslate"><span class="pre">{}</span></code>)
+Must overwrite <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function to use these.</p></li>
+<li><p><strong>args_like</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Additional <code class="docutils literal notranslate"><span class="pre">*args</span></code> to pass to Likelihood function.
+Must overwrite <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function to use these.
+(default: <code class="docutils literal notranslate"><span class="pre">()</span></code>)</p></li>
+<li><p><strong>kwargs_like</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> to pass to Likelihood function.
+Must overwrite <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function to use these.
+(default: <code class="docutils literal notranslate"><span class="pre">{}</span></code>)</p></li>
+<li><p><strong>args_prior</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Additional <code class="docutils literal notranslate"><span class="pre">*args</span></code> to pass to Prior function.
+Must overwrite <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function to use these.
+(default: <code class="docutils literal notranslate"><span class="pre">()</span></code>)</p></li>
+<li><p><strong>kwargs_prior</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> to pass to Prior function.
+Must overwrite <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function to use these.
+(default: <code class="docutils literal notranslate"><span class="pre">{}</span></code>)</p></li>
+<li><p><strong>betas</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Inverse temperatures passes to the proposal with shape <code class="docutils literal notranslate"><span class="pre">(nwalkers,)</span></code>.</p></li>
+<li><p><strong>ll_in</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Log Likelihood values coming in for current coordinates. Must be provided
+if <code class="docutils literal notranslate"><span class="pre">self.rj</span> <span class="pre">is</span> <span class="pre">True</span></code>. Useful if <code class="docutils literal notranslate"><span class="pre">self.independent</span> <span class="pre">is</span> <span class="pre">True</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>lp_in</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Log Prior values coming in for current coordinates. Must be provided
+if <code class="docutils literal notranslate"><span class="pre">self.rj</span> <span class="pre">is</span> <span class="pre">True</span></code>. Useful if <code class="docutils literal notranslate"><span class="pre">self.independent</span> <span class="pre">is</span> <span class="pre">True</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>inds_leaves_rj</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Array giving the leaf index of each incoming walker.
+Must be provided if <code class="docutils literal notranslate"><span class="pre">self.rj</span> <span class="pre">is</span> <span class="pre">True</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>inds_reverse_rj</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Array giving the walker index for which proposals are
+reverse proposal removing a leaf.
+Must be provided if <code class="docutils literal notranslate"><span class="pre">self.rj</span> <span class="pre">is</span> <span class="pre">True</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(generated points, factors).</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>AssertionError</strong> – Inputs are incorrect.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="implemented-multiple-try-moves">
+<h3>Implemented Multiple Try Moves<a class="headerlink" href="#implemented-multiple-try-moves" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMove">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">MTDistGenMove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dist</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#eryn.moves.MultipleTryMove" title="eryn.moves.multipletry.MultipleTryMove"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.multipletry.MultipleTryMove</span></code></a>, <a class="reference internal" href="#eryn.moves.MHMove" title="eryn.moves.mh.MHMove"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.mh.MHMove</span></code></a></p>
+<p>Perform a multiple try MH move based on a distribution.</p>
+<p>Distribution must be independent of the current point.</p>
+<p>This is effectively an example of the mutliple try class inheritance structure.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMove.special_generate_func">
+<span class="sig-name descname"><span class="pre">special_generate_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_tuple</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMove.special_generate_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate samples and calculate the logpdf of their proposal function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coords</strong> (<em>np.ndarray</em>) – Current coordinates of walkers.</p></li>
+<li><p><strong>random</strong> (<em>obj</em>) – Random generator.</p></li>
+<li><p><strong>*args</strong> (<em>tuple</em><em>, </em><em>optional</em>) – additional arguments passed by overwriting the
+<code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function and passing <code class="docutils literal notranslate"><span class="pre">args_generate</span></code> keyword argument.</p></li>
+<li><p><strong>size</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of tries to generate.</p></li>
+<li><p><strong>fill_tuple</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Length 2 tuple with the indexing of which values to fill
+when generating. Can be used for auxillary proposals or reverse RJ proposals. First index is the index into walkers and the second index is
+the index into the number of tries. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>fill_values</strong> (<em>np.ndarray</em>) – values to fill associated with <code class="docutils literal notranslate"><span class="pre">fill_tuple</span></code>. Should
+have size <code class="docutils literal notranslate"><span class="pre">(len(fill_tuple[0]),</span> <span class="pre">ndim)</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>).</p></li>
+<li><p><strong>**kwargs</strong> (<em>tuple</em><em>, </em><em>optional</em>) – additional keyword arguments passed by overwriting the
+<code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function and passing <code class="docutils literal notranslate"><span class="pre">kwargs_generate</span></code> keyword argument.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(generated points, logpdf of generated points).</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMove.special_like_func">
+<span class="sig-name descname"><span class="pre">special_like_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">generated_coords</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMove.special_like_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the Likelihood for sampled points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>generated_coords</strong> (<em>np.ndarray</em>) – Generated coordinates with shape <code class="docutils literal notranslate"><span class="pre">(number</span> <span class="pre">of</span> <span class="pre">independent</span> <span class="pre">walkers,</span> <span class="pre">num_try)</span></code>.</p></li>
+<li><p><strong>*args</strong> (<em>tuple</em><em>, </em><em>optional</em>) – additional arguments passed by overwriting the
+<code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function and passing <code class="docutils literal notranslate"><span class="pre">args_like</span></code> keyword argument.</p></li>
+<li><p><strong>inds_leaves_rj</strong> (<em>np.ndarray</em>) – Index into each individual walker giving the
+leaf index associated with this proposal. Should only be used if <code class="docutils literal notranslate"><span class="pre">self.rj</span> <span class="pre">is</span> <span class="pre">True</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>**kwargs</strong> (<em>tuple</em><em>, </em><em>optional</em>) – additional keyword arguments passed by overwriting the
+<code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function and passing <code class="docutils literal notranslate"><span class="pre">kwargs_like</span></code> keyword argument.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Likelihood values with shape <code class="docutils literal notranslate"><span class="pre">(generated_coords.shape[0],</span> <span class="pre">num_try).</span></code></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMove.special_prior_func">
+<span class="sig-name descname"><span class="pre">special_prior_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">generated_coords</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMove.special_prior_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the Prior for sampled points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>generated_coords</strong> (<em>np.ndarray</em>) – Generated coordinates with shape <code class="docutils literal notranslate"><span class="pre">(number</span> <span class="pre">of</span> <span class="pre">independent</span> <span class="pre">walkers,</span> <span class="pre">num_try)</span></code>.</p></li>
+<li><p><strong>*args</strong> (<em>tuple</em><em>, </em><em>optional</em>) – additional arguments passed by overwriting the
+<code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function and passing <code class="docutils literal notranslate"><span class="pre">args_prior</span></code> keyword argument.</p></li>
+<li><p><strong>inds_leaves_rj</strong> (<em>np.ndarray</em>) – Index into each individual walker giving the
+leaf index associated with this proposal. Should only be used if <code class="docutils literal notranslate"><span class="pre">self.rj</span> <span class="pre">is</span> <span class="pre">True</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>**kwargs</strong> (<em>tuple</em><em>, </em><em>optional</em>) – additional keyword arguments passed by overwriting the
+<code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function and passing <code class="docutils literal notranslate"><span class="pre">kwargs_prior</span></code> keyword argument.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Prior values with shape <code class="docutils literal notranslate"><span class="pre">(generated_coords.shape[0],</span> <span class="pre">num_try).</span></code></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMove.acceptance_fraction">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">acceptance_fraction</span></span><a class="headerlink" href="#eryn.moves.MTDistGenMove.acceptance_fraction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Acceptance fraction for this move.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMove.accepted">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">accepted</span></span><a class="headerlink" href="#eryn.moves.MTDistGenMove.accepted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accepted counts for this move.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMove.cleanup_proposals_gibbs">
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set all not Gibbs-sampled parameters back</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>branch_names_run</strong> (<em>list</em>) – List of branch names to run concurrently.</p></li>
+<li><p><strong>inds_run</strong> (<em>list</em>) – List of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays including Gibbs sampling information.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>branches_coords</strong> (<em>dict</em>) – Dictionary of old coordinate arrays for all branches.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMove.compute_log_posterior_basic">
+<span class="sig-name descname"><span class="pre">compute_log_posterior_basic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMove.compute_log_posterior_basic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the log of posterior</p>
+<p><span class="math notranslate nohighlight">\(\log{P} = \log{L} + \log{p}\)</span></p>
+<p>This method is to mesh with the tempered log posterior computation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>logl</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – Log-likelihood values.</p></li>
+<li><p><strong>logp</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – Log-prior values.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Log-Posterior values.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMove.fix_logp_gibbs">
+<span class="sig-name descname"><span class="pre">fix_logp_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMove.fix_logp_gibbs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set any walker with no leaves to have logp = -np.inf</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>branch_names_run</strong> (<em>list</em>) – List of branch names to run concurrently.</p></li>
+<li><p><strong>inds_run</strong> (<em>list</em>) – List of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays including Gibbs sampling information.</p></li>
+<li><p><strong>logp</strong> (<em>np.ndarray</em>) – Log of the prior going into final posterior computation.</p></li>
+<li><p><strong>inds</strong> (<em>dict</em>) – Dictionary of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays for all branches.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMove.get_mt_log_posterior">
+<span class="sig-name descname"><span class="pre">get_mt_log_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ll</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMove.get_mt_log_posterior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the log of the posterior for all tries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ll</strong> (<em>np.ndarray</em>) – Log Likelihood values with shape <code class="docutils literal notranslate"><span class="pre">(nwalkers,</span> <span class="pre">num_tries)</span></code>.</p></li>
+<li><p><strong>lp</strong> (<em>np.ndarray</em>) – Log Prior values with shape <code class="docutils literal notranslate"><span class="pre">(nwalkers,</span> <span class="pre">num_tries)</span></code>.</p></li>
+<li><p><strong>betas</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Inverse temperatures to include in log Posterior computation.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Log of the Posterior with shape <code class="docutils literal notranslate"><span class="pre">(nwalkers,</span> <span class="pre">num_tries)</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMove.get_mt_proposal">
+<span class="sig-name descname"><span class="pre">get_mt_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args_generate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs_generate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args_like</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs_like</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args_prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs_prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ll_in</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lp_in</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_leaves_rj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_reverse_rj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMove.get_mt_proposal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a multiple-try proposal</p>
+<p>Here, <code class="docutils literal notranslate"><span class="pre">nwalkers</span></code> refers to all independent walkers which generally
+will mean <code class="docutils literal notranslate"><span class="pre">nwalkers</span> <span class="pre">*</span> <span class="pre">ntemps</span></code> in terms of the rest of the sampler.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coords</strong> (<em>np.ndarray</em>) – Current coordinates of walkers.</p></li>
+<li><p><strong>random</strong> (<em>obj</em>) – Random generator.</p></li>
+<li><p><strong>args_generate</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Additional <code class="docutils literal notranslate"><span class="pre">*args</span></code> to pass to generate function.
+Must overwrite <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function to use these.
+(default: <code class="docutils literal notranslate"><span class="pre">()</span></code>)</p></li>
+<li><p><strong>kwargs_generate</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> to pass to generate function.
+(default: <code class="docutils literal notranslate"><span class="pre">{}</span></code>)
+Must overwrite <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function to use these.</p></li>
+<li><p><strong>args_like</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Additional <code class="docutils literal notranslate"><span class="pre">*args</span></code> to pass to Likelihood function.
+Must overwrite <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function to use these.
+(default: <code class="docutils literal notranslate"><span class="pre">()</span></code>)</p></li>
+<li><p><strong>kwargs_like</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> to pass to Likelihood function.
+Must overwrite <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function to use these.
+(default: <code class="docutils literal notranslate"><span class="pre">{}</span></code>)</p></li>
+<li><p><strong>args_prior</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Additional <code class="docutils literal notranslate"><span class="pre">*args</span></code> to pass to Prior function.
+Must overwrite <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function to use these.
+(default: <code class="docutils literal notranslate"><span class="pre">()</span></code>)</p></li>
+<li><p><strong>kwargs_prior</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> to pass to Prior function.
+Must overwrite <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function to use these.
+(default: <code class="docutils literal notranslate"><span class="pre">{}</span></code>)</p></li>
+<li><p><strong>betas</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Inverse temperatures passes to the proposal with shape <code class="docutils literal notranslate"><span class="pre">(nwalkers,)</span></code>.</p></li>
+<li><p><strong>ll_in</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Log Likelihood values coming in for current coordinates. Must be provided
+if <code class="docutils literal notranslate"><span class="pre">self.rj</span> <span class="pre">is</span> <span class="pre">True</span></code>. Useful if <code class="docutils literal notranslate"><span class="pre">self.independent</span> <span class="pre">is</span> <span class="pre">True</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>lp_in</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Log Prior values coming in for current coordinates. Must be provided
+if <code class="docutils literal notranslate"><span class="pre">self.rj</span> <span class="pre">is</span> <span class="pre">True</span></code>. Useful if <code class="docutils literal notranslate"><span class="pre">self.independent</span> <span class="pre">is</span> <span class="pre">True</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>inds_leaves_rj</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Array giving the leaf index of each incoming walker.
+Must be provided if <code class="docutils literal notranslate"><span class="pre">self.rj</span> <span class="pre">is</span> <span class="pre">True</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>inds_reverse_rj</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Array giving the walker index for which proposals are
+reverse proposal removing a leaf.
+Must be provided if <code class="docutils literal notranslate"><span class="pre">self.rj</span> <span class="pre">is</span> <span class="pre">True</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(generated points, factors).</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>AssertionError</strong> – Inputs are incorrect.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMove.gibbs_sampling_setup_iterator">
+<span class="sig-name descname"><span class="pre">gibbs_sampling_setup_iterator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_branch_names</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMove.gibbs_sampling_setup_iterator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate through the gibbs splits as a generator</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>all_branch_names</strong> (<em>list</em>) – List of all branch names.</p>
+</dd>
+<dt class="field-even">Yields</dt>
+<dd class="field-even"><p><em>2-tuple</em> –</p>
+<dl class="simple">
+<dt>Gibbs sampling split.</dt><dd><p>First entry is the branch names to run and the second entry is the index
+into the leaves/parameters for this Gibbs split.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – Incorrect inputs.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMove.propose">
+<span class="sig-name descname"><span class="pre">propose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMove.propose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use the move to generate a proposal and compute the acceptance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.model.Model</span></code>) – Carrier of sampler information.</p></li>
+<li><p><strong>state</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code>) – Current state of the sampler.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>State of sampler after proposal is complete.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMove.readout_adjustment">
+<span class="sig-name descname"><span class="pre">readout_adjustment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out_vals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_vals_prop</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_all_vals</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMove.readout_adjustment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read out values from the proposal.</p>
+<p>Allows the user to read out any values from the proposal that may be needed elsewhere. This function must be overwritten.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>out_vals</strong> (<em>list</em>) – <code class="docutils literal notranslate"><span class="pre">[logP_out,</span> <span class="pre">ll_out,</span> <span class="pre">lp_out,</span> <span class="pre">log_proposal_pdf_out,</span> <span class="pre">log_sum_weights]</span></code>.</p></li>
+<li><p><strong>all_vals_prop</strong> (<em>list</em>) – <code class="docutils literal notranslate"><span class="pre">[logP,</span> <span class="pre">ll,</span> <span class="pre">lp,</span> <span class="pre">log_proposal_pdf,</span> <span class="pre">log_sum_weights]</span></code>.</p></li>
+<li><p><strong>aux_all_vals</strong> (<em>list</em>) – <code class="docutils literal notranslate"><span class="pre">[aux_logP,</span> <span class="pre">aux_ll,</span> <span class="pre">aux_lp,</span> <span class="pre">aux_log_proposal_pdf,</span> <span class="pre">aux_log_sum_weights]</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMove.setup_proposals">
+<span class="sig-name descname"><span class="pre">setup_proposals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMove.setup_proposals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup proposals when gibbs sampling.</p>
+<p>Get inputs into the proposal including Gibbs split information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>branch_names_run</strong> (<em>list</em>) – List of branch names to run concurrently.</p></li>
+<li><p><strong>inds_run</strong> (<em>list</em>) – List of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays including Gibbs sampling information.</p></li>
+<li><p><strong>branches_coords</strong> (<em>dict</em>) – Dictionary of coordinate arrays for all branches.</p></li>
+<li><p><strong>branches_inds</strong> (<em>dict</em>) – Dictionary of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays for all branches.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>(coords, inds, at_least_one_proposal)</dt><dd><ul class="simple">
+<li><p>Coords including Gibbs sampling info.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">inds</span></code> including Gibbs sampling info.</p></li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">at_least_one_proposal</span></code> is boolean. It is passed out to</dt><dd><p>indicate there is at least one leaf available for the requested branch names.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMove.temperature_control">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">temperature_control</span></span><a class="headerlink" href="#eryn.moves.MTDistGenMove.temperature_control" title="Permalink to this definition">¶</a></dt>
+<dd><p>Temperature controller</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMove.tune">
+<span class="sig-name descname"><span class="pre">tune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMove.tune" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tune a proposal</p>
+<p>This is a place holder for tuning.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state</strong> (<a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.State</span></code></a>) – Current state of sampler.</p></li>
+<li><p><strong>accepted</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – Accepted values for last pass
+through proposal.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMove.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">old_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMove.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update a given subset of the ensemble with an accepted proposal</p>
+<p>This class was updated from <code class="docutils literal notranslate"><span class="pre">emcee</span></code> to handle the added structure
+of Eryn.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>old_state</strong> (<a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.State</span></code></a>) – State with current information.
+New information is added to this state.</p></li>
+<li><p><strong>new_state</strong> (<a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.State</span></code></a>) – State with information from proposed
+points.</p></li>
+<li><p><strong>accepted</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – A vector of booleans indicating
+which walkers were accepted.</p></li>
+<li><p><strong>subset</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em><em>, </em><em>optional</em>) – A boolean mask
+indicating which walkers were included in the subset.
+This can be used, for example, when updating only the
+primary ensemble in a <a class="reference internal" href="#eryn.moves.RedBlueMove" title="eryn.moves.RedBlueMove"><code class="xref py py-class docutils literal notranslate"><span class="pre">RedBlueMove</span></code></a>.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">old_state</span></code> with accepted points added from <code class="docutils literal notranslate"><span class="pre">new_state</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.State</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="implemented-multiple-try-rj-moves">
+<h3>Implemented Multiple Try RJ Moves<a class="headerlink" href="#implemented-multiple-try-rj-moves" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">MTDistGenMoveRJ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dist</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.multipletry.MultipleTryMoveRJ</span></code>, <a class="reference internal" href="#eryn.moves.DistributionGenerateRJ" title="eryn.moves.distgenrj.DistributionGenerateRJ"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.distgenrj.DistributionGenerateRJ</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.special_generate_func">
+<span class="sig-name descname"><span class="pre">special_generate_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_tuple</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.special_generate_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate samples and calculate the logpdf of their proposal function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coords</strong> (<em>np.ndarray</em>) – Current coordinates of walkers.</p></li>
+<li><p><strong>random</strong> (<em>obj</em>) – Random generator.</p></li>
+<li><p><strong>*args</strong> (<em>tuple</em><em>, </em><em>optional</em>) – additional arguments passed by overwriting the
+<code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function and passing <code class="docutils literal notranslate"><span class="pre">args_generate</span></code> keyword argument.</p></li>
+<li><p><strong>size</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of tries to generate.</p></li>
+<li><p><strong>fill_tuple</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Length 2 tuple with the indexing of which values to fill
+when generating. Can be used for auxillary proposals or reverse RJ proposals. First index is the index into walkers and the second index is
+the index into the number of tries. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>fill_values</strong> (<em>np.ndarray</em>) – values to fill associated with <code class="docutils literal notranslate"><span class="pre">fill_tuple</span></code>. Should
+have size <code class="docutils literal notranslate"><span class="pre">(len(fill_tuple[0]),</span> <span class="pre">ndim)</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>).</p></li>
+<li><p><strong>**kwargs</strong> (<em>tuple</em><em>, </em><em>optional</em>) – additional keyword arguments passed by overwriting the
+<code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function and passing <code class="docutils literal notranslate"><span class="pre">kwargs_generate</span></code> keyword argument.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(generated points, logpdf of generated points).</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.special_like_func">
+<span class="sig-name descname"><span class="pre">special_like_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">generated_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_leaves_rj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.special_like_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the Likelihood for sampled points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>generated_coords</strong> (<em>np.ndarray</em>) – Generated coordinates with shape <code class="docutils literal notranslate"><span class="pre">(number</span> <span class="pre">of</span> <span class="pre">independent</span> <span class="pre">walkers,</span> <span class="pre">num_try)</span></code>.</p></li>
+<li><p><strong>*args</strong> (<em>tuple</em><em>, </em><em>optional</em>) – additional arguments passed by overwriting the
+<code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function and passing <code class="docutils literal notranslate"><span class="pre">args_like</span></code> keyword argument.</p></li>
+<li><p><strong>inds_leaves_rj</strong> (<em>np.ndarray</em>) – Index into each individual walker giving the
+leaf index associated with this proposal. Should only be used if <code class="docutils literal notranslate"><span class="pre">self.rj</span> <span class="pre">is</span> <span class="pre">True</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>**kwargs</strong> (<em>tuple</em><em>, </em><em>optional</em>) – additional keyword arguments passed by overwriting the
+<code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function and passing <code class="docutils literal notranslate"><span class="pre">kwargs_like</span></code> keyword argument.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Likelihood values with shape <code class="docutils literal notranslate"><span class="pre">(generated_coords.shape[0],</span> <span class="pre">num_try).</span></code></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.special_prior_func">
+<span class="sig-name descname"><span class="pre">special_prior_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">generated_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_leaves_rj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.special_prior_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the Prior for sampled points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>generated_coords</strong> (<em>np.ndarray</em>) – Generated coordinates with shape <code class="docutils literal notranslate"><span class="pre">(number</span> <span class="pre">of</span> <span class="pre">independent</span> <span class="pre">walkers,</span> <span class="pre">num_try)</span></code>.</p></li>
+<li><p><strong>*args</strong> (<em>tuple</em><em>, </em><em>optional</em>) – additional arguments passed by overwriting the
+<code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function and passing <code class="docutils literal notranslate"><span class="pre">args_prior</span></code> keyword argument.</p></li>
+<li><p><strong>inds_leaves_rj</strong> (<em>np.ndarray</em>) – Index into each individual walker giving the
+leaf index associated with this proposal. Should only be used if <code class="docutils literal notranslate"><span class="pre">self.rj</span> <span class="pre">is</span> <span class="pre">True</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>**kwargs</strong> (<em>tuple</em><em>, </em><em>optional</em>) – additional keyword arguments passed by overwriting the
+<code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function and passing <code class="docutils literal notranslate"><span class="pre">kwargs_prior</span></code> keyword argument.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Prior values with shape <code class="docutils literal notranslate"><span class="pre">(generated_coords.shape[0],</span> <span class="pre">num_try).</span></code></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.acceptance_fraction">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">acceptance_fraction</span></span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.acceptance_fraction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Acceptance fraction for this move.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.accepted">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">accepted</span></span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.accepted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accepted counts for this move.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.cleanup_proposals_gibbs">
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set all not Gibbs-sampled parameters back</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>branch_names_run</strong> (<em>list</em>) – List of branch names to run concurrently.</p></li>
+<li><p><strong>inds_run</strong> (<em>list</em>) – List of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays including Gibbs sampling information.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>branches_coords</strong> (<em>dict</em>) – Dictionary of old coordinate arrays for all branches.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.compute_log_posterior_basic">
+<span class="sig-name descname"><span class="pre">compute_log_posterior_basic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.compute_log_posterior_basic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the log of posterior</p>
+<p><span class="math notranslate nohighlight">\(\log{P} = \log{L} + \log{p}\)</span></p>
+<p>This method is to mesh with the tempered log posterior computation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>logl</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – Log-likelihood values.</p></li>
+<li><p><strong>logp</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – Log-prior values.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Log-Posterior values.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.fix_logp_gibbs">
+<span class="sig-name descname"><span class="pre">fix_logp_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.fix_logp_gibbs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set any walker with no leaves to have logp = -np.inf</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>branch_names_run</strong> (<em>list</em>) – List of branch names to run concurrently.</p></li>
+<li><p><strong>inds_run</strong> (<em>list</em>) – List of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays including Gibbs sampling information.</p></li>
+<li><p><strong>logp</strong> (<em>np.ndarray</em>) – Log of the prior going into final posterior computation.</p></li>
+<li><p><strong>inds</strong> (<em>dict</em>) – Dictionary of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays for all branches.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.get_model_change_proposal">
+<span class="sig-name descname"><span class="pre">get_model_change_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_k</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.get_model_change_proposal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function for changing the model count by 1.</p>
+<p>This helper function works with nested models where you want to add or remove
+one leaf at a time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inds</strong> (<em>np.ndarray</em>) – <code class="docutils literal notranslate"><span class="pre">inds</span></code> values for this specific branch with shape
+<code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max)</span></code>.</p></li>
+<li><p><strong>random</strong> (<em>object</em>) – Current random state of the sampler.</p></li>
+<li><p><strong>min_k</strong> (<em>int</em>) – Minimum allowable leaf count for this branch.</p></li>
+<li><p><strong>max_k</strong> (<em>int</em>) – Maximum allowable leaf count for this branch.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Keys are <code class="docutils literal notranslate"><span class="pre">&quot;+1&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;-1&quot;</span></code>. Values are indexing information.</dt><dd><p><code class="docutils literal notranslate"><span class="pre">&quot;+1&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;-1&quot;</span></code> indicate if a source is being added or removed, respectively.
+The indexing information is a 2D array with shape <code class="docutils literal notranslate"><span class="pre">(number</span> <span class="pre">changing,</span> <span class="pre">3)</span></code>.
+The length 3 is the index into each of the <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max)</span></code>.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.get_mt_log_posterior">
+<span class="sig-name descname"><span class="pre">get_mt_log_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ll</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.get_mt_log_posterior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the log of the posterior for all tries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ll</strong> (<em>np.ndarray</em>) – Log Likelihood values with shape <code class="docutils literal notranslate"><span class="pre">(nwalkers,</span> <span class="pre">num_tries)</span></code>.</p></li>
+<li><p><strong>lp</strong> (<em>np.ndarray</em>) – Log Prior values with shape <code class="docutils literal notranslate"><span class="pre">(nwalkers,</span> <span class="pre">num_tries)</span></code>.</p></li>
+<li><p><strong>betas</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Inverse temperatures to include in log Posterior computation.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Log of the Posterior with shape <code class="docutils literal notranslate"><span class="pre">(nwalkers,</span> <span class="pre">num_tries)</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.get_mt_proposal">
+<span class="sig-name descname"><span class="pre">get_mt_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args_generate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs_generate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args_like</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs_like</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args_prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs_prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ll_in</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lp_in</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_leaves_rj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_reverse_rj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.get_mt_proposal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a multiple-try proposal</p>
+<p>Here, <code class="docutils literal notranslate"><span class="pre">nwalkers</span></code> refers to all independent walkers which generally
+will mean <code class="docutils literal notranslate"><span class="pre">nwalkers</span> <span class="pre">*</span> <span class="pre">ntemps</span></code> in terms of the rest of the sampler.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coords</strong> (<em>np.ndarray</em>) – Current coordinates of walkers.</p></li>
+<li><p><strong>random</strong> (<em>obj</em>) – Random generator.</p></li>
+<li><p><strong>args_generate</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Additional <code class="docutils literal notranslate"><span class="pre">*args</span></code> to pass to generate function.
+Must overwrite <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function to use these.
+(default: <code class="docutils literal notranslate"><span class="pre">()</span></code>)</p></li>
+<li><p><strong>kwargs_generate</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> to pass to generate function.
+(default: <code class="docutils literal notranslate"><span class="pre">{}</span></code>)
+Must overwrite <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function to use these.</p></li>
+<li><p><strong>args_like</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Additional <code class="docutils literal notranslate"><span class="pre">*args</span></code> to pass to Likelihood function.
+Must overwrite <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function to use these.
+(default: <code class="docutils literal notranslate"><span class="pre">()</span></code>)</p></li>
+<li><p><strong>kwargs_like</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> to pass to Likelihood function.
+Must overwrite <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function to use these.
+(default: <code class="docutils literal notranslate"><span class="pre">{}</span></code>)</p></li>
+<li><p><strong>args_prior</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Additional <code class="docutils literal notranslate"><span class="pre">*args</span></code> to pass to Prior function.
+Must overwrite <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function to use these.
+(default: <code class="docutils literal notranslate"><span class="pre">()</span></code>)</p></li>
+<li><p><strong>kwargs_prior</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> to pass to Prior function.
+Must overwrite <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> function to use these.
+(default: <code class="docutils literal notranslate"><span class="pre">{}</span></code>)</p></li>
+<li><p><strong>betas</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Inverse temperatures passes to the proposal with shape <code class="docutils literal notranslate"><span class="pre">(nwalkers,)</span></code>.</p></li>
+<li><p><strong>ll_in</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Log Likelihood values coming in for current coordinates. Must be provided
+if <code class="docutils literal notranslate"><span class="pre">self.rj</span> <span class="pre">is</span> <span class="pre">True</span></code>. Useful if <code class="docutils literal notranslate"><span class="pre">self.independent</span> <span class="pre">is</span> <span class="pre">True</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>lp_in</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Log Prior values coming in for current coordinates. Must be provided
+if <code class="docutils literal notranslate"><span class="pre">self.rj</span> <span class="pre">is</span> <span class="pre">True</span></code>. Useful if <code class="docutils literal notranslate"><span class="pre">self.independent</span> <span class="pre">is</span> <span class="pre">True</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>inds_leaves_rj</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Array giving the leaf index of each incoming walker.
+Must be provided if <code class="docutils literal notranslate"><span class="pre">self.rj</span> <span class="pre">is</span> <span class="pre">True</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>inds_reverse_rj</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Array giving the walker index for which proposals are
+reverse proposal removing a leaf.
+Must be provided if <code class="docutils literal notranslate"><span class="pre">self.rj</span> <span class="pre">is</span> <span class="pre">True</span></code>. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(generated points, factors).</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>AssertionError</strong> – Inputs are incorrect.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.gibbs_sampling_setup_iterator">
+<span class="sig-name descname"><span class="pre">gibbs_sampling_setup_iterator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_branch_names</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.gibbs_sampling_setup_iterator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate through the gibbs splits as a generator</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>all_branch_names</strong> (<em>list</em>) – List of all branch names.</p>
+</dd>
+<dt class="field-even">Yields</dt>
+<dd class="field-even"><p><em>2-tuple</em> –</p>
+<dl class="simple">
+<dt>Gibbs sampling split.</dt><dd><p>First entry is the branch names to run and the second entry is the index
+into the leaves/parameters for this Gibbs split.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – Incorrect inputs.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.propose">
+<span class="sig-name descname"><span class="pre">propose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.propose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use the move to generate a proposal and compute the acceptance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.model.Model</span></code>) – Carrier of sampler information.</p></li>
+<li><p><strong>state</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code>) – Current state of the sampler.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>State of sampler after proposal is complete.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.readout_adjustment">
+<span class="sig-name descname"><span class="pre">readout_adjustment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out_vals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_vals_prop</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_all_vals</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.readout_adjustment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read out values from the proposal.</p>
+<p>Allows the user to read out any values from the proposal that may be needed elsewhere. This function must be overwritten.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>out_vals</strong> (<em>list</em>) – <code class="docutils literal notranslate"><span class="pre">[logP_out,</span> <span class="pre">ll_out,</span> <span class="pre">lp_out,</span> <span class="pre">log_proposal_pdf_out,</span> <span class="pre">log_sum_weights]</span></code>.</p></li>
+<li><p><strong>all_vals_prop</strong> (<em>list</em>) – <code class="docutils literal notranslate"><span class="pre">[logP,</span> <span class="pre">ll,</span> <span class="pre">lp,</span> <span class="pre">log_proposal_pdf,</span> <span class="pre">log_sum_weights]</span></code>.</p></li>
+<li><p><strong>aux_all_vals</strong> (<em>list</em>) – <code class="docutils literal notranslate"><span class="pre">[aux_logP,</span> <span class="pre">aux_ll,</span> <span class="pre">aux_lp,</span> <span class="pre">aux_log_proposal_pdf,</span> <span class="pre">aux_log_sum_weights]</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.setup_proposals">
+<span class="sig-name descname"><span class="pre">setup_proposals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.setup_proposals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup proposals when gibbs sampling.</p>
+<p>Get inputs into the proposal including Gibbs split information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>branch_names_run</strong> (<em>list</em>) – List of branch names to run concurrently.</p></li>
+<li><p><strong>inds_run</strong> (<em>list</em>) – List of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays including Gibbs sampling information.</p></li>
+<li><p><strong>branches_coords</strong> (<em>dict</em>) – Dictionary of coordinate arrays for all branches.</p></li>
+<li><p><strong>branches_inds</strong> (<em>dict</em>) – Dictionary of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays for all branches.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>(coords, inds, at_least_one_proposal)</dt><dd><ul class="simple">
+<li><p>Coords including Gibbs sampling info.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">inds</span></code> including Gibbs sampling info.</p></li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">at_least_one_proposal</span></code> is boolean. It is passed out to</dt><dd><p>indicate there is at least one leaf available for the requested branch names.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.temperature_control">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">temperature_control</span></span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.temperature_control" title="Permalink to this definition">¶</a></dt>
+<dd><p>Temperature controller</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.tune">
+<span class="sig-name descname"><span class="pre">tune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.tune" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tune a proposal</p>
+<p>This is a place holder for tuning.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state</strong> (<a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.State</span></code></a>) – Current state of sampler.</p></li>
+<li><p><strong>accepted</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – Accepted values for last pass
+through proposal.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">old_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update a given subset of the ensemble with an accepted proposal</p>
+<p>This class was updated from <code class="docutils literal notranslate"><span class="pre">emcee</span></code> to handle the added structure
+of Eryn.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>old_state</strong> (<a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.State</span></code></a>) – State with current information.
+New information is added to this state.</p></li>
+<li><p><strong>new_state</strong> (<a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.State</span></code></a>) – State with information from proposed
+points.</p></li>
+<li><p><strong>accepted</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em>) – A vector of booleans indicating
+which walkers were accepted.</p></li>
+<li><p><strong>subset</strong> (<em>np.ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>]</em><em>, </em><em>optional</em>) – A boolean mask
+indicating which walkers were included in the subset.
+This can be used, for example, when updating only the
+primary ensemble in a <a class="reference internal" href="#eryn.moves.RedBlueMove" title="eryn.moves.RedBlueMove"><code class="xref py py-class docutils literal notranslate"><span class="pre">RedBlueMove</span></code></a>.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">old_state</span></code> with accepted points added from <code class="docutils literal notranslate"><span class="pre">new_state</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.State</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
 <section id="utility-moves">
 <h2>Utility Moves<a class="headerlink" href="#utility-moves" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
@@ -3107,7 +4159,7 @@ This can be very helpful when debugging.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.CombineMove.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.CombineMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.CombineMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
