@@ -2,7 +2,7 @@
 
 Eryn is an advanced MCMC sampler. It has the capability to run with parallel tempering, multiple model types, and unknown counts within each model type using Reversible Jump MCMC techniques. Eryn is heavily based on [emcee](https://emcee.readthedocs.io/en/stable/). The `emcee` base structure with the Ensemble Sampler, State objects, proposal setup, and storage backends is carried over into Eryn with small changes to account for the increased complexity. In a simple sense, Eryn is an advanced (and slightly more complicated) version of `emcee`. 
 
-If you use Eryn in your publication, please cite (# TODO: add paper). The documentation for Eryn can be found here: (# TODO: add website). You will find the code on Github: [github.com/mikekatz04/Eryn](https://github.com/mikekatz04/Eryn). (# TODO: add zenodo as well)
+If you use Eryn in your publication, please cite the paper (# TODO: add paper), its zenodo (# TODO: add zenodo as well), and [emcee](https://emcee.readthedocs.io/en/stable/). The documentation for Eryn can be found here: [mikekatz04.gihub.io/Eryn](https://mikekatz04.gihub.io/Eryn). You will find the code on Github: [github.com/mikekatz04/Eryn](https://github.com/mikekatz04/Eryn). 
 
 ## Getting Started
 

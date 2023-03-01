@@ -8,7 +8,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Eryn &mdash; Eryn 0.0.1 documentation</title>
+  <title>Eryn Basic Tutorial &mdash; Eryn 0.0.1 documentation</title>
   
 
   
@@ -102,7 +102,7 @@
 </ul>
 <p class="caption"><span class="caption-text">Tutorial:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Eryn</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Eryn Basic Tutorial</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#MCMC-Basics">MCMC Basics</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#The-Tree-Metaphor">The Tree Metaphor</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Getting-Started-with-the-Ensemble-Sampler">Getting Started with the Ensemble Sampler</a></li>
@@ -177,7 +177,7 @@
     
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
         
-      <li>Eryn</li>
+      <li>Eryn Basic Tutorial</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -500,12 +500,12 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 </div>
-<section id="Eryn">
-<h1>Eryn<a class="headerlink" href="#Eryn" title="Permalink to this headline">¶</a></h1>
+<section id="Eryn-Basic-Tutorial">
+<h1>Eryn Basic Tutorial<a class="headerlink" href="#Eryn-Basic-Tutorial" title="Permalink to this headline">¶</a></h1>
 <p>Eryn is an advanced MCMC sampler. It has the capability to run with parallel tempering, multiple model types, and unknown counts within each model type using Reversible-Jump MCMC techniques. Eryn is heavily based on <a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a>. The <code class="docutils literal notranslate"><span class="pre">emcee</span></code> base structure with the Ensemble Sampler, State objects, proposal setup, and storage backends is carried over into Eryn with small changes to account for the increased complexity. In a simple sense, Eryn is an
 advanced (and slightly more complicated) version of <code class="docutils literal notranslate"><span class="pre">emcee</span></code>.</p>
 <p>In this tutorial, we will go through much of what is available in Eryn. We will start with a basic sampling operation to illustrate how to build and navigate common objects in Eryn. We will then scale up the complexity to understand how to use Eryn in different circumstances.</p>
-<p>If you use Eryn in your publication, please cite (# TODO: add paper). The documentation for Eryn can be found here: (# TODO: add website). You will find the code on Github: <a class="reference external" href="https://github.com/mikekatz04/Eryn">github.com/mikekatz04/Eryn</a>. (# TODO: add zenodo as well)</p>
+<p>If you use Eryn in your publication, please cite the paper (# TODO: add paper), its zenodo (# TODO: add zenodo as well), and <a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a>. The documentation for Eryn can be found here: <a class="reference external" href="https://mikekatz04.gihub.io/Eryn">mikekatz04.gihub.io/Eryn</a>. You will find the code on Github: <a class="reference external" href="https://github.com/mikekatz04/Eryn">github.com/mikekatz04/Eryn</a>.</p>
 <section id="MCMC-Basics">
 <h2>MCMC Basics<a class="headerlink" href="#MCMC-Basics" title="Permalink to this headline">¶</a></h2>
 <p>Here we will go through the basics of MCMC. For a better overall understanding of MCMC, see the Eryn paper: (# TODO: add paper).</p>
