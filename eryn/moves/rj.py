@@ -211,6 +211,9 @@ class ReversibleJump(Move):
                 if name not in branches_supps_new:
                     branches_supps_new[name] = state.branches_supplimental[name]
 
+            # fix any ordering issues
+            q, new_inds, branches_supps_new = self.ensure_ordering(list(state.branches.keys()), q, new_inds, branches_supps_new)
+
             # TODO: check this
             edge_factors = np.zeros((ntemps, nwalkers))
             # get factors for edges
