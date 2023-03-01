@@ -133,7 +133,7 @@
 </ul>
 <p class="caption"><span class="caption-text">Tutorial:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../tutorial/Eryn_tutorial.html">Eryn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial/Eryn_tutorial.html">Eryn Basic Tutorial</a></li>
 </ul>
 
             
@@ -370,16 +370,42 @@ into the leaves/parameters for this Gibbs split.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.Move.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.Move.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_supplimental</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.Move.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>branch_names_run</strong> (<em>list</em>) – List of branch names to run concurrently.</p></li>
 <li><p><strong>inds_run</strong> (<em>list</em>) – List of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays including Gibbs sampling information.</p></li>
-<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all proposal branches.</p></li>
 <li><p><strong>branches_coords</strong> (<em>dict</em>) – Dictionary of old coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new inds arrays for all proposal branches.</p></li>
+<li><p><strong>branches_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+<li><p><strong>branches_supplimental</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old branches supplimental for all branches.</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.Move.ensure_ordering">
+<span class="sig-name descname"><span class="pre">ensure_ordering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correct_key_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.Move.ensure_ordering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure proper order of key in dictionaries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>correct_key_order</strong> (<em>list</em>) – Keys in correct order.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em>) – Dictionary of new inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em> or </em><em>None</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(q, new_inds, new_branch_supps) in correct key order.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple</p>
 </dd>
 </dl>
 </dd></dl>
@@ -564,15 +590,19 @@ leaves are currently being used. (default: <code class="docutils literal notrans
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.MHMove.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_supplimental</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>branch_names_run</strong> (<em>list</em>) – List of branch names to run concurrently.</p></li>
 <li><p><strong>inds_run</strong> (<em>list</em>) – List of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays including Gibbs sampling information.</p></li>
-<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all proposal branches.</p></li>
 <li><p><strong>branches_coords</strong> (<em>dict</em>) – Dictionary of old coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new inds arrays for all proposal branches.</p></li>
+<li><p><strong>branches_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+<li><p><strong>branches_supplimental</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old branches supplimental for all branches.</p></li>
 </ul>
 </dd>
 </dl>
@@ -596,6 +626,28 @@ leaves are currently being used. (default: <code class="docutils literal notrans
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MHMove.ensure_ordering">
+<span class="sig-name descname"><span class="pre">ensure_ordering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correct_key_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MHMove.ensure_ordering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure proper order of key in dictionaries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>correct_key_order</strong> (<em>list</em>) – Keys in correct order.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em>) – Dictionary of new inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em> or </em><em>None</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(q, new_inds, new_branch_supps) in correct key order.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple</p>
 </dd>
 </dl>
 </dd></dl>
@@ -802,15 +854,19 @@ leaves are currently being used. (default: <code class="docutils literal notrans
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.GaussianMove.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GaussianMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_supplimental</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GaussianMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>branch_names_run</strong> (<em>list</em>) – List of branch names to run concurrently.</p></li>
 <li><p><strong>inds_run</strong> (<em>list</em>) – List of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays including Gibbs sampling information.</p></li>
-<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all proposal branches.</p></li>
 <li><p><strong>branches_coords</strong> (<em>dict</em>) – Dictionary of old coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new inds arrays for all proposal branches.</p></li>
+<li><p><strong>branches_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+<li><p><strong>branches_supplimental</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old branches supplimental for all branches.</p></li>
 </ul>
 </dd>
 </dl>
@@ -834,6 +890,28 @@ leaves are currently being used. (default: <code class="docutils literal notrans
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.GaussianMove.ensure_ordering">
+<span class="sig-name descname"><span class="pre">ensure_ordering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correct_key_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GaussianMove.ensure_ordering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure proper order of key in dictionaries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>correct_key_order</strong> (<em>list</em>) – Keys in correct order.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em>) – Dictionary of new inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em> or </em><em>None</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(q, new_inds, new_branch_supps) in correct key order.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1046,15 +1124,19 @@ in the numerator. -log of factors if in the denominator.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.DistributionGenerate.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerate.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_supplimental</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerate.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>branch_names_run</strong> (<em>list</em>) – List of branch names to run concurrently.</p></li>
 <li><p><strong>inds_run</strong> (<em>list</em>) – List of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays including Gibbs sampling information.</p></li>
-<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all proposal branches.</p></li>
 <li><p><strong>branches_coords</strong> (<em>dict</em>) – Dictionary of old coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new inds arrays for all proposal branches.</p></li>
+<li><p><strong>branches_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+<li><p><strong>branches_supplimental</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old branches supplimental for all branches.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1078,6 +1160,28 @@ in the numerator. -log of factors if in the denominator.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.DistributionGenerate.ensure_ordering">
+<span class="sig-name descname"><span class="pre">ensure_ordering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correct_key_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerate.ensure_ordering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure proper order of key in dictionaries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>correct_key_order</strong> (<em>list</em>) – Keys in correct order.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em>) – Dictionary of new inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em> or </em><em>None</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(q, new_inds, new_branch_supps) in correct key order.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1348,15 +1452,19 @@ The second return value is the accepted count array.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.RedBlueMove.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_supplimental</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>branch_names_run</strong> (<em>list</em>) – List of branch names to run concurrently.</p></li>
 <li><p><strong>inds_run</strong> (<em>list</em>) – List of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays including Gibbs sampling information.</p></li>
-<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all proposal branches.</p></li>
 <li><p><strong>branches_coords</strong> (<em>dict</em>) – Dictionary of old coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new inds arrays for all proposal branches.</p></li>
+<li><p><strong>branches_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+<li><p><strong>branches_supplimental</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old branches supplimental for all branches.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1380,6 +1488,28 @@ The second return value is the accepted count array.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.RedBlueMove.ensure_ordering">
+<span class="sig-name descname"><span class="pre">ensure_ordering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correct_key_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.RedBlueMove.ensure_ordering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure proper order of key in dictionaries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>correct_key_order</strong> (<em>list</em>) – Keys in correct order.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em>) – Dictionary of new inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em> or </em><em>None</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(q, new_inds, new_branch_supps) in correct key order.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1667,15 +1797,19 @@ randomly generated quantity per walker remains the same over branches.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.StretchMove.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_supplimental</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>branch_names_run</strong> (<em>list</em>) – List of branch names to run concurrently.</p></li>
 <li><p><strong>inds_run</strong> (<em>list</em>) – List of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays including Gibbs sampling information.</p></li>
-<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all proposal branches.</p></li>
 <li><p><strong>branches_coords</strong> (<em>dict</em>) – Dictionary of old coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new inds arrays for all proposal branches.</p></li>
+<li><p><strong>branches_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+<li><p><strong>branches_supplimental</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old branches supplimental for all branches.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1699,6 +1833,28 @@ randomly generated quantity per walker remains the same over branches.</p></li>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.StretchMove.ensure_ordering">
+<span class="sig-name descname"><span class="pre">ensure_ordering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correct_key_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove.ensure_ordering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure proper order of key in dictionaries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>correct_key_order</strong> (<em>list</em>) – Keys in correct order.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em>) – Dictionary of new inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em> or </em><em>None</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(q, new_inds, new_branch_supps) in correct key order.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2035,15 +2191,19 @@ The second return value is the accepted count array.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.GroupMove.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_supplimental</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>branch_names_run</strong> (<em>list</em>) – List of branch names to run concurrently.</p></li>
 <li><p><strong>inds_run</strong> (<em>list</em>) – List of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays including Gibbs sampling information.</p></li>
-<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all proposal branches.</p></li>
 <li><p><strong>branches_coords</strong> (<em>dict</em>) – Dictionary of old coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new inds arrays for all proposal branches.</p></li>
+<li><p><strong>branches_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+<li><p><strong>branches_supplimental</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old branches supplimental for all branches.</p></li>
 </ul>
 </dd>
 </dl>
@@ -2067,6 +2227,28 @@ The second return value is the accepted count array.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.GroupMove.ensure_ordering">
+<span class="sig-name descname"><span class="pre">ensure_ordering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correct_key_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupMove.ensure_ordering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure proper order of key in dictionaries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>correct_key_order</strong> (<em>list</em>) – Keys in correct order.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em>) – Dictionary of new inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em> or </em><em>None</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(q, new_inds, new_branch_supps) in correct key order.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2285,15 +2467,19 @@ must be broadcastable with <code class="docutils literal notranslate"><span clas
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.GroupStretchMove.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupStretchMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_supplimental</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupStretchMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>branch_names_run</strong> (<em>list</em>) – List of branch names to run concurrently.</p></li>
 <li><p><strong>inds_run</strong> (<em>list</em>) – List of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays including Gibbs sampling information.</p></li>
-<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all proposal branches.</p></li>
 <li><p><strong>branches_coords</strong> (<em>dict</em>) – Dictionary of old coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new inds arrays for all proposal branches.</p></li>
+<li><p><strong>branches_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+<li><p><strong>branches_supplimental</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old branches supplimental for all branches.</p></li>
 </ul>
 </dd>
 </dl>
@@ -2317,6 +2503,28 @@ must be broadcastable with <code class="docutils literal notranslate"><span clas
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.GroupStretchMove.ensure_ordering">
+<span class="sig-name descname"><span class="pre">ensure_ordering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correct_key_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupStretchMove.ensure_ordering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure proper order of key in dictionaries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>correct_key_order</strong> (<em>list</em>) – Keys in correct order.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em>) – Dictionary of new inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em> or </em><em>None</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(q, new_inds, new_branch_supps) in correct key order.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2667,15 +2875,19 @@ The length 3 is the index into each of the <code class="docutils literal notrans
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.ReversibleJump.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJump.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_supplimental</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJump.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>branch_names_run</strong> (<em>list</em>) – List of branch names to run concurrently.</p></li>
 <li><p><strong>inds_run</strong> (<em>list</em>) – List of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays including Gibbs sampling information.</p></li>
-<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all proposal branches.</p></li>
 <li><p><strong>branches_coords</strong> (<em>dict</em>) – Dictionary of old coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new inds arrays for all proposal branches.</p></li>
+<li><p><strong>branches_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+<li><p><strong>branches_supplimental</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old branches supplimental for all branches.</p></li>
 </ul>
 </dd>
 </dl>
@@ -2699,6 +2911,28 @@ The length 3 is the index into each of the <code class="docutils literal notrans
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.ReversibleJump.ensure_ordering">
+<span class="sig-name descname"><span class="pre">ensure_ordering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correct_key_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJump.ensure_ordering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure proper order of key in dictionaries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>correct_key_order</strong> (<em>list</em>) – Keys in correct order.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em>) – Dictionary of new inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em> or </em><em>None</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(q, new_inds, new_branch_supps) in correct key order.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2939,15 +3173,19 @@ in the numerator. -log of factors if in the denominator.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.DistributionGenerateRJ.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerateRJ.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_supplimental</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerateRJ.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>branch_names_run</strong> (<em>list</em>) – List of branch names to run concurrently.</p></li>
 <li><p><strong>inds_run</strong> (<em>list</em>) – List of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays including Gibbs sampling information.</p></li>
-<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all proposal branches.</p></li>
 <li><p><strong>branches_coords</strong> (<em>dict</em>) – Dictionary of old coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new inds arrays for all proposal branches.</p></li>
+<li><p><strong>branches_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+<li><p><strong>branches_supplimental</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old branches supplimental for all branches.</p></li>
 </ul>
 </dd>
 </dl>
@@ -2971,6 +3209,28 @@ in the numerator. -log of factors if in the denominator.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.DistributionGenerateRJ.ensure_ordering">
+<span class="sig-name descname"><span class="pre">ensure_ordering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correct_key_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerateRJ.ensure_ordering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure proper order of key in dictionaries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>correct_key_order</strong> (<em>list</em>) – Keys in correct order.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em>) – Dictionary of new inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em> or </em><em>None</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(q, new_inds, new_branch_supps) in correct key order.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple</p>
 </dd>
 </dl>
 </dd></dl>
@@ -3429,15 +3689,19 @@ leaf index associated with this proposal. Should only be used if <code class="do
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.MTDistGenMove.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_supplimental</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>branch_names_run</strong> (<em>list</em>) – List of branch names to run concurrently.</p></li>
 <li><p><strong>inds_run</strong> (<em>list</em>) – List of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays including Gibbs sampling information.</p></li>
-<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all proposal branches.</p></li>
 <li><p><strong>branches_coords</strong> (<em>dict</em>) – Dictionary of old coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new inds arrays for all proposal branches.</p></li>
+<li><p><strong>branches_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+<li><p><strong>branches_supplimental</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old branches supplimental for all branches.</p></li>
 </ul>
 </dd>
 </dl>
@@ -3461,6 +3725,28 @@ leaf index associated with this proposal. Should only be used if <code class="do
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMove.ensure_ordering">
+<span class="sig-name descname"><span class="pre">ensure_ordering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correct_key_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMove.ensure_ordering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure proper order of key in dictionaries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>correct_key_order</strong> (<em>list</em>) – Keys in correct order.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em>) – Dictionary of new inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em> or </em><em>None</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(q, new_inds, new_branch_supps) in correct key order.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple</p>
 </dd>
 </dl>
 </dd></dl>
@@ -3805,15 +4091,19 @@ leaf index associated with this proposal. Should only be used if <code class="do
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_supplimental</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>branch_names_run</strong> (<em>list</em>) – List of branch names to run concurrently.</p></li>
 <li><p><strong>inds_run</strong> (<em>list</em>) – List of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays including Gibbs sampling information.</p></li>
-<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all proposal branches.</p></li>
 <li><p><strong>branches_coords</strong> (<em>dict</em>) – Dictionary of old coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new inds arrays for all proposal branches.</p></li>
+<li><p><strong>branches_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+<li><p><strong>branches_supplimental</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old branches supplimental for all branches.</p></li>
 </ul>
 </dd>
 </dl>
@@ -3837,6 +4127,28 @@ leaf index associated with this proposal. Should only be used if <code class="do
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.ensure_ordering">
+<span class="sig-name descname"><span class="pre">ensure_ordering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correct_key_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.ensure_ordering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure proper order of key in dictionaries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>correct_key_order</strong> (<em>list</em>) – Keys in correct order.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em>) – Dictionary of new inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em> or </em><em>None</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(q, new_inds, new_branch_supps) in correct key order.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple</p>
 </dd>
 </dl>
 </dd></dl>
@@ -4159,15 +4471,19 @@ This can be very helpful when debugging.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.CombineMove.cleanup_proposals_gibbs">
-<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.CombineMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleanup_proposals_gibbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branch_names_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_supplimental</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.CombineMove.cleanup_proposals_gibbs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set all not Gibbs-sampled parameters back</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>branch_names_run</strong> (<em>list</em>) – List of branch names to run concurrently.</p></li>
 <li><p><strong>inds_run</strong> (<em>list</em>) – List of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays including Gibbs sampling information.</p></li>
-<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all proposal branches.</p></li>
 <li><p><strong>branches_coords</strong> (<em>dict</em>) – Dictionary of old coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new inds arrays for all proposal branches.</p></li>
+<li><p><strong>branches_inds</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+<li><p><strong>branches_supplimental</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of old branches supplimental for all branches.</p></li>
 </ul>
 </dd>
 </dl>
@@ -4191,6 +4507,28 @@ This can be very helpful when debugging.</p></li>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>np.ndarray[ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.CombineMove.ensure_ordering">
+<span class="sig-name descname"><span class="pre">ensure_ordering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">correct_key_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_branch_supps</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.CombineMove.ensure_ordering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure proper order of key in dictionaries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>correct_key_order</strong> (<em>list</em>) – Keys in correct order.</p></li>
+<li><p><strong>q</strong> (<em>dict</em>) – Dictionary of new coordinate arrays for all branches.</p></li>
+<li><p><strong>new_inds</strong> (<em>dict</em>) – Dictionary of new inds arrays for all branches.</p></li>
+<li><p><strong>new_branch_supps</strong> (<em>dict</em><em> or </em><em>None</em>) – Dictionary of new branches supplimental for all proposal branches.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(q, new_inds, new_branch_supps) in correct key order.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple</p>
 </dd>
 </dl>
 </dd></dl>
