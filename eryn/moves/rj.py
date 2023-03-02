@@ -119,6 +119,16 @@ class ReversibleJump(Move):
             elif list(state.branches.keys())[ind_upd]=='qbpl':
                 names_upd+=['qpl']
 
+
+            if list(state.branches.keys())[ind_upd]=='pl':
+                prand=np.random.rand()
+                if prand<0.5:
+                    names_upd+=['bpl']
+            elif list(state.branches.keys())[ind_upd]=='bpl':
+                prand=np.random.rand()
+                if prand<0.5:
+                    names_upd+=['pl']
+
             # if list(state.branches.keys())[ind_upd]=='pl':
             #     names_upd+=['bpl']
             # elif list(state.branches.keys())[ind_upd]=='bpl':
