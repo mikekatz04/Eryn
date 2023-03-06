@@ -478,19 +478,15 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-
-<span></span><span class="kn">import</span> <span class="nn">sys</span>
-<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;/Users/michaelkatz/Research/Eryn/&#39;</span><span class="p">)</span>
-
-<span class="kn">from</span> <span class="nn">eryn.ensemble</span> <span class="kn">import</span> <span class="n">EnsembleSampler</span>
+<span></span><span class="kn">from</span> <span class="nn">eryn.ensemble</span> <span class="kn">import</span> <span class="n">EnsembleSampler</span>
 <span class="kn">from</span> <span class="nn">eryn.state</span> <span class="kn">import</span> <span class="n">State</span>
 <span class="kn">from</span> <span class="nn">eryn.prior</span> <span class="kn">import</span> <span class="n">ProbDistContainer</span><span class="p">,</span> <span class="n">uniform_dist</span>
 <span class="kn">from</span> <span class="nn">eryn.utils</span> <span class="kn">import</span> <span class="n">TransformContainer</span>
-<span class="kn">from</span> <span class="nn">eryn.moves</span> <span class="kn">import</span> <span class="n">GaussianMove</span>
+<span class="kn">from</span> <span class="nn">eryn.moves</span> <span class="kn">import</span> <span class="n">GaussianMove</span><span class="p">,</span> <span class="n">StretchMove</span><span class="p">,</span> <span class="n">CombineMove</span>
 <span class="kn">from</span> <span class="nn">eryn.utils.utility</span> <span class="kn">import</span> <span class="n">groups_from_inds</span>
 
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
@@ -2014,7 +2010,7 @@ max ll: -261.23462233367997
 <h2>Add multiple branches<a class="headerlink" href="#Add-multiple-branches" title="Permalink to this headline">¶</a></h2>
 <p>Now we will add another model to our reversible jump problem. We will add a sine wave model.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -2094,12 +2090,12 @@ max ll: -261.23462233367997
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x169a6a6a0&gt;
+&lt;matplotlib.legend.Legend at 0x158e76940&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -2480,6 +2476,258 @@ max ll: -224.91812775874538
 </ul>
 <section id="Gibbs-Sampling">
 <h3>Gibbs Sampling<a class="headerlink" href="#Gibbs-Sampling" title="Permalink to this headline">¶</a></h3>
+<p>There is a very useful setup for Gibbs sampling of parameters in <code class="docutils literal notranslate"><span class="pre">Eryn</span></code>. To use this feature, you can pass information as the <code class="docutils literal notranslate"><span class="pre">gibbs_sampling_setup</span></code> keyword argument to the chosen Move class. It is handled by the base <code class="docutils literal notranslate"><span class="pre">eryn.moves.Move</span></code> class so it is a feature of all proposals.</p>
+<p>Gibbs sampling allows the user to sample over a specific set of models or parameters to improve sampling efficiency. For example, sampling in a 100-parameter space may be inefficient, but sampling in 10-dimensional sub-spaces consecutively may be more efficient by increasing the acceptance fraction.</p>
+<p>The documentation for the <code class="docutils literal notranslate"><span class="pre">gibbs_sampling_setup</span></code> parameter reads as follows:</p>
+<p><code class="docutils literal notranslate"><span class="pre">gibbs_sampling_setup</span></code> (str, tuple, dict, or list, optional) – This sets the Gibbs Sampling setup if desired. The Gibbs sampling setup is completely customizable down to the leaf and parameters. All of the separate Gibbs sampling splits will be run within 1 call to this proposal. If None, run all branches and all parameters. If str, run all parameters within the branch given as the string. To enter a branch with a specific set of parameters, you can provide a 2-tuple with the first entry as
+the branch name and the second entry as a 2D boolean array of shape (nleaves_max, ndim) that indicates which leaves and/or parameters you want to run. None can also be entered in the second entry if all parameters are to be run. A dictionary is also possible with keys as branch names and values as the same 2D boolean array of shape (nleaves_max, ndim) that indicates which leaves and/or parameters you want to run. None can also be entered in the value of the dictionary if all parameters are to be
+run. If multiple keys are provided in the dictionary, those branches will be run simultaneously in the proposal as one iteration of the proposing loop. The final option is a list. This is how you make sure to run all the Gibbs splits. Each entry of the list can be a string, 2-tuple, or dictionary as described above. The list controls the order in which all of these splits are run. (default: None)</p>
+<p>In the following example, we will use Gibbs sampling to run the same multimodel case as above with the sine waves and Gaussian pulses. However, in the example above, for each proposal, both in-model and between-model, all parameters/leaves were updated simultaneously. This means for the in-model step, all parameters for both models were updated simultaneously. In the between-model or RJ step, changes to the leaf counts were also proposed simultaneously for both models. In simple cases, the may
+be okay.</p>
+<p>Here we will fix the model count of the sine waves to the true value in order to use the stretch proposal on that model. We will still sample over Gaussian pulses with an uncertain model count. We will choose for the sake of example to sample leaf by leaf over the first 2 parameters of the sine wave and then the last one. For the Gaussians, we will sample all the parameters together, but leaf by leaf.</p>
+<p>We will also use the <code class="docutils literal notranslate"><span class="pre">CombineMove</span></code> to make sure these all happen one after another.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">nwalkers</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">ntemps</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">ndims</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="n">nleaves_max</span> <span class="o">=</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="c1"># same min and max means no changing</span>
+<span class="n">nleaves_min</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+
+<span class="n">branch_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">,</span> <span class="s2">&quot;sine&quot;</span><span class="p">]</span>
+
+<span class="c1"># define time stream</span>
+<span class="n">num</span> <span class="o">=</span> <span class="mi">500</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">num</span><span class="p">)</span>
+
+<span class="n">gauss_inj_params</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span><span class="mf">3.3</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+    <span class="p">[</span><span class="mf">2.6</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+    <span class="p">[</span><span class="mf">3.4</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+    <span class="p">[</span><span class="mf">2.9</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+<span class="p">]</span>
+
+<span class="n">sine_inj_params</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span><span class="mf">1.3</span><span class="p">,</span> <span class="mf">10.1</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span>
+    <span class="p">[</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">4.6</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">],</span>
+<span class="p">]</span>
+
+<span class="c1"># combine gaussians</span>
+<span class="n">injection</span> <span class="o">=</span> <span class="n">combine_gaussians</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">gauss_inj_params</span><span class="p">))</span>
+<span class="n">injection</span> <span class="o">+=</span> <span class="n">combine_sine</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sine_inj_params</span><span class="p">))</span>
+
+<span class="c1"># set noise level</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="mf">2.0</span>
+
+<span class="c1"># produce full data</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">injection</span> <span class="o">+</span> <span class="n">sigma</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">injection</span><span class="p">))</span>
+
+
+<span class="n">coords</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ndims</span><span class="p">[</span><span class="mi">0</span><span class="p">])),</span>
+    <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ndims</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+<span class="p">}</span>
+
+<span class="c1"># make sure to start near the proper setup</span>
+<span class="n">inds</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">),</span>
+    <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+<span class="p">}</span>
+
+
+<span class="c1"># this is the sigma for the multivariate Gaussian that sets starting points</span>
+<span class="c1"># We need it to be very small to assume we are passed the search phase</span>
+<span class="c1"># we will verify this is with likelihood calculations</span>
+<span class="n">sig1</span> <span class="o">=</span> <span class="mf">0.0001</span>
+
+<span class="c1"># setup initial walkers to be the correct count (it will spread out)</span>
+<span class="c1"># start with gaussians</span>
+<span class="k">for</span> <span class="n">nn</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+    <span class="k">if</span> <span class="n">nn</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">gauss_inj_params</span><span class="p">):</span>
+        <span class="c1"># not going to add parameters for these unused leaves</span>
+        <span class="k">continue</span>
+    <span class="n">coords</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="n">nn</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">gauss_inj_params</span><span class="p">[</span><span class="n">nn</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">sig1</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">))</span>
+    <span class="n">inds</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="n">nn</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="c1"># next do sine waves</span>
+<span class="k">for</span> <span class="n">nn</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+    <span class="k">if</span> <span class="n">nn</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sine_inj_params</span><span class="p">):</span>
+        <span class="c1"># not going to add parameters for these unused leaves</span>
+        <span class="k">continue</span>
+    <span class="n">coords</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="n">nn</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">sine_inj_params</span><span class="p">[</span><span class="n">nn</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">sig1</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">))</span>
+    <span class="c1"># inds[&quot;sine&quot;][:, :, nn] = True  # already True</span>
+
+
+<span class="c1"># describes priors for all leaves independently</span>
+<span class="n">priors</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="mi">0</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">),</span>  <span class="c1"># amplitude</span>
+        <span class="mi">1</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">t</span><span class="o">.</span><span class="n">max</span><span class="p">()),</span>  <span class="c1"># mean</span>
+        <span class="mi">2</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.21</span><span class="p">),</span>  <span class="c1"># sigma</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="mi">0</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">),</span>  <span class="c1"># amplitude</span>
+        <span class="mi">1</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">20.</span><span class="p">),</span>  <span class="c1"># mean</span>
+        <span class="mi">2</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">),</span>  <span class="c1"># sigma</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+
+<span class="c1"># for the Gaussian Move</span>
+<span class="n">factor</span> <span class="o">=</span> <span class="mf">0.00001</span>
+<span class="n">cov</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">ndims</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span> <span class="o">*</span> <span class="n">factor</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># pass boolean array of shape (nleaves_max[0], ndims[0])</span>
+<span class="n">gibbs_sampling_gauss</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s2">&quot;gauss&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nleaves_max</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ndims</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="p">]</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+    <span class="n">gibbs_sampling_gauss</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="n">gauss_move</span> <span class="o">=</span> <span class="n">GaussianMove</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="n">gibbs_sampling_setup</span><span class="o">=</span><span class="n">gibbs_sampling_gauss</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;gauss gibbs setup:&quot;</span><span class="p">,</span> <span class="n">gibbs_sampling_gauss</span><span class="p">)</span>
+
+<span class="n">gibbs_sampling_sine</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s2">&quot;sine&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nleaves_max</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ndims</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="p">]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">gibbs_sampling_sine</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="n">j</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">gibbs_sampling_sine</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="n">j</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">:]</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;sine gibbs setup:&quot;</span><span class="p">,</span> <span class="n">gibbs_sampling_sine</span><span class="p">)</span>
+
+<span class="n">sine_move</span> <span class="o">=</span> <span class="n">StretchMove</span><span class="p">(</span><span class="n">live_dangerously</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">gibbs_sampling_setup</span><span class="o">=</span><span class="n">gibbs_sampling_sine</span><span class="p">)</span>
+
+<span class="n">move</span> <span class="o">=</span> <span class="n">CombineMove</span><span class="p">([</span><span class="n">gauss_move</span><span class="p">,</span> <span class="n">sine_move</span><span class="p">])</span>
+
+<span class="n">ensemble</span> <span class="o">=</span> <span class="n">EnsembleSampler</span><span class="p">(</span>
+    <span class="n">nwalkers</span><span class="p">,</span>
+    <span class="n">ndims</span><span class="p">,</span>
+    <span class="n">log_like_fn_gauss_and_sine</span><span class="p">,</span>
+    <span class="n">priors</span><span class="p">,</span>
+    <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sigma</span><span class="p">],</span>
+    <span class="n">tempering_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">ntemps</span><span class="o">=</span><span class="n">ntemps</span><span class="p">),</span>
+    <span class="n">nbranches</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">branch_names</span><span class="p">),</span>
+    <span class="n">branch_names</span><span class="o">=</span><span class="n">branch_names</span><span class="p">,</span>
+    <span class="n">nleaves_max</span><span class="o">=</span><span class="n">nleaves_max</span><span class="p">,</span>
+    <span class="n">nleaves_min</span><span class="o">=</span><span class="n">nleaves_min</span><span class="p">,</span>
+    <span class="n">moves</span><span class="o">=</span><span class="n">move</span><span class="p">,</span>
+    <span class="n">rj_moves</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># basic generation of new leaves from the prior</span>
+<span class="p">)</span>
+
+
+<span class="n">log_prior</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">compute_log_prior</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">)</span>
+<span class="n">log_like</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">compute_log_like</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">,</span> <span class="n">logp</span><span class="o">=</span><span class="n">log_prior</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="c1"># make sure it is reasonably close to the maximum which this is</span>
+<span class="c1"># will not be zero due to noise</span>
+
+<span class="c1"># setup starting state</span>
+<span class="n">state</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">log_like</span><span class="o">=</span><span class="n">log_like</span><span class="p">,</span> <span class="n">log_prior</span><span class="o">=</span><span class="n">log_prior</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">)</span>
+
+<span class="n">nsteps</span> <span class="o">=</span> <span class="mi">500</span>
+<span class="n">last_sample</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">nsteps</span><span class="p">,</span> <span class="n">burn</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+  0%|                                                   | 0/100 [00:00&lt;?, ?it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+gauss gibbs setup: [(&#39;gauss&#39;, array([[ True,  True,  True],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False]])), (&#39;gauss&#39;, array([[False, False, False],
+       [ True,  True,  True],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False]])), (&#39;gauss&#39;, array([[False, False, False],
+       [False, False, False],
+       [ True,  True,  True],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False]])), (&#39;gauss&#39;, array([[False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [ True,  True,  True],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False]])), (&#39;gauss&#39;, array([[False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [ True,  True,  True],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False]])), (&#39;gauss&#39;, array([[False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [ True,  True,  True],
+       [False, False, False],
+       [False, False, False]])), (&#39;gauss&#39;, array([[False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [ True,  True,  True],
+       [False, False, False]])), (&#39;gauss&#39;, array([[False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [False, False, False],
+       [ True,  True,  True]]))]
+sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
+       [False, False, False]])), (&#39;sine&#39;, array([[False, False,  True],
+       [False, False, False]])), (&#39;sine&#39;, array([[False, False, False],
+       [ True,  True, False]])), (&#39;sine&#39;, array([[False, False, False],
+       [False, False,  True]]))]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+100%|█████████████████████████████████████████| 100/100 [00:19&lt;00:00,  5.16it/s]
+ 17%|███████▏                                  | 86/500 [00:15&lt;01:16,  5.40it/s]
+</pre></div></div>
+</div>
 </section>
 </section>
 <section id="Utilities">

@@ -179,7 +179,7 @@ class Move(object):
                         if isinstance(item, str):
                             branch_names_run_all[prop_i].append(item)
                             inds_run_all[prop_i].append(None)
-                        elif isinstance(proposal_iteration, tuple):
+                        elif isinstance(item, tuple):
                             branch_names_run_all[prop_i].append(item[0])
                             inds_run_all[prop_i].append(item[1])
 
@@ -266,7 +266,17 @@ class Move(object):
             at_least_one_proposal,
         )
 
-    def cleanup_proposals_gibbs(self, branch_names_run, inds_run, q, branches_coords, new_inds=None, branches_inds=None, new_branch_supps=None, branches_supplimental=None):
+    def cleanup_proposals_gibbs(
+        self,
+        branch_names_run,
+        inds_run,
+        q,
+        branches_coords,
+        new_inds=None,
+        branches_inds=None,
+        new_branch_supps=None,
+        branches_supplimental=None,
+    ):
         """Set all not Gibbs-sampled parameters back
         
         Args:
@@ -316,7 +326,10 @@ class Move(object):
         if list(new_inds.keys()) != correct_key_order:
             new_inds = {key: new_inds[key] for key in correct_key_order}
 
-        if new_branch_supps is not None and list(new_branch_supps.keys()) != correct_key_order:
+        if (
+            new_branch_supps is not None
+            and list(new_branch_supps.keys()) != correct_key_order
+        ):
             new_branch_supps = {key: new_branch_supps[key] for key in correct_key_order}
 
         return q, new_inds, new_branch_supps
@@ -349,8 +362,6 @@ class Move(object):
 
         # adjust
         logp[total_leaves == 0] = -np.inf
-
-    
 
     @property
     def accepted(self):

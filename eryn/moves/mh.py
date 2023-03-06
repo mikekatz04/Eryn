@@ -78,7 +78,6 @@ class MHMove(Move):
         for (branch_names_run, inds_run) in self.gibbs_sampling_setup_iterator(
             all_branch_names
         ):
-
             # setup supplimental information
             if not np.all(
                 np.asarray(list(state.branches_supplimental.values())) == None
