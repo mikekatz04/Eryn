@@ -15,7 +15,7 @@ except (ModuleNotFoundError, ImportError):
 
     gpu_available = False
 
-from .rj import ReversibleJump
+from .rj import ReversibleJumpMove
 from ..prior import ProbDistContainer
 from ..utils.utility import groups_from_inds
 

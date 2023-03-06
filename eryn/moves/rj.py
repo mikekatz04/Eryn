@@ -8,10 +8,10 @@ from .move import Move
 from .delayedrejection import DelayedRejection
 from .distgen import DistributionGenerate
 
-__all__ = ["ReversibleJump"]
+__all__ = ["ReversibleJumpMove"]
 
 
-class ReversibleJump(Move):
+class ReversibleJumpMove(Move):
     """
     An abstract reversible jump move from # TODO: add citations.
 
@@ -35,7 +35,7 @@ class ReversibleJump(Move):
         fix_change=None,
         **kwargs
     ):
-        # super(ReversibleJump, self).__init__(**kwargs)
+        # super(ReversibleJumpMove, self).__init__(**kwargs)
         Move.__init__(self, is_rj=True, **kwargs)
 
         # setup leaf limits
@@ -71,7 +71,7 @@ class ReversibleJump(Move):
 
     def setup(self, branches_coords):
         """Any setup for the proposal. 
-        
+
         Args:
             branches_coords (dict): Keys are ``branch_names``. Values are
                 np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent

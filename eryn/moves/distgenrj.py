@@ -2,13 +2,13 @@
 
 import numpy as np
 
-from .rj import ReversibleJump
+from .rj import ReversibleJumpMove
 from ..prior import ProbDistContainer
 
 __all__ = ["DistributionGenerateRJ"]
 
 
-class DistributionGenerateRJ(ReversibleJump):
+class DistributionGenerateRJ(ReversibleJumpMove):
     """Generate Revesible-Jump proposals from a distribution.
 
     The prior can be entered as the ``generate_dist`` to generate proposals directly from the prior.

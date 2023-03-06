@@ -66,13 +66,24 @@ class SearchConvergeStopping(Stopping):
         self.past_like_best = -np.inf
 
     def __call__(self, iter, sample, sampler):
+        """Call update function.
+
+        Args:
+            iter (int): Iteration of the sampler.
+            last_sample (obj): Last state of sampler (:class:`eryn.state.State`).
+            sampler (obj): Full sampler oject (:class:`eryn.ensemble.EnsembleSampler`).
+
+        Returns:
+            bool: Value of ``stop``. If ``True``, stop sampling.
+            
+        """
 
         # if we have not reached the start iteration return
         if iter < self.start_iteration:
             return False
 
         # get best Likelihood so far
-        like_best = sampler.get_log_prob(discard=self.start_iteration).max()
+        like_best = sampler.get_log_like(discard=self.start_iteration).max()
 
         # compare to last
         # if it is less than diff change it passes

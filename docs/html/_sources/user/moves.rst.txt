@@ -78,7 +78,7 @@ Reversible Jump Moves
 
 Reversible Jump Parent Class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: eryn.moves.ReversibleJump
+.. autoclass:: eryn.moves.ReversibleJumpMove
     :members:
     :show-inheritance:
     :inherited-members:

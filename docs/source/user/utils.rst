@@ -11,13 +11,6 @@ Periodic Container
     :show-inheritance:
     :inherited-members:
 
-PlotContainer
-~~~~~~~~~~~~~~~
-
-.. autoclass:: eryn.utils.PlotContainer
-    :members:
-    :show-inheritance:
-    :inherited-members:
 
 TransformContainer
 ~~~~~~~~~~~~~~~~~~~
