@@ -40,6 +40,11 @@ shutil.copy(
     "/Users/michaelkatz/Research/Eryn/docs/source/tutorial/Eryn_tutorial.ipynb",
 )
 
+shutil.copy(
+    "/Users/michaelkatz/Research/Eryn/examples/more_tutorials.ipynb",
+    "/Users/michaelkatz/Research/Eryn/docs/source/tutorial/more_tutorials.ipynb",
+)
+
 
 # -- General configuration ---------------------------------------------------
 
