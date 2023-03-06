@@ -48,9 +48,15 @@ class RedBlueMove(Move, ABC):
         self.live_dangerously = live_dangerously
         self.randomize_split = randomize_split
 
-    def setup(self, coords):
-        """Any setup necessary for the proposal"""
-        pass
+    def setup(self, branches_coords):
+        """Any setup for the proposal. 
+        
+        Args:
+            branches_coords (dict): Keys are ``branch_names``. Values are
+                np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent
+                coordinates for all the walkers.
+
+        """
 
     @classmethod
     def get_proposal(self, sample, complement, random, gibbs_ndim=None):
@@ -154,17 +160,14 @@ class RedBlueMove(Move, ABC):
                 # inds including gibbs information
                 new_inds = {
                     name: np.take_along_axis(
-                        state.branches[name].inds,
-                        all_inds_shaped[:, :, None],
-                        axis=1,
+                        state.branches[name].inds, all_inds_shaped[:, :, None], axis=1,
                     )
                     for name in state.branches
                 }
 
                 # the actual inds for the subset
                 real_inds_subset = {
-                    name: new_inds[name]
-                    for name in inds_going_for_proposal
+                    name: new_inds[name] for name in inds_going_for_proposal
                 }
 
                 # actual coordinates of subset
@@ -248,8 +251,10 @@ class RedBlueMove(Move, ABC):
                 else:
                     new_branch_supps = None
 
-                # order everything properly                
-                q, new_inds, new_branch_supps = self.ensure_ordering(list(state.branches.keys()), q, new_inds, new_branch_supps)
+                # order everything properly
+                q, new_inds, new_branch_supps = self.ensure_ordering(
+                    list(state.branches.keys()), q, new_inds, new_branch_supps
+                )
 
                 # Compute prior of the proposed position
                 # new_inds_prior is adjusted if product-space is used

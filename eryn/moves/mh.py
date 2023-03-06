@@ -44,6 +44,16 @@ class MHMove(Move):
 
         raise NotImplementedError("The proposal must be implemented by " "subclasses")
 
+    def setup(self, branches_coords):
+        """Any setup for the proposal. 
+        
+        Args:
+            branches_coords (dict): Keys are ``branch_names``. Values are
+                np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent
+                coordinates for all the walkers.
+
+        """
+
     def propose(self, model, state):
         """Use the move to generate a proposal and compute the acceptance
 
@@ -55,6 +65,8 @@ class MHMove(Move):
             :class:`State`: State of sampler after proposal is complete.
 
         """
+
+        self.setup(state.branches_coords)
 
         # get all branch names for gibbs setup
         all_branch_names = list(state.branches.keys())
@@ -110,16 +122,19 @@ class MHMove(Move):
                 branch_names_run, inds_run, q, state.branches_coords
             )
 
-            # order everything properly                
-            q, _, new_branch_supps = self.ensure_ordering(list(state.branches.keys()), q, state.branches_inds, new_branch_supps)
-
+            # order everything properly
+            q, _, new_branch_supps = self.ensure_ordering(
+                list(state.branches.keys()), q, state.branches_inds, new_branch_supps
+            )
 
             # if not wrapping with mutliple try (normal route)
             if not hasattr(self, "mt_ll") or not hasattr(self, "mt_lp"):
                 # Compute prior of the proposed position
                 logp = model.compute_log_prior_fn(q, inds=state.branches_inds)
 
-                self.fix_logp_gibbs(branch_names_run, inds_run, logp, state.branches_inds)
+                self.fix_logp_gibbs(
+                    branch_names_run, inds_run, logp, state.branches_inds
+                )
 
                 # Compute the lnprobs of the proposed position.
                 # Can adjust supplimentals in place

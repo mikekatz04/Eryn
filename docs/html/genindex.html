@@ -99,6 +99,9 @@
 <p class="caption"><span class="caption-text">Tutorial:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="tutorial/Eryn_tutorial.html">Eryn Basic Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial/Eryn_tutorial.html#Searching-for-Gaussian-pulses-in-2D">Searching for Gaussian pulses in 2D</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial/Eryn_tutorial.html#Choosing-the-optimal-B-Spline-order">Choosing the optimal B-Spline order</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial/Eryn_tutorial.html#\sim-fin-\sim"><span class="math notranslate nohighlight">\(\sim fin \sim\)</span></a></li>
 </ul>
 
             
@@ -637,8 +640,6 @@
       </ul></li>
       <li><a href="user/state.html#eryn.state.State.get_log_prob">get_log_prob() (eryn.state.State method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_model">get_model() (eryn.ensemble.EnsembleSampler method)</a>
 </li>
       <li><a href="user/moves.html#eryn.moves.DistributionGenerateRJ.get_model_change_proposal">get_model_change_proposal() (eryn.moves.DistributionGenerateRJ method)</a>
@@ -649,6 +650,8 @@
         <li><a href="user/moves.html#eryn.moves.ReversibleJump.get_model_change_proposal">(eryn.moves.ReversibleJump method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="user/backend.html#eryn.backends.Backend.get_move_info">get_move_info() (eryn.backends.Backend method)</a>
 
       <ul>
@@ -697,6 +700,12 @@
         <li><a href="user/moves.html#eryn.moves.GroupStretchMove.get_proposal">(eryn.moves.GroupStretchMove method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.MHMove.get_proposal">(eryn.moves.MHMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMove.get_proposal">(eryn.moves.MTDistGenMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.get_proposal">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MultipleTryMove.get_proposal">(eryn.moves.MultipleTryMove method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.RedBlueMove.get_proposal">(eryn.moves.RedBlueMove class method)</a>
 </li>
@@ -1022,12 +1031,32 @@
       </ul></li>
       <li><a href="user/utils.html#eryn.utils.SearchConvergeStopping">SearchConvergeStopping (class in eryn.utils)</a>
 </li>
-      <li><a href="user/moves.html#eryn.moves.GroupMove.setup">setup() (eryn.moves.GroupMove method)</a>
+      <li><a href="user/moves.html#eryn.moves.MTDistGenMove.set_coords_and_inds">set_coords_and_inds() (eryn.moves.MTDistGenMove method)</a>
 
       <ul>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.set_coords_and_inds">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
+      </ul></li>
+      <li><a href="user/moves.html#eryn.moves.DistributionGenerate.setup">setup() (eryn.moves.DistributionGenerate method)</a>
+
+      <ul>
+        <li><a href="user/moves.html#eryn.moves.DistributionGenerateRJ.setup">(eryn.moves.DistributionGenerateRJ method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.GaussianMove.setup">(eryn.moves.GaussianMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.GroupMove.setup">(eryn.moves.GroupMove method)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.GroupStretchMove.setup">(eryn.moves.GroupStretchMove method)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.MHMove.setup">(eryn.moves.MHMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMove.setup">(eryn.moves.MTDistGenMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.setup">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.RedBlueMove.setup">(eryn.moves.RedBlueMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.ReversibleJump.setup">(eryn.moves.ReversibleJump method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.StretchMove.setup">(eryn.moves.StretchMove method)</a>
 </li>
@@ -1080,6 +1109,14 @@
         <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.special_generate_func">(eryn.moves.MTDistGenMoveRJ method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.MultipleTryMove.special_generate_func">(eryn.moves.MultipleTryMove class method)</a>
+</li>
+      </ul></li>
+      <li><a href="user/moves.html#eryn.moves.MTDistGenMove.special_generate_logpdf">special_generate_logpdf() (eryn.moves.MTDistGenMove method)</a>
+
+      <ul>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.special_generate_logpdf">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MultipleTryMove.special_generate_logpdf">(eryn.moves.MultipleTryMove class method)</a>
 </li>
       </ul></li>
       <li><a href="user/moves.html#eryn.moves.MTDistGenMove.special_like_func">special_like_func() (eryn.moves.MTDistGenMove method)</a>

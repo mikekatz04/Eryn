@@ -69,10 +69,19 @@ class ReversibleJump(Move):
             self.dr = DelayedRejection(dr_proposal, max_iter=dr_max_iter)
             # TODO: add stuff here if needed like prob of birth / death
 
-    def setup(self, coords):
-        pass
+    def setup(self, branches_coords):
+        """Any setup for the proposal. 
+        
+        Args:
+            branches_coords (dict): Keys are ``branch_names``. Values are
+                np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent
+                coordinates for all the walkers.
 
-    def get_proposal(self, all_coords, all_inds, all_inds_for_change, random):
+        """
+
+    def get_proposal(
+        self, all_coords, all_inds, min_k_all, max_k_all, random, **kwargs
+    ):
         """Make a proposal
 
         Args:
@@ -85,7 +94,7 @@ class ReversibleJump(Move):
             min_k_all (list): Minimum values of leaf ount for each model. Must have same order as ``all_cords``. 
             max_k_all (list): Maximum values of leaf ount for each model. Must have same order as ``all_cords``. 
             random (object): Current random state of the sampler.
-            **kwargs (dict, optional): Kwargs for modularity. 
+            **kwargs (ignored): For modularity. 
 
         Returns:
             tuple: Tuple containing proposal information.
@@ -195,7 +204,9 @@ class ReversibleJump(Move):
                 supps=state.supplimental,
             )
 
-            branches_supps_new = {key: item for key, item in branches_supp_propose_in.items()}
+            branches_supps_new = {
+                key: item for key, item in branches_supp_propose_in.items()
+            }
             # account for gibbs sampling
             self.cleanup_proposals_gibbs(
                 branch_names_run, inds_run, q, state.branches_coords
@@ -212,7 +223,9 @@ class ReversibleJump(Move):
                     branches_supps_new[name] = state.branches_supplimental[name]
 
             # fix any ordering issues
-            q, new_inds, branches_supps_new = self.ensure_ordering(list(state.branches.keys()), q, new_inds, branches_supps_new)
+            q, new_inds, branches_supps_new = self.ensure_ordering(
+                list(state.branches.keys()), q, new_inds, branches_supps_new
+            )
 
             # TODO: check this
             edge_factors = np.zeros((ntemps, nwalkers))

@@ -26,7 +26,6 @@ class DistributionGenerateRJ(ReversibleJump):
         # make sure all inputs are distribution Containers
         for key in generate_dist:
             if not isinstance(generate_dist[key], ProbDistContainer):
-                breakpoint()
                 raise ValueError(
                     "Distributions need to be eryn.prior.ProbDistContiner object."
                 )
@@ -180,7 +179,7 @@ class DistributionGenerateRJ(ReversibleJump):
             ntemps, nwalkers, nleaves_max, ndim = coords.shape
             new_inds[name] = inds.copy()
             q[name] = coords.copy()
-            
+
             if i == 0:
                 factors = np.zeros((ntemps, nwalkers))
 
