@@ -12,7 +12,8 @@ from .moves import StretchMove, TemperatureControl, DistributionGenerateRJ, Gaus
 from .pbar import get_progress_bar
 from .state import State
 from .prior import ProbDistContainer
-from .utils import PlotContainer
+
+# from .utils import PlotContainer
 from .utils import PeriodicContainer
 from .utils.utility import groups_from_inds
 
@@ -480,6 +481,7 @@ class EnsembleSampler(object):
         self.plot_iterations = plot_iterations
 
         if plot_generator is None and self.plot_iterations > 0:
+            raise NotImplementedError
             # set to default if not provided
             if plot_name is not None:
                 name = plot_name
@@ -489,6 +491,7 @@ class EnsembleSampler(object):
                 fp=name, backend=self.backend, thin_chain_by_ac=True
             )
         elif self.plot_iterations > 0:
+            raise NotImplementedError
             self.plot_generator = plot_generator
 
         # prepare stopping functions
