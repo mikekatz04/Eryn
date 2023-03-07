@@ -67,7 +67,6 @@ class ReversibleJumpMove(Move):
                 dr_proposal = self.dr
 
             self.dr = DelayedRejection(dr_proposal, max_iter=dr_max_iter)
-            # TODO: add stuff here if needed like prob of birth / death
 
     def setup(self, branches_coords):
         """Any setup for the proposal. 

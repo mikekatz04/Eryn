@@ -10,8 +10,9 @@ and storage backends is carried over into Eryn with small changes to
 account for the increased complexity. In a simple sense, Eryn is an
 advanced (and slightly more complicated) version of ``emcee``.
 
-If you use Eryn in your publication, please cite the paper (# TODO: add
-paper), its zenodo (# TODO: add zenodo as well), and
+If you use Eryn in your publication, please cite the paper
+`arXiv:2303.02164 <https://arxiv.org/abs/2303.02164>`__, its zenodo (#
+TODO: add zenodo as well), and
 `emcee <https://emcee.readthedocs.io/en/stable/>`__. The documentation
 for Eryn can be found here:
 `mikekatz04.gihub.io/Eryn <https://mikekatz04.gihub.io/Eryn>`__. You
@@ -22,8 +23,6 @@ Getting Started
 ---------------
 
 Below is a quick set of instructions to get you started with ``eryn``.
-It will eventually be available directly through pip. For now you can
-pip install the latest version through Github:
 
 ::
 

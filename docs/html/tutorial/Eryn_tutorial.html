@@ -505,7 +505,7 @@ div.rendered_html tbody tr:hover {
 <p>Eryn is an advanced MCMC sampler. It has the capability to run with parallel tempering, multiple model types, and unknown counts within each model type using Reversible-Jump MCMC techniques. Eryn is heavily based on <a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a>. The <code class="docutils literal notranslate"><span class="pre">emcee</span></code> base structure with the Ensemble Sampler, State objects, proposal setup, and storage backends is carried over into Eryn with small changes to account for the increased complexity. In a simple sense, Eryn is an
 advanced (and slightly more complicated) version of <code class="docutils literal notranslate"><span class="pre">emcee</span></code>.</p>
 <p>In this tutorial, we will go through much of what is available in Eryn. We will start with a basic sampling operation to illustrate how to build and navigate common objects in Eryn. We will then scale up the complexity to understand how to use Eryn in different circumstances.</p>
-<p>If you use Eryn in your publication, please cite the paper (# TODO: add paper), its zenodo (# TODO: add zenodo as well), and <a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a>. The documentation for Eryn can be found here: <a class="reference external" href="https://mikekatz04.gihub.io/Eryn">mikekatz04.gihub.io/Eryn</a>. You will find the code on Github: <a class="reference external" href="https://github.com/mikekatz04/Eryn">github.com/mikekatz04/Eryn</a>.</p>
+<p>If you use Eryn in your publication, please cite the paper <a class="reference external" href="https://arxiv.org/abs/2303.02164">arXiv:2303.02164</a>, its zenodo (# TODO: add zenodo as well), and <a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a>. The documentation for Eryn can be found here: <a class="reference external" href="https://mikekatz04.gihub.io/Eryn">mikekatz04.gihub.io/Eryn</a>. You will find the code on Github: <a class="reference external" href="https://github.com/mikekatz04/Eryn">github.com/mikekatz04/Eryn</a>.</p>
 <section id="MCMC-Basics">
 <h2>MCMC Basics<a class="headerlink" href="#MCMC-Basics" title="Permalink to this headline">¶</a></h2>
 <p>Here we will go through the basics of MCMC. For a better overall understanding of MCMC, see the Eryn paper: (# TODO: add paper).</p>
@@ -2487,7 +2487,7 @@ be okay.</p>
 <p>Here we will fix the model count of the sine waves to the true value in order to use the stretch proposal on that model. We will still sample over Gaussian pulses with an uncertain model count. We will choose for the sake of example to sample leaf by leaf over the first 2 parameters of the sine wave and then the last one. For the Gaussians, we will sample all the parameters together, but leaf by leaf.</p>
 <p>We will also use the <code class="docutils literal notranslate"><span class="pre">CombineMove</span></code> to make sure these all happen one after another.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -2725,7 +2725,7 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
 100%|█████████████████████████████████████████| 100/100 [00:19&lt;00:00,  5.16it/s]
- 17%|███████▏                                  | 86/500 [00:15&lt;01:16,  5.40it/s]
+100%|█████████████████████████████████████████| 500/500 [01:38&lt;00:00,  5.10it/s]
 </pre></div></div>
 </div>
 </section>

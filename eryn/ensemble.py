@@ -33,8 +33,10 @@ class EnsembleSampler(object):
     The class controls the entire sampling run. It can handle
     everything from a basic non-tempered MCMC to a parallel-tempered,
     global fit containing multiple branches (models) and a variable
-    number of leaves (sources) per branch. (# TODO: add link to tree explainer)
-  
+    number of leaves (sources) per branch. 
+    See `here <https://mikekatz04.github.io/Eryn/html/tutorial/Eryn_tutorial.html#The-Tree-Metaphor>`_
+    for a basic explainer.
+
     Parameters related to parallelization can be controlled via the ``pool`` argument.
 
     Args:
@@ -71,7 +73,10 @@ class EnsembleSampler(object):
                 Extra ``args`` and ``kwargs`` for the Likelihood function can be added with the kwargs 
                 ``args`` and ``kwargs`` below.
 
-                Please see the tutorial for more information. (# TODO: add link to tutorial)           
+                Please see the 
+                `tutorial <https://mikekatz04.github.io/Eryn/html/tutorial/Eryn_tutorial.html#>`_ 
+                for more information. 
+
         priors (dict): The prior dictionary can take four forms.
             1) A dictionary with keys as int or tuple containing the int or tuple of int
             that describe the parameter number over which to assess the prior, and values that
@@ -84,8 +89,8 @@ class EnsembleSampler(object):
         provide_groups (bool, optional): If ``True``, provide groups as described in ``log_like_fn`` above.
             A group parameter is added for each branch. (default: ``False``)
         provide_supplimental (bool, optional): If ``True``, it will provide keyword arguments to 
-            the Likelihood function: ``supps`` and ``branch_supps``. Please see the Tutorial
-            (# TODO: add tutorial link) and :class:`eryn.state.BranchSupplimental` for more information.
+            the Likelihood function: ``supps`` and ``branch_supps``. Please see the `Tutorial <https://mikekatz04.github.io/Eryn/html/tutorial/Eryn_tutorial.html#>`_
+            and :class:`eryn.state.BranchSupplimental` for more information.
         tempering_kwargs (dict, optional): Keyword arguments for initialization of the
             tempering class: :class:`eryn.moves.tempering.TemperatureControl`.  (default: ``{}``)
         branch_names (list, optional): List of branch names. If ``None``, models will be assigned
@@ -319,7 +324,7 @@ class EnsembleSampler(object):
             self.has_reversible_jump = False
         elif isinstance(rj_moves, bool):
             self.has_reversible_jump = rj_moves
-            # TODO: deal with tuning
+
             if self.has_reversible_jump:
                 if nleaves_min is None:
                     # default to 0 for all models
@@ -360,7 +365,7 @@ class EnsembleSampler(object):
 
         else:
             self.has_reversible_jump = True
-            # TODO: fix error catch here
+
             self.rj_moves = [rj_moves]
             self.rj_weights = [1.0]
 
@@ -372,7 +377,9 @@ class EnsembleSampler(object):
             # warn if base stretch is used
             for move in self.moves:
                 if type(move) == StretchMove:
-                    warnings.warn("If using revisible jump, using the Stretch Move for in-model proposals is not advised. It will run and work, but it will not be using the correct complientary group of parameters meaning it will most likely be very inefficient.")
+                    warnings.warn(
+                        "If using revisible jump, using the Stretch Move for in-model proposals is not advised. It will run and work, but it will not be using the correct complientary group of parameters meaning it will most likely be very inefficient."
+                    )
 
         # make sure moves have temperature module
         if self.temperature_control is not None:
@@ -532,33 +539,36 @@ class EnsembleSampler(object):
 
         """
         if isinstance(priors, dict):
-            # TODO: do checks on all priors, not just first
-            test = priors[list(priors.keys())[0]]
-            if isinstance(test, dict):
-                # check all dists
-                for name, priors_temp in priors.items():
-                    for ind, dist in priors_temp.items():
-                        if not hasattr(dist, "logpdf"):
-                            raise ValueError(
-                                "Distribution for model {0} and index {1} does not have logpdf method.".format(
-                                    name, ind
+
+            self._priors = {}
+
+            for key in priors.keys():
+                test = priors[key]
+                if isinstance(test, dict):
+                    # check all dists
+                    for name, priors_temp in priors.items():
+                        for ind, dist in priors_temp.items():
+                            if not hasattr(dist, "logpdf"):
+                                raise ValueError(
+                                    "Distribution for model {0} and index {1} does not have logpdf method.".format(
+                                        name, ind
+                                    )
                                 )
-                            )
-                self._priors = {
-                    name: ProbDistContainer(priors_temp)
-                    for name, priors_temp in priors.items()
-                }
+                    self._priors[key] = {
+                        name: ProbDistContainer(priors_temp)
+                        for name, priors_temp in priors.items()
+                    }
 
-            elif isinstance(test, ProbDistContainer):
-                self._priors = priors
+                elif isinstance(test, ProbDistContainer):
+                    self._priors[key] = priors
 
-            elif hasattr(test, "logpdf"):
-                self._priors = {"model_0": ProbDistContainer(priors)}
+                elif hasattr(test, "logpdf"):
+                    self._priors[key] = {"model_0": ProbDistContainer(priors)}
 
-            else:
-                raise ValueError(
-                    "priors dictionary items must be dictionaries with prior information or instances of the ProbDistContainer class."
-                )
+                else:
+                    raise ValueError(
+                        "priors dictionary items must be dictionaries with prior information or instances of the ProbDistContainer class."
+                    )
 
         elif isinstance(priors, ProbDistContainer):
             self._priors = {"model_0": priors}
@@ -1231,7 +1241,9 @@ class EnsembleSampler(object):
                         if self.provide_supplimental:
                             if supps is not None:
                                 # supps are specific to each group
-                                kwarg_i["supps"] = {key: supps_in[key][group_i] for key in supps_in}
+                                kwarg_i["supps"] = {
+                                    key: supps_in[key][group_i] for key in supps_in
+                                }
                             if branch_supps is not None:
                                 # make sure there is a dictionary ready in this kwarg dictionary
                                 if "branch_supps" not in kwarg_i:
@@ -1431,7 +1443,6 @@ class _FunctionWrapper(object):
         try:
             args_in = args_in_add + type(args_in_add)(self.args)
             kwargs_in = {**kwargs_in_add, **self.kwargs}
-            # TODO: this may have pickle issue with multiprocessing (kwargs_in)
 
             out = self.f(*args_in, **kwargs_in)
             return out
