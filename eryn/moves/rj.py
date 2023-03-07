@@ -8,16 +8,18 @@ from .move import Move
 from .delayedrejection import DelayedRejection
 from .distgen import DistributionGenerate
 
-__all__ = ["ReversibleJump"]
+__all__ = ["ReversibleJumpMove"]
 
 
-class ReversibleJump(Move):
+class ReversibleJumpMove(Move):
     """
     An abstract reversible jump move from # TODO: add citations.
 
     Args:
         max_k (int or list of int): Maximum number(s) of leaves for each model.
+            This is a keyword argument, nut it is required.
         min_k (int or list of int): Minimum number(s) of leaves for each model.
+            This is a keyword argument, nut it is required.
         tune (bool, optional): If True, tune proposal. (Default: ``False``)
         fix_change (int or None, optional): Fix the change in the number of leaves. Make them all 
             add a leaf or remove a leaf. This can be useful for some search functions. Options
@@ -27,16 +29,19 @@ class ReversibleJump(Move):
 
     def __init__(
         self,
-        max_k,
-        min_k,
+        max_k=None,
+        min_k=None,
         dr=None,
         dr_max_iter=5,
         tune=False,
         fix_change=None,
         **kwargs
     ):
-        # super(ReversibleJump, self).__init__(**kwargs)
+        # super(ReversibleJumpMove, self).__init__(**kwargs)
         Move.__init__(self, is_rj=True, **kwargs)
+
+        if max_k is None or min_k is None:
+            raise ValueError("Must provide min_k and max_k keyword arguments for RJ.")
 
         # setup leaf limits
         if isinstance(max_k, int):
@@ -60,19 +65,27 @@ class ReversibleJump(Move):
             if self.dr is True:  # Check if it's a boolean, then we just generate
                 # from prior (kills the purpose, but yields "healther" chains)
                 dr_proposal = DistributionGenerate(
-                    self.priors, temperature_control=self.temperature_control
+                    self.generate_dist, temperature_control=self.temperature_control
                 )
             else:
                 # Otherwise pass given input
                 dr_proposal = self.dr
 
             self.dr = DelayedRejection(dr_proposal, max_iter=dr_max_iter)
-            # TODO: add stuff here if needed like prob of birth / death
 
-    def setup(self, coords):
-        pass
+    def setup(self, branches_coords):
+        """Any setup for the proposal. 
 
-    def get_proposal(self, all_coords, all_inds, all_inds_for_change, random):
+        Args:
+            branches_coords (dict): Keys are ``branch_names``. Values are
+                np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent
+                coordinates for all the walkers.
+
+        """
+
+    def get_proposal(
+        self, all_coords, all_inds, min_k_all, max_k_all, random, **kwargs
+    ):
         """Make a proposal
 
         Args:
@@ -85,7 +98,7 @@ class ReversibleJump(Move):
             min_k_all (list): Minimum values of leaf ount for each model. Must have same order as ``all_cords``. 
             max_k_all (list): Maximum values of leaf ount for each model. Must have same order as ``all_cords``. 
             random (object): Current random state of the sampler.
-            **kwargs (dict, optional): Kwargs for modularity. 
+            **kwargs (ignored): For modularity. 
 
         Returns:
             tuple: Tuple containing proposal information.
@@ -126,73 +139,7 @@ class ReversibleJump(Move):
         
         """
 
-        ntemps, nwalkers, _ = inds.shape
-
-        nleaves = inds.sum(axis=-1)
-
-        # choose whether to add or remove
-        if self.fix_change is None:
-            change = random.choice([-1, +1], size=nleaves.shape)
-        else:
-            change = np.full(nleaves.shape, self.fix_change)
-
-        # fix edge cases
-        change = (
-            change * ((nleaves != min_k) & (nleaves != max_k))
-            + (+1) * (nleaves == min_k)
-            + (-1) * (nleaves == max_k)
-        )
-
-        # setup storage for this information
-        inds_for_change = {}
-        num_increases = np.sum(change == +1)
-        inds_for_change["+1"] = np.zeros((num_increases, 3), dtype=int)
-        num_decreases = np.sum(change == -1)
-        inds_for_change["-1"] = np.zeros((num_decreases, 3), dtype=int)
-
-        # TODO: not loop ? Is it necessary?
-        # TODO: might be able to subtract new inds from old inds type of thing
-        # fill the inds_for_change
-        increase_i = 0
-        decrease_i = 0
-        for t in range(ntemps):
-            for w in range(nwalkers):
-                # check if add or remove
-                change_tw = change[t][w]
-                # inds array from specific walker
-                inds_tw = inds[t][w]
-
-                # adding
-                if change_tw == +1:
-                    # find where leaves are not currently used
-                    inds_false = np.where(inds_tw == False)[0]
-                    # decide which spot to add
-                    ind_change = random.choice(inds_false)
-                    # put in the indexes into inds arrays
-                    inds_for_change["+1"][increase_i] = np.array(
-                        [t, w, ind_change], dtype=int
-                    )
-                    # count increases
-                    increase_i += 1
-
-                # removing
-                elif change_tw == -1:
-                    # change_tw == -1
-                    # find which leavs are used
-                    inds_true = np.where(inds_tw == True)[0]
-                    # choose which to remove
-                    ind_change = random.choice(inds_true)
-                    # add indexes into inds
-                    if inds_for_change["-1"].shape[0] > 0:
-                        inds_for_change["-1"][decrease_i] = np.array(
-                            [t, w, ind_change], dtype=int
-                        )
-                        decrease_i += 1
-                    # do not care currently about what we do with discarded coords, they just sit in the state
-                # model component number not changing
-                else:
-                    pass
-        return inds_for_change
+        raise NotImplementedError
 
     def propose(self, model, state):
         """Use the move to generate a proposal and compute the acceptance
@@ -205,10 +152,7 @@ class ReversibleJump(Move):
             :class:`State`: State of sampler after proposal is complete.
 
         """
-        # TODO: check if temperatures are properly repeated after reset
         # this exposes anywhere in the proposal class to this information
-        self.current_state = state
-        self.current_model = model
 
         # Run any move-specific setup.
         self.setup(state.branches)
@@ -250,6 +194,8 @@ class ReversibleJump(Move):
                 max_k_all.append(self.max_k[ind_keep_here])
                 min_k_all.append(self.min_k[ind_keep_here])
 
+            self.current_model = model
+            self.current_state = state
             # propose new sources and coordinates
             q, new_inds, factors = self.get_proposal(
                 coords_propose_in,
@@ -261,6 +207,14 @@ class ReversibleJump(Move):
                 supps=state.supplimental,
             )
 
+            branches_supps_new = {
+                key: item for key, item in branches_supp_propose_in.items()
+            }
+            # account for gibbs sampling
+            self.cleanup_proposals_gibbs(
+                branch_names_run, inds_run, q, state.branches_coords
+            )
+
             # put back any branches that were left out from Gibbs split
             for name, branch in state.branches.items():
                 if name not in q:
@@ -268,7 +222,14 @@ class ReversibleJump(Move):
                 if name not in new_inds:
                     new_inds[name] = state.branches[name].inds[:].copy()
 
-            # TODO: check this
+                if name not in branches_supps_new:
+                    branches_supps_new[name] = state.branches_supplimental[name]
+
+            # fix any ordering issues
+            q, new_inds, branches_supps_new = self.ensure_ordering(
+                list(state.branches.keys()), q, new_inds, branches_supps_new
+            )
+
             edge_factors = np.zeros((ntemps, nwalkers))
             # get factors for edges
             for (name, branch), min_k, max_k in zip(
@@ -327,25 +288,27 @@ class ReversibleJump(Move):
 
             # supp info
 
-            if hasattr(self, "new_supps_for_transfer"):
+            if hasattr(self, "mt_supps"):
                 # logp = self.lp_for_transfer.reshape(ntemps, nwalkers)
-                new_supps = self.new_supps_for_transfer
+                new_supps = self.mt_supps
 
-            if hasattr(self, "new_branch_supps_for_transfer"):
+            if hasattr(self, "mt_branch_supps"):
                 # logp = self.lp_for_transfer.reshape(ntemps, nwalkers)
-                new_branch_supps = self.new_branch_supps_for_transfer
+                new_branch_supps = self.mt_branch_supps
 
             # logp and logl
 
             # Compute prior of the proposed position
-            if hasattr(self, "lp_for_transfer"):
-                logp = self.lp_for_transfer.reshape(ntemps, nwalkers)
+            if hasattr(self, "mt_lp"):
+                logp = self.mt_lp.reshape(ntemps, nwalkers)
 
             else:
                 logp = model.compute_log_prior_fn(q, inds=new_inds)
 
-            if hasattr(self, "ll_for_transfer"):
-                logl = self.ll_for_transfer.reshape(ntemps, nwalkers)
+            self.fix_logp_gibbs(branch_names_run, inds_run, logp, new_inds)
+
+            if hasattr(self, "mt_ll"):
+                logl = self.mt_ll.reshape(ntemps, nwalkers)
 
             else:
                 # Compute the ln like of the proposed position.
@@ -354,7 +317,7 @@ class ReversibleJump(Move):
                     inds=new_inds,
                     logp=logp,
                     supps=new_supps,
-                    branch_supps=branches_supp_propose_in,
+                    branch_supps=branches_supps_new,
                 )
 
             # posterior and previous info
@@ -381,7 +344,7 @@ class ReversibleJump(Move):
                 blobs=None,
                 inds=new_inds,
                 supplimental=new_supps,
-                branch_supplimental=branches_supp_propose_in,
+                branch_supplimental=branches_supps_new,
             )
             state = self.update(state, new_state, accepted)
 
@@ -390,12 +353,20 @@ class ReversibleJump(Move):
             # this to +1 may not be preserving detailed balance. You may need to
             # "simulate it" for -1 similar to what we do in multiple try
             if self.dr:
-                raise NotImplementedError
+                raise NotImplementedError(
+                    "Delayed Rejection will be implemented soon. Check for updated versions."
+                )
                 # for name, branch in state.branches.items():
                 #     # We have to work with the binaries added only.
                 #     # We need the a) rejected points, b) the model,
                 #     # c) the current state, d) the indices where we had +1 (True),
                 #     # and the e) factors.
+                inds_for_change = {}
+                for name in branch_names_run:
+                    inds_for_change[name] = {
+                        "+1": np.argwhere(new_inds[name] & (~state.branches[name].inds))
+                    }
+
                 state, accepted = self.dr.propose(
                     lnpdiff,
                     accepted,
@@ -412,11 +383,11 @@ class ReversibleJump(Move):
             # switching back what was swapped in the previous in-model step.
             # TODO: MLK: I think we should allow for swapping but no adaptation.
 
-            if self.temperature_control is not None and not self.prevent_swaps:
-                state = self.temperature_control.temper_comps(state, adapt=False)
+        if self.temperature_control is not None and not self.prevent_swaps:
+            state = self.temperature_control.temper_comps(state, adapt=False)
 
-            # add to move-specific accepted information
-            self.accepted += accepted
-            self.num_proposals += 1
+        # add to move-specific accepted information
+        self.accepted += accepted
+        self.num_proposals += 1
 
-            return state, accepted
+        return state, accepted

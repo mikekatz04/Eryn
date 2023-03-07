@@ -98,7 +98,8 @@
 </ul>
 <p class="caption"><span class="caption-text">Tutorial:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="tutorial/Eryn_tutorial.html">Eryn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial/Eryn_tutorial.html">Eryn Basic Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial/more_tutorials.html">More Advanced Eryn Examples</a></li>
 </ul>
 
             
@@ -223,13 +224,21 @@
 </li>
         <li><a href="user/moves.html#eryn.moves.GaussianMove.acceptance_fraction">(eryn.moves.GaussianMove property)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.GroupMove.acceptance_fraction">(eryn.moves.GroupMove property)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.GroupStretchMove.acceptance_fraction">(eryn.moves.GroupStretchMove property)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.MHMove.acceptance_fraction">(eryn.moves.MHMove property)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.Move.acceptance_fraction">(eryn.moves.Move property)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMove.acceptance_fraction">(eryn.moves.MTDistGenMove property)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.acceptance_fraction">(eryn.moves.MTDistGenMoveRJ property)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.RedBlueMove.acceptance_fraction">(eryn.moves.RedBlueMove property)</a>
 </li>
-        <li><a href="user/moves.html#eryn.moves.ReversibleJump.acceptance_fraction">(eryn.moves.ReversibleJump property)</a>
+        <li><a href="user/moves.html#eryn.moves.ReversibleJumpMove.acceptance_fraction">(eryn.moves.ReversibleJumpMove property)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.StretchMove.acceptance_fraction">(eryn.moves.StretchMove property)</a>
 </li>
@@ -249,25 +258,35 @@
 </li>
         <li><a href="user/moves.html#eryn.moves.GaussianMove.accepted">(eryn.moves.GaussianMove property)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.GroupMove.accepted">(eryn.moves.GroupMove property)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.GroupStretchMove.accepted">(eryn.moves.GroupStretchMove property)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.MHMove.accepted">(eryn.moves.MHMove property)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.Move.accepted">(eryn.moves.Move property)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMove.accepted">(eryn.moves.MTDistGenMove property)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.accepted">(eryn.moves.MTDistGenMoveRJ property)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.RedBlueMove.accepted">(eryn.moves.RedBlueMove property)</a>
 </li>
-        <li><a href="user/moves.html#eryn.moves.ReversibleJump.accepted">(eryn.moves.ReversibleJump property)</a>
+        <li><a href="user/moves.html#eryn.moves.ReversibleJumpMove.accepted">(eryn.moves.ReversibleJumpMove property)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.StretchMove.accepted">(eryn.moves.StretchMove property)</a>
 </li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="user/utils.html#eryn.utils.PlotContainer.add_backend">add_backend() (eryn.utils.PlotContainer method)</a>
-</li>
       <li><a href="user/state.html#eryn.state.BranchSupplimental.add_objects">add_objects() (eryn.state.BranchSupplimental method)</a>
 </li>
-      <li><a href="user/moves.html#eryn.moves.StretchMove.adjust_factors">adjust_factors() (eryn.moves.StretchMove method)</a>
+      <li><a href="user/moves.html#eryn.moves.GroupStretchMove.adjust_factors">adjust_factors() (eryn.moves.GroupStretchMove method)</a>
+
+      <ul>
+        <li><a href="user/moves.html#eryn.moves.StretchMove.adjust_factors">(eryn.moves.StretchMove method)</a>
 </li>
+      </ul></li>
       <li><a href="user/utils.html#eryn.utils.AdjustStretchProposalScale">AdjustStretchProposalScale (class in eryn.utils)</a>
 </li>
   </ul></td>
@@ -310,8 +329,14 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="user/backend.html#eryn.backends.Backend.chain">chain (eryn.backends.Backend attribute)</a>
 </li>
-      <li><a href="user/moves.html#eryn.moves.StretchMove.choose_c_vals">choose_c_vals() (eryn.moves.StretchMove method)</a>
+      <li><a href="user/moves.html#eryn.moves.GroupMove.choose_c_vals">choose_c_vals() (eryn.moves.GroupMove method)</a>
+
+      <ul>
+        <li><a href="user/moves.html#eryn.moves.GroupStretchMove.choose_c_vals">(eryn.moves.GroupStretchMove method)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.StretchMove.choose_c_vals">(eryn.moves.StretchMove method)</a>
+</li>
+      </ul></li>
       <li><a href="user/moves.html#eryn.moves.CombineMove.cleanup_proposals_gibbs">cleanup_proposals_gibbs() (eryn.moves.CombineMove method)</a>
 
       <ul>
@@ -321,21 +346,29 @@
 </li>
         <li><a href="user/moves.html#eryn.moves.GaussianMove.cleanup_proposals_gibbs">(eryn.moves.GaussianMove method)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.GroupMove.cleanup_proposals_gibbs">(eryn.moves.GroupMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.GroupStretchMove.cleanup_proposals_gibbs">(eryn.moves.GroupStretchMove method)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.MHMove.cleanup_proposals_gibbs">(eryn.moves.MHMove method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.Move.cleanup_proposals_gibbs">(eryn.moves.Move method)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMove.cleanup_proposals_gibbs">(eryn.moves.MTDistGenMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.cleanup_proposals_gibbs">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.RedBlueMove.cleanup_proposals_gibbs">(eryn.moves.RedBlueMove method)</a>
 </li>
-        <li><a href="user/moves.html#eryn.moves.ReversibleJump.cleanup_proposals_gibbs">(eryn.moves.ReversibleJump method)</a>
+        <li><a href="user/moves.html#eryn.moves.ReversibleJumpMove.cleanup_proposals_gibbs">(eryn.moves.ReversibleJumpMove method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.StretchMove.cleanup_proposals_gibbs">(eryn.moves.StretchMove method)</a>
 </li>
       </ul></li>
-      <li><a href="user/moves.html#eryn.moves.CombineMove">CombineMove (class in eryn.moves)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="user/moves.html#eryn.moves.CombineMove">CombineMove (class in eryn.moves)</a>
+</li>
       <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.compute_log_like">compute_log_like() (eryn.ensemble.EnsembleSampler method)</a>
 </li>
       <li><a href="user/moves.html#eryn.moves.CombineMove.compute_log_posterior_basic">compute_log_posterior_basic() (eryn.moves.CombineMove method)</a>
@@ -347,13 +380,21 @@
 </li>
         <li><a href="user/moves.html#eryn.moves.GaussianMove.compute_log_posterior_basic">(eryn.moves.GaussianMove method)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.GroupMove.compute_log_posterior_basic">(eryn.moves.GroupMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.GroupStretchMove.compute_log_posterior_basic">(eryn.moves.GroupStretchMove method)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.MHMove.compute_log_posterior_basic">(eryn.moves.MHMove method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.Move.compute_log_posterior_basic">(eryn.moves.Move method)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMove.compute_log_posterior_basic">(eryn.moves.MTDistGenMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.compute_log_posterior_basic">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.RedBlueMove.compute_log_posterior_basic">(eryn.moves.RedBlueMove method)</a>
 </li>
-        <li><a href="user/moves.html#eryn.moves.ReversibleJump.compute_log_posterior_basic">(eryn.moves.ReversibleJump method)</a>
+        <li><a href="user/moves.html#eryn.moves.ReversibleJumpMove.compute_log_posterior_basic">(eryn.moves.ReversibleJumpMove method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.StretchMove.compute_log_posterior_basic">(eryn.moves.StretchMove method)</a>
 </li>
@@ -388,6 +429,34 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler">EnsembleSampler (class in eryn.ensemble)</a>
 </li>
+      <li><a href="user/moves.html#eryn.moves.CombineMove.ensure_ordering">ensure_ordering() (eryn.moves.CombineMove method)</a>
+
+      <ul>
+        <li><a href="user/moves.html#eryn.moves.DistributionGenerate.ensure_ordering">(eryn.moves.DistributionGenerate method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.DistributionGenerateRJ.ensure_ordering">(eryn.moves.DistributionGenerateRJ method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.GaussianMove.ensure_ordering">(eryn.moves.GaussianMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.GroupMove.ensure_ordering">(eryn.moves.GroupMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.GroupStretchMove.ensure_ordering">(eryn.moves.GroupStretchMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MHMove.ensure_ordering">(eryn.moves.MHMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.Move.ensure_ordering">(eryn.moves.Move method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMove.ensure_ordering">(eryn.moves.MTDistGenMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.ensure_ordering">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.RedBlueMove.ensure_ordering">(eryn.moves.RedBlueMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.ReversibleJumpMove.ensure_ordering">(eryn.moves.ReversibleJumpMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.StretchMove.ensure_ordering">(eryn.moves.StretchMove method)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li>
@@ -405,6 +474,12 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="user/utils.html#eryn.utils.TransformContainer.fill_values">fill_values() (eryn.utils.TransformContainer method)</a>
 </li>
+      <li><a href="user/moves.html#eryn.moves.GroupMove.find_friends">find_friends() (eryn.moves.GroupMove method)</a>
+
+      <ul>
+        <li><a href="user/moves.html#eryn.moves.GroupStretchMove.find_friends">(eryn.moves.GroupStretchMove method)</a>
+</li>
+      </ul></li>
       <li><a href="user/moves.html#eryn.moves.CombineMove.fix_logp_gibbs">fix_logp_gibbs() (eryn.moves.CombineMove method)</a>
 
       <ul>
@@ -414,13 +489,21 @@
 </li>
         <li><a href="user/moves.html#eryn.moves.GaussianMove.fix_logp_gibbs">(eryn.moves.GaussianMove method)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.GroupMove.fix_logp_gibbs">(eryn.moves.GroupMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.GroupStretchMove.fix_logp_gibbs">(eryn.moves.GroupStretchMove method)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.MHMove.fix_logp_gibbs">(eryn.moves.MHMove method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.Move.fix_logp_gibbs">(eryn.moves.Move method)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMove.fix_logp_gibbs">(eryn.moves.MTDistGenMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.fix_logp_gibbs">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.RedBlueMove.fix_logp_gibbs">(eryn.moves.RedBlueMove method)</a>
 </li>
-        <li><a href="user/moves.html#eryn.moves.ReversibleJump.fix_logp_gibbs">(eryn.moves.ReversibleJump method)</a>
+        <li><a href="user/moves.html#eryn.moves.ReversibleJumpMove.fix_logp_gibbs">(eryn.moves.ReversibleJumpMove method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.StretchMove.fix_logp_gibbs">(eryn.moves.StretchMove method)</a>
 </li>
@@ -436,28 +519,6 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="user/moves.html#eryn.moves.GaussianMove">GaussianMove (class in eryn.moves)</a>
-</li>
-      <li><a href="user/utils.html#eryn.utils.PlotContainer.generate_corner">generate_corner() (eryn.utils.PlotContainer method)</a>
-</li>
-      <li><a href="user/utils.html#eryn.utils.PlotContainer.generate_info_page">generate_info_page() (eryn.utils.PlotContainer method)</a>
-</li>
-      <li><a href="user/utils.html#eryn.utils.PlotContainer.generate_k_per_temperature_chains">generate_k_per_temperature_chains() (eryn.utils.PlotContainer method)</a>
-</li>
-      <li><a href="user/utils.html#eryn.utils.PlotContainer.generate_k_per_tree_chains">generate_k_per_tree_chains() (eryn.utils.PlotContainer method)</a>
-</li>
-      <li><a href="user/utils.html#eryn.utils.PlotContainer.generate_leaves_chains">generate_leaves_chains() (eryn.utils.PlotContainer method)</a>
-</li>
-      <li><a href="user/utils.html#eryn.utils.PlotContainer.generate_parameter_chains">generate_parameter_chains() (eryn.utils.PlotContainer method)</a>
-</li>
-      <li><a href="user/utils.html#eryn.utils.PlotContainer.generate_parameter_chains_per_temperature">generate_parameter_chains_per_temperature() (eryn.utils.PlotContainer method)</a>
-</li>
-      <li><a href="user/utils.html#eryn.utils.PlotContainer.generate_parameter_chains_per_temperature_per_walker">generate_parameter_chains_per_temperature_per_walker() (eryn.utils.PlotContainer method)</a>
-</li>
-      <li><a href="user/utils.html#eryn.utils.PlotContainer.generate_plot_info">generate_plot_info() (eryn.utils.PlotContainer method)</a>
-</li>
-      <li><a href="user/utils.html#eryn.utils.PlotContainer.generate_posterior_chains">generate_posterior_chains() (eryn.utils.PlotContainer method)</a>
-</li>
-      <li><a href="user/utils.html#eryn.utils.PlotContainer.generate_temperature_chains">generate_temperature_chains() (eryn.utils.PlotContainer method)</a>
 </li>
       <li><a href="user/backend.html#eryn.backends.Backend.get_a_sample">get_a_sample() (eryn.backends.Backend method)</a>
 
@@ -535,14 +596,22 @@
         <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_last_sample">(eryn.ensemble.EnsembleSampler method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="user/backend.html#eryn.backends.Backend.get_log_like">get_log_like() (eryn.backends.Backend method)</a>
 
       <ul>
         <li><a href="user/backend.html#eryn.backends.HDFBackend.get_log_like">(eryn.backends.HDFBackend method)</a>
 </li>
         <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_log_like">(eryn.ensemble.EnsembleSampler method)</a>
+</li>
+      </ul></li>
+      <li><a href="user/backend.html#eryn.backends.Backend.get_log_posterior">get_log_posterior() (eryn.backends.Backend method)</a>
+
+      <ul>
+        <li><a href="user/backend.html#eryn.backends.HDFBackend.get_log_posterior">(eryn.backends.HDFBackend method)</a>
+</li>
+        <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_log_posterior">(eryn.ensemble.EnsembleSampler method)</a>
+</li>
+        <li><a href="user/state.html#eryn.state.State.get_log_posterior">(eryn.state.State method)</a>
 </li>
       </ul></li>
       <li><a href="user/backend.html#eryn.backends.Backend.get_log_prior">get_log_prior() (eryn.backends.Backend method)</a>
@@ -553,14 +622,14 @@
         <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_log_prior">(eryn.ensemble.EnsembleSampler method)</a>
 </li>
       </ul></li>
-      <li><a href="user/state.html#eryn.state.State.get_log_prob">get_log_prob() (eryn.state.State method)</a>
-</li>
       <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_model">get_model() (eryn.ensemble.EnsembleSampler method)</a>
 </li>
       <li><a href="user/moves.html#eryn.moves.DistributionGenerateRJ.get_model_change_proposal">get_model_change_proposal() (eryn.moves.DistributionGenerateRJ method)</a>
 
       <ul>
-        <li><a href="user/moves.html#eryn.moves.ReversibleJump.get_model_change_proposal">(eryn.moves.ReversibleJump method)</a>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.get_model_change_proposal">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.ReversibleJumpMove.get_model_change_proposal">(eryn.moves.ReversibleJumpMove method)</a>
 </li>
       </ul></li>
       <li><a href="user/backend.html#eryn.backends.Backend.get_move_info">get_move_info() (eryn.backends.Backend method)</a>
@@ -569,8 +638,30 @@
         <li><a href="user/backend.html#eryn.backends.HDFBackend.get_move_info">(eryn.backends.HDFBackend method)</a>
 </li>
       </ul></li>
-      <li><a href="user/moves.html#eryn.moves.StretchMove.get_new_points">get_new_points() (eryn.moves.StretchMove method)</a>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="user/moves.html#eryn.moves.MTDistGenMove.get_mt_log_posterior">get_mt_log_posterior() (eryn.moves.MTDistGenMove method)</a>
+
+      <ul>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.get_mt_log_posterior">(eryn.moves.MTDistGenMoveRJ method)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.MultipleTryMove.get_mt_log_posterior">(eryn.moves.MultipleTryMove method)</a>
+</li>
+      </ul></li>
+      <li><a href="user/moves.html#eryn.moves.MTDistGenMove.get_mt_proposal">get_mt_proposal() (eryn.moves.MTDistGenMove method)</a>
+
+      <ul>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.get_mt_proposal">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MultipleTryMove.get_mt_proposal">(eryn.moves.MultipleTryMove method)</a>
+</li>
+      </ul></li>
+      <li><a href="user/moves.html#eryn.moves.GroupStretchMove.get_new_points">get_new_points() (eryn.moves.GroupStretchMove method)</a>
+
+      <ul>
+        <li><a href="user/moves.html#eryn.moves.StretchMove.get_new_points">(eryn.moves.StretchMove method)</a>
+</li>
+      </ul></li>
       <li><a href="user/backend.html#eryn.backends.Backend.get_nleaves">get_nleaves() (eryn.backends.Backend method)</a>
 
       <ul>
@@ -586,11 +677,21 @@
 </li>
         <li><a href="user/moves.html#eryn.moves.GaussianMove.get_proposal">(eryn.moves.GaussianMove method)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.GroupMove.get_proposal">(eryn.moves.GroupMove class method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.GroupStretchMove.get_proposal">(eryn.moves.GroupStretchMove method)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.MHMove.get_proposal">(eryn.moves.MHMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMove.get_proposal">(eryn.moves.MTDistGenMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.get_proposal">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MultipleTryMove.get_proposal">(eryn.moves.MultipleTryMove method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.RedBlueMove.get_proposal">(eryn.moves.RedBlueMove class method)</a>
 </li>
-        <li><a href="user/moves.html#eryn.moves.ReversibleJump.get_proposal">(eryn.moves.ReversibleJump method)</a>
+        <li><a href="user/moves.html#eryn.moves.ReversibleJumpMove.get_proposal">(eryn.moves.ReversibleJumpMove method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.StretchMove.get_proposal">(eryn.moves.StretchMove method)</a>
 </li>
@@ -614,18 +715,30 @@
 </li>
         <li><a href="user/moves.html#eryn.moves.GaussianMove.gibbs_sampling_setup_iterator">(eryn.moves.GaussianMove method)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.GroupMove.gibbs_sampling_setup_iterator">(eryn.moves.GroupMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.GroupStretchMove.gibbs_sampling_setup_iterator">(eryn.moves.GroupStretchMove method)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.MHMove.gibbs_sampling_setup_iterator">(eryn.moves.MHMove method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.Move.gibbs_sampling_setup_iterator">(eryn.moves.Move method)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMove.gibbs_sampling_setup_iterator">(eryn.moves.MTDistGenMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.gibbs_sampling_setup_iterator">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.RedBlueMove.gibbs_sampling_setup_iterator">(eryn.moves.RedBlueMove method)</a>
 </li>
-        <li><a href="user/moves.html#eryn.moves.ReversibleJump.gibbs_sampling_setup_iterator">(eryn.moves.ReversibleJump method)</a>
+        <li><a href="user/moves.html#eryn.moves.ReversibleJumpMove.gibbs_sampling_setup_iterator">(eryn.moves.ReversibleJumpMove method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.StretchMove.gibbs_sampling_setup_iterator">(eryn.moves.StretchMove method)</a>
 </li>
       </ul></li>
+      <li><a href="user/moves.html#eryn.moves.GroupMove">GroupMove (class in eryn.moves)</a>
+</li>
       <li><a href="user/utils.html#eryn.utils.utility.groups_from_inds">groups_from_inds() (in module eryn.utils.utility)</a>
+</li>
+      <li><a href="user/moves.html#eryn.moves.GroupStretchMove">GroupStretchMove (class in eryn.moves)</a>
 </li>
       <li><a href="user/backend.html#eryn.backends.Backend.grow">grow() (eryn.backends.Backend method)</a>
 
@@ -720,6 +833,12 @@
 </li>
       <li><a href="user/backend.html#eryn.backends.Backend.move_keys">move_keys (eryn.backends.Backend attribute)</a>
 </li>
+      <li><a href="user/moves.html#eryn.moves.MTDistGenMove">MTDistGenMove (class in eryn.moves)</a>
+</li>
+      <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ">MTDistGenMoveRJ (class in eryn.moves)</a>
+</li>
+      <li><a href="user/moves.html#eryn.moves.MultipleTryMove">MultipleTryMove (class in eryn.moves)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -766,8 +885,6 @@
 </li>
       <li><a href="user/utils.html#eryn.utils.PeriodicContainer">PeriodicContainer (class in eryn.utils)</a>
 </li>
-      <li><a href="user/utils.html#eryn.utils.PlotContainer">PlotContainer (class in eryn.utils)</a>
-</li>
       <li><a href="user/prior.html#eryn.prior.ProbDistContainer.ppf">ppf() (eryn.prior.ProbDistContainer method)</a>
 </li>
       <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.priors">priors (eryn.ensemble.EnsembleSampler property)</a>
@@ -780,8 +897,6 @@
 </li>
       <li><a href="user/prior.html#eryn.prior.ProbDistContainer">ProbDistContainer (class in eryn.prior)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="user/moves.html#eryn.moves.CombineMove.propose">propose() (eryn.moves.CombineMove method)</a>
 
       <ul>
@@ -791,15 +906,25 @@
 </li>
         <li><a href="user/moves.html#eryn.moves.GaussianMove.propose">(eryn.moves.GaussianMove method)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.GroupMove.propose">(eryn.moves.GroupMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.GroupStretchMove.propose">(eryn.moves.GroupStretchMove method)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.MHMove.propose">(eryn.moves.MHMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMove.propose">(eryn.moves.MTDistGenMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.propose">(eryn.moves.MTDistGenMoveRJ method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.RedBlueMove.propose">(eryn.moves.RedBlueMove method)</a>
 </li>
-        <li><a href="user/moves.html#eryn.moves.ReversibleJump.propose">(eryn.moves.ReversibleJump method)</a>
+        <li><a href="user/moves.html#eryn.moves.ReversibleJumpMove.propose">(eryn.moves.ReversibleJumpMove method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.StretchMove.propose">(eryn.moves.StretchMove method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="user/state.html#eryn.state.BranchSupplimental.put_along_axis">put_along_axis() (eryn.state.BranchSupplimental method)</a>
 </li>
   </ul></td>
@@ -812,6 +937,14 @@
 
       <ul>
         <li><a href="user/ensemble.html#eryn.ensemble.EnsembleSampler.random_state">(eryn.ensemble.EnsembleSampler property)</a>
+</li>
+      </ul></li>
+      <li><a href="user/moves.html#eryn.moves.MTDistGenMove.readout_adjustment">readout_adjustment() (eryn.moves.MTDistGenMove method)</a>
+
+      <ul>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.readout_adjustment">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MultipleTryMove.readout_adjustment">(eryn.moves.MultipleTryMove method)</a>
 </li>
       </ul></li>
       <li><a href="user/moves.html#eryn.moves.RedBlueMove">RedBlueMove (class in eryn.moves)</a>
@@ -840,7 +973,7 @@
 </li>
       <li><a href="user/moves.html#eryn.moves.StretchMove.return_gpu">return_gpu (eryn.moves.StretchMove attribute)</a>
 </li>
-      <li><a href="user/moves.html#eryn.moves.ReversibleJump">ReversibleJump (class in eryn.moves)</a>
+      <li><a href="user/moves.html#eryn.moves.ReversibleJumpMove">ReversibleJumpMove (class in eryn.moves)</a>
 </li>
       <li><a href="user/backend.html#eryn.backends.Backend.rj">rj (eryn.backends.Backend attribute)</a>
 </li>
@@ -878,10 +1011,40 @@
       </ul></li>
       <li><a href="user/utils.html#eryn.utils.SearchConvergeStopping">SearchConvergeStopping (class in eryn.utils)</a>
 </li>
-      <li><a href="user/moves.html#eryn.moves.RedBlueMove.setup">setup() (eryn.moves.RedBlueMove method)</a>
+      <li><a href="user/moves.html#eryn.moves.MTDistGenMove.set_coords_and_inds">set_coords_and_inds() (eryn.moves.MTDistGenMove method)</a>
 
       <ul>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.set_coords_and_inds">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
+      </ul></li>
+      <li><a href="user/moves.html#eryn.moves.DistributionGenerate.setup">setup() (eryn.moves.DistributionGenerate method)</a>
+
+      <ul>
+        <li><a href="user/moves.html#eryn.moves.DistributionGenerateRJ.setup">(eryn.moves.DistributionGenerateRJ method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.GaussianMove.setup">(eryn.moves.GaussianMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.GroupMove.setup">(eryn.moves.GroupMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.GroupStretchMove.setup">(eryn.moves.GroupStretchMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MHMove.setup">(eryn.moves.MHMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMove.setup">(eryn.moves.MTDistGenMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.setup">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.RedBlueMove.setup">(eryn.moves.RedBlueMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.ReversibleJumpMove.setup">(eryn.moves.ReversibleJumpMove method)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.StretchMove.setup">(eryn.moves.StretchMove method)</a>
+</li>
+      </ul></li>
+      <li><a href="user/moves.html#eryn.moves.GroupMove.setup_friends">setup_friends() (eryn.moves.GroupMove method)</a>
+
+      <ul>
+        <li><a href="user/moves.html#eryn.moves.GroupStretchMove.setup_friends">(eryn.moves.GroupStretchMove method)</a>
 </li>
       </ul></li>
       <li><a href="user/moves.html#eryn.moves.CombineMove.setup_proposals">setup_proposals() (eryn.moves.CombineMove method)</a>
@@ -893,13 +1056,21 @@
 </li>
         <li><a href="user/moves.html#eryn.moves.GaussianMove.setup_proposals">(eryn.moves.GaussianMove method)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.GroupMove.setup_proposals">(eryn.moves.GroupMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.GroupStretchMove.setup_proposals">(eryn.moves.GroupStretchMove method)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.MHMove.setup_proposals">(eryn.moves.MHMove method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.Move.setup_proposals">(eryn.moves.Move method)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMove.setup_proposals">(eryn.moves.MTDistGenMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.setup_proposals">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.RedBlueMove.setup_proposals">(eryn.moves.RedBlueMove method)</a>
 </li>
-        <li><a href="user/moves.html#eryn.moves.ReversibleJump.setup_proposals">(eryn.moves.ReversibleJump method)</a>
+        <li><a href="user/moves.html#eryn.moves.ReversibleJumpMove.setup_proposals">(eryn.moves.ReversibleJumpMove method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.StretchMove.setup_proposals">(eryn.moves.StretchMove method)</a>
 </li>
@@ -910,6 +1081,38 @@
 
       <ul>
         <li><a href="user/backend.html#eryn.backends.HDFBackend.shape">(eryn.backends.HDFBackend property)</a>
+</li>
+      </ul></li>
+      <li><a href="user/moves.html#eryn.moves.MTDistGenMove.special_generate_func">special_generate_func() (eryn.moves.MTDistGenMove method)</a>
+
+      <ul>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.special_generate_func">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MultipleTryMove.special_generate_func">(eryn.moves.MultipleTryMove class method)</a>
+</li>
+      </ul></li>
+      <li><a href="user/moves.html#eryn.moves.MTDistGenMove.special_generate_logpdf">special_generate_logpdf() (eryn.moves.MTDistGenMove method)</a>
+
+      <ul>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.special_generate_logpdf">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MultipleTryMove.special_generate_logpdf">(eryn.moves.MultipleTryMove class method)</a>
+</li>
+      </ul></li>
+      <li><a href="user/moves.html#eryn.moves.MTDistGenMove.special_like_func">special_like_func() (eryn.moves.MTDistGenMove method)</a>
+
+      <ul>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.special_like_func">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MultipleTryMove.special_like_func">(eryn.moves.MultipleTryMove class method)</a>
+</li>
+      </ul></li>
+      <li><a href="user/moves.html#eryn.moves.MTDistGenMove.special_prior_func">special_prior_func() (eryn.moves.MTDistGenMove method)</a>
+
+      <ul>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.special_prior_func">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MultipleTryMove.special_prior_func">(eryn.moves.MultipleTryMove class method)</a>
 </li>
       </ul></li>
       <li><a href="user/state.html#eryn.state.State">State (class in eryn.state)</a>
@@ -943,13 +1146,21 @@
 </li>
         <li><a href="user/moves.html#eryn.moves.GaussianMove.temperature_control">(eryn.moves.GaussianMove property)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.GroupMove.temperature_control">(eryn.moves.GroupMove property)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.GroupStretchMove.temperature_control">(eryn.moves.GroupStretchMove property)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.MHMove.temperature_control">(eryn.moves.MHMove property)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.Move.temperature_control">(eryn.moves.Move property)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMove.temperature_control">(eryn.moves.MTDistGenMove property)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.temperature_control">(eryn.moves.MTDistGenMoveRJ property)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.RedBlueMove.temperature_control">(eryn.moves.RedBlueMove property)</a>
 </li>
-        <li><a href="user/moves.html#eryn.moves.ReversibleJump.temperature_control">(eryn.moves.ReversibleJump property)</a>
+        <li><a href="user/moves.html#eryn.moves.ReversibleJumpMove.temperature_control">(eryn.moves.ReversibleJumpMove property)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.StretchMove.temperature_control">(eryn.moves.StretchMove property)</a>
 </li>
@@ -964,8 +1175,6 @@
 </li>
       <li><a href="user/utils.html#eryn.utils.utility.thermodynamic_integration_log_evidence">thermodynamic_integration_log_evidence() (in module eryn.utils.utility)</a>
 </li>
-      <li><a href="user/utils.html#eryn.utils.PlotContainer.transform">transform() (eryn.utils.PlotContainer method)</a>
-</li>
       <li><a href="user/utils.html#eryn.utils.TransformContainer.transform_base_parameters">transform_base_parameters() (eryn.utils.TransformContainer method)</a>
 </li>
       <li><a href="user/utils.html#eryn.utils.TransformContainer">TransformContainer (class in eryn.utils)</a>
@@ -979,13 +1188,21 @@
 </li>
         <li><a href="user/moves.html#eryn.moves.GaussianMove.tune">(eryn.moves.GaussianMove method)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.GroupMove.tune">(eryn.moves.GroupMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.GroupStretchMove.tune">(eryn.moves.GroupStretchMove method)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.MHMove.tune">(eryn.moves.MHMove method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.Move.tune">(eryn.moves.Move method)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMove.tune">(eryn.moves.MTDistGenMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.tune">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.RedBlueMove.tune">(eryn.moves.RedBlueMove method)</a>
 </li>
-        <li><a href="user/moves.html#eryn.moves.ReversibleJump.tune">(eryn.moves.ReversibleJump method)</a>
+        <li><a href="user/moves.html#eryn.moves.ReversibleJumpMove.tune">(eryn.moves.ReversibleJumpMove method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.StretchMove.tune">(eryn.moves.StretchMove method)</a>
 </li>
@@ -1009,19 +1226,29 @@
 </li>
         <li><a href="user/moves.html#eryn.moves.GaussianMove.update">(eryn.moves.GaussianMove method)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.GroupMove.update">(eryn.moves.GroupMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.GroupStretchMove.update">(eryn.moves.GroupStretchMove method)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.MHMove.update">(eryn.moves.MHMove method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.Move.update">(eryn.moves.Move method)</a>
 </li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMove.update">(eryn.moves.MTDistGenMove method)</a>
+</li>
+        <li><a href="user/moves.html#eryn.moves.MTDistGenMoveRJ.update">(eryn.moves.MTDistGenMoveRJ method)</a>
+</li>
         <li><a href="user/moves.html#eryn.moves.RedBlueMove.update">(eryn.moves.RedBlueMove method)</a>
 </li>
-        <li><a href="user/moves.html#eryn.moves.ReversibleJump.update">(eryn.moves.ReversibleJump method)</a>
+        <li><a href="user/moves.html#eryn.moves.ReversibleJumpMove.update">(eryn.moves.ReversibleJumpMove method)</a>
 </li>
         <li><a href="user/moves.html#eryn.moves.StretchMove.update">(eryn.moves.StretchMove method)</a>
 </li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="user/prior.html#eryn.prior.ProbDistContainer.use_cupy">use_cupy (eryn.prior.ProbDistContainer attribute)</a>
+</li>
       <li><a href="user/moves.html#eryn.moves.StretchMove.use_gpu">use_gpu (eryn.moves.StretchMove attribute)</a>
 </li>
   </ul></td>

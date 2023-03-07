@@ -101,7 +101,8 @@
 </ul>
 <p class="caption"><span class="caption-text">Tutorial:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../tutorial/Eryn_tutorial.html">Eryn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial/Eryn_tutorial.html">Eryn Basic Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial/more_tutorials.html">More Advanced Eryn Examples</a></li>
 </ul>
 
             
@@ -213,7 +214,9 @@
 <p>The class controls the entire sampling run. It can handle
 everything from a basic non-tempered MCMC to a parallel-tempered,
 global fit containing multiple branches (models) and a variable
-number of leaves (sources) per branch. (# TODO: add link to tree explainer)</p>
+number of leaves (sources) per branch.
+See <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/tutorial/Eryn_tutorial.html#The-Tree-Metaphor">here</a>
+for a basic explainer.</p>
 <p>Parameters related to parallelization can be controlled via the <code class="docutils literal notranslate"><span class="pre">pool</span></code> argument.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -246,7 +249,9 @@ respectively, we wil have an <code class="docutils literal notranslate"><span cl
 If <code class="docutils literal notranslate"><span class="pre">N</span> <span class="pre">==</span> <span class="pre">1</span></code>, then the lists are removed and the inputs become <code class="docutils literal notranslate"><span class="pre">(X0,</span> <span class="pre">group0)</span></code>.</p>
 <p>Extra <code class="docutils literal notranslate"><span class="pre">args</span></code> and <code class="docutils literal notranslate"><span class="pre">kwargs</span></code> for the Likelihood function can be added with the kwargs
 <code class="docutils literal notranslate"><span class="pre">args</span></code> and <code class="docutils literal notranslate"><span class="pre">kwargs</span></code> below.</p>
-<p>Please see the tutorial for more information. (# TODO: add link to tutorial)</p>
+<p>Please see the
+<a class="reference external" href="https://mikekatz04.github.io/Eryn/html/tutorial/Eryn_tutorial.html#">tutorial</a>
+for more information.</p>
 </div></blockquote>
 </p></li>
 <li><p><strong>priors</strong> (<em>dict</em>) – The prior dictionary can take four forms.
@@ -260,9 +265,10 @@ each branch as described for (1).
 <a class="reference internal" href="prior.html#eryn.prior.ProbDistContainer" title="eryn.prior.ProbDistContainer"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.prior.ProbDistContainer</span></code></a> objects.</p></li>
 <li><p><strong>provide_groups</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, provide groups as described in <code class="docutils literal notranslate"><span class="pre">log_like_fn</span></code> above.
 A group parameter is added for each branch. (default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
-<li><p><strong>provide_supplimental</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, it will provide keyword arguments to
-the Likelihood function: <code class="docutils literal notranslate"><span class="pre">supps</span></code> and <code class="docutils literal notranslate"><span class="pre">branch_supps</span></code>. Please see the Tutorial
-(# TODO: add tutorial link) and <a class="reference internal" href="state.html#eryn.state.BranchSupplimental" title="eryn.state.BranchSupplimental"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.BranchSupplimental</span></code></a> for more information.</p></li>
+<li><p><strong>provide_supplimental</strong> (<em>bool</em><em>, </em><em>optional</em>) – <p>If <code class="docutils literal notranslate"><span class="pre">True</span></code>, it will provide keyword arguments to
+the Likelihood function: <code class="docutils literal notranslate"><span class="pre">supps</span></code> and <code class="docutils literal notranslate"><span class="pre">branch_supps</span></code>. Please see the <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/tutorial/Eryn_tutorial.html#">Tutorial</a>
+and <a class="reference internal" href="state.html#eryn.state.BranchSupplimental" title="eryn.state.BranchSupplimental"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.state.BranchSupplimental</span></code></a> for more information.</p>
+</p></li>
 <li><p><strong>tempering_kwargs</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keyword arguments for initialization of the
 tempering class: <a class="reference internal" href="temper.html#eryn.moves.tempering.TemperatureControl" title="eryn.moves.tempering.TemperatureControl"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.tempering.TemperatureControl</span></code></a>.  (default: <code class="docutils literal notranslate"><span class="pre">{}</span></code>)</p></li>
 <li><p><strong>branch_names</strong> (<em>list</em><em>, </em><em>optional</em>) – List of branch names. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, models will be assigned
@@ -290,7 +296,7 @@ If <code class="docutils literal notranslate"><span class="pre">True</span></cod
 (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 <li><p><strong>dr_moves</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">None</span></code> ot <code class="docutils literal notranslate"><span class="pre">False</span></code>, delayed rejection when proposing “birth”
 of new components/models will be switched off for this run. Requires <code class="docutils literal notranslate"><span class="pre">rj_moves</span></code> set to <code class="docutils literal notranslate"><span class="pre">True</span></code>.
-# TODO: check in with Nikos about this
+Not implemented yet. Working on it.
 (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 <li><p><strong>dr_max_iter</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum number of iterations used with delayed rejection. (default: 5)</p></li>
 <li><p><strong>args</strong> (<em>optional</em>) – A list of extra positional arguments for
@@ -415,7 +421,9 @@ in the sampler from outside the sampler.</p>
 <li><p><strong>initial_state</strong> (<a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><em>State</em></a><em> or </em><em>ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>, </em><em>nleaves_max</em><em>, </em><em>ndim</em><em>] or </em><em>dict</em>) – The initial
 <code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code> or positions of the walkers in the
 parameter space. If multiple branches used, must be dict with keys
-as the <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values as the positions.</p></li>
+as the <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values as the positions. If <code class="docutils literal notranslate"><span class="pre">betas</span></code> are
+provided in the state object, they will be loaded into the
+<code class="docutils literal notranslate"><span class="pre">temperature_control</span></code>.</p></li>
 <li><p><strong>iterations</strong> (<em>int</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – The number of steps to generate.
 <code class="docutils literal notranslate"><span class="pre">None</span></code> generates an infinite stream (requires <code class="docutils literal notranslate"><span class="pre">store=False</span></code>).
 (default: 1)</p></li>
@@ -465,7 +473,9 @@ skipped. If using reversible jump, the user needs to ensure this on their own
 <li><p><strong>initial_state</strong> (<a class="reference internal" href="state.html#eryn.state.State" title="eryn.state.State"><em>State</em></a><em> or </em><em>ndarray</em><em>[</em><em>ntemps</em><em>, </em><em>nwalkers</em><em>, </em><em>nleaves_max</em><em>, </em><em>ndim</em><em>] or </em><em>dict</em>) – The initial
 <code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code> or positions of the walkers in the
 parameter space. If multiple branches used, must be dict with keys
-as the <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values as the positions.</p></li>
+as the <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values as the positions. If <code class="docutils literal notranslate"><span class="pre">betas</span></code> are
+provided in the state object, they will be loaded into the
+<code class="docutils literal notranslate"><span class="pre">temperature_control</span></code>.</p></li>
 <li><p><strong>nsteps</strong> (<em>int</em>) – The number of steps to generate. The total number of proposals is <code class="docutils literal notranslate"><span class="pre">nsteps</span> <span class="pre">*</span> <span class="pre">thin_by</span></code>.</p></li>
 <li><p><strong>burn</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of burn steps to run before storing information. The <code class="docutils literal notranslate"><span class="pre">thin_by</span></code> kwarg is ignored when counting burn steps since there is no storage (equivalent to <code class="docutils literal notranslate"><span class="pre">thin_by=1</span></code>).</p></li>
 <li><p><strong>post_burn_update</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, run <code class="docutils literal notranslate"><span class="pre">update_fn</span></code> after burn in.</p></li>
@@ -641,7 +651,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.get_log_like">
 <span class="sig-name descname"><span class="pre">get_log_like</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_log_like" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the chain of log probabilities evaluated at the MCMC samples</p>
+<dd><p>Get the chain of log Prior evaluated at the MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -657,7 +667,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The chain of log likelihood values.</p>
+<dd class="field-even"><p>The chain of log prior values.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>double np.ndarray[nsteps, ntemps, nwalkers]</p>
@@ -668,10 +678,39 @@ small subset of the overall array. (default: <code class="docutils literal notra
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.get_log_prior">
 <span class="sig-name descname"><span class="pre">get_log_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_log_prior" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the chain of log probabilities evaluated at the MCMC samples</p>
+<dd><p>Get the chain of log Prior evaluated at the MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
+<li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Take only every <code class="docutils literal notranslate"><span class="pre">thin</span></code> steps from the
+chain. (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
+<li><p><strong>discard</strong> (<em>int</em><em>, </em><em>optional</em>) – Discard the first <code class="docutils literal notranslate"><span class="pre">discard</span></code> steps in
+the chain as burn-in. (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
+<li><p><strong>slice_vals</strong> (<em>indexing np.ndarray</em><em> or </em><em>slice</em><em>, </em><em>optional</em>) – This is only available in <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.backends.hdfbackend</span></code>.
+If provided, slice the array directly from the HDF5 file with slice = <code class="docutils literal notranslate"><span class="pre">slice_vals</span></code>.
+<code class="docutils literal notranslate"><span class="pre">thin</span></code> and <code class="docutils literal notranslate"><span class="pre">discard</span></code> will be ignored if slice_vals is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+This is particularly useful if files are very large and the user only wants a
+small subset of the overall array. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The chain of log prior values.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>double np.ndarray[nsteps, ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.get_log_posterior">
+<span class="sig-name descname"><span class="pre">get_log_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_log_posterior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the chain of log posterior values evaluated at the MCMC samples</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>temper</strong> (<em>bool</em><em>, </em><em>optional</em>) – Apply tempering to the posterior values.
+(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
 <li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Take only every <code class="docutils literal notranslate"><span class="pre">thin</span></code> steps from the
 chain. (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
 <li><p><strong>discard</strong> (<em>int</em><em>, </em><em>optional</em>) – Discard the first <code class="docutils literal notranslate"><span class="pre">discard</span></code> steps in

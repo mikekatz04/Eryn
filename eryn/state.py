@@ -86,7 +86,6 @@ class BranchSupplimental(object):
                 isinstance(obj_contained, np.ndarray)
                 and obj_contained.dtype.name == "object"
             ):
-                # TODO: need to copy?
                 self.holder[name] = dc(obj_contained)
                 if self.base_shape is None:
                     self.base_shape = self.holder[name].shape
@@ -131,7 +130,6 @@ class BranchSupplimental(object):
                                         )
 
                                     for k in range(self.base_shape[2]):
-                                        # TODO: copy?
                                         self.holder[name][i, j, k] = obj_contained[i][
                                             j
                                         ][k]
@@ -540,7 +538,7 @@ class State(object):
         for name in state_to_copy.__slots__:
             setattr(self, name, getattr(state_to_copy, name))
 
-    def get_log_prob(self, temper: bool = False):
+    def get_log_posterior(self, temper: bool = False):
         """Get the posterior probability
         
         Args:
