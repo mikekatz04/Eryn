@@ -42,7 +42,7 @@ Prerequisites
 ~~~~~~~~~~~~~
 
 Eryn has only a few python-based dependencies: ``tqdm``, ``corner`` for
-plotting, ``numpy``, ``matplotlib``, ``cupy`` TODO: update this
+plotting, ``numpy``, ``matplotlib``.
 
 Installing
 ~~~~~~~~~~

@@ -22,7 +22,7 @@ See [examples notebook](https://github.com/mikekatz04/Eryn/blob/main/examples/Er
 
 ### Prerequisites
 
-Eryn has only a few python-based dependencies: `tqdm`, `corner` for plotting, `numpy`, `matplotlib`, `cupy` TODO: update this
+Eryn has only a few python-based dependencies: `tqdm`, `corner` for plotting, `numpy`, `matplotlib`. 
 
 ### Installing
 
