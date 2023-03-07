@@ -15,7 +15,7 @@ If you use Eryn in your publication, please cite the paper
 TODO: add zenodo as well), and
 `emcee <https://emcee.readthedocs.io/en/stable/>`__. The documentation
 for Eryn can be found here:
-`mikekatz04.gihub.io/Eryn <https://mikekatz04.gihub.io/Eryn>`__. You
+`mikekatz04.github.io/Eryn <https://mikekatz04.github.io/Eryn>`__. You
 will find the code on Github:
 `github.com/mikekatz04/Eryn <https://github.com/mikekatz04/Eryn>`__.
 
