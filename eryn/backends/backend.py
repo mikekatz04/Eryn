@@ -409,7 +409,7 @@ class Backend(object):
         return self.get_value("blobs", **kwargs)
 
     def get_log_like(self, **kwargs):
-        """Get the chain of log probabilities evaluated at the MCMC samples
+        """Get the chain of log Likelihood values evaluated at the MCMC samples
 
         Args:
             thin (int, optional): Take only every ``thin`` steps from the
@@ -429,7 +429,7 @@ class Backend(object):
         return self.get_value("log_like", **kwargs)
 
     def get_log_prior(self, **kwargs):
-        """Get the chain of log probabilities evaluated at the MCMC samples
+        """Get the chain of log Prior evaluated at the MCMC samples
 
         Args:
             thin (int, optional): Take only every ``thin`` steps from the
@@ -448,7 +448,36 @@ class Backend(object):
         """
         return self.get_value("log_prior", **kwargs)
 
-    # TODO: add get log prob after change is dealth with entirely
+    def get_log_posterior(self, temper: bool = False, **kwargs):
+        """Get the chain of log posterior values evaluated at the MCMC samples
+
+        Args:
+            temper (bool, optional): Apply tempering to the posterior values.
+                (default: ``False``)
+            thin (int, optional): Take only every ``thin`` steps from the
+                chain. (default: ``1``)
+            discard (int, optional): Discard the first ``discard`` steps in
+                the chain as burn-in. (default: ``0``)
+            slice_vals (indexing np.ndarray or slice, optional): This is only available in :class:`eryn.backends.hdfbackend`.
+                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``. 
+                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``. 
+                This is particularly useful if files are very large and the user only wants a 
+                small subset of the overall array. (default: ``None``)
+
+        Returns:
+            double np.ndarray[nsteps, ntemps, nwalkers]: The chain of log prior values.
+
+        """
+        if temper:
+            betas = self.get_betas(**kwargs)
+
+        else:
+            betas = np.ones_like(self.get_betas(**kwargs))
+
+        log_like = self.get_log_like(**kwargs)
+        log_prior = self.get_log_prior(**kwargs)
+
+        return betas[:, :, None] * log_like + log_prior
 
     def get_betas(self, **kwargs):
         """Get the chain of inverse temperatures
@@ -593,7 +622,6 @@ class Backend(object):
                 ``(logZ, dlogZ)``. Otherwise, just a double value of logZ.
 
         """
-        # TODO: check this
         # get all the likelihood and temperature values
         logls_all = self.get_log_like(discard=discard, thin=thin)
         betas_all = self.get_betas(discard=discard, thin=thin)
@@ -918,7 +946,6 @@ class Backend(object):
         # get inds
         out_info["inds"] = self.get_inds(thin=thin, discard=discard)
 
-        # TODO: fix self.ntemps in hdf5 backend
         out_info["shapes"] = self.shape
         out_info["ntemps"] = self.ntemps
         out_info["nwalkers"] = self.nwalkers

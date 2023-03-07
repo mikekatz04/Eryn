@@ -129,7 +129,6 @@ class GaussianMove(MHMove):
 class _isotropic_proposal(object):
 
     allowed_modes = ["vector", "random", "sequential"]
-    # TODO: document this?
 
     def __init__(self, scale, factor, mode):
         self.index = 0

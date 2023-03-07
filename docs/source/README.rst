@@ -26,7 +26,7 @@ Below is a quick set of instructions to get you started with ``eryn``.
 
 ::
 
-   pip install git+https://github.com/mikekatz04/Eryn.git
+   pip install eryn
 
 To import eryn:
 
@@ -50,7 +50,12 @@ Installing
 If you are not planning to develop the code, you can just install the
 latest version with the pip installation technique given above.
 Otherwise, you can just clone the repo and run ``pip install .`` inside
-of the Eryn directory.
+of the Eryn directory. To run tests on Eryn during development, you can
+run the following in the main Eryn directory:
+
+::
+
+   python -m unittest discover
 
 Running the Tests
 -----------------
@@ -74,7 +79,7 @@ We use `SemVer <http://semver.org/>`__ for versioning. For the versions
 available, see the `tags on this
 repository <https://github.com/BlackHolePerturbationToolkit/FastEMRIWaveforms/tags>`__.
 
-Current Version: 0.2.2
+Current Version: 1.0.0
 
 Authors
 -------

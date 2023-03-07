@@ -705,7 +705,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.get_log_like">
 <span class="sig-name descname"><span class="pre">get_log_like</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_log_like" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the chain of log probabilities evaluated at the MCMC samples</p>
+<dd><p>Get the chain of log Likelihood values evaluated at the MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -732,10 +732,39 @@ small subset of the overall array. (default: <code class="docutils literal notra
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.get_log_prior">
 <span class="sig-name descname"><span class="pre">get_log_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_log_prior" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the chain of log probabilities evaluated at the MCMC samples</p>
+<dd><p>Get the chain of log Prior evaluated at the MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
+<li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Take only every <code class="docutils literal notranslate"><span class="pre">thin</span></code> steps from the
+chain. (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
+<li><p><strong>discard</strong> (<em>int</em><em>, </em><em>optional</em>) – Discard the first <code class="docutils literal notranslate"><span class="pre">discard</span></code> steps in
+the chain as burn-in. (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
+<li><p><strong>slice_vals</strong> (<em>indexing np.ndarray</em><em> or </em><em>slice</em><em>, </em><em>optional</em>) – This is only available in <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.backends.hdfbackend</span></code>.
+If provided, slice the array directly from the HDF5 file with slice = <code class="docutils literal notranslate"><span class="pre">slice_vals</span></code>.
+<code class="docutils literal notranslate"><span class="pre">thin</span></code> and <code class="docutils literal notranslate"><span class="pre">discard</span></code> will be ignored if slice_vals is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+This is particularly useful if files are very large and the user only wants a
+small subset of the overall array. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The chain of log prior values.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>double np.ndarray[nsteps, ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.backends.Backend.get_log_posterior">
+<span class="sig-name descname"><span class="pre">get_log_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temper</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_log_posterior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the chain of log posterior values evaluated at the MCMC samples</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>temper</strong> (<em>bool</em><em>, </em><em>optional</em>) – Apply tempering to the posterior values.
+(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
 <li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Take only every <code class="docutils literal notranslate"><span class="pre">thin</span></code> steps from the
 chain. (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
 <li><p><strong>discard</strong> (<em>int</em><em>, </em><em>optional</em>) – Discard the first <code class="docutils literal notranslate"><span class="pre">discard</span></code> steps in
@@ -1503,7 +1532,7 @@ checks or plotting.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_log_like">
 <span class="sig-name descname"><span class="pre">get_log_like</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_log_like" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the chain of log probabilities evaluated at the MCMC samples</p>
+<dd><p>Get the chain of log Likelihood values evaluated at the MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1528,9 +1557,38 @@ small subset of the overall array. (default: <code class="docutils literal notra
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_log_posterior">
+<span class="sig-name descname"><span class="pre">get_log_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temper</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_log_posterior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the chain of log posterior values evaluated at the MCMC samples</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>temper</strong> (<em>bool</em><em>, </em><em>optional</em>) – Apply tempering to the posterior values.
+(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
+<li><p><strong>thin</strong> (<em>int</em><em>, </em><em>optional</em>) – Take only every <code class="docutils literal notranslate"><span class="pre">thin</span></code> steps from the
+chain. (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
+<li><p><strong>discard</strong> (<em>int</em><em>, </em><em>optional</em>) – Discard the first <code class="docutils literal notranslate"><span class="pre">discard</span></code> steps in
+the chain as burn-in. (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></li>
+<li><p><strong>slice_vals</strong> (<em>indexing np.ndarray</em><em> or </em><em>slice</em><em>, </em><em>optional</em>) – This is only available in <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.backends.hdfbackend</span></code>.
+If provided, slice the array directly from the HDF5 file with slice = <code class="docutils literal notranslate"><span class="pre">slice_vals</span></code>.
+<code class="docutils literal notranslate"><span class="pre">thin</span></code> and <code class="docutils literal notranslate"><span class="pre">discard</span></code> will be ignored if slice_vals is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+This is particularly useful if files are very large and the user only wants a
+small subset of the overall array. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The chain of log prior values.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>double np.ndarray[nsteps, ntemps, nwalkers]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_log_prior">
 <span class="sig-name descname"><span class="pre">get_log_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_log_prior" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the chain of log probabilities evaluated at the MCMC samples</p>
+<dd><p>Get the chain of log Prior evaluated at the MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">

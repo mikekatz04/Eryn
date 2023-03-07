@@ -13,8 +13,6 @@ class MTDistGenMoveRJ(MultipleTryMoveRJ, DistributionGenerateRJ):
         This is effectively an example of the mutliple try class inheritance structure.
         
         """
-
-        # TODO: change RJ min_k max_k to kwargs
         kwargs["rj"] = True
         MultipleTryMoveRJ.__init__(self, **kwargs)
         DistributionGenerateRJ.__init__(self, dist, *args, **kwargs)

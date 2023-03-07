@@ -120,7 +120,7 @@ class EnsembleSampler(object):
             (default: ``None``)
         dr_moves (bool, optional): If ``None`` ot ``False``, delayed rejection when proposing "birth"
             of new components/models will be switched off for this run. Requires ``rj_moves`` set to ``True``.
-            # TODO: check in with Nikos about this
+            Not implemented yet. Working on it.
             (default: ``None``)
         dr_max_iter (int, optional): Maximum number of iterations used with delayed rejection. (default: 5)
         args (optional): A list of extra positional arguments for
@@ -197,8 +197,8 @@ class EnsembleSampler(object):
         ndims,  # assumes ndim_max
         log_like_fn,
         priors,
-        provide_groups=False,  # TODO: improve this
-        provide_supplimental=False,  # TODO: improve this
+        provide_groups=False,
+        provide_supplimental=False,
         tempering_kwargs={},
         branch_names=None,
         nbranches=1,
@@ -343,8 +343,8 @@ class EnsembleSampler(object):
                 # default to DistributionGenerateRJ
                 rj_move = DistributionGenerateRJ(
                     self.priors,
-                    self.nleaves_max,
-                    self.nleaves_min,
+                    max_k=self.nleaves_max,
+                    min_k=self.nleaves_min,
                     dr=dr_moves,
                     dr_max_iter=dr_max_iter,
                     tune=False,
@@ -546,24 +546,21 @@ class EnsembleSampler(object):
                 test = priors[key]
                 if isinstance(test, dict):
                     # check all dists
-                    for name, priors_temp in priors.items():
-                        for ind, dist in priors_temp.items():
-                            if not hasattr(dist, "logpdf"):
-                                raise ValueError(
-                                    "Distribution for model {0} and index {1} does not have logpdf method.".format(
-                                        name, ind
-                                    )
+                    for ind, dist in test.items():
+                        if not hasattr(dist, "logpdf"):
+                            raise ValueError(
+                                "Distribution for model {0} and index {1} does not have logpdf method.".format(
+                                    key, ind
                                 )
-                    self._priors[key] = {
-                        name: ProbDistContainer(priors_temp)
-                        for name, priors_temp in priors.items()
-                    }
+                            )
+
+                    self._priors[key] = ProbDistContainer(test)
 
                 elif isinstance(test, ProbDistContainer):
-                    self._priors[key] = priors
+                    self._priors[key] = test
 
                 elif hasattr(test, "logpdf"):
-                    self._priors[key] = {"model_0": ProbDistContainer(priors)}
+                    self._priors[key] = {"model_0": test}
 
                 else:
                     raise ValueError(
@@ -643,7 +640,9 @@ class EnsembleSampler(object):
             initial_state (State or ndarray[ntemps, nwalkers, nleaves_max, ndim] or dict): The initial
                 :class:`State` or positions of the walkers in the
                 parameter space. If multiple branches used, must be dict with keys
-                as the ``branch_names`` and values as the positions.
+                as the ``branch_names`` and values as the positions. If ``betas`` are
+                provided in the state object, they will be loaded into the 
+                ``temperature_control``. 
             iterations (int or None, optional): The number of steps to generate.
                 ``None`` generates an infinite stream (requires ``store=False``).
                 (default: 1)
@@ -720,6 +719,15 @@ class EnsembleSampler(object):
                 supps=state.supplimental,  # only used if self.provide_supplimental is True
                 branch_supps=state.branches_supplimental,  # only used if self.provide_supplimental is True
             )
+
+        # get betas out of state object if they are there
+        if state.betas is not None:
+            if state.betas.shape[0] != self.ntemps:
+                raise ValueError(
+                    "Input state has inverse temperatures (betas), but not the correct number of temperatures according to sampler inputs."
+                )
+
+            self.temperature_control.betas = state.betas.copy()
 
         if np.shape(state.log_like) != (self.ntemps, self.nwalkers):
             raise ValueError("incompatible input dimensions")
@@ -836,7 +844,9 @@ class EnsembleSampler(object):
             initial_state (State or ndarray[ntemps, nwalkers, nleaves_max, ndim] or dict): The initial
                 :class:`State` or positions of the walkers in the
                 parameter space. If multiple branches used, must be dict with keys
-                as the ``branch_names`` and values as the positions.
+                as the ``branch_names`` and values as the positions. If ``betas`` are
+                provided in the state object, they will be loaded into the 
+                ``temperature_control``. 
             nsteps (int): The number of steps to generate. The total number of proposals is ``nsteps * thin_by``.
             burn (int, optional): Number of burn steps to run before storing information. The ``thin_by`` kwarg is ignored when counting burn steps since there is no storage (equivalent to ``thin_by=1``).
             post_burn_update (bool, optional): If ``True``, run ``update_fn`` after burn in. 
@@ -997,7 +1007,6 @@ class EnsembleSampler(object):
             prior_out = np.zeros((ntemps, nwalkers))
             for name in x_in:
                 ntemps, nwalkers, nleaves_max, ndim = coords[name].shape
-
                 prior_out_temp = (
                     self.priors[name]
                     .logpdf(x_in[name])
@@ -1376,14 +1385,19 @@ class EnsembleSampler(object):
     get_blobs.__doc__ = Backend.get_blobs.__doc__
 
     def get_log_like(self, **kwargs):
-        return self.get_value("log_like", **kwargs)
+        return self.backend.get_log_like(**kwargs)
 
-    get_log_like.__doc__ = Backend.get_log_like.__doc__
+    get_log_like.__doc__ = Backend.get_log_prior.__doc__
 
     def get_log_prior(self, **kwargs):
-        return self.get_value("log_like", **kwargs)
+        return self.backend.get_log_prior(**kwargs)
 
     get_log_prior.__doc__ = Backend.get_log_prior.__doc__
+
+    def get_log_posterior(self, **kwargs):
+        return self.backend.get_log_posterior(**kwargs)
+
+    get_log_posterior.__doc__ = Backend.get_log_posterior.__doc__
 
     def get_inds(self, **kwargs):
         return self.get_value("inds", **kwargs)

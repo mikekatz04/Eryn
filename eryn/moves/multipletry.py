@@ -570,7 +570,7 @@ class MultipleTryMove(ABC):
         # store this information for access outside
         self.mt_ll = self.mt_ll.reshape(ntemps, nwalkers)
         self.mt_lp = self.mt_lp.reshape(ntemps, nwalkers)
-        # TODO: check this with multiple leaves gibbs ndim
+
         return (
             {key_in: generated_points.reshape(ntemps, nwalkers, 1, -1)},
             factors.reshape(ntemps, nwalkers),

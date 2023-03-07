@@ -19,7 +19,6 @@ class MHMove(Move):
     def __init__(self, **kwargs):
 
         Move.__init__(self, **kwargs)
-        # TODO: check ndim stuff
 
     def get_proposal(self, branches_coords, random, branches_inds=None, **kwargs):
         """Get proposal

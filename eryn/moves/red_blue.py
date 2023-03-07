@@ -41,8 +41,6 @@ class RedBlueMove(Move, ABC):
     def __init__(
         self, nsplits=2, randomize_split=True, live_dangerously=False, **kwargs
     ):
-
-        # TODO: have each move keep track of its own acceptance fraction
         super(RedBlueMove, self).__init__(**kwargs)
         self.nsplits = int(nsplits)
         self.live_dangerously = live_dangerously

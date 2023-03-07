@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import stats
+from copy import deepcopy
 
 try:
     import cupy as cp
@@ -12,8 +13,8 @@ class UniformDistribution(object):
     """Generate uniform distribution between ``min`` and ``max``
 
     Args:
-        min (double): Minimum in the uniform distribution
-        max (double): Maximum in the uniform distribution
+        min_val (double): Minimum in the uniform distribution
+        max_val (double): Maximum in the uniform distribution
         use_cupy (bool, optional): If ``True``, use CuPy. If ``False`` use Numpy.
             (default: ``False``)
 
@@ -21,6 +22,7 @@ class UniformDistribution(object):
         ValueError: Issue with inputs. 
 
     """
+
     def __init__(self, min_val, max_val, use_cupy=False):
 
         if min_val > max_val:
@@ -55,7 +57,7 @@ class UniformDistribution(object):
         xp = np if not self.use_cupy else cp
 
         rand_unif = xp.random.rand(*size)
-        
+
         out = rand_unif * self.diff + self.min_val
 
         return out
@@ -74,7 +76,10 @@ class UniformDistribution(object):
         out[(x >= self.min_val) & (x <= self.max_val)] = self.logpdf_val
         out[(x < self.min_val) | (x > self.max_val)] = -np.inf
         return out
-    
+
+    def copy(self):
+        return deepcopy(self)
+
 
 def uniform_dist(min, max, use_cupy=False):
     """Generate uniform distribution between ``min`` and ``max``
@@ -239,7 +244,6 @@ class ProbDistContainer:
 
         uni_inds = np.unique(np.concatenate(temp_inds, axis=1).flatten())
         if len(uni_inds) != len(np.arange(np.max(uni_inds) + 1)):
-            # TODO: make better
             raise ValueError(
                 "Please ensure all sampled parameters are included in priors."
             )

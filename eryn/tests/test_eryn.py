@@ -1042,7 +1042,7 @@ class WaveformTest(unittest.TestCase):
         from eryn.moves import MTDistGenMoveRJ
 
         mt_rj_prior = MTDistGenMoveRJ(
-            priors, [nleaves_max], [nleaves_min], num_try=25, rj=True
+            priors, max_k=[nleaves_max], min_k=[nleaves_min], num_try=25, rj=True
         )
 
         ensemble = EnsembleSampler(

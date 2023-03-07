@@ -17,7 +17,9 @@ class ReversibleJumpMove(Move):
 
     Args:
         max_k (int or list of int): Maximum number(s) of leaves for each model.
+            This is a keyword argument, nut it is required.
         min_k (int or list of int): Minimum number(s) of leaves for each model.
+            This is a keyword argument, nut it is required.
         tune (bool, optional): If True, tune proposal. (Default: ``False``)
         fix_change (int or None, optional): Fix the change in the number of leaves. Make them all 
             add a leaf or remove a leaf. This can be useful for some search functions. Options
@@ -27,8 +29,8 @@ class ReversibleJumpMove(Move):
 
     def __init__(
         self,
-        max_k,
-        min_k,
+        max_k=None,
+        min_k=None,
         dr=None,
         dr_max_iter=5,
         tune=False,
@@ -37,6 +39,9 @@ class ReversibleJumpMove(Move):
     ):
         # super(ReversibleJumpMove, self).__init__(**kwargs)
         Move.__init__(self, is_rj=True, **kwargs)
+
+        if max_k is None or min_k is None:
+            raise ValueError("Must provide min_k and max_k keyword arguments for RJ.")
 
         # setup leaf limits
         if isinstance(max_k, int):
@@ -60,7 +65,7 @@ class ReversibleJumpMove(Move):
             if self.dr is True:  # Check if it's a boolean, then we just generate
                 # from prior (kills the purpose, but yields "healther" chains)
                 dr_proposal = DistributionGenerate(
-                    self.priors, temperature_control=self.temperature_control
+                    self.generate_dist, temperature_control=self.temperature_control
                 )
             else:
                 # Otherwise pass given input
@@ -147,7 +152,6 @@ class ReversibleJumpMove(Move):
             :class:`State`: State of sampler after proposal is complete.
 
         """
-        # TODO: check if temperatures are properly repeated after reset
         # this exposes anywhere in the proposal class to this information
 
         # Run any move-specific setup.
@@ -226,7 +230,6 @@ class ReversibleJumpMove(Move):
                 list(state.branches.keys()), q, new_inds, branches_supps_new
             )
 
-            # TODO: check this
             edge_factors = np.zeros((ntemps, nwalkers))
             # get factors for edges
             for (name, branch), min_k, max_k in zip(
@@ -350,12 +353,20 @@ class ReversibleJumpMove(Move):
             # this to +1 may not be preserving detailed balance. You may need to
             # "simulate it" for -1 similar to what we do in multiple try
             if self.dr:
-                raise NotImplementedError
+                raise NotImplementedError(
+                    "Delayed Rejection will be implemented soon. Check for updated versions."
+                )
                 # for name, branch in state.branches.items():
                 #     # We have to work with the binaries added only.
                 #     # We need the a) rejected points, b) the model,
                 #     # c) the current state, d) the indices where we had +1 (True),
                 #     # and the e) factors.
+                inds_for_change = {}
+                for name in branch_names_run:
+                    inds_for_change[name] = {
+                        "+1": np.argwhere(new_inds[name] & (~state.branches[name].inds))
+                    }
+
                 state, accepted = self.dr.propose(
                     lnpdiff,
                     accepted,
@@ -372,11 +383,11 @@ class ReversibleJumpMove(Move):
             # switching back what was swapped in the previous in-model step.
             # TODO: MLK: I think we should allow for swapping but no adaptation.
 
-            if self.temperature_control is not None and not self.prevent_swaps:
-                state = self.temperature_control.temper_comps(state, adapt=False)
+        if self.temperature_control is not None and not self.prevent_swaps:
+            state = self.temperature_control.temper_comps(state, adapt=False)
 
-            # add to move-specific accepted information
-            self.accepted += accepted
-            self.num_proposals += 1
+        # add to move-specific accepted information
+        self.accepted += accepted
+        self.num_proposals += 1
 
-            return state, accepted
+        return state, accepted
