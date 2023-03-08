@@ -2,7 +2,7 @@
 
 Eryn is an advanced MCMC sampler. It has the capability to run with parallel tempering, multiple model types, and unknown counts within each model type using Reversible Jump MCMC techniques. Eryn is heavily based on [emcee](https://emcee.readthedocs.io/en/stable/). The `emcee` base structure with the Ensemble Sampler, State objects, proposal setup, and storage backends is carried over into Eryn with small changes to account for the increased complexity. In a simple sense, Eryn is an advanced (and slightly more complicated) version of `emcee`. 
 
-If you use Eryn in your publication, please cite the paper [arXiv:2303.02164](https://arxiv.org/abs/2303.02164), its zenodo (# TODO: add zenodo as well), and [emcee](https://emcee.readthedocs.io/en/stable/). The documentation for Eryn can be found here: [mikekatz04.github.io/Eryn](https://mikekatz04.github.io/Eryn). You will find the code on Github: [github.com/mikekatz04/Eryn](https://github.com/mikekatz04/Eryn). 
+If you use Eryn in your publication, please cite the paper [arXiv:2303.02164](https://arxiv.org/abs/2303.02164), its [zenodo](https://zenodo.org/record/7705496#.ZAhzukJKjlw), and [emcee](https://emcee.readthedocs.io/en/stable/). The documentation for Eryn can be found here: [mikekatz04.github.io/Eryn](https://mikekatz04.github.io/Eryn). You will find the code on Github: [github.com/mikekatz04/Eryn](https://github.com/mikekatz04/Eryn). 
 
 ## Getting Started
 
@@ -49,6 +49,56 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduc
 We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/BlackHolePerturbationToolkit/FastEMRIWaveforms/tags).
 
 Current Version: 1.0.1
+
+## Citation
+
+When using this package, please cite at minimum the following sources:
+
+```
+@article{Karnesis:2023ras,
+    author = "Karnesis, Nikolaos and Katz, Michael L. and Korsakova, Natalia and Gair, Jonathan R. and Stergioulas, Nikolaos",
+    title = "{Eryn : A multi-purpose sampler for Bayesian inference}",
+    eprint = "2303.02164",
+    archivePrefix = "arXiv",
+    primaryClass = "astro-ph.IM",
+    month = "3",
+    year = "2023"
+}
+
+@software{michael_katz_2023_7705496,
+  author       = {Michael Katz and
+                  Nikolaos Karnesis and
+                  Natalia Korsakova},
+  title        = {mikekatz04/Eryn: first full release},
+  month        = mar,
+  year         = 2023,
+  publisher    = {Zenodo},
+  version      = {v1.0.0},
+  doi          = {10.5281/zenodo.7705496},
+  url          = {https://doi.org/10.5281/zenodo.7705496}
+}
+
+@ARTICLE{2013PASP..125..306F,
+       author = {{Foreman-Mackey}, Daniel and {Hogg}, David W. and {Lang}, Dustin and {Goodman}, Jonathan},
+        title = "{emcee: The MCMC Hammer}",
+      journal = {\pasp},
+     keywords = {Astrophysics - Instrumentation and Methods for Astrophysics, Physics - Computational Physics, Statistics - Computation},
+         year = 2013,
+        month = mar,
+       volume = {125},
+       number = {925},
+        pages = {306},
+          doi = {10.1086/670067},
+archivePrefix = {arXiv},
+       eprint = {1202.3665},
+ primaryClass = {astro-ph.IM},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2013PASP..125..306F},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+```
+
+Depending on which proposals are used, you may be required to cite more sources. Please make sure you do this properly. 
 
 ## Authors
 

@@ -203,8 +203,8 @@ and storage backends is carried over into Eryn with small changes to
 account for the increased complexity. In a simple sense, Eryn is an
 advanced (and slightly more complicated) version of <code class="docutils literal notranslate"><span class="pre">emcee</span></code>.</p>
 <p>If you use Eryn in your publication, please cite the paper
-<a class="reference external" href="https://arxiv.org/abs/2303.02164">arXiv:2303.02164</a>, its zenodo (#
-TODO: add zenodo as well), and
+<a class="reference external" href="https://arxiv.org/abs/2303.02164">arXiv:2303.02164</a>, its
+<a class="reference external" href="https://zenodo.org/record/7705496#.ZAhzukJKjlw">zenodo</a>, and
 <a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a>. The documentation
 for Eryn can be found here:
 <a class="reference external" href="https://mikekatz04.github.io/Eryn">mikekatz04.github.io/Eryn</a>. You
@@ -258,6 +258,54 @@ code of conduct, and the process for submitting pull requests to us.</p>
 available, see the <a class="reference external" href="https://github.com/BlackHolePerturbationToolkit/FastEMRIWaveforms/tags">tags on this
 repository</a>.</p>
 <p>Current Version: 1.0.1</p>
+</section>
+<section id="citation">
+<h2>Citation<a class="headerlink" href="#citation" title="Permalink to this headline">¶</a></h2>
+<p>When using this package, please cite at minimum the following sources:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@article</span><span class="p">{</span><span class="n">Karnesis</span><span class="p">:</span><span class="mi">2023</span><span class="n">ras</span><span class="p">,</span>
+    <span class="n">author</span> <span class="o">=</span> <span class="s2">&quot;Karnesis, Nikolaos and Katz, Michael L. and Korsakova, Natalia and Gair, Jonathan R. and Stergioulas, Nikolaos&quot;</span><span class="p">,</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;{Eryn : A multi-purpose sampler for Bayesian inference}&quot;</span><span class="p">,</span>
+    <span class="n">eprint</span> <span class="o">=</span> <span class="s2">&quot;2303.02164&quot;</span><span class="p">,</span>
+    <span class="n">archivePrefix</span> <span class="o">=</span> <span class="s2">&quot;arXiv&quot;</span><span class="p">,</span>
+    <span class="n">primaryClass</span> <span class="o">=</span> <span class="s2">&quot;astro-ph.IM&quot;</span><span class="p">,</span>
+    <span class="n">month</span> <span class="o">=</span> <span class="s2">&quot;3&quot;</span><span class="p">,</span>
+    <span class="n">year</span> <span class="o">=</span> <span class="s2">&quot;2023&quot;</span>
+<span class="p">}</span>
+
+<span class="nd">@software</span><span class="p">{</span><span class="n">michael_katz_2023_7705496</span><span class="p">,</span>
+  <span class="n">author</span>       <span class="o">=</span> <span class="p">{</span><span class="n">Michael</span> <span class="n">Katz</span> <span class="ow">and</span>
+                  <span class="n">Nikolaos</span> <span class="n">Karnesis</span> <span class="ow">and</span>
+                  <span class="n">Natalia</span> <span class="n">Korsakova</span><span class="p">},</span>
+  <span class="n">title</span>        <span class="o">=</span> <span class="p">{</span><span class="n">mikekatz04</span><span class="o">/</span><span class="n">Eryn</span><span class="p">:</span> <span class="n">first</span> <span class="n">full</span> <span class="n">release</span><span class="p">},</span>
+  <span class="n">month</span>        <span class="o">=</span> <span class="n">mar</span><span class="p">,</span>
+  <span class="n">year</span>         <span class="o">=</span> <span class="mi">2023</span><span class="p">,</span>
+  <span class="n">publisher</span>    <span class="o">=</span> <span class="p">{</span><span class="n">Zenodo</span><span class="p">},</span>
+  <span class="n">version</span>      <span class="o">=</span> <span class="p">{</span><span class="n">v1</span><span class="mf">.0.0</span><span class="p">},</span>
+  <span class="n">doi</span>          <span class="o">=</span> <span class="p">{</span><span class="mf">10.5281</span><span class="o">/</span><span class="n">zenodo</span><span class="mf">.7705496</span><span class="p">},</span>
+  <span class="n">url</span>          <span class="o">=</span> <span class="p">{</span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">doi</span><span class="o">.</span><span class="n">org</span><span class="o">/</span><span class="mf">10.5281</span><span class="o">/</span><span class="n">zenodo</span><span class="mf">.7705496</span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="nd">@ARTICLE</span><span class="p">{</span><span class="mi">2013</span><span class="n">PASP</span><span class="o">.</span><span class="mf">.125</span><span class="o">.</span><span class="mf">.306</span><span class="n">F</span><span class="p">,</span>
+       <span class="n">author</span> <span class="o">=</span> <span class="p">{{</span><span class="n">Foreman</span><span class="o">-</span><span class="n">Mackey</span><span class="p">},</span> <span class="n">Daniel</span> <span class="ow">and</span> <span class="p">{</span><span class="n">Hogg</span><span class="p">},</span> <span class="n">David</span> <span class="n">W</span><span class="o">.</span> <span class="ow">and</span> <span class="p">{</span><span class="n">Lang</span><span class="p">},</span> <span class="n">Dustin</span> <span class="ow">and</span> <span class="p">{</span><span class="n">Goodman</span><span class="p">},</span> <span class="n">Jonathan</span><span class="p">},</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;{emcee: The MCMC Hammer}&quot;</span><span class="p">,</span>
+      <span class="n">journal</span> <span class="o">=</span> <span class="p">{</span>\<span class="n">pasp</span><span class="p">},</span>
+     <span class="n">keywords</span> <span class="o">=</span> <span class="p">{</span><span class="n">Astrophysics</span> <span class="o">-</span> <span class="n">Instrumentation</span> <span class="ow">and</span> <span class="n">Methods</span> <span class="k">for</span> <span class="n">Astrophysics</span><span class="p">,</span> <span class="n">Physics</span> <span class="o">-</span> <span class="n">Computational</span> <span class="n">Physics</span><span class="p">,</span> <span class="n">Statistics</span> <span class="o">-</span> <span class="n">Computation</span><span class="p">},</span>
+         <span class="n">year</span> <span class="o">=</span> <span class="mi">2013</span><span class="p">,</span>
+        <span class="n">month</span> <span class="o">=</span> <span class="n">mar</span><span class="p">,</span>
+       <span class="n">volume</span> <span class="o">=</span> <span class="p">{</span><span class="mi">125</span><span class="p">},</span>
+       <span class="n">number</span> <span class="o">=</span> <span class="p">{</span><span class="mi">925</span><span class="p">},</span>
+        <span class="n">pages</span> <span class="o">=</span> <span class="p">{</span><span class="mi">306</span><span class="p">},</span>
+          <span class="n">doi</span> <span class="o">=</span> <span class="p">{</span><span class="mf">10.1086</span><span class="o">/</span><span class="mi">670067</span><span class="p">},</span>
+<span class="n">archivePrefix</span> <span class="o">=</span> <span class="p">{</span><span class="n">arXiv</span><span class="p">},</span>
+       <span class="n">eprint</span> <span class="o">=</span> <span class="p">{</span><span class="mf">1202.3665</span><span class="p">},</span>
+ <span class="n">primaryClass</span> <span class="o">=</span> <span class="p">{</span><span class="n">astro</span><span class="o">-</span><span class="n">ph</span><span class="o">.</span><span class="n">IM</span><span class="p">},</span>
+       <span class="n">adsurl</span> <span class="o">=</span> <span class="p">{</span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">ui</span><span class="o">.</span><span class="n">adsabs</span><span class="o">.</span><span class="n">harvard</span><span class="o">.</span><span class="n">edu</span><span class="o">/</span><span class="nb">abs</span><span class="o">/</span><span class="mi">2013</span><span class="n">PASP</span><span class="o">.</span><span class="mf">.125</span><span class="o">.</span><span class="mf">.306</span><span class="n">F</span><span class="p">},</span>
+      <span class="n">adsnote</span> <span class="o">=</span> <span class="p">{</span><span class="n">Provided</span> <span class="n">by</span> <span class="n">the</span> <span class="n">SAO</span><span class="o">/</span><span class="n">NASA</span> <span class="n">Astrophysics</span> <span class="n">Data</span> <span class="n">System</span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Depending on which proposals are used, you may be required to cite more
+sources. Please make sure you do this properly.</p>
 </section>
 <section id="authors">
 <h2>Authors<a class="headerlink" href="#authors" title="Permalink to this headline">¶</a></h2>
