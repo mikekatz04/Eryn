@@ -104,7 +104,7 @@ Depending on which proposals are used, you may be required to cite more sources.
 
 * **Michael Katz**
 * Nikos Karnesis
-* Natalia Korsokova
+* Natalia Korsakova
 * Jonathan Gair
 
 ### Contibutors
