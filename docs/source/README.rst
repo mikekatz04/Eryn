@@ -137,7 +137,7 @@ Authors
 
 -  **Michael Katz**
 -  Nikos Karnesis
--  Natalia Korsokova
+-  Natalia Korsakova
 -  Jonathan Gair
 
 Contibutors
