@@ -309,7 +309,8 @@ class EnsembleSampler(object):
 
         elif isinstance(moves, Iterable):
             try:
-                self.moves, self.weights = zip(*moves)
+                self.moves, self.weights = [list(tmp) for tmp in zip(*moves)]
+
             except TypeError:
                 self.moves = moves
                 self.weights = np.ones(len(moves))
@@ -422,6 +423,7 @@ class EnsembleSampler(object):
 
         self.info = info
 
+        breakpoint()
         self.all_moves = (
             self.moves if not self.has_reversible_jump else self.moves + self.rj_moves
         )
