@@ -423,7 +423,6 @@ class EnsembleSampler(object):
 
         self.info = info
 
-        breakpoint()
         self.all_moves = (
             self.moves if not self.has_reversible_jump else self.moves + self.rj_moves
         )
