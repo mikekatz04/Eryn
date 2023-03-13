@@ -360,6 +360,10 @@ class Move(object):
 
             total_leaves += tmp.sum(axis=-1)
 
+        for name, inds_val in inds.items():
+            if name not in branch_names_run:
+                total_leaves += inds_val.sum(axis=-1)
+
         # adjust
         logp[total_leaves == 0] = -np.inf
 
