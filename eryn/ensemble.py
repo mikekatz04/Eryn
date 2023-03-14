@@ -87,6 +87,14 @@ class EnsembleSampler(object):
             each branch as described for (1).
             4) A dictionary with keys that are ``branch_names`` and values are
             :class:`eryn.prior.ProbDistContainer` objects.
+            If the priors dictionary has the specific key ``"all_models_together"`` in it, then a special
+            prior must be input by the user that can produce the prior ``logpdf`` information that can depend on all of the models
+            together rather than handling them separately as is the default. In this case, the user must input
+            as the item attached to this special key a class object with a ``logpdf`` method that takes as input
+            two arguments: ``(coords, inds)``, which are the coordinate and index dictionaries across all models with 
+            shapes of ``(ntemps, nwalkers, nleaves_max, ndim)`` and ``(ntemps, nwalkers, nleaves_max)`` for each 
+            individual model, respectively. This function must then return the numpy array of logpdf values for the 
+            prior value with shape ``(ntemps, nwalkers)``. 
         provide_groups (bool, optional): If ``True``, provide groups as described in ``log_like_fn`` above.
             A group parameter is added for each branch. (default: ``False``)
         provide_supplimental (bool, optional): If ``True``, it will provide keyword arguments to 
@@ -974,7 +982,13 @@ class EnsembleSampler(object):
 
         # take information out of dict and spread to x1..xn
         x_in = {}
-        if self.provide_groups:
+
+        # for completely customizable priors
+        if "all_models_together" in self.priors:
+            prior_out = self.priors["all_models_together"].logpdf(coords, inds)
+            assert prior_out.shape == (ntemps, nwalkers)
+
+        elif self.provide_groups:
 
             # get group information from the inds dict
             groups = groups_from_inds(inds)
