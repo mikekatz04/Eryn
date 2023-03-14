@@ -1,1 +1,1 @@
-from . import backends, moves, utils
+from eryn._version import __version__

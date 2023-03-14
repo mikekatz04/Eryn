@@ -8,16 +8,18 @@ from copy import deepcopy
 
 from .backends import Backend, HDFBackend
 from .model import Model
-from .moves import StretchMove, TemperatureControl, PriorGenerateRJ, GaussianMove
+from .moves import StretchMove, TemperatureControl, DistributionGenerateRJ, GaussianMove
 from .pbar import get_progress_bar
 from .state import State
-from .prior import PriorContainer
-from .utils import PlotContainer
+from .prior import ProbDistContainer
+
+# from .utils import PlotContainer
 from .utils import PeriodicContainer
 from .utils.utility import groups_from_inds
 
 
 __all__ = ["EnsembleSampler", "walkers_independent"]
+
 
 try:
     from collections.abc import Iterable
@@ -32,93 +34,113 @@ class EnsembleSampler(object):
     The class controls the entire sampling run. It can handle
     everything from a basic non-tempered MCMC to a parallel-tempered,
     global fit containing multiple branches (models) and a variable
-    number of leaves (sources) per branch. (# TODO: add link to tree explainer)
-    Parameters related to parallelization can be
-    controlled via the ``pool`` argument (:ref:`parallel`).
+    number of leaves (sources) per branch. 
+    See `here <https://mikekatz04.github.io/Eryn/html/tutorial/Eryn_tutorial.html#The-Tree-Metaphor>`_
+    for a basic explainer.
+
+    Parameters related to parallelization can be controlled via the ``pool`` argument.
 
     Args:
-        nwalkers (int): The number of walkers in the ensemble.
+        nwalkers (int): The number of walkers in the ensemble per temperature.
         ndims (int or list of ints): Number of dimensions in the parameter space
             for each branch tested.
-        log_prob_fn (callable): A function that takes a vector in the
-            parameter space as input and returns the natural logarithm of the
-            likelihood for that position. When using reversible jump, this function
-            must take a specific set of arguments: ``(x1, group1,...,xN, groupN)``,
-            where ``N`` is the number of branches. ``x1,..,xN`` are the coordinates
-            for each branch and ``group1,...,groupN`` are the groups of leaves that
-            are combined for each walker. This is due to the possibly variable number
-            of leaves associated with different walkers. ``x1`` is 2D with shape
-            (all included individual leaves of branch 1, ndim1), ``xN`` is 2D with shape
-            (all included individual leaves of branch N, ndimN). ``group1`` is
-            a 1D int array array of indexes assigning the specific leaf to a
-            specific walker. Please see the tutorial for more information. (# TODO: add link to tutorial)
+        log_like_fn (callable): A function that returns the natural logarithm of the
+            likelihood for that position. The inputs to ``log_like_fn`` depend on whether
+            the function is vectorized (kwarg ``vectorize`` below), if you are using reversible jump, 
+            and how many branches you have. 
+            
+                In the simplest case where ``vectorize == False``, no reversible jump, and only one 
+                type of model, the inputs are just the array of parameters for one walker, so shape is ``(ndim,)``.
+
+                If ``vectorize == True``, no reversible jimp, and only one type of model, the inputs will 
+                be a 2D array of parameters of all the walkers going in. Shape: ``(num positions, ndim)``.
+
+                If using reversible jump, the leaves that go together in the same Likelihood will be grouped
+                together into a single function call. If ``vectorize == False``, then each group is sent as
+                an individual computation. With ``N`` different branches (``N > 1``), inputs would be a list 
+                of 2D arrays of the coordinates for all leaves within each branch: ``([x0, x1,...,xN])``
+                where ``xi`` is 2D with shape ``(number of leaves in this branch, ndim)``. If ``N == 1``, then
+                a list is not provided, just x0, the 2D array of coordinates for the one branch considered.
+
+                If using reversible jump and ``vectorize == True``, then the arrays of parameters will be output
+                with information as regards the grouping of branch and leaf set. Inputs will be
+                ``([X0, X1,..XN], [group0, group1,...,groupN])`` where ``Xi`` is a 2D array of all
+                leaves in the sampler for branch ``i``. ``groupi`` is an index indicating which unique group
+                that sources belongs. For example, if we have 3 walkers with (1, 2, 1) leaves for model ``i``,
+                respectively, we wil have an ``Xi = array([params0, params1, params2, params3])`` and 
+                ``groupsi = array([0, 1, 1, 2])``. 
+                If ``N == 1``, then the lists are removed and the inputs become ``(X0, group0)``. 
+
+                Extra ``args`` and ``kwargs`` for the Likelihood function can be added with the kwargs 
+                ``args`` and ``kwargs`` below.
+
+                Please see the 
+                `tutorial <https://mikekatz04.github.io/Eryn/html/tutorial/Eryn_tutorial.html#>`_ 
+                for more information. 
+
         priors (dict): The prior dictionary can take four forms.
             1) A dictionary with keys as int or tuple containing the int or tuple of int
             that describe the parameter number over which to assess the prior, and values that
             are prior probability distributions that must have a ``logpdf`` class method.
-            2) A :class:`eryn.prior.PriorContainer` object.
+            2) A :class:`eryn.prior.ProbDistContainer` object.
             3) A dictionary with keys that are ``branch_names`` and values that are dictionaries for
             each branch as described for (1).
             4) A dictionary with keys that are ``branch_names`` and values are
-            :class:`eryn.prior.PriorContainer` objects.
-        provide_groups (bool, optional): If True, provide groups as described in ``log_prob_fn`` above.
+            :class:`eryn.prior.ProbDistContainer` objects.
+        provide_groups (bool, optional): If ``True``, provide groups as described in ``log_like_fn`` above.
             A group parameter is added for each branch. (default: ``False``)
+        provide_supplimental (bool, optional): If ``True``, it will provide keyword arguments to 
+            the Likelihood function: ``supps`` and ``branch_supps``. Please see the `Tutorial <https://mikekatz04.github.io/Eryn/html/tutorial/Eryn_tutorial.html#>`_
+            and :class:`eryn.state.BranchSupplimental` for more information.
         tempering_kwargs (dict, optional): Keyword arguments for initialization of the
-            tempering class (# TODO: add link to tempering class).  (default: ``{}``)
+            tempering class: :class:`eryn.moves.tempering.TemperatureControl`.  (default: ``{}``)
+        branch_names (list, optional): List of branch names. If ``None``, models will be assigned
+            names as ``f"model_{index}"``. (default: ``None``)
         nbranches (int, optional): Number of branches (models) tested. (default: ``1``)
         nleaves_max (int, list of int, or int np.ndarray[nbranches], optional):
             Number of maximum allowable leaves for each branch. (default: ``1``)
         nleaves_min (int, list of int, or int np.ndarray[nbranches], optional):
             Number of minimum allowable leaves for each branch. This is only
             used when using reversible jump. (default: ``1``)
-        pool (optional): An object with a ``map`` method that follows the same
+        pool (object, optional): An object with a ``map`` method that follows the same
             calling sequence as the built-in ``map`` function. This is
             generally used to compute the log-probabilities for the ensemble
             in parallel.
-        moves (optional): This can be a single move object, a list of moves,
-            or a "weighted" list of the form ``[(emcee.moves.StretchMove(),
+        moves (list or object, optional): This can be a single move object, a list of moves,
+            or a "weighted" list of the form ``[(eryn.moves.StretchMove(),
             0.1), ...]``. When running, the sampler will randomly select a
             move from this list (optionally with weights) for each proposal.
             If ``None``, the default will be :class:`StretchMove`.
             (default: ``None``)
-        rj_moves (optional): If ``None`` ot ``False``, reversible jump will not be included in the run.
+        rj_moves (list or object, optional): If ``None`` or ``False``, reversible jump will not be included in the run.
             This can be a single move object, a list of moves,
-            or a "weighted" list of the form ``[(eryn.moves.PriorGenerateRJ(),
+            or a "weighted" list of the form ``[(eryn.moves.DistributionGenerateRJ(),
             0.1), ...]``. When running, the sampler will randomly select a
             move from this list (optionally with weights) for each proposal.
-            If ``True``, it defaults to :class:`PriorGenerateRJ`.
+            If ``True``, it defaults to :class:`DistributionGenerateRJ`.
             (default: ``None``)
         dr_moves (bool, optional): If ``None`` ot ``False``, delayed rejection when proposing "birth"
             of new components/models will be switched off for this run. Requires ``rj_moves`` set to ``True``.
+            Not implemented yet. Working on it.
             (default: ``None``)
+        dr_max_iter (int, optional): Maximum number of iterations used with delayed rejection. (default: 5)
         args (optional): A list of extra positional arguments for
-            ``log_prob_fn``. ``log_prob_fn`` will be called with the sequence
-            ``log_prob_fn(p, *args, **kwargs)``.
+            ``log_like_fn``. ``log_like_fn`` will be called as
+            ``log_like_fn(sampler added args, *args, sampler added kwargs, **kwargs)``.
         kwargs (optional): A dict of extra keyword arguments for
-            ``log_prob_fn``. ``log_prob_fn`` will be called with the sequence
-            ``log_prob_fn(p, *args, **kwargs)``.
+            ``log_like_fn``. ``log_like_fn`` will be called as
+            ``log_like_fn(sampler added args, *args, sampler added kwargs, **kwargs)``.
         backend (optional): Either a :class:`backends.Backend` or a subclass
             (like :class:`backends.HDFBackend`) that is used to store and
             serialize the state of the chain. By default, the chain is stored
             as a set of numpy arrays in memory, but new backends can be
             written to support other mediums.
-        vectorize (bool, optional): If ``True``, ``log_prob_fn`` is expected
-            to accept a list of position vectors instead of just one. Note
-            that ``pool`` will be ignored if this is ``True``.
+        vectorize (bool, optional): If ``True``, ``log_like_fn`` is expected
+            to accept an array of position vectors instead of just one. Note
+            that ``pool`` will be ignored if this is ``True``. See ``log_like_fn`` information
+            above to understand the arguments of ``log_like_fn`` based on whether 
+            ``vectorize`` is ``True``. 
             (default: ``False``)
-        subset (int, optional): Set an amount of walkers to have their likelihood
-            calculated (used when ``vectorize == True``). This allows the user
-            to maintain memory constraints while adding more walkers to the ensemble.
-            When subset is ``None``, all walkers are determined together.
-            (default: ``None``) # TODO implement
-        autocorr_iter_count (int, optional): Number of iterations of the sampler
-            before the autocorrelations are checked and printed.
-            ``autocorr_iter_count == -1`` will not check the autocorrelation lengths.
-            (default: 100)
-        autocorr_multiplier (int, optional): This will stop the sampler if the
-            sampler iteration is greater than
-            ``autocorr_multiplier * max(autocorrelation lengths)``.
-            (default: 50)
         plot_iterations (int, optional): If ``plot_iterations == -1``, then the
             diagnostic plots will not be constructed. Otherwise, the diagnostic
             plots will be constructed every ``plot_iterations`` sampler iterations.
@@ -133,24 +155,37 @@ class EnsembleSampler(object):
         periodic (dict, optional): Keys are ``branch_names``. Values are dictionaries
             that have (key: value) pairs as (index to parameter: period). Periodic
             parameters are treated as having periodic boundary conditions in proposals.
-        update_fn (optional): :class:`eryn.utils.updates.AdjustStretchProposalScale`
+        update_fn (callable, optional): :class:`eryn.utils.updates.AdjustStretchProposalScale`
             object that allows the user to update the sampler in any preferred way
-            every ``update_iterations`` sampler iterations.
+            every ``update_iterations`` sampler iterations. The callable must have signature:
+            ``(sampler iteration, last sample state object, EnsembleSampler object)``. 
         update_iterations (int, optional): Number of iterations between sampler
-            updates using ``update_fn``.
-        stopping_fn (optional): :class:`eryn.utils.stopping.Stopping` object that
+            updates using ``update_fn``. Updates are only performed at the thinning rate. 
+            If ``thin_by>1`` when :func:`EnsembleSampler.run_mcmc` is used, the sampler
+            is updated every ``thin_by * update_iterations`` iterations. 
+        stopping_fn (callable, optional): :class:`eryn.utils.stopping.Stopping` object that
             allows the user to end the sampler if specified criteria are met.
+            The callable must have signature:
+            ``(sampler iteration, last sample state object, EnsembleSampler object)``. 
         stopping_iterations (int, optional): Number of iterations between sampler
-            attempts to evaluate the ``stopping_fn``.
-        info (dict, optional): Key and value pairs reprenting any information
-            the user wants to add to the backend if the user is not inputing
-            their own backend.
+            attempts to evaluate the ``stopping_fn``. Stopping checks are only performed at the thinning rate. 
+            If ``thin_by>1`` when :func:`EnsembleSampler.run_mcmc` is used, the sampler
+            is checked for the stopping criterion every ``thin_by * stopping_iterations`` iterations.
         fill_zero_leaves_val (double, optional): When there are zero leaves in a
             given walker (across all branches), fill the likelihood value with
             ``fill_zero_leaves_val``. If wanting to keep zero leaves as a possible
             model, this should be set to the value of the contribution to the Likelihood
             from the data. (Default: ``-1e300``).
+        num_repeats_in_model (int, optional): Number of times to repeat the in-model step
+            within in one sampler iteration. When analyzing the acceptance fraction, you must 
+            include the value of ``num_repeats_in_model`` to get the proper denominator.
+        num_repeats_rj (int, optional): Number of time to repeat the reversible jump step 
+            within in one sampler iteration. When analyzing the acceptance fraction, you must 
+            include the value of ``num_repeats_rj`` to get the proper denominator.
         verbose (int, optional): # TODO
+        info (dict, optional): Key and value pairs reprenting any information
+            the user wants to add to the backend if the user is not inputing
+            their own backend.
 
     Raises:
         ValueError: Any startup issues.
@@ -161,15 +196,15 @@ class EnsembleSampler(object):
         self,
         nwalkers,
         ndims,  # assumes ndim_max
-        log_prob_fn,
+        log_like_fn,
         priors,
-        provide_groups=False,  # TODO: improve this
-        provide_supplimental=False,  # TODO: improve this
+        provide_groups=False,
+        provide_supplimental=False,
         tempering_kwargs={},
+        branch_names=None,
         nbranches=1,
         nleaves_max=1,
         nleaves_min=1,
-        # test_inds=None,  # TODO: add ?
         pool=None,
         moves=None,
         rj_moves=None,
@@ -178,35 +213,37 @@ class EnsembleSampler(object):
         args=None,
         kwargs=None,
         backend=None,
-        vectorize=True,
-        subset=None,
+        vectorize=False,
         blobs_dtype=None,  # TODO check this
-        truth=None,  # TODO: add this
-        autocorr_iter_count=100,
-        autocorr_multiplier=1000,  # TODO: adjust this to 50
-        plot_iterations=-1,
+        plot_iterations=-1,  # TODO: do plot stuff?
         plot_generator=None,
         plot_name=None,
-        periodic=None,  # TODO: add periodic to proposals
+        periodic=None,
         update_fn=None,
         update_iterations=-1,
         stopping_fn=None,
         stopping_iterations=-1,
-        info={},
-        branch_names=None,
         fill_zero_leaves_val=-1e300,
         num_repeats_in_model=1,
         num_repeats_rj=1,
         verbose=False,
+        info={},
     ):
 
-        # TODO: check non-vectorized
+        # store priors
+        self.priors = priors
 
+        # store some kwargs
         self.provide_groups = provide_groups
         self.provide_supplimental = provide_supplimental
         self.fill_zero_leaves_val = fill_zero_leaves_val
         self.num_repeats_in_model = num_repeats_in_model
         self.num_repeats_rj = num_repeats_rj
+
+        # setup emcee-like basics
+        self.pool = pool
+        self.vectorize = vectorize
+        self.blobs_dtype = blobs_dtype
 
         # store default branch names if not given
         if branch_names is None:
@@ -230,18 +267,10 @@ class EnsembleSampler(object):
             self.ntemps = 1
             self.temperature_control = None
         else:
-            # TODO: fix ndim
             self.temperature_control = TemperatureControl(
                 ndims, nwalkers, nleaves_max, **tempering_kwargs
             )
             self.ntemps = self.temperature_control.ntemps
-
-        # setup emcee basics
-        self.pool = pool
-        self.vectorize = vectorize
-        self.blobs_dtype = blobs_dtype
-
-        self.priors = priors
 
         # set basic variables for sampling settings
         self.ndims = ndims  # interpeted as ndim_max
@@ -250,6 +279,7 @@ class EnsembleSampler(object):
         self.nleaves_max = nleaves_max
         self.branch_names = branch_names
 
+        # eryn wraps periodic parameters
         if periodic is not None:
             if not isinstance(periodic, PeriodicContainer) and not isinstance(
                 periodic, dict
@@ -264,40 +294,44 @@ class EnsembleSampler(object):
         if moves is None:
             if rj_moves is not None:
                 raise ValueError(
-                    "If providing rj_moves, must provide moves kwargs as well."
+                    "If providing rj_moves, must provide moves kwarg as well."
                 )
-            # TODO: remove live_dangerously
-            self._moves = [
+
+            # defaults to stretch move
+            self.moves = [
                 StretchMove(
-                    live_dangerously=True,
                     temperature_control=self.temperature_control,
                     periodic=periodic,
                     a=2.0,
                 )
             ]
-            self._weights = [1.0]
+            self.weights = [1.0]
 
         elif isinstance(moves, Iterable):
             try:
-                self._moves, self._weights = zip(*moves)
-            except TypeError:
-                self._moves = moves
-                self._weights = np.ones(len(moves))
-        else:
-            self._moves = [moves]
-            self._weights = [1.0]
+                self.moves, self.weights = [list(tmp) for tmp in zip(*moves)]
 
-        self._weights = np.atleast_1d(self._weights).astype(float)
-        self._weights /= np.sum(self._weights)
+            except TypeError:
+                self.moves = moves
+                self.weights = np.ones(len(moves))
+        else:
+            self.moves = [moves]
+            self.weights = [1.0]
+
+        self.weights = np.atleast_1d(self.weights).astype(float)
+        self.weights /= np.sum(self.weights)
 
         # parse the reversible jump move schedule
         if rj_moves is None:
             self.has_reversible_jump = False
         elif isinstance(rj_moves, bool):
             self.has_reversible_jump = rj_moves
-            # TODO: deal with tuning
+
             if self.has_reversible_jump:
-                if isinstance(nleaves_min, int):
+                if nleaves_min is None:
+                    # default to 0 for all models
+                    self.nleaves_min = [0 for _ in range(self.nbranches)]
+                elif isinstance(nleaves_min, int):
                     self.nleaves_min = [nleaves_min for _ in range(self.nbranches)]
                 elif isinstance(nleaves_min, list):
                     self.nleaves_min = nleaves_min
@@ -308,59 +342,76 @@ class EnsembleSampler(object):
 
                 assert len(self.nleaves_min) == self.nbranches
 
-                rj_move = PriorGenerateRJ(
+                # default to DistributionGenerateRJ
+                rj_move = DistributionGenerateRJ(
                     self.priors,
-                    self.nleaves_max,
-                    self.nleaves_min,
+                    max_k=self.nleaves_max,
+                    min_k=self.nleaves_min,
                     dr=dr_moves,
                     dr_max_iter=dr_max_iter,
                     tune=False,
                     temperature_control=self.temperature_control,
                 )
-                self._rj_moves = [rj_move]
-                self._rj_weights = [1.0]
+                self.rj_moves = [rj_move]
+                self.rj_weights = [1.0]
 
+        # same as above for moves
         elif isinstance(rj_moves, Iterable):
             self.has_reversible_jump = True
 
             try:
-                self._rj_moves, self._rj_weights = zip(*rj_moves)
+                self.rj_moves, self.rj_weights = zip(*rj_moves)
             except TypeError:
-                self._rj_moves = rj_moves
-                self._rj_weights = np.ones(len(rj_moves))
+                self.rj_moves = rj_moves
+                self.rj_weights = np.ones(len(rj_moves))
 
         else:
             self.has_reversible_jump = True
-            # TODO: fix error catch here
-            self._rj_moves = [rj_moves]
-            self._rj_weights = [1.0]
-            
+
+            self.rj_moves = [rj_moves]
+            self.rj_weights = [1.0]
 
         # adjust rj weights properly
         if self.has_reversible_jump:
-            self._rj_weights = np.atleast_1d(self._rj_weights).astype(float)
-            self._rj_weights /= np.sum(self._rj_weights)
+            self.rj_weights = np.atleast_1d(self.rj_weights).astype(float)
+            self.rj_weights /= np.sum(self.rj_weights)
+
+            # warn if base stretch is used
+            for move in self.moves:
+                if type(move) == StretchMove:
+                    warnings.warn(
+                        "If using revisible jump, using the Stretch Move for in-model proposals is not advised. It will run and work, but it will not be using the correct complientary group of parameters meaning it will most likely be very inefficient."
+                    )
 
         # make sure moves have temperature module
         if self.temperature_control is not None:
-            for move in self._moves:
+            for move in self.moves:
                 if move.temperature_control is None:
                     move.temperature_control = self.temperature_control
 
             if self.has_reversible_jump:
-                for move in self._rj_moves:
+                for move in self.rj_moves:
                     if move.temperature_control is None:
                         move.temperature_control = self.temperature_control
 
+        # make sure moves have temperature module
         if periodic is not None:
-            for move in self._moves:
+            for move in self.moves:
                 if move.periodic is None:
                     move.periodic = periodic
 
             if self.has_reversible_jump:
-                for move in self._rj_moves:
+                for move in self.rj_moves:
                     if move.periodic is None:
                         move.periodic = periodic
+
+        # prepare the per proposal accepted values that are held as attributes in the specific classes
+        for move in self.moves:
+            move.accepted = np.zeros((self.ntemps, self.nwalkers))
+
+        if self.has_reversible_jump:
+            for move in self.rj_moves:
+                move.accepted = np.zeros((self.ntemps, self.nwalkers))
 
         # setup backend if not provided or initialized
         if backend is None:
@@ -372,6 +423,9 @@ class EnsembleSampler(object):
 
         self.info = info
 
+        self.all_moves = (
+            self.moves if not self.has_reversible_jump else self.moves + self.rj_moves
+        )
         # Deal with re-used backends
         if not self.backend.initialized:
             self._previous_state = None
@@ -380,6 +434,7 @@ class EnsembleSampler(object):
                 ntemps=self.ntemps,
                 nleaves_max=nleaves_max,
                 rj=self.has_reversible_jump,
+                moves=self.all_moves,
                 **info
             )
             state = np.random.get_state()
@@ -417,22 +472,17 @@ class EnsembleSampler(object):
 
         # Do a little bit of _magic_ to make the likelihood call with
         # ``args`` and ``kwargs`` pickleable.
-        self.log_prob_fn = _FunctionWrapper(
-            log_prob_fn,
-            args,
-            kwargs,
-            provide_groups=self.provide_groups,
-            provide_supplimental=provide_supplimental,
-            fill_zero_leaves_val=self.fill_zero_leaves_val,
-        )
+        self.log_like_fn = _FunctionWrapper(log_like_fn, args, kwargs)
 
         self.all_walkers = self.nwalkers * self.ntemps
         self.verbose = verbose
 
         # prepare plotting
+        # TODO: adjust plotting maybe?
         self.plot_iterations = plot_iterations
 
         if plot_generator is None and self.plot_iterations > 0:
+            raise NotImplementedError
             # set to default if not provided
             if plot_name is not None:
                 name = plot_name
@@ -442,6 +492,7 @@ class EnsembleSampler(object):
                 fp=name, backend=self.backend, thin_chain_by_ac=True
             )
         elif self.plot_iterations > 0:
+            raise NotImplementedError
             self.plot_generator = plot_generator
 
         # prepare stopping functions
@@ -476,41 +527,51 @@ class EnsembleSampler(object):
         except:
             pass
 
-    @property 
+    @property
     def priors(self):
+        """
+        Return the priors in the sampler.
+
+        """
         return self._priors
 
     @priors.setter
     def priors(self, priors):
+        """Set priors information.
+        
+        This performs checks to make sure the inputs are okay.
+
+        """
         if isinstance(priors, dict):
-            test = priors[list(priors.keys())[0]]
-            if isinstance(test, dict):
-                # check all dists
-                for name, priors_temp in priors.items():
-                    for ind, dist in priors_temp.items():
+
+            self._priors = {}
+
+            for key in priors.keys():
+                test = priors[key]
+                if isinstance(test, dict):
+                    # check all dists
+                    for ind, dist in test.items():
                         if not hasattr(dist, "logpdf"):
                             raise ValueError(
                                 "Distribution for model {0} and index {1} does not have logpdf method.".format(
-                                    name, ind
+                                    key, ind
                                 )
                             )
-                self._priors = {
-                    name: PriorContainer(priors_temp)
-                    for name, priors_temp in priors.items()
-                }
 
-            elif isinstance(test, PriorContainer):
-                self._priors = priors
+                    self._priors[key] = ProbDistContainer(test)
 
-            elif hasattr(test, "logpdf"):
-                self._priors = {"model_0": PriorContainer(priors)}
+                elif isinstance(test, ProbDistContainer):
+                    self._priors[key] = test
 
-            else:
-                raise ValueError(
-                    "priors dictionary items must be dictionaries with prior information or instances of the PriorContainer class."
-                )
+                elif hasattr(test, "logpdf"):
+                    self._priors[key] = {"model_0": test}
 
-        elif isinstance(priors, PriorContainer):
+                else:
+                    raise ValueError(
+                        "priors dictionary items must be dictionaries with prior information or instances of the ProbDistContainer class."
+                    )
+
+        elif isinstance(priors, ProbDistContainer):
             self._priors = {"model_0": priors}
 
         else:
@@ -524,7 +585,7 @@ class EnsembleSampler(object):
 
     def reset(self, **info):
         """
-        Reset the bookkeeping parameters
+        Reset the backend.
 
         Args:
             **info (dict, optional): information to pass to backend reset method.
@@ -549,7 +610,6 @@ class EnsembleSampler(object):
         Returns:
             :class:`Model`: ``Model`` object used by sampler.
 
-
         """
         # Set up a wrapper around the relevant model functions
         if self.pool is not None:
@@ -559,8 +619,8 @@ class EnsembleSampler(object):
 
         # setup model framework for passing necessary items
         model = Model(
-            self.log_prob_fn,
-            self.compute_log_prob,
+            self.log_like_fn,
+            self.compute_log_like,
             self.compute_log_prior,
             self.temperature_control,
             map_fn,
@@ -577,38 +637,41 @@ class EnsembleSampler(object):
         thin_by=1,
         store=True,
         progress=False,
-        save_first_state=False,
     ):
         """Advance the chain as a generator
 
         Args:
-            initial_state (State or ndarray[nwalkers, ndim] or dict): The initial
+            initial_state (State or ndarray[ntemps, nwalkers, nleaves_max, ndim] or dict): The initial
                 :class:`State` or positions of the walkers in the
                 parameter space. If multiple branches used, must be dict with keys
-                as the ``branch_names`` and values as the positions.
-            iterations (int or NoneType, optional): The number of steps to generate.
+                as the ``branch_names`` and values as the positions. If ``betas`` are
+                provided in the state object, they will be loaded into the 
+                ``temperature_control``. 
+            iterations (int or None, optional): The number of steps to generate.
                 ``None`` generates an infinite stream (requires ``store=False``).
                 (default: 1)
             tune (bool, optional): If ``True``, the parameters of some moves
-                will be automatically tuned.
+                will be automatically tuned. (default: ``False``)
             thin_by (int, optional): If you only want to store and yield every
                 ``thin_by`` samples in the chain, set ``thin_by`` to an
                 integer greater than 1. When this is set, ``iterations *
-                thin_by`` proposals will be made.
+                thin_by`` proposals will be made. (default: 1)
             store (bool, optional): By default, the sampler stores in the backend
-                the positions and log-probabilities of the samples in the
+                the positions (and other information) of the samples in the
                 chain. If you are using another method to store the samples to
                 a file or if you don't need to analyze the samples after the
-                fact (for burn-in for example) set ``store`` to ``False``.
+                fact (for burn-in for example) set ``store`` to ``False``. (default: ``True``)
             progress (bool or str, optional): If ``True``, a progress bar will
                 be shown as the sampler progresses. If a string, will select a
                 specific ``tqdm`` progress bar - most notable is
                 ``'notebook'``, which shows a progress bar suitable for
                 Jupyter notebooks.  If ``False``, no progress bar will be
-                shown.
+                shown. (default: ``False``)
             skip_initial_state_check (bool, optional): If ``True``, a check
                 that the initial_state can fully explore the space will be
-                skipped. (default: ``False``)
+                skipped. If using reversible jump, the user needs to ensure this on their own 
+                (``skip_initial_state_check``is set to ``False`` in this case.
+                (default: ``True``)
 
         Returns:
             State: Every ``thin_by`` steps, this generator yields the :class:`State` of the ensemble.
@@ -622,17 +685,22 @@ class EnsembleSampler(object):
 
         # Interpret the input as a walker state and check the dimensions.
         state = State(initial_state, copy=True)
+
         # Check the backend shape
         for i, (name, branch) in enumerate(state.branches.items()):
             ntemps_, nwalkers_, nleaves_, ndim_ = branch.shape
-            if (ntemps_, nwalkers_, ndim_) != (
+            if (ntemps_, nwalkers_, nleaves_, ndim_) != (
                 self.ntemps,
                 self.nwalkers,
+                self.nleaves_max[i],
                 self.ndims[i],
-            ) or nleaves_ > self.nleaves_max[i]:
+            ):
                 raise ValueError("incompatible input dimensions")
 
-        if (not skip_initial_state_check) and (not walkers_independent(state.coords)):
+        # do an initial state check if is requested and we are not using reversible jump
+        if (not skip_initial_state_check) and (
+            not walkers_independent(state.coords) and not self.has_reversible_jump
+        ):
             raise ValueError(
                 "Initial state has a large condition number. "
                 "Make sure that your walkers are linearly independent for the "
@@ -641,33 +709,48 @@ class EnsembleSampler(object):
 
         # get log prior and likelihood if not provided in the initial state
         if state.log_prior is None:
-            coords = {name: branch.coords for name, branch in state.branches.items()}
-            if self.provide_groups:
-                inds = {name: branch.inds for name, branch in state.branches.items()}
-            else:
-                inds = None
+            coords = state.branches_coords
+            inds = state.branches_inds
             state.log_prior = self.compute_log_prior(coords, inds=inds)
 
-        if state.log_prob is None:
-            coords = {name: branch.coords for name, branch in state.branches.items()}
-
-            if self.provide_groups:
-                inds = {name: branch.inds for name, branch in state.branches.items()}
-            else:
-                inds = None
-            state.log_prob, state.blobs = self.compute_log_prob(
-                coords, inds=inds, logp=state.log_prior, supps=state.supplimental, branch_supps=state.branches_supplimental 
+        if state.log_like is None:
+            coords = state.branches_coords
+            inds = state.branches_inds
+            state.log_like, state.blobs = self.compute_log_like(
+                coords,
+                inds=inds,
+                logp=state.log_prior,
+                supps=state.supplimental,  # only used if self.provide_supplimental is True
+                branch_supps=state.branches_supplimental,  # only used if self.provide_supplimental is True
             )
 
-        if np.shape(state.log_prob) != (self.ntemps, self.nwalkers):
+        # get betas out of state object if they are there
+        if state.betas is not None:
+            if state.betas.shape[0] != self.ntemps:
+                raise ValueError(
+                    "Input state has inverse temperatures (betas), but not the correct number of temperatures according to sampler inputs."
+                )
+
+            self.temperature_control.betas = state.betas.copy()
+
+        if np.shape(state.log_like) != (self.ntemps, self.nwalkers):
             raise ValueError("incompatible input dimensions")
         if np.shape(state.log_prior) != (self.ntemps, self.nwalkers):
             raise ValueError("incompatible input dimensions")
 
         # Check to make sure that the probability function didn't return
         # ``np.nan``.
-        if np.any(np.isnan(state.log_prob)):
-            raise ValueError("The initial log_prob was NaN")
+        if np.any(np.isnan(state.log_like)):
+            raise ValueError("The initial log_like was NaN")
+
+        if np.any(np.isinf(state.log_like)):
+            raise ValueError("The initial log_like was +/- infinite")
+
+        if np.any(np.isnan(state.log_prior)):
+            raise ValueError("The initial log_prior was NaN")
+
+        if np.any(np.isinf(state.log_prior)):
+            raise ValueError("The initial log_prior was +/- infinite")
 
         # Check that the thin keyword is reasonable.
         thin_by = int(thin_by)
@@ -679,21 +762,8 @@ class EnsembleSampler(object):
         if store:
             self.backend.grow(iterations, state.blobs)
 
+        # get the model object
         model = self.get_model()
-
-        if save_first_state and store and self.backend.iteration == 0:
-            if iterations <= 1:
-                raise ValueError("Cannot save_first_state if iterations == 1.")
-            state.random_state = self.random_state
-            state.betas = model.temperature_control.betas
-            rj_accepted_tmp = np.zeros((self.ntemps, self.nwalkers)) if self.has_reversible_jump else None
-            self.backend.save_step(
-                state,
-                np.zeros((self.ntemps, self.nwalkers)),  # accepted
-                rj_accepted=rj_accepted_tmp,
-                in_model_swaps_accepted=None,
-                rj_swaps_accepted=None,
-            )
 
         # Inject the progress bar
         total = None if iterations is None else iterations * yield_step
@@ -702,13 +772,15 @@ class EnsembleSampler(object):
             for _ in count() if iterations is None else range(iterations):
                 for _ in range(yield_step):
                     # in model moves
+                    accepted = np.zeros((self.ntemps, self.nwalkers))
                     for repeat in range(self.num_repeats_in_model):
-                            
+
                         # Choose a random move
-                        move = self._random.choice(self._moves, p=self._weights)
+                        move = self._random.choice(self.moves, p=self.weights)
 
                         # Propose (in model)
-                        state, accepted = move.propose(model, state)
+                        state, accepted_out = move.propose(model, state)
+                        accepted += accepted_out
                         if self.ntemps > 1:
                             in_model_swaps = move.temperature_control.swaps_accepted
                         else:
@@ -717,17 +789,18 @@ class EnsembleSampler(object):
                         state.random_state = self.random_state
 
                         if tune:
-                            move.tune(state, accepted)
+                            move.tune(state, accepted_out)
 
                     if self.has_reversible_jump:
+                        rj_accepted = np.zeros((self.ntemps, self.nwalkers))
                         for repeat in range(self.num_repeats_rj):
                             rj_move = self._random.choice(
-                                self._rj_moves, p=self._rj_weights
+                                self.rj_moves, p=self.rj_weights
                             )
 
                             # Propose (Between models)
-                            state, rj_accepted = rj_move.propose(model, state)
-
+                            state, rj_accepted_out = rj_move.propose(model, state)
+                            rj_accepted += rj_accepted_out
                             # Again commenting out this section: We do not control temperature on RJ moves
                             # if self.ntemps > 1:
                             #     rj_swaps = rj_move.temperature_control.swaps_accepted
@@ -738,7 +811,7 @@ class EnsembleSampler(object):
                             state.random_state = self.random_state
 
                             if tune:
-                                rj_move.tune(state, rj_accepted)
+                                rj_move.tune(state, rj_accepted_out)
 
                     else:
                         rj_accepted = None
@@ -746,12 +819,16 @@ class EnsembleSampler(object):
 
                     # Save the new step
                     if store and (i + 1) % checkpoint_step == 0:
+
+                        moves_accepted_fraction = [
+                            move_tmp.acceptance_fraction for move_tmp in self.all_moves
+                        ]
                         self.backend.save_step(
                             state,
                             accepted,
                             rj_accepted=rj_accepted,
-                            in_model_swaps_accepted=in_model_swaps,
-                            rj_swaps_accepted=rj_swaps,
+                            swaps_accepted=in_model_swaps,
+                            moves_accepted_fraction=moves_accepted_fraction,
                         )
 
                     pbar.update(1)
@@ -761,19 +838,22 @@ class EnsembleSampler(object):
                 # sorts of fun stuff with the results so far.
                 yield state
 
-    def run_mcmc(self, initial_state, nsteps, burn=None, **kwargs):
+    def run_mcmc(
+        self, initial_state, nsteps, burn=None, post_burn_update=False, **kwargs
+    ):
         """
-        Iterate :func:`sample` for ``nsteps`` iterations and return the result
+        Iterate :func:`sample` for ``nsteps`` iterations and return the result.
 
         Args:
-            initial_state (State or ndarray[nwalkers, ndim] or dict): The initial
+            initial_state (State or ndarray[ntemps, nwalkers, nleaves_max, ndim] or dict): The initial
                 :class:`State` or positions of the walkers in the
                 parameter space. If multiple branches used, must be dict with keys
-                as the ``branch_names`` and values as the positions. Can also be
-                ``None`` to resume from where :func:``run_mcmc`` left off the
-                last time it executed.
-            nsteps: The number of steps to run.
-            burn (int, optional): Number of burn steps to run before storing information.
+                as the ``branch_names`` and values as the positions. If ``betas`` are
+                provided in the state object, they will be loaded into the 
+                ``temperature_control``. 
+            nsteps (int): The number of steps to generate. The total number of proposals is ``nsteps * thin_by``.
+            burn (int, optional): Number of burn steps to run before storing information. The ``thin_by`` kwarg is ignored when counting burn steps since there is no storage (equivalent to ``thin_by=1``).
+            post_burn_update (bool, optional): If ``True``, run ``update_fn`` after burn in. 
 
         Other parameters are directly passed to :func:`sample`.
 
@@ -792,12 +872,15 @@ class EnsembleSampler(object):
                 )
             initial_state = self._previous_state
 
+        # setup thin_by info
         thin_by = 1 if "thin_by" not in kwargs else kwargs["thin_by"]
 
+        # run burn in
         if burn is not None and burn != 0:
             if self.verbose:
                 print("Start burn")
 
+            # prepare kwargs that relate to burn
             burn_kwargs = deepcopy(kwargs)
             burn_kwargs["store"] = False
             burn_kwargs["thin_by"] = 1
@@ -810,8 +893,12 @@ class EnsembleSampler(object):
                     and self.update_fn is not None
                     and (i + 1) % (self.update_iterations * thin_by) == 0
                 ):
-                    stop = self.update_fn(i, results, self)
+                    self.update_fn(i, results, self)
                 i += 1
+
+            # run post-burn update
+            if post_burn_update and self.update_fn is not None:
+                self.update_fn(i, results, self)
 
             initial_state = results
             if self.verbose:
@@ -819,13 +906,14 @@ class EnsembleSampler(object):
 
         if nsteps == 0:
             return initial_state
-            
+
         results = None
 
         i = 0
         for results in self.sample(initial_state, iterations=nsteps, **kwargs):
 
             # diagnostic plots
+            # TODO: adjust diagnostic plots
             if self.plot_iterations > 0 and (i + 1) % (self.plot_iterations) == 0:
                 self.plot_generator.generate_plot_info()  # TODO: remove defaults
 
@@ -864,7 +952,7 @@ class EnsembleSampler(object):
                 This dictionary is created with the ``branches_coords`` attribute
                 from :class:`State`.
             inds (dict, optional): Keys are ``branch_names`` and values are
-                the inds np.arrays[ntemps, nwalkers, nleaves_max] that indicates
+                the ``inds`` np.arrays[ntemps, nwalkers, nleaves_max] that indicates
                 which leaves are being used. This dictionary is created with the
                 ``branches_inds`` attribute from :class:`State`.
                 (default: ``None``)
@@ -874,9 +962,9 @@ class EnsembleSampler(object):
 
         """
 
+        # get number of temperature and walkers
         ntemps, nwalkers, _, _ = coords[list(coords.keys())[0]].shape
 
-        # take information out of dict and spread to x1..xn
         if inds is None:
             # default use all sources
             inds = {
@@ -884,46 +972,62 @@ class EnsembleSampler(object):
                 for name in coords
             }
 
+        # take information out of dict and spread to x1..xn
         x_in = {}
         if self.provide_groups:
 
             # get group information from the inds dict
             groups = groups_from_inds(inds)
 
+            # get the coordinates that are used
             for i, (name, coords_i) in enumerate(coords.items()):
                 x_in[name] = coords_i[inds[name]]
 
             prior_out = np.zeros((ntemps * nwalkers))
             for name in x_in:
+                # get prior for individual binaries
                 prior_out_temp = self.priors[name].logpdf(x_in[name])
 
                 # arrange prior values by groups
+                # TODO: vectorize this?
                 for i in np.unique(groups[name]):
+                    # which members are in the group i
                     inds_temp = np.where(groups[name] == i)[0]
-                    num_in_group = len(inds_temp)
-                    # check = (prior_out_temp[inds_temp].sum() / num_in_group)
+                    # num_in_group = len(inds_temp)
+
+                    # add to the prior for this group
                     prior_out[i] += prior_out_temp[inds_temp].sum()
 
+            # reshape
             prior_out = prior_out.reshape(ntemps, nwalkers)
-            return prior_out
 
         else:
+            # flatten coordinate arrays
             for i, (name, coords_i) in enumerate(coords.items()):
                 ntemps, nwalkers, nleaves_max, ndim = coords_i.shape
 
-                # TODO: add copy here?
                 x_in[name] = coords_i.reshape(-1, ndim)
 
             prior_out = np.zeros((ntemps, nwalkers))
             for name in x_in:
-                prior_out_temp = self.priors[name].logpdf(x_in[name]) * inds[name].flatten()
-                prior_out += prior_out_temp.reshape(ntemps, nwalkers, nleaves_max).sum(
-                    axis=-1
+                ntemps, nwalkers, nleaves_max, ndim = coords[name].shape
+                prior_out_temp = (
+                    self.priors[name]
+                    .logpdf(x_in[name])
+                    .reshape(ntemps, nwalkers, nleaves_max)
                 )
 
-            return prior_out
+                # fix any infs / nans from binaries that are not being used (inds == False)
+                prior_out_temp[~inds[name]] = 0.0
 
-    def compute_log_prob(self, coords, inds=None, logp=None, supps=None, branch_supps=None):
+                # vectorized because everything is rectangular (no groups to indicate model difference)
+                prior_out += prior_out_temp.sum(axis=-1)
+
+        return prior_out
+
+    def compute_log_like(
+        self, coords, inds=None, logp=None, supps=None, branch_supps=None
+    ):
         """Calculate the vector of log-likelihood for the walkers
 
         Args:
@@ -951,107 +1055,300 @@ class EnsembleSampler(object):
             ValueError: Infinite or NaN values in parameters.
 
         """
-        p = coords
 
         # Check that the parameters are in physical ranges.
-        for ptemp in p.values():
+        for ptemp in coords.values():
             if np.any(np.isinf(ptemp)):
                 raise ValueError("At least one parameter value was infinite")
             if np.any(np.isnan(ptemp)):
                 raise ValueError("At least one parameter value was NaN")
 
-        # Run the log-probability calculations (optionally in parallel).
-        if self.vectorize:
-            if inds is None:
-                inds = {
-                    name: np.full(coords[name].shape[:-1], True, dtype=bool)
-                    for name in coords
+        # if inds not provided, use all
+        if inds is None:
+            inds = {
+                name: np.full(coords[name].shape[:-1], True, dtype=bool)
+                for name in coords
+            }
+
+        # if no prior values are added, compute_prior
+        # this is necessary to ensure Likelihood is not evaluated outside of the prior
+        if logp is None:
+            logp = self.compute_log_prior(coords, inds=inds)
+
+        # if all points are outside the prior
+        if np.all(np.isinf(logp)):
+            warnings.warn(
+                "All points input for the Likelihood have a log prior of -inf."
+            )
+            return np.full_like(logp, -1e300), None
+
+        # do not run log likelihood where logp = -inf
+        inds_copy = deepcopy(inds)
+        inds_bad = np.where(np.isinf(logp))
+        for key in inds_copy:
+            inds_copy[key][inds_bad] = False
+
+            # if inds_keep in branch supps, indicate which to not keep
+            if (
+                branch_supps is not None
+                and key in branch_supps
+                and branch_supps[key] is not None
+                and "inds_keep" in branch_supps[key]
+            ):
+                # TODO: indicate specialty of inds_keep in branch_supp
+                branch_supps[key][inds_bad] = {"inds_keep": False}
+
+        # take information out of dict and spread to x1..xn
+        x_in = {}
+        if self.provide_supplimental:
+            if supps is None and branch_supps is None:
+                raise ValueError(
+                    """supps and branch_supps are both None. If self.provide_supplimental
+                       is True, must provide some supplimental information."""
+                )
+            if branch_supps is not None:
+                branch_supps_in = {}
+
+        # determine groupings from inds
+        groups = groups_from_inds(inds_copy)
+
+        # need to map group inds properly
+        # this is the unique group indexes
+        unique_groups = np.unique(
+            np.concatenate([groups_i for groups_i in groups.values()])
+        )
+
+        # this is the map to those indexes that are used in the likelihood
+        groups_map = np.arange(len(unique_groups))
+
+        # get the indices with groups_map for the Likelihood
+        ll_groups = {}
+        for key, group in groups.items():
+            # get unique groups in this sub-group (or branch)
+            temp_unique_groups, inverse = np.unique(group, return_inverse=True)
+
+            # use groups_map by finding where temp_unique_groups overlaps with unique_groups
+            keep_groups = groups_map[np.in1d(unique_groups, temp_unique_groups)]
+
+            # fill group information for Likelihood
+            ll_groups[key] = keep_groups[inverse]
+
+        for i, (name, coords_i) in enumerate(coords.items()):
+            ntemps, nwalkers, nleaves_max, ndim = coords_i.shape
+            nwalkers_all = ntemps * nwalkers
+
+            # fill x_values properly into dictionary
+            x_in[name] = coords_i[inds_copy[name]]
+
+            # prepare branch supplimentals for each branch
+            if self.provide_supplimental:
+                if branch_supps is not None:  #  and
+                    if branch_supps[name] is not None:
+                        # index the branch supps
+                        # it will carry in a dictionary of information
+                        branch_supps_in[name] = branch_supps[name][inds_copy[name]]
+                    else:
+                        # fill with None if this branch does not have a supplimental
+                        branch_supps_in[name] = None
+
+        # deal with overall supplimental not specific to the branches
+        if self.provide_supplimental:
+            if supps is not None:
+                # get the flattened supplimental
+                # this will produce the shape (ntemps * nwalkers,...)
+                temp = supps.flat
+
+                # unique_groups will properly index the flattened array
+                supps_in = {
+                    name: values[unique_groups] for name, values in temp.items()
                 }
 
-            # if no prior values are added, compute_prior
-            if logp is None:
-                logp = self.compute_log_prior(coords, inds=inds)
+        # prepare group information
+        # this gets the group_map indexing into a list
+        groups_in = list(ll_groups.values())
 
-            if np.all(np.isinf(logp)):
-                return np.full_like(logp, -1e300), None
+        # if only one branch, take the group array out of the list
+        if len(groups_in) == 1:
+            groups_in = groups_in[0]
 
-            # do not run log likelihood where logp = -inf
-            inds_copy = deepcopy(inds)
-            inds_bad = np.where(np.isinf(logp))
-            for key in inds_copy:
-                inds_copy[key][inds_bad] = False
+        # list of paramter arrays
+        params_in = list(x_in.values())
 
-                if branch_supps is not None and branch_supps[key] is not None:
-                    branch_supps[key][inds_bad] = {"inds_keep": False}
+        # Likelihoods are vectorized across groups
+        if self.vectorize:
 
-            results = self.log_prob_fn(p, inds=inds_copy, supps=supps, branch_supps=branch_supps)
-            if not isinstance(results, list):
-                results = [results]
+            # prepare args list
+            args_in = []
+
+            # when vectorizing, if params_in has one entry, take out of list
+            if len(params_in) == 1:
+                params_in = params_in[0]
+
+            # add parameters to args
+            args_in.append(params_in)
+
+            # if providing groups, add to args
+            if self.provide_groups:
+                args_in.append(groups_in)
+
+            # prepare supplimentals as kwargs to the Likelihood
+            kwargs_in = {}
+            if self.provide_supplimental:
+                if supps is not None:
+                    kwargs_in["supps"] = supps_in
+                if branch_supps is not None:
+                    # get list of branch_supps values
+                    branch_supps_in_2 = list(branch_supps_in.values())
+
+                    # if only one entry, take out of list
+                    if len(branch_supps_in_2) == 1:
+                        kwargs_in["branch_supps"] = branch_supps_in_2[0]
+
+                    else:
+                        kwargs_in["branch_supps"] = branch_supps_in_2
+
+            # provide args, kwargs as a tuple
+            args_and_kwargs = (args_in, kwargs_in)
+
+            # get vectorized results
+            results = self.log_like_fn(args_and_kwargs)
+
+        # each Likelihood is computed individually
         else:
-            raise NotImplementedError
+
+            # if groups in is an array, need to put it in a list.
+            if isinstance(groups_in, np.ndarray):
+                groups_in = [groups_in]
+
+            # prepare input args for all Likelihood calls
+            # to be spread out with map functions below
+            args_in = []
+
+            # each individual group in the groups_map
+            for group_i in groups_map:
+
+                # args and kwargs for the individual Likelihood
+                arg_i = [None for _ in self.branch_names]
+                kwarg_i = {}
+
+                # iterate over the group information from the branches
+                for branch_i, groups_in_set in enumerate(groups_in):
+                    # which entries in this branch are in the overall group tested
+                    # this accounts for multiple leaves (or model counts)
+                    inds_keep = np.where(groups_in_set == group_i)[0]
+
+                    branch_name_i = self.branch_names[branch_i]
+
+                    if inds_keep.shape[0] > 0:
+                        # get parameters
+
+                        params = params_in[branch_i][inds_keep]
+
+                        # if leaf count is constant and leaf count is 1
+                        # just give 1D parameters
+                        if not self.has_reversible_jump and params.shape[0] == 1:
+                            params = params[0]
+
+                        # add them to the specific args for this Likelihood
+                        arg_i[branch_i] = params
+                        if self.provide_supplimental:
+                            if supps is not None:
+                                # supps are specific to each group
+                                kwarg_i["supps"] = {
+                                    key: supps_in[key][group_i] for key in supps_in
+                                }
+                            if branch_supps is not None:
+                                # make sure there is a dictionary ready in this kwarg dictionary
+                                if "branch_supps" not in kwarg_i:
+                                    kwarg_i["branch_supps"] = {}
+
+                                # fill these branch supplimentals for the specific group
+                                if branch_supps_in[branch_name_i] is not None:
+                                    # get list of branch_supps values
+                                    kwarg_i["branch_supps"][
+                                        branch_name_i
+                                    ] = branch_supps_in[branch_name_i][inds_keep]
+                                else:
+                                    kwarg_i["branch_supps"][branch_name_i] = None
+
+                # if only one model type, will take out of groups
+                add_term = arg_i[0] if len(groups_in) == 1 else arg_i
+
+                # based on how this is dealth with in the _FunctionWrapper
+                # add_term is wrapped in a list
+                args_in.append([[add_term], kwarg_i])
+
             # If the `pool` property of the sampler has been set (i.e. we want
             # to use `multiprocessing`), use the `pool`'s map method.
             # Otherwise, just use the built-in `map` function.
             if self.pool is not None:
                 map_func = self.pool.map
+
             else:
                 map_func = map
-            results = list(map_func(self.log_prob_fn, (p[i] for i in range(len(p)))))
 
-        log_prob = results[0]
-        try:
-            blob = results[1]
+            # get results and turn into an array
+            results = np.asarray(list(map_func(self.log_like_fn, args_in)))
 
-        except (IndexError, TypeError):
-            blob = None
+        assert isinstance(results, np.ndarray)
 
-        """
-        # TODO: adjust this
-        try:
-            log_prob = np.array([float(l[0]) for l in results])
-            blob = [l[1:] for l in results]
-        except (IndexError, TypeError):
-            log_prob = np.array([float(l) for l in results])
-            blob = None
+        # -1e300 because -np.inf screws up state acceptance transfer in proposals
+        ll = np.full(nwalkers_all, -1e300)
+        inds_fix_zeros = np.delete(np.arange(nwalkers_all), unique_groups)
+
+        # make sure second dimension is not 1
+        if results.ndim == 2 and results.shape[1] == 1:
+            results = np.squeeze(results)
+
+        # parse the results if it has blobs
+        if results.ndim == 2:
+            # get the results and put into groups that were analyzed
+            ll[unique_groups] = results[:, 0]
+
+            # fix groups that were not analyzed
+            ll[inds_fix_zeros] = self.fill_zero_leaves_val
+
+            # deal with blobs
+            blobs_out = np.zeros((nwalkers_all, results.shape[1] - 1))
+            blobs_out[unique_groups] = results[:, 1:]
+
+        elif results.dtype == "object":
+            # TODO: check blobs and add this capability
+            raise NotImplementedError
+
         else:
-            # Get the blobs dtype
-            if self.blobs_dtype is not None:
-                dt = self.blobs_dtype
-            else:
-                try:
-                    with warnings.catch_warnings(record=True):
-                        warnings.simplefilter("error",
-                                              np.VisibleDeprecationWarning)
+            # no blobs
+            ll[unique_groups] = results
+            ll[inds_fix_zeros] = self.fill_zero_leaves_val
+
+            blobs_out = None
+
+        if False:  # self.provide_supplimental:
+            # TODO: need to think about how to return information, we may need to add a function to do that
+            if branch_supps is not None:
+                for name_i, name in enumerate(branch_supps):
+                    if branch_supps[name] is not None:
+                        # TODO: better way to do this? limit to
+                        if "inds_keep" in branch_supps[name]:
+                            inds_back = branch_supps[name][:]["inds_keep"]
+                            inds_back2 = branch_supps_in[name]["inds_keep"]
+                        else:
+                            inds_back = inds_copy[name]
+                            inds_back2 = slice(None)
                         try:
-                            dt = np.atleast_1d(blob[0]).dtype
-                        except Warning:
-                            deprecation_warning(
-                                "You have provided blobs that are not all the "
-                                "same shape or size. This means they must be "
-                                "placed in an object array. Numpy has "
-                                "deprecated this automatic detection, so "
-                                "please specify "
-                                "blobs_dtype=np.dtype('object')")
-                            dt = np.dtype("object")
-                except ValueError:
-                    dt = np.dtype("object")
-                if dt.kind in "US":
-                    # Strings need to be object arrays or we risk truncation
-                    dt = np.dtype("object")
-            blob = np.array(blob, dtype=dt)
+                            branch_supps[name][inds_back] = {
+                                key: branch_supps_in_2[name_i][key][inds_back2]
+                                for key in branch_supps_in_2[name_i]
+                            }
+                        except ValueError:
+                            breakpoint()
+                            branch_supps[name][inds_back] = {
+                                key: branch_supps_in_2[name_i][key][inds_back2]
+                                for key in branch_supps_in_2[name_i]
+                            }
 
-            # Deal with single blobs properly
-            shape = blob.shape[1:]
-            if len(shape):
-                axes = np.arange(len(shape))[np.array(shape) == 1] + 1
-                if len(axes):
-                    blob = np.squeeze(blob, tuple(axes))
-
-        # Check for log_prob returning NaN.
-        if np.any(np.isnan(log_prob)):
-            raise ValueError("Probability function returned NaN")
-        """
-        return log_prob, blob
+        # return Likelihood and blobs
+        return ll.reshape(ntemps, nwalkers), blobs_out
 
     @property
     def acceptance_fraction(self):
@@ -1070,8 +1367,7 @@ class EnsembleSampler(object):
     def swap_acceptance_fraction(self):
         """The fraction of proposed steps that were accepted"""
         # print(self.backend.iteration) # np.sum(self.backend.accepted)
-        # breakpoint()
-        return self.backend.in_model_swaps_accepted / float(self.backend.iteration)
+        return self.backend.swaps_accepted / float(self.backend.iteration)
 
     @property
     def rj_swap_acceptance_fraction(self):
@@ -1092,10 +1388,20 @@ class EnsembleSampler(object):
 
     get_blobs.__doc__ = Backend.get_blobs.__doc__
 
-    def get_log_prob(self, **kwargs):
-        return self.get_value("log_prob", **kwargs)
+    def get_log_like(self, **kwargs):
+        return self.backend.get_log_like(**kwargs)
 
-    get_log_prob.__doc__ = Backend.get_log_prob.__doc__
+    get_log_like.__doc__ = Backend.get_log_prior.__doc__
+
+    def get_log_prior(self, **kwargs):
+        return self.backend.get_log_prior(**kwargs)
+
+    get_log_prior.__doc__ = Backend.get_log_prior.__doc__
+
+    def get_log_posterior(self, **kwargs):
+        return self.backend.get_log_posterior(**kwargs)
+
+    get_log_posterior.__doc__ = Backend.get_log_posterior.__doc__
 
     def get_inds(self, **kwargs):
         return self.get_value("inds", **kwargs)
@@ -1136,178 +1442,70 @@ class _FunctionWrapper(object):
     """
 
     def __init__(
-        self, f, args, kwargs, provide_groups=False, provide_supplimental=False, fill_zero_leaves_val=-1e300
+        self, f, args, kwargs,
     ):
         self.f = f
         self.args = [] if args is None else args
         self.kwargs = {} if kwargs is None else kwargs
-        self.provide_groups = provide_groups
-        self.provide_supplimental = provide_supplimental
-        self.fill_zero_leaves_val = fill_zero_leaves_val
 
-    def __call__(self, x, inds=None, supps=None, branch_supps=None):
+    def __call__(self, args_and_kwargs):
+        """
+        Internal function that takes a tuple (args, kwargs) for entrance into the Likelihood.
+
+        ``self.args`` and ``self.kwargs`` are added to these inputs.
+        
+        """
+
+        args_in_add, kwargs_in_add = args_and_kwargs
+
         try:
-            # take information out of dict and spread to x1..xn
-            x_in = {}
-            if self.provide_supplimental:
-                if supps is None and branch_supps is None:
-                    raise ValueError("supps and branch_supps are both None. If self.provide_supplimental is True, must provide some supplimental information.")
-                if branch_supps is not None:
-                    branch_supps_in = {}
-                    
+            args_in = args_in_add + type(args_in_add)(self.args)
+            kwargs_in = {**kwargs_in_add, **self.kwargs}
 
-            if inds is None:
-                inds = {
-                    name: np.full(x[name].shape[:-1], True, dtype=bool) for name in x
-                }
-
-            # determine groupings from inds
-            groups = groups_from_inds(inds)
-
-            # need to map group inds properly
-            # this is the unique group indexes
-            unique_groups = np.unique(
-                np.concatenate([groups_i for groups_i in groups.values()])
-            )
-
-            # this is the map to those indexes that are used in the likelihood
-            groups_in = np.arange(len(unique_groups))
-
-            ll_groups = {}
-            for key, group in groups.items():
-                temp_unique_groups, inverse = np.unique(group, return_inverse=True)
-                keep_groups = groups_in[np.in1d(unique_groups, temp_unique_groups)]
-                ll_groups[key] = keep_groups[inverse]
-
-            for i, (name, coords) in enumerate(x.items()):
-                ntemps, nwalkers, nleaves_max, ndim = coords.shape
-                nwalkers_all = ntemps * nwalkers
-                x_in[name] = coords[inds[name]]
-                
-                if self.provide_supplimental:
-                    if branch_supps is not None:  #  and 
-                        if branch_supps[name] is not None:
-                            branch_supps_in[name] = branch_supps[name][inds[name]]
-                        else:
-                            branch_supps_in[name] = None
-
-            if self.provide_supplimental:
-                if supps is not None:
-                    temp = supps.flat
-                    supps_in = {name: values[keep_groups] for name, values in temp.items()}
-
-            args_in = []
-            
-            params_in = list(x_in.values()) 
-            
-            if len(params_in) == 1:
-                params_in = params_in[0]
-
-            args_in.append(params_in)
-            
-            if self.provide_groups:
-                groups_in = list(ll_groups.values())
-                if len(groups_in) == 1:
-                    groups_in = groups_in[0]
-
-                args_in.append(groups_in)
-
-            args_in += self.args
-
-            kwargs_in = self.kwargs.copy()
-            if self.provide_supplimental:
-                if supps is not None:
-                    kwargs_in["supps"] = supps_in
-                if branch_supps is not None:
-                    branch_supps_in_2 = list(branch_supps_in.values())
-                    if len(branch_supps_in_2) == 1:
-                        kwargs_in["branch_supps"] = branch_supps_in_2[0]
-
-                    else:
-                        kwargs_in["branch_supps"] = branch_supps_in_2
-                    
-            # TODO: this may have pickle issue with multiprocessing (kwargs_in)
             out = self.f(*args_in, **kwargs_in)
-
-            if self.provide_supplimental:
-                if branch_supps is not None:
-                    for name_i, name in enumerate(branch_supps):
-                        if branch_supps[name] is not None:
-                            # TODO: better way to do this? limit to 
-                            if "inds_keep" in branch_supps[name]:
-                                inds_back = branch_supps[name][:]["inds_keep"]
-                                inds_back2 = branch_supps_in[name]["inds_keep"]
-                            else:
-                                inds_back = inds[name]
-                                inds_back2 = slice(None)
-                            try:
-                                branch_supps[name][inds_back] = {key: branch_supps_in_2[name_i][key][inds_back2] for key in branch_supps_in_2[name_i]}
-                            except ValueError:
-                                breakpoint()
-                                branch_supps[name][inds_back] = {key: branch_supps_in_2[name_i][key][inds_back2] for key in branch_supps_in_2[name_i]}
-                                
-            # -1e300 because -np.inf screws up state acceptance transfer in proposals
-            ll = np.full(nwalkers_all, -1e300)
-            inds_fix_zeros = np.delete(np.arange(nwalkers_all), unique_groups)
-
-            if out.ndim == 2:
-                ll[unique_groups] = out[:, 0]
-                ll[inds_fix_zeros] = self.fill_zero_leaves_val
-                blobs_out = np.zeros((nwalkers_all, out.shape[1] - 1))
-                blobs_out[unique_groups] = out[:, 1:]
-                return [
-                    ll.reshape(ntemps, nwalkers),
-                    blobs_out.reshape(ntemps, nwalkers, -1),
-                ]
-            else:
-                try:
-                    ll[unique_groups] = out
-                except ValueError:
-                    breakpoint()
-                ll[inds_fix_zeros] = self.fill_zero_leaves_val
-                return ll.reshape(ntemps, nwalkers)
+            return out
 
         except:  # pragma: no cover
             import traceback
 
-            print("emcee: Exception while calling your likelihood function:")
-            print("  params:", x)
+            print("eryn: Exception while calling your likelihood function:")
+            print("  args added:", args_in_add)
             print("  args:", self.args)
+            print("  kwargs added:", kwargs_in_add)
             print("  kwargs:", self.kwargs)
             print("  exception:")
             traceback.print_exc()
             raise
 
 
-def walkers_independent(coords):
-    raise NotImplementedError
+def walkers_independent(coords_in):
+    """Determine if walkers are independent
+
+    Orginall from ``emcee``.
+    
+    Args:
+        coords_in (np.ndarray[ntemps, nwalkers, nleaves_max, ndim]): Coordinates of the walkers.
+
+    Returns:
+        bool: If walkers are independent.
+    
+    """
+    # make sure it is 4-dimensional and reshape
+    # so it groups by temperature and walker
+    assert coords_in.ndim == 4
+    ntemps, nwalkers, nleaves_max, ndim = coords_in.shape
+    coords = coords_in.reshape(ntemps * nwalkers, nleaves_max * ndim)
+
+    # make sure all coordinates are finite
     if not np.all(np.isfinite(coords)):
         return False
-    C = coords - np.mean(coords, axis=(1, 2))[:, None, None, :, :]
-    C_colmax = np.amax(np.abs(C), axis=(1, 2))[:, None, None, :, :]
+
+    # roughly determine covariance information
+    C = coords - np.mean(coords, axis=0)[None, :]
+    C_colmax = np.amax(np.abs(C), axis=0)
     if np.any(C_colmax == 0):
         return False
     C /= C_colmax
-    C_colsum = np.sqrt(np.sum(C ** 2, axis=(1, 2)))[:, None, None, :, :]
+    C_colsum = np.sqrt(np.sum(C ** 2, axis=0))
     C /= C_colsum
-    cond = np.array([np.linalg.cond(C[i,].astype(float))])
-    return np.all(cond <= 1e8)
-
-
-def walkers_independent_cov(coords):
-    C = np.cov(coords, rowvar=False)
-    if np.any(np.isnan(C)):
-        return False
-    return _scaled_cond(np.atleast_2d(C)) <= 1e8
-
-
-def _scaled_cond(a):
-    asum = np.sqrt((a ** 2).sum(axis=0))[None, :]
-    if np.any(asum == 0):
-        return np.inf
-    b = a / asum
-    bsum = np.sqrt((b ** 2).sum(axis=1))[:, None]
-    if np.any(bsum == 0):
-        return np.inf
-    c = b / bsum
-    return np.linalg.cond(c.astype(float))
+    return np.linalg.cond(C.astype(float)) <= 1e8

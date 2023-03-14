@@ -7,62 +7,43 @@ except (ModuleNotFoundError, ImportError):
 import numpy as np
 
 from .group import GroupMove
+from .stretch import StretchMove
 
 __all__ = ["GroupStretchMove"]
 
 
-class GroupStretchMove(GroupMove):
-    """Affine-Invariant Proposal
+class GroupStretchMove(GroupMove, StretchMove):
+    """Proposal like stretch with stationary compliment.
 
-    A `Goodman & Weare (2010)
-    <https://msp.org/camcos/2010/5-1/p04.xhtml>`_ "stretch move" with
-    parallelization as described in `Foreman-Mackey et al. (2013)
-    <https://arxiv.org/abs/1202.3665>`_.
+    This move uses the stretch proposal method and math, but the compliment
+    of walkers used to propose a new point is chosen from a stationary group
+    rather than the current walkers in the ensemble. 
+
+    This move allows for "stretch"-like proposal to be used in Reversible Jump MCMC.
 
     Args:
-        a (double, optional): The stretch scale parameter. (default: ``2.0``)
+        **kwargs (dict, optional): Keyword arguments passed to :class:`GroupMove` and 
+            :class:`StretchMove`.
 
-    Attributes:
-        a (double): The stretch scale parameter.
     """
 
-    def __init__(self, a=2.0, use_gpu=False, return_gpu=False, random_seed=None, **kwargs):
-        self.a = a
-        if use_gpu:
-            self.xp = xp
-        else:
-            self.xp = np
+    def __init__(self, **kwargs):
+        GroupMove.__init__(self, **kwargs)
+        StretchMove.__init__(self, **kwargs)
 
-        if random_seed is not None:
-            self.xp.random.seed(random_seed)
-
-        self.use_gpu = use_gpu
-        self.return_gpu = return_gpu
-
-        super(GroupStretchMove, self).__init__(**kwargs)
-
-    def adjust_factors(self, factors, ndims_old, ndims_new):
-        # adjusts in place
-        logzz = factors / (ndims_old - 1.0) 
-        factors[:] = logzz * (ndims_new - 1.0)
-
-    def get_proposal(self, s_all, c_all, random, **kwargs):
-        """Generate stretch proposal
-
-        # TODO: add log proposal from ptemcee
+    def get_proposal(self, s_all, random, gibbs_ndim=None, s_inds_all=None, **kwargs):
+        """Generate group stretch proposal coordinates
 
         Args:
             s_all (dict): Keys are ``branch_names`` and values are coordinates
                 for which a proposal is to be generated.
-            c_all (dict): Keys are ``branch_names`` and values are lists. These
-                lists contain all the complement array values.
             random (object): Random state object.
-            inds_s (dict, optional): Keys are ``branch_names`` and values are
-                np.ndarray[nwalkers, nleaves_max] that indicate which leaves
-                are currently being used in :code:`s_all`. (default: ``None``)
-            inds_c (dict, optional): Keys are ``branch_names`` and values are
-                np.ndarray[nwalkers, nleaves_max] that indicate which leaves
-                are currently being used in :code:`s_all`. (default: ``None``)
+            gibbs_ndim (int or np.ndarray, optional): If Gibbs sampling, this indicates
+                the true dimension. If given as an array, must have shape ``(ntemps, nwalkers)``.
+                See the tutorial for more information.
+                (default: ``None``)
+            s_inds_all (dict, optional): Keys are ``branch_names`` and values are 
+                ``inds`` arrays indicating which leaves are currently used. (default: ``None``)
 
         Returns:
             tuple: First entry is new positions. Second entry is detailed balance factors.
@@ -71,46 +52,57 @@ class GroupStretchMove(GroupMove):
             ValueError: Issues with dimensionality.
 
         """
+        # needs to be set before we reach the end
+        self.zz = None
         random_number_generator = random if not self.use_gpu else self.xp.random
-
         newpos = {}
-        for i, name in enumerate(s_all):
-            if i > 0:
-                # TODO: check?
-                raise NotImplementedError
 
-            c = self.xp.asarray(c_all[name])
+        # iterate over branches
+        for i, name in enumerate(s_all):
+            # get points to move
             s = self.xp.asarray(s_all[name])
 
-            nwalkers, ndim_here = s.shape
+            Ns = s.shape[1]
 
-            Ns, Nc = nwalkers, c.shape[-2]
-            
-            ndim = ndim_here
-            zz = ((self.a - 1.0) * random_number_generator.rand(nwalkers) + 1) ** 2.0 / self.a
-
-            rint = random_number_generator.randint(Nc, size=(nwalkers,))
-
-            c_temp = np.take_along_axis(c, rint[:, None, None], axis=1)[:, 0, :]
-
-            if self.periodic is not None:
-                diff = self.periodic.distance(
-                    s.reshape(nwalkers, 1, ndim_here), 
-                    c_temp.reshape(nwalkers, 1, ndim_here), 
-                    names=[name],
-                    xp=self.xp
-                )[name].reshape(nwalkers, ndim_here)
+            if s_inds_all is not None:
+                s_inds = self.xp.asarray(s_inds_all[name])
             else:
-                diff = c_temp - s
+                s_inds = None
 
-            temp = c_temp - (diff) * zz[:, None]
+            ntemps, nwalkers, nleaves_max, ndim_here = s.shape
 
-            if self.periodic is not None:
-                temp = self.periodic.wrap(temp.reshape(nwalkers, 1, ndim_here), names=[name], xp=self.xp)[name].reshape(nwalkers, ndim_here)
+            # gets rid of any values of exactly zero
+            ndim_temp = nleaves_max * ndim_here
 
-            newpos[name] = temp
+            # need to properly handle ndim
+            if i == 0:
+                ndim = ndim_temp
+                Ns_check = Ns
+
+            else:
+                ndim += ndim_temp
+                if Ns_check != Ns:
+                    raise ValueError("Different number of walkers across models.")
+
+
+            Ns = nwalkers
+
+            # get actual compliment values
+            c_temp = self.choose_c_vals(name, s, s_inds=s_inds)
+
+            # use stretch to get new proposals
+            newpos[name] = self.get_new_points(
+                name, s, c_temp, Ns, s.shape, i, random_number_generator
+            )
 
         # proper factors
-        factors = (ndim - 1.0) * self.xp.log(zz)
+        factors = (ndim - 1.0) * self.xp.log(self.zz)
+        if self.use_gpu and not self.return_gpu:
+            factors = factors.get()
+
+        if gibbs_ndim is not None:
+            # adjust factors in place
+            self.adjust_factors(factors, ndim, gibbs_ndim)
+
         return newpos, factors
 

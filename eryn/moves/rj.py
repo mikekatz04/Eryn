@@ -6,37 +6,55 @@ from copy import deepcopy
 from ..state import State
 from .move import Move
 from .delayedrejection import DelayedRejection
-from .priorgen import PriorGenerate
+from .distgen import DistributionGenerate
 
-__all__ = ["ReversibleJump"]
+__all__ = ["ReversibleJumpMove"]
 
 
-class ReversibleJump(Move):
+class ReversibleJumpMove(Move):
     """
     An abstract reversible jump move from # TODO: add citations.
 
     Args:
         max_k (int or list of int): Maximum number(s) of leaves for each model.
+            This is a keyword argument, nut it is required.
         min_k (int or list of int): Minimum number(s) of leaves for each model.
+            This is a keyword argument, nut it is required.
         tune (bool, optional): If True, tune proposal. (Default: ``False``)
+        fix_change (int or None, optional): Fix the change in the number of leaves. Make them all
+            add a leaf or remove a leaf. This can be useful for some search functions. Options
+            are ``+1`` or ``-1``. (default: ``None``)
 
     """
 
     def __init__(
-        self, max_k, min_k, dr=None, dr_max_iter=5, tune=False, fix_change=None, **kwargs
+        self,
+        max_k=None,
+        min_k=None,
+        dr=None,
+        dr_max_iter=5,
+        tune=False,
+        fix_change=None,
+        **kwargs
     ):
-        super(ReversibleJump, self).__init__(**kwargs)
+        # super(ReversibleJumpMove, self).__init__(**kwargs)
+        Move.__init__(self, is_rj=True, **kwargs)
 
+        if max_k is None or min_k is None:
+            raise ValueError("Must provide min_k and max_k keyword arguments for RJ.")
+
+        # setup leaf limits
         if isinstance(max_k, int):
             max_k = [max_k]
 
         if isinstance(max_k, int):
             min_k = [min_k]
 
+        # store info
         self.max_k = max_k
         self.min_k = min_k
-        self.tune  = tune
-        self.dr    = dr
+        self.tune = tune
+        self.dr = dr
         self.fix_change = fix_change
         if self.fix_change not in [None, +1, -1]:
             raise ValueError("fix_change must be None, +1, or -1.")
@@ -54,12 +72,20 @@ class ReversibleJump(Move):
                 dr_proposal = self.dr
 
             self.dr = DelayedRejection(dr_proposal, max_iter=dr_max_iter)
-            # TODO: add stuff here if needed like prob of birth / death
 
-    def setup(self, coords):
-        pass
+    def setup(self, branches_coords):
+        """Any setup for the proposal.
 
-    def get_proposal(self, all_coords, all_inds, all_inds_for_change, random):
+        Args:
+            branches_coords (dict): Keys are ``branch_names``. Values are
+                np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent
+                coordinates for all the walkers.
+
+        """
+
+    def get_proposal(
+        self, all_coords, all_inds, min_k_all, max_k_all, random, **kwargs
+    ):
         """Make a proposal
 
         Args:
@@ -69,15 +95,10 @@ class ReversibleJump(Move):
             all_inds (dict): Keys are ``branch_names``. Values are
                 np.ndarray[ntemps, nwalkers, nleaves_max]. These are the boolean
                 arrays marking which leaves are currently used within each walker.
-            all_inds_for_change (dict): Keys are ``branch_names``. Values are
-                dictionaries. These dictionaries have keys ``"+1"`` and ``"-1"``,
-                indicating waklkers that are adding or removing a leafm respectively.
-                The values for these dicts are ``int`` np.ndarray[..., 3]. The "..." indicates
-                the number of walkers in all temperatures that fall under either adding
-                or removing a leaf. The second dimension, 3, is the indexes into
-                the three-dimensional arrays within ``all_inds`` of the specific leaf
-                that is being added or removed from those leaves currently considered.
+            min_k_all (list): Minimum values of leaf ount for each model. Must have same order as ``all_cords``.
+            max_k_all (list): Maximum values of leaf ount for each model. Must have same order as ``all_cords``.
             random (object): Current random state of the sampler.
+            **kwargs (ignored): For modularity.
 
         Returns:
             tuple: Tuple containing proposal information.
@@ -155,12 +176,13 @@ class ReversibleJump(Move):
             else:
                 change = np.full(nleaves.shape, self.fix_change)
 
-            # fix edge cases
-            change = (
-                change * ((nleaves != min_k) & (nleaves != max_k))
-                + (+1) * (nleaves == min_k)
-                + (-1) * (nleaves == max_k)
-            )
+        Returns:
+            dict: Keys are ``"+1"`` and ``"-1"``. Values are indexing information.
+                    ``"+1"`` and ``"-1"`` indicate if a source is being added or removed, respectively.
+                    The indexing information is a 2D array with shape ``(number changing, 3)``.
+                    The length 3 is the index into each of the ``(ntemps, nwalkers, nleaves_max)``.
+
+        """
 
             # setup storage for this information
             inds_for_change[name] = {}
@@ -232,15 +254,12 @@ class ReversibleJump(Move):
 
         # TODO: keep this?
         # this exposes anywhere in the proposal class to this information
-        self.current_state = state
-        self.current_model = model
 
         # Run any move-specific setup.
         self.setup(state.branches)
 
         ntemps, nwalkers, _, _ = state.branches[list(state.branches.keys())[0]].shape
 
-        # Split the ensemble in half and iterate over these two halves.
         accepted = np.zeros((ntemps, nwalkers), dtype=bool)
 
         # TODO: check if temperatures are properly repeated after reset

@@ -9,7 +9,7 @@ def groups_from_inds(inds):
 
     Args:
         inds (dict): Keys are ``branch_names`` and values are inds
-            np.ndarrays[ntemps, nwalkers, nleaves_max] that specific
+            np.ndarrays[ntemps, nwalkers, nleaves_max] that specify
             which leaves are used in this step.
 
     Returns:
@@ -18,10 +18,11 @@ def groups_from_inds(inds):
             np.ndarray[total number of used leaves]. The array is flat.
 
     """
+    # prepare output
     groups = {}
     for name, inds_temp in inds.items():
-        if inds_temp is None:
-            inds_temp = np.full(x[name].shape[:-1], True, dtype=bool)
+
+        # shape information
         ntemps, nwalkers, nleaves_max = inds_temp.shape
         num_groups = ntemps * nwalkers
 
@@ -32,6 +33,7 @@ def groups_from_inds(inds):
             axis=-1,
         )
 
+        # fill new information
         groups[name] = group_id[inds_temp]
 
     return groups
@@ -140,13 +142,20 @@ def get_integrated_act(x, axis=0, window=50, fast=False, average=True):
 def thermodynamic_integration_log_evidence(betas, logls):
     """
     Thermodynamic integration estimate of the evidence.
-    :param betas: The inverse temperatures to use for the quadrature.
-    :param logls:  The mean log-likelihoods corresponding to ``betas`` to use for
-        computing the thermodynamic evidence.
-    :return ``(logZ, dlogZ)``: Returns an estimate of the
-        log-evidence and the error associated with the finite
-        number of temperatures at which the posterior has been
-        sampled.
+
+    This function origindated in ``ptemcee``.
+
+    Args:
+        betas (np.ndarray[ntemps]): The inverse temperatures to use for the quadrature.
+        logls (np.ndarray[ntemps]): The mean log-Likelihoods corresponding to ``betas`` to use for
+            computing the thermodynamic evidence.
+    Returns:
+        tuple:   ``(logZ, dlogZ)``: 
+                Returns an estimate of the
+                log-evidence and the error associated with the finite
+                number of temperatures at which the posterior has been
+                sampled.
+
     The evidence is the integral of the un-normalized posterior
     over all of parameter space:
     .. math::
@@ -168,29 +177,31 @@ def thermodynamic_integration_log_evidence(betas, logls):
     By computing the average of the log-likelihood at the
     difference temperatures, the sampler can approximate the above
     integral.
+
     """
 
-    # TODO: check this stuff
-
+    # make sure they are the same length
     if len(betas) != len(logls):
         raise ValueError("Need the same number of log(L) values as temperatures.")
 
+    # make sure they are in order
     order = np.argsort(betas)[::-1]
     betas = betas[order]
     logls = logls[order]
 
     betas0 = np.copy(betas)
-    if betas[-1] != 0:
-        betas = np.concatenate((betas0, [0]))
-        betas2 = np.concatenate((betas0[::2], [0]))
+    if betas[-1] != 0.0:
+        betas = np.concatenate((betas0, [0.0]))
+        betas2 = np.concatenate((betas0[::2], [0.0]))
 
         # Duplicate mean log-likelihood of hottest chain as a best guess for beta = 0.
         logls2 = np.concatenate((logls[::2], [logls[-1]]))
         logls = np.concatenate((logls, [logls[-1]]))
     else:
-        betas2 = np.concatenate((betas0[:-1:2], [0]))
+        betas2 = np.concatenate((betas0[:-1:2], [0.0]))
         logls2 = np.concatenate((logls[:-1:2], [logls[-1]]))
 
+    # integrate by trapz
     logZ = -np.trapz(logls, betas)
     logZ2 = -np.trapz(logls2, betas2)
     return logZ, np.abs(logZ - logZ2)

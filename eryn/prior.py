@@ -1,30 +1,102 @@
 import numpy as np
 from scipy import stats
-import torch
-from torch.distributions.normal import Normal
+from copy import deepcopy
+
+try:
+    import cupy as cp
+
+except (ModuleNotFoundError, ImportError) as e:
+    pass
 
 
-def uniform_dist(min, max):
+class UniformDistribution(object):
+    """Generate uniform distribution between ``min`` and ``max``
+
+    Args:
+        min_val (double): Minimum in the uniform distribution
+        max_val (double): Maximum in the uniform distribution
+        use_cupy (bool, optional): If ``True``, use CuPy. If ``False`` use Numpy.
+            (default: ``False``)
+
+    Raises:
+        ValueError: Issue with inputs. 
+
+    """
+
+    def __init__(self, min_val, max_val, use_cupy=False):
+
+        if min_val > max_val:
+            tmp = min_val
+            min_val = max_val
+            max_val = tmp
+        elif min_val == max_val:
+            raise ValueError("Min and max values are the same.")
+
+        self.min_val = min_val
+        self.max_val = max_val
+        self.diff = max_val - min_val
+
+        self.pdf_val = 1 / self.diff
+        self.logpdf_val = np.log(self.pdf_val)
+
+        self.use_cupy = use_cupy
+        if use_cupy:
+            try:
+                cp.abs(1.0)
+            except NameError:
+                raise ValueError("CuPy not found.")
+
+    def rvs(self, size=1):
+
+        if not isinstance(size, int) and not isinstance(size, tuple):
+            raise ValueError("size must be an integer or tuple of ints.")
+
+        if isinstance(size, int):
+            size = (size,)
+
+        xp = np if not self.use_cupy else cp
+
+        rand_unif = xp.random.rand(*size)
+
+        out = rand_unif * self.diff + self.min_val
+
+        return out
+
+    def pdf(self, x):
+
+        out = self.pdf_val * ((x >= self.min_val) & (x <= self.max_val))
+
+        return out
+
+    def logpdf(self, x):
+
+        xp = np if not self.use_cupy else cp
+
+        out = xp.zeros_like(x)
+        out[(x >= self.min_val) & (x <= self.max_val)] = self.logpdf_val
+        out[(x < self.min_val) | (x > self.max_val)] = -np.inf
+        return out
+
+    def copy(self):
+        return deepcopy(self)
+
+
+def uniform_dist(min, max, use_cupy=False):
     """Generate uniform distribution between ``min`` and ``max``
 
     Args:
         min (double): Minimum in the uniform distribution
         max (double): Maximum in the uniform distribution
+        use_cupy (bool, optional): If ``True``, use CuPy. If ``False`` use Numpy.
+            (default: ``False``)
 
     Returns:
-        scipy distribution object: Uniform distribution built from
-            `scipy.stats.uniform <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.uniform.html>_`.
+        :class:`UniformDistribution`: Uniform distribution.
+
 
     """
-    # adjust ordering if needed
-    if min > max:
-        temp = min
-        min = max
-        max = temp
+    dist = UniformDistribution(min, max, use_cupy=use_cupy)
 
-    # setup quantities for scipy
-    sig = max - min
-    dist = stats.uniform(min, sig)
     return dist
 
 
@@ -62,8 +134,10 @@ class MappedUniformDistribution:
     and ``-np.inf`` if it is outside that range.
 
     Args:
-        min (double): Minimum in the log-uniform distribution
-        max (double): Maximum in the log-uniform distribution
+        min (double): Minimum in the uniform distribution
+        max (double): Maximum in the uniform distribution
+        use_cupy (bool, optional): If ``True``, use CuPy. If ``False`` use Numpy.
+            (default: ``False``)
 
     Raises:
         ValueError: If ``min`` is greater than ``max``.
@@ -71,13 +145,13 @@ class MappedUniformDistribution:
 
     """
 
-    def __init__(self, min, max):
+    def __init__(self, min, max, use_cupy=False):
         self.min, self.max = min, max
         self.diff = self.max - self.min
         if self.min > self.max:
             raise ValueError("min must be less than max.")
 
-        self.dist = uniform_dist(0.0, 1.0)
+        self.dist = uniform_dist(0.0, 1.0, use_cupy=use_cupy)
 
     def logpdf(self, x):
         """Get the log of the pdf value for this distribution.
@@ -116,7 +190,7 @@ class MappedUniformDistribution:
         return self.max + (temp - 1.0) * self.diff
 
 
-class PriorContainer:
+class ProbDistContainer:
     """Container for holding and generating prior info
 
     Args:
@@ -131,13 +205,15 @@ class PriorContainer:
         priors (list): list of indexes and their associated distributions arranged
             in a list.
         ndim (int): Full dimensionality.
+        use_cupy (bool, optional): If ``True``, use CuPy. If ``False`` use Numpy.
+            (default: ``False``)
 
     Raises:
         ValueError: Missing parameters or incorrect index keys.
 
     """
 
-    def __init__(self, priors_in):
+    def __init__(self, priors_in, use_cupy=False):
 
         # copy to have
         self.priors_in = priors_in.copy()
@@ -168,26 +244,43 @@ class PriorContainer:
 
         uni_inds = np.unique(np.concatenate(temp_inds, axis=1).flatten())
         if len(uni_inds) != len(np.arange(np.max(uni_inds) + 1)):
-            # TODO: make better
             raise ValueError(
-                "If providing priors, need to ensure all sampled parameters are included."
+                "Please ensure all sampled parameters are included in priors."
             )
 
         self.ndim = uni_inds.max() + 1
 
-    def logpdf(self, x, groups=None):
+        self.use_cupy = use_cupy
+
+        for key, item in self.priors_in.items():
+            item.use_cupy = use_cupy
+
+    def logpdf(self, x):
         """Get logpdf by summing logpdf of individual distributions
 
         Args:
-            x (double np.ndarray[number of tested sources, ndim]):
+            x (double np.ndarray[..., ndim]):
                 Input parameters to get prior values.
 
         Returns:
-            np.ndarray[number of tested sources]: Prior values.
+            np.ndarray[...]: Prior values.
 
         """
         # TODO: check if mutliple index prior will work
-        prior_vals = np.zeros(x.shape[0])
+        xp = np if not self.use_cupy else cp
+
+        # make sure at least 2D
+        if x.ndim == 1:
+            x = x[None, :]
+            squeeze = True
+
+        elif x.ndim != 2:
+            raise ValueError("x needs to 1 or 2 dimensional array.")
+        else:
+            squeeze = False
+
+        prior_vals = xp.zeros(x.shape[0])
+
         # sum the logs (assumes parameters are independent)
         for i, (inds, prior_i) in enumerate(self.priors):
             vals_in = x[:, inds].squeeze()
@@ -195,8 +288,12 @@ class PriorContainer:
                 temp = prior_i.logpdf(vals_in)
             else:
                 temp = prior_i.logpmf(vals_in)
-                
+
             prior_vals += temp
+
+        # if only one walker was asked for, return a scalar value not an array
+        if squeeze:
+            prior_vals = prior_vals[0].item()
 
         return prior_vals
 
@@ -204,21 +301,23 @@ class PriorContainer:
         """Get logpdf by summing logpdf of individual distributions
 
         Args:
-            x (double np.ndarray[number of tested sources, ndim]):
+            x (double np.ndarray[..., ndim]):
                 Input parameters to get prior values.
 
         Returns:
-            np.ndarray[number of tested sources]: Prior values.
+            np.ndarray[...]: Prior values.
 
         """
 
         if groups is not None:
             raise NotImplementedError
 
+        xp = np if not self.use_cupy else cp
+
         # TODO: check if mutliple index prior will work
         is_1d = x.ndim == 1
-        x = np.atleast_2d(x)
-        out_vals = np.zeros_like(x)
+        x = xp.atleast_2d(x)
+        out_vals = xp.zeros_like(x)
 
         # sum the logs (assumes parameters are independent)
         for i, (inds, prior_i) in enumerate(self.priors):
@@ -227,7 +326,7 @@ class PriorContainer:
 
             vals_in = x[:, inds].squeeze()
             temp = prior_i.ppf(vals_in)
-            
+
             out_vals[:, inds[0]] = temp
 
         if is_1d:
@@ -262,11 +361,13 @@ class PriorContainer:
         elif not isinstance(size, tuple):
             raise ValueError("Size must be int or tuple of ints.")
 
+        xp = np if not self.use_cupy else cp
+
         # setup the slicing to probably sample points
         out_inds = tuple([slice(None) for _ in range(len(size))])
 
         # setup output and loop through priors
-        out = np.zeros(size + (self.ndim,))
+        out = xp.zeros(size + (self.ndim,))
         for i, (inds, prior_i) in enumerate(self.priors):
             # guard against extra prior functions without rvs methods
             if not hasattr(prior_i, "rvs"):
@@ -278,37 +379,3 @@ class PriorContainer:
             out[inds_in] = prior_i.rvs(size=size)[adjust_inds]
 
         return out
-
-
-class UniformTorch(torch.distributions.uniform.Uniform):
-    """
-       For testing Likelihood Ratio.
-    """
-
-    def __init__(self, lower, upper):
-        super(UniformTorch, self).__init__(lower, upper)
-
-    def log_prob(self, sample):
-        return super(UniformTorch, self).log_prob(sample).mean()
-
-
-if __name__ == "__main__":
-    import pickle
-
-    multi = stats.multivariate_normal(
-        mean=np.array([0.0, 0.0]), cov=np.array([[1.0, -0.3], [0.3, 1.0]])
-    )
-    multi_in = multi.rvs(100)
-
-    x = np.concatenate([multi_in, np.array([np.linspace(0, 800, 100)]).T], axis=1)
-
-    with open("amps_dist.pickle", "rb") as f:
-        amps_dist = pickle.load(f)
-
-    priors_in = {(0, 1): multi, 2: amps_dist}
-    prior = PriorContainer(priors_in)
-
-    pval = prior.logpdf(x)
-
-    out = prior.rvs(1000)
-    breakpoint()
