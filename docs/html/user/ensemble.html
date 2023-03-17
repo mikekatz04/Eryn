@@ -262,7 +262,15 @@ are prior probability distributions that must have a <code class="docutils liter
 3) A dictionary with keys that are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values that are dictionaries for
 each branch as described for (1).
 4) A dictionary with keys that are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are
-<a class="reference internal" href="prior.html#eryn.prior.ProbDistContainer" title="eryn.prior.ProbDistContainer"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.prior.ProbDistContainer</span></code></a> objects.</p></li>
+<a class="reference internal" href="prior.html#eryn.prior.ProbDistContainer" title="eryn.prior.ProbDistContainer"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.prior.ProbDistContainer</span></code></a> objects.
+If the priors dictionary has the specific key <code class="docutils literal notranslate"><span class="pre">&quot;all_models_together&quot;</span></code> in it, then a special
+prior must be input by the user that can produce the prior <code class="docutils literal notranslate"><span class="pre">logpdf</span></code> information that can depend on all of the models
+together rather than handling them separately as is the default. In this case, the user must input
+as the item attached to this special key a class object with a <code class="docutils literal notranslate"><span class="pre">logpdf</span></code> method that takes as input
+two arguments: <code class="docutils literal notranslate"><span class="pre">(coords,</span> <span class="pre">inds)</span></code>, which are the coordinate and index dictionaries across all models with
+shapes of <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max,</span> <span class="pre">ndim)</span></code> and <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max)</span></code> for each
+individual model, respectively. This function must then return the numpy array of logpdf values for the
+prior value with shape <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers)</span></code>.</p></li>
 <li><p><strong>provide_groups</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, provide groups as described in <code class="docutils literal notranslate"><span class="pre">log_like_fn</span></code> above.
 A group parameter is added for each branch. (default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
 <li><p><strong>provide_supplimental</strong> (<em>bool</em><em>, </em><em>optional</em>) – <p>If <code class="docutils literal notranslate"><span class="pre">True</span></code>, it will provide keyword arguments to

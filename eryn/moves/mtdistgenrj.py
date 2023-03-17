@@ -128,6 +128,7 @@ class MTDistGenMoveRJ(MultipleTryMoveRJ, DistributionGenerateRJ):
                 coords_in_dict[key] = self.current_state.branches[key].coords.reshape(
                     (1, -1) + self.current_state.branches[key].shape[-2:]
                 )
+                # expand to express multiple tries
                 coords_in_dict[key] = np.tile(
                     coords_in_dict[key], (1, self.num_try, 1)
                 ).reshape(
@@ -139,6 +140,7 @@ class MTDistGenMoveRJ(MultipleTryMoveRJ, DistributionGenerateRJ):
                 inds_in_dict[key] = self.current_state.branches[key].inds.reshape(
                     (1, -1) + self.current_state.branches[key].shape[-2:-1]
                 )
+                # expand to express multiple tries
                 inds_in_dict[key] = np.tile(
                     inds_in_dict[key], (1, self.num_try)
                 ).reshape(
