@@ -5,19 +5,26 @@ from eryn.moves import DistributionGenerateRJ
 
 
 class MTDistGenMoveRJ(MultipleTryMoveRJ, DistributionGenerateRJ):
-    def __init__(self, dist, *args, **kwargs):
+    def __init__(self, generate_dist, *args, **kwargs):
         """Perform a reversible-jump multiple try move based on a distribution.
     
         Distribution must be independent of the current point.
         
         This is effectively an example of the mutliple try class inheritance structure.
         
+        Args:
+            generate_dist (dict): Keys are branch names and values are :class:`ProbDistContainer` objects 
+                that have ``logpdf`` and ``rvs`` methods. If you 
+            *args (tuple, optional): Additional arguments to pass to parent classes.
+            **kwargs (dict, optional): Keyword arguments passed to parent classes.
+
+            
         """
         kwargs["rj"] = True
         MultipleTryMoveRJ.__init__(self, **kwargs)
-        DistributionGenerateRJ.__init__(self, dist, *args, **kwargs)
+        DistributionGenerateRJ.__init__(self, generate_dist, *args, **kwargs)
 
-        self.dist = dist
+        self.generate_dist = generate_dist
 
     def special_generate_logpdf(self, generated_coords):
         """Get logpdf of generated coordinates.
@@ -28,7 +35,7 @@ class MTDistGenMoveRJ(MultipleTryMoveRJ, DistributionGenerateRJ):
         Returns:
             np.ndarray: logpdf of generated points.
             """
-        return self.dist[self.key_in].logpdf(generated_coords)
+        return self.generate_dist[self.key_in].logpdf(generated_coords)
 
     def special_generate_func(
         self, coords, random, size=1, fill_tuple=None, fill_values=None
@@ -58,7 +65,7 @@ class MTDistGenMoveRJ(MultipleTryMoveRJ, DistributionGenerateRJ):
         if not isinstance(size, int):
             raise ValueError("size must be an int.")
 
-        generated_coords = self.dist[self.key_in].rvs(size=(nwalkers, size))
+        generated_coords = self.generate_dist[self.key_in].rvs(size=(nwalkers, size))
 
         if fill_values is not None:
             generated_coords[fill_tuple] = fill_values
@@ -94,7 +101,7 @@ class MTDistGenMoveRJ(MultipleTryMoveRJ, DistributionGenerateRJ):
                 np.arange(coords_in.shape[1]),
                 np.repeat(inds_leaves_rj, self.num_try),
             )
-        ] = generated_coords.reshape(-1, 3)
+        ] = generated_coords.reshape(-1, coords_in.shape[-1])
         inds_in = np.repeat(
             self.current_state.branches[self.key_in].inds.reshape(
                 (1, -1,) + self.current_state.branches[self.key_in].inds.shape[-1:]
