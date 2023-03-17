@@ -129,7 +129,7 @@ class MTDistGenMoveRJ(MultipleTryMoveRJ, DistributionGenerateRJ):
                     (1, -1) + self.current_state.branches[key].shape[-2:]
                 )
                 inds_in_dict[key] = self.current_state.branches[key].inds.reshape(
-                    (1, -1) + self.current_state.branches[key].shape[-1:]
+                    (1, -1) + self.current_state.branches[key].shape[-2:-1]
                 )
 
         return coords_in_dict, inds_in_dict
