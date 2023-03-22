@@ -96,6 +96,103 @@ class MyMove(MHMove):
         return q, np.zeros((ntemps, nwalkers))
 
 
+class MyRJMove(MHMove):
+    """A Metropolis step with a Gaussian proposal function.
+
+    This class is heavily based on the same class in ``emcee``. 
+
+    Args:
+        cov (dict): The covariance of the proposal function. The keys are branch names and the 
+            values are covariance information. This information can be provided as a scalar,
+            vector, or matrix and the proposal will be assumed isotropic,
+            axis-aligned, or general, respectively.
+        mode (str, optional): Select the method used for updating parameters. This
+            can be one of ``"vector"``, ``"random"``, or ``"sequential"``. The
+            ``"vector"`` mode updates all dimensions simultaneously,
+            ``"random"`` randomly selects a dimension and only updates that
+            one, and ``"sequential"`` loops over dimensions and updates each
+            one in turn. (default: ``"vector"``)
+        factor (float, optional): If provided the proposal will be made with a
+            standard deviation uniformly selected from the range
+            ``exp(U(-log(factor), log(factor))) * cov``. This is invalid for
+            the ``"vector"`` mode. (default: ``None``)
+        **kwargs (dict, optional): Kwargs for parent classes. (default: ``{}``)
+
+    Raises:
+        ValueError: If the proposal dimensions are invalid or if any of any of
+            the other arguments are inconsistent.
+
+    """
+
+    def __init__(self, cov_all, factor=None, **kwargs):
+
+        self.all_proposal = {}
+        for name, cov in cov_all.items():
+            # Parse the proposal type.
+            self.all_proposal[name] = cov
+
+        super(MyRJMove, self).__init__(**kwargs)
+
+    def get_proposal(self, branches_coords, random, branches_inds=None, **kwargs):
+        """Get proposal from Gaussian distribution
+
+        Args:
+            branches_coords (dict): Keys are ``branch_names`` and values are
+                np.ndarray[ntemps, nwalkers, nleaves_max, ndim] representing
+                coordinates for walkers.
+            random (object): Current random state object.
+            branches_inds (dict, optional): Keys are ``branch_names`` and values are
+                np.ndarray[ntemps, nwalkers, nleaves_max] representing which
+                leaves are currently being used. (default: ``None``)
+            **kwargs (ignored): This is added for compatibility. It is ignored in this function.
+
+        Returns:
+            tuple: (Proposed coordinates, factors) -> (dict, np.ndarray)
+
+        """
+
+        # initialize ouput
+        q = {}
+        for name, coords in zip(branches_coords.keys(), branches_coords.values()):
+            ntemps, nwalkers, nleaves_max, ndim = coords.shape
+
+            # setup inds accordingly
+            if branches_inds is None:
+                inds = np.ones((ntemps, nwalkers, nleaves_max), dtype=bool)
+            else:
+                inds = branches_inds[name]
+
+            # get the proposal for this branch
+            proposal_fn = self.all_proposal[name]
+            inds_here = np.where(inds == True)
+
+            # copy coords
+            q[name] = coords.copy()
+
+            # get new points
+            new_coords, _ = proposal_fn(coords[inds_here], random)
+
+            # put into coords in proper location
+            q[name][inds_here] = new_coords.copy()
+
+        # handle periodic parameters
+        if self.periodic is not None:
+            q = self.periodic.wrap(
+                {
+                    name: tmp.reshape(ntemps * nwalkers, nleaves_max, ndim)
+                    for name, tmp in q.items()
+                },
+                xp=self.xp,
+            )
+
+            q = {
+                name: tmp.reshape(ntemps, nwalkers, nleaves_max, ndim)
+                for name, tmp in q.items()
+            }
+
+        return q, np.zeros((ntemps, nwalkers))
+
+
 
 from itertools import permutations
 import random
@@ -243,6 +340,8 @@ class proposal_template(object):
             y[:,rand_j] += np.random.normal(size=nw)[:,None] * np.sqrt(S[None,rand_j]) * 2.38 / np.sqrt(nd)
             # go back to the basis
             new_pos = np.asarray([np.dot(U, y[i]) for i in range(nw)]) 
+
+            # new_pos += np.random.normal(size=nw)[:,None] * np.sqrt(S[None,rand_j]) * U[:,rand_j]
         except:
             print("svd failed")
             new_pos = np.array([self.initial_sample() for i in range(nw)])
