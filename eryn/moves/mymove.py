@@ -169,8 +169,13 @@ class MyRJMove(MHMove):
             # copy coords
             q[name] = coords.copy()
 
+            # if np.sum(np.isnan(coords[inds_here]))>0:
+            #     breakpoint()
             # get new points
             new_coords, _ = proposal_fn(coords[inds_here], random)
+
+            # if np.sum(np.isnan(new_coords))>0:
+            #     breakpoint()
 
             # put into coords in proper location
             q[name][inds_here] = new_coords.copy()
@@ -319,7 +324,7 @@ class proposal_template(object):
             prob = rng.random()
 
             # large jump
-            if prob > 0.99:
+            if prob > 0.97:
                 scale = 10.0
 
             # small jump
@@ -343,8 +348,12 @@ class proposal_template(object):
 
             # new_pos += np.random.normal(size=nw)[:,None] * np.sqrt(S[None,rand_j]) * U[:,rand_j]
         except:
+            print('------------------------------')
             print("svd failed")
-            new_pos = np.array([self.initial_sample() for i in range(nw)])
+            print('------------------------------')
+            cov  = np.diag(np.ones(nd) )*0.01
+            new_pos = np.array([np.random.multivariate_normal(xtemp[i], cov) for i in range(nw)])
+            # new_pos = np.array([self.initial_sample() for i in range(nw)])
         return new_pos, np.zeros(nw)
 
 

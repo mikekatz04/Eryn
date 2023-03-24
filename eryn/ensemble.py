@@ -1029,11 +1029,11 @@ class EnsembleSampler(object):
         """
 
         # Check that the parameters are in physical ranges.
-        for ptemp in coords.values():
-            if np.any(np.isinf(ptemp)):
-                raise ValueError("At least one parameter value was infinite")
-            if np.any(np.isnan(ptemp)):
-                raise ValueError("At least one parameter value was NaN")
+        # for ptemp in coords.values():
+        #     if np.any(np.isinf(ptemp)):
+        #         raise ValueError("At least one parameter value was infinite")
+        #     if np.any(np.isnan(ptemp)):
+        #         raise ValueError("At least one parameter value was NaN")
 
         # if inds not provided, use all
         if inds is None:
