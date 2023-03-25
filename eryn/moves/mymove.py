@@ -256,7 +256,6 @@ class proposal_template(object):
         if self.samp_cov is not None:
             if (self.it==0) or (self.it%100==0):
                 if temp==0:
-                    print("\nupdate covariance\n")
                     maxN = np.min([nw, self.samp_cov.shape[0]])
                     self.samp_cov[:maxN] = x0[:maxN].copy()
                     self.Cov = np.cov(self.samp_cov, rowvar=False) * self.it / (self.it + 1)**2 +\
