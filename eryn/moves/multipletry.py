@@ -59,7 +59,6 @@ class MultipleTryMove:
         coords,
         nwalkers,
         inds_reverse,
-        inds_reverse_individual,
         random,
         args_generate=(),
         kwargs_generate={},

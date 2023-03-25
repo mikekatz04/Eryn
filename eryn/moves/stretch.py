@@ -194,6 +194,9 @@ class StretchMove(RedBlueMove):
             # get points to move
             s = self.xp.asarray(s_all[name])
 
+            if not isinstance(c_all[name], list):
+                raise ValueError("c_all for each branch needs to be a list.")
+                
             # get compliment possibilities
             c = [self.xp.asarray(c_tmp) for c_tmp in c_all[name]]
 
