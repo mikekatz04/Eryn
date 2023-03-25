@@ -274,31 +274,43 @@ class ReversibleJump(Move):
             for (name, branch), min_k, max_k in zip(
                 state.branches.items(), self.min_k, self.max_k
             ):
-                nleaves = branch.nleaves
 
-                # do not work on sources with fixed source count
-                if min_k == max_k:
+                if name not in branch_names_run:
                     continue
 
-                # fix proposal asymmetry at bottom of k range
-                inds_min = np.where(nleaves == min_k)
-                # numerator term so +ln
-                edge_factors[inds_min] += np.log(1 / 2.0)
+                # get old and new values
+                old_nleaves = branch.nleaves
+                new_nleaves = new_inds[name].sum(axis=-1)
 
-                # fix proposal asymmetry at top of k range
-                inds_max = np.where(nleaves == max_k)
-                # numerator term so -ln
-                edge_factors[inds_max] += np.log(1 / 2.0)
+                # do not work on sources with fixed source count
+                if min_k == max_k or min_k + 1 == max_k:
+                    # min_k == max_k --> no rj proposal
+                    # min_k + 1 == max_k --> no edge factors because it is guaranteed to be min_k or max_k
+                    continue
 
-                # fix proposal asymmetry at bottom of k range (kmin + 1)
-                inds_min = np.where(nleaves == min_k + 1)
-                # numerator term so +ln
-                edge_factors[inds_min] -= np.log(1 / 2.0)
+                elif min_k > max_k:
+                    raise ValueError("min_k cannot be greater than max_k.")
 
-                # fix proposal asymmetry at top of k range (kmax - 1)
-                inds_max = np.where(nleaves == max_k - 1)
-                # numerator term so -ln
-                edge_factors[inds_max] -= np.log(1 / 2.0)
+                else:
+                    # fix proposal asymmetry at bottom of k range (kmin -> kmin + 1)
+                    inds_min = np.where(old_nleaves == min_k)
+                    # numerator term so +ln
+                    edge_factors[inds_min] += np.log(1 / 2.0)
+
+                    # fix proposal asymmetry at top of k range (kmax -> kmax - 1)
+                    inds_max = np.where(old_nleaves == max_k)
+                    # numerator term so -ln
+                    edge_factors[inds_max] += np.log(1 / 2.0)
+
+                    # fix proposal asymmetry at bottom of k range (kmin + 1 -> kmin)
+                    inds_min = np.where(new_nleaves == min_k)
+                    # numerator term so +ln
+                    edge_factors[inds_min] -= np.log(1 / 2.0)
+
+                    # fix proposal asymmetry at top of k range (kmax - 1 -> kmax)
+                    inds_max = np.where(new_nleaves == max_k)
+                    # numerator term so -ln
+                    edge_factors[inds_max] -= np.log(1 / 2.0)
 
             factors += edge_factors
 
