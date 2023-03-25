@@ -164,21 +164,22 @@ class MyRJMove(MHMove):
 
             # get the proposal for this branch
             proposal_fn = self.all_proposal[name]
-            inds_here = np.where(inds == True)
-
+            
             # copy coords
             q[name] = coords.copy()
 
-            # if np.sum(np.isnan(coords[inds_here]))>0:
-            #     breakpoint()
-            # get new points
-            new_coords, _ = proposal_fn(coords[inds_here], random)
+            inds_here = np.where(inds == True)
+            
+            for tt in range(ntemps):
+                
+                # new_coords, _ = proposal_fn(coords[tt][], random)
+                new_coords = proposal_fn(coords[tt][inds[tt]], random, temp=tt)[0]
 
-            # if np.sum(np.isnan(new_coords))>0:
-            #     breakpoint()
+                # if np.sum(np.isnan(new_coords))>0:
+                #     breakpoint()
 
-            # put into coords in proper location
-            q[name][inds_here] = new_coords.copy()
+                # put into coords in proper location
+                q[name][tt][inds[tt]] = new_coords.copy()
 
         # handle periodic parameters
         if self.periodic is not None:
@@ -204,10 +205,13 @@ import random
 
 class proposal_template(object):
 
-    def __init__(self, model, proposal, hypermod=False, indx_list=None):
+    def __init__(self, model, proposal, hypermod=False, indx_list=None, samp_cov=None):
         self.model = model
         self.hypermod = hypermod
-        if proposal=="DE":
+        
+        if proposal=="Mixture":
+            self.proposal = [self.AMMove, self.GaussianMove]
+        elif proposal=="DE":
             self.proposal = self.DEmove
         elif proposal=="Prior":
             self.proposal = self.PriorProp
@@ -222,8 +226,14 @@ class proposal_template(object):
             self.indx_list = indx_list
             self.split_update = True
         else:
-            
             self.split_update = False
+
+        # array of samples 
+        self.samp_cov = samp_cov[0,:,0,:]
+        self.Cov = np.diag(np.ones(self.samp_cov.shape[-1]))*0.01
+    
+        # iteration
+        self.it = 0
     
     def initial_sample(self):
         
@@ -232,8 +242,28 @@ class proposal_template(object):
         else:
             return np.hstack(p.sample() for p in self.model.params)[self.sample_list]
 
-    def __call__(self, x0, rng):
+    def __call__(self, x0, rng, temp=0):
         nw, nd = x0.shape
+
+        if isinstance(self.proposal, list):
+            if np.random.uniform()<0.7:
+                proposal_here = self.proposal[0]
+            else:
+                proposal_here = self.proposal[1]
+        else:
+            proposal_here = self.proposal
+    
+        if self.samp_cov is not None:
+            if (self.it==0) or (self.it%100==0):
+                if temp==0:
+                    print("\nupdate covariance\n")
+                    maxN = np.min([nw, self.samp_cov.shape[0]])
+                    self.samp_cov[:maxN] = x0[:maxN].copy()
+                    self.Cov = np.cov(self.samp_cov, rowvar=False) * self.it / (self.it + 1)**2 +\
+                                 + self.Cov * self.it / (self.it + 1)
+        
+        self.it += 1
+
         self.sample_list = np.ones(nd, dtype=bool)
         if self.split_update:
             new_pos = x0.copy()
@@ -241,17 +271,19 @@ class proposal_template(object):
             for i in range(nw):
                 q = np.random.randint(len(self.indx_list))
                 self.sample_list = self.indx_list[q]
-                new_pos[i,self.indx_list[q]] = self.proposal(x0[:,self.sample_list], rng)[0][i,:]
+                newlist = np.delete( np.arange(nd), self.sample_list)
+                input_cov = self.Cov[np.ix_(self.sample_list,self.sample_list)]
+                new_pos[i,self.indx_list[q]] = proposal_here(x0[:,self.sample_list], rng, input_cov=input_cov)[0][i,:]
             return new_pos,  np.zeros(nw)
         else:
-            return self.proposal(x0, rng)
+            return proposal_here(x0, rng)
     
-    def PriorProp(self, x0, rng):
+    def PriorProp(self, x0, rng, **kwargs):
         nw, nd = x0.shape
         x = np.array([self.initial_sample() for _ in range(nw)])
         return  x, np.zeros(nw)
 
-    def DEmove(self, x0, rng):
+    def DEmove(self, x0, rng, **kwargs):
         """
         DE implemented as described in https://arxiv.org/pdf/1404.1267.pdf eq.(C5)
         """
@@ -262,24 +294,31 @@ class proposal_template(object):
             xtemp = x0.copy()
         
         nw, nd = xtemp.shape
-        perms = list(permutations(np.arange(nw), 2))
-        pairs = np.asarray(random.sample(perms,nw)).T
-        if np.random.rand() > 0.5:
-            gamma = 2.38 / np.sqrt(2 * nd) 
-        else:
-            gamma = 1.0
+        if nw>1:
+            perms = list(permutations(np.arange(nw), 2))
+            pairs = np.asarray(random.sample(perms,nw)).T
 
-        f = 1e-5 * rng.randn(nw)
+            if np.random.rand() > 0.5:
+                gamma = 2.38 / np.sqrt(2 * nd) 
+            else:
+                gamma = 1.0
 
-        if self.hypermod:
-            new_pos[:,:-1] += gamma * (xtemp[pairs[0]]-xtemp[pairs[1]]) + f[:,None]
-            new_pos[:,-1] += gamma * (xtemp[pairs[0]]-xtemp[pairs[1]])[:,-1]#np.array([self.model.initial_sample()[-1] for _ in range(nw)])# 
-        else:
-            new_pos += gamma * (xtemp[pairs[0]]-xtemp[pairs[1]]) + f[:,None]
-        
+            f = 1e-5 * rng.randn(nw)
+
+            if self.hypermod:
+                new_pos[:,:-1] += gamma * (xtemp[pairs[0]]-xtemp[pairs[1]]) + f[:,None]
+                new_pos[:,-1] += gamma * (xtemp[pairs[0]]-xtemp[pairs[1]])[:,-1]#np.array([self.model.initial_sample()[-1] for _ in range(nw)])# 
+            else:
+                if self.samp_cov is not None:
+                    maxN = np.min([nw, self.samp_cov.shape[0]])
+                    xtemp[pairs[0]][:maxN] = self.samp_cov[np.random.randint(maxN), self.sample_list].copy()
+
+                tmp = xtemp[pairs[1]]
+                new_pos += gamma * (xtemp[pairs[0]]-tmp) + f[:,None]
+            
         return new_pos, np.zeros(nw)
 
-    def GaussianMove(self, x0, rng):
+    def GaussianMove(self, x0, rng, input_cov=None, **kwargs):
         """
         https://link.springer.com/content/pdf/10.1007/s11222-006-9438-0.pdf
         """
@@ -293,7 +332,12 @@ class proposal_template(object):
         nw, nd = xtemp.shape
         mean = np.mean(xtemp, axis=0)
         eps = 1e-3 # makes sure that the covariance matrix is not singular
-        cov = (np.cov(xtemp, rowvar=False) + eps * np.diag(np.ones_like(xtemp[0])) ) * 2.38**2 / nd
+
+        
+        if input_cov is not None:
+            cov = (input_cov.copy() ) * 2.38**2 / nd # + cov
+        else:
+            cov = (np.cov(xtemp, rowvar=False) + eps * np.diag(np.ones_like(xtemp[0])) ) * 2.38**2 / nd
 
         if self.hypermod:
             new_pos[:,:-1] += np.random.multivariate_normal(mean*0.0,cov,size=nw)
@@ -303,7 +347,7 @@ class proposal_template(object):
 
         return new_pos, np.zeros(nw)
 
-    def AMMove(self, x0, rng):
+    def AMMove(self, x0, rng, input_cov=None,**kwargs):
         """
         Adaptive Jump Proposal
         """
@@ -317,14 +361,19 @@ class proposal_template(object):
 
         # calculate covariance and make SVD decomposition
         try:
+
+            # cov_samp = np.cov(self.samp_cov, rowvar=False)
+            tmp_cov = np.cov(xtemp, rowvar=False)
+            if input_cov is not None:
+                tmp_cov = input_cov.copy() + tmp_cov
             
-            U, S, v = np.linalg.svd(np.cov(xtemp, rowvar=False))
+            U, S, v = np.linalg.svd(tmp_cov)
 
             # adjust step size
             prob = rng.random()
 
             # large jump
-            if prob > 0.97:
+            if prob > 0.99:
                 scale = 10.0
 
             # small jump
@@ -344,9 +393,13 @@ class proposal_template(object):
             rand_j = ind_vec[:np.random.randint(1,nd)]
             y[:,rand_j] += np.random.normal(size=nw)[:,None] * np.sqrt(S[None,rand_j]) * 2.38 / np.sqrt(nd)
             # go back to the basis
+            # if np.random.uniform()>0.7:
             new_pos = np.asarray([np.dot(U, y[i]) for i in range(nw)]) 
+            # else:
 
-            # new_pos += np.random.normal(size=nw)[:,None] * np.sqrt(S[None,rand_j]) * U[:,rand_j]
+            #     rand_j = np.random.randint(1,nd)
+            #     new_pos += (np.random.normal(size=nw) * (np.sqrt(S[rand_j]) * U[:,rand_j]) ).T
+            
         except:
             print('------------------------------')
             print("svd failed")
