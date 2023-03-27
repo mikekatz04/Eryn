@@ -233,6 +233,10 @@ class TemperatureControl(object):
             This can become complicated when using the repeating proposal options, so the 
             user must be careful and verify constant temperatures in the backend.
             (default: -1)
+        permute (bool, optional): If ``True``, permute the walkers in each temperature during 
+            swaps. (default: ``True``)
+        skip_swap_supp_names (list, optional): List of strings that indicate supplimental keys that are not to be swapped.
+            (default: ``[]``)
     
 
     """
@@ -249,6 +253,8 @@ class TemperatureControl(object):
         adaptation_lag=10000,
         adaptation_time=100,
         stop_adaptation=-1,
+        permute=True,
+        skip_swap_supp_names=[],
     ):
         # force ndims and nleaves_max to be a list of ints
         if isinstance(ndims, int):
@@ -280,6 +286,8 @@ class TemperatureControl(object):
         self.nwalkers = nwalkers
         self.betas = betas
         self.ntemps = ntemps = len(betas)
+        self.permute = permute
+        self.skip_swap_supp_names = skip_swap_supp_names
 
         # number of times adapted
         self.time = 0
@@ -289,7 +297,6 @@ class TemperatureControl(object):
         self.adaptation_time, self.adaptation_lag = adaptation_time, adaptation_lag
         self.stop_adaptation = stop_adaptation
 
-        # TODO: read this information out (specific to each proposal maybe)
         self.swaps_proposed = np.full(self.ntemps - 1, self.nwalkers)
 
     def compute_log_posterior_tempered(self, logl, logp, betas=None):
@@ -359,6 +366,134 @@ class TemperatureControl(object):
 
         return loglT
 
+    def do_swaps_indexing(self,  i, iperm_sel, i1perm_sel, dbeta, x, logP, logl, logp, inds=None, blobs=None, supps=None, branch_supps=None):
+
+        # for x and inds, just do full copy
+        x_temp = {name: np.copy(x[name]) for name in x}
+        if inds is not None:
+            inds_temp = {name: np.copy(inds[name]) for name in inds}
+        if branch_supps is not None:
+            branch_supps_temp = {
+                name: deepcopy(branch_supps[name]) for name in branch_supps
+            }
+
+        logl_temp = np.copy(logl[i, iperm_sel])
+        logp_temp = np.copy(logp[i, iperm_sel])
+        logP_temp = np.copy(logP[i, iperm_sel])
+        if blobs is not None:
+            blobs_temp = np.copy(blobs[i, iperm_sel])
+        if supps is not None:
+            supps_temp = deepcopy(supps[i, iperm_sel])
+
+        # swap from i1 to i
+        for name in x:
+            # coords first
+            x[name][i, iperm_sel, :, :] = x[name][i - 1, i1perm_sel, :, :]
+
+            # then inds
+            if inds is not None:
+                inds[name][i, iperm_sel, :] = inds[name][i - 1, i1perm_sel, :]
+
+            # do something special for branch_supps in case in contains a large amount of data
+            # that is heavy to copy
+            if branch_supps[name] is not None:
+                tmp = branch_supps[name][
+                    i - 1, i1perm_sel, :
+                ]
+
+                for key in self.skip_swap_supp_names:
+                    tmp.pop(key)
+
+                branch_supps[name][i, iperm_sel, :] = tmp
+                """# where the inds are alive in the current permutation
+                # need inds_temp because that is the original
+                inds_i = np.where(inds_temp[name][i][iperm_sel])
+
+                # gives the associated walker for each spot in the permuted array
+                walker_inds_i = iperm_sel[inds_i[0]]
+
+                # represents which permuted leaves are alive
+                leaf_inds_i = inds_i[1]
+
+                # all of these are at the same temperature
+                temp_inds_i = np.full_like(leaf_inds_i, i)
+
+                # repeat all for the i1 permutated temperature
+                # need inds_temp because that is the original
+                inds_i1 = np.where(inds_temp[name][i - 1][i1perm_sel])
+                walker_inds_i1 = i1perm_sel[inds_i1[0]]
+                leaf_inds_i1 = inds_i1[1]
+                temp_inds_i1 = np.full_like(leaf_inds_i1, i - 1)
+
+                # go through the values within each branch supplimental holder
+                # do direct movement of things that need to change
+                # rather than copying the whole thing
+                for name2 in branch_supps[name].holder:
+                    # store temperarily
+                    bring_back_branch_supps = (
+                        branch_supps[name]
+                        .holder[name2][(temp_inds_i, walker_inds_i, leaf_inds_i)]
+                        .copy()
+                    )
+
+                    # make switch from i1 to i
+                    branch_supps[name].holder[name2][
+                        (temp_inds_i, walker_inds_i, leaf_inds_i)
+                    ] = branch_supps[name].holder[name2][
+                        (temp_inds_i1, walker_inds_i1, leaf_inds_i1)
+                    ]
+
+                    # make switch from i to i1
+                    branch_supps[name].holder[name2][
+                        (temp_inds_i1, walker_inds_i1, leaf_inds_i1)
+                    ] = bring_back_branch_supps"""
+
+        # switch everythin else from i1 to i
+        logl[i, iperm_sel] = logl[i - 1, i1perm_sel]
+        logp[i, iperm_sel] = logp[i - 1, i1perm_sel]
+        logP[i, iperm_sel] = (
+            logP[i - 1, i1perm_sel] - dbeta * logl[i - 1, i1perm_sel]
+        )
+        if blobs is not None:
+            blobs[i, iperm_sel] = blobs[i - 1, i1perm_sel]
+        if supps is not None:
+            tmp_supps = supps[i - 1, i1perm_sel]
+            for key in self.skip_swap_supp_names:
+                tmp_supps.pop(key)
+            supps[i, iperm_sel] = tmp_supps
+
+        # switch x from i to i1
+        for name in x:
+            x[name][i - 1, i1perm_sel, :, :] = x_temp[name][i, iperm_sel, :, :]
+            if inds is not None:
+                inds[name][i - 1, i1perm_sel, :] = inds_temp[name][
+                    i, iperm_sel, :
+                ]
+            if branch_supps[name] is not None:
+                tmp = branch_supps_temp[name][
+                    i, iperm_sel, :
+                ]
+
+                for key in self.skip_swap_supp_names:
+                    tmp.pop(key)
+                branch_supps[name][i - 1, i1perm_sel, :] = tmp
+
+        # switch the rest from i to i1
+        logl[i - 1, i1perm_sel] = logl_temp
+        logp[i - 1, i1perm_sel] = logp_temp
+        logP[i - 1, i1perm_sel] = logP_temp + dbeta * logl_temp
+
+        if blobs is not None:
+            blobs[i - 1, i1perm_sel] = blobs_temp
+        if supps is not None:
+            tmp_supps = supps_temp
+            for key in self.skip_swap_supp_names:
+                tmp_supps.pop(key)
+            supps[i - 1, i1perm_sel] = tmp_supps
+
+        return (x, logP, logl, logp, inds, blobs, supps, branch_supps)
+
+
     def temperature_swaps(
         self, x, logP, logl, logp, inds=None, blobs=None, supps=None, branch_supps=None
     ):
@@ -400,8 +535,14 @@ class TemperatureControl(object):
             dbeta = bi1 - bi
 
             # permute the indices for the walkers in each temperature to randomize swap positions
-            iperm = np.random.permutation(nwalkers)
-            i1perm = np.random.permutation(nwalkers)
+            if self.permute:
+                iperm = np.random.permutation(nwalkers)
+                i1perm = np.random.permutation(nwalkers)
+
+            # do not permute if desired
+            else:
+                iperm = np.arange(nwalkers)
+                i1perm = np.arange(nwalkers)
 
             # random draw that produces log of the acceptance fraction
             raccept = np.log(np.random.uniform(size=nwalkers))
@@ -413,114 +554,7 @@ class TemperatureControl(object):
             sel = paccept > raccept
             self.swaps_accepted[i - 1] = np.sum(sel)
 
-            # for x and inds, just do full copy
-            x_temp = {name: np.copy(x[name]) for name in x}
-            if inds is not None:
-                inds_temp = {name: np.copy(inds[name]) for name in inds}
-            if branch_supps is not None:
-                branch_supps_temp = {
-                    name: deepcopy(branch_supps[name]) for name in branch_supps
-                }
-
-            logl_temp = np.copy(logl[i, iperm[sel]])
-            logp_temp = np.copy(logp[i, iperm[sel]])
-            logP_temp = np.copy(logP[i, iperm[sel]])
-            if blobs is not None:
-                blobs_temp = np.copy(blobs[i, iperm[sel]])
-            if supps is not None:
-                supps_temp = deepcopy(supps[i, iperm[sel]])
-
-            # swap from i1 to i
-            for name in x:
-                # coords first
-                x[name][i, iperm[sel], :, :] = x[name][i - 1, i1perm[sel], :, :]
-
-                # then inds
-                if inds is not None:
-                    inds[name][i, iperm[sel], :] = inds[name][i - 1, i1perm[sel], :]
-
-                # do something special for branch_supps in case in contains a large amount of data
-                # that is heavy to copy
-                if branch_supps[name] is not None:
-
-                    branch_supps[name][i, iperm[sel], :] = branch_supps[name][
-                        i - 1, i1perm[sel], :
-                    ]
-                    """# where the inds are alive in the current permutation
-                    # need inds_temp because that is the original
-                    inds_i = np.where(inds_temp[name][i][iperm[sel]])
-
-                    # gives the associated walker for each spot in the permuted array
-                    walker_inds_i = iperm[sel][inds_i[0]]
-
-                    # represents which permuted leaves are alive
-                    leaf_inds_i = inds_i[1]
-
-                    # all of these are at the same temperature
-                    temp_inds_i = np.full_like(leaf_inds_i, i)
-
-                    # repeat all for the i1 permutated temperature
-                    # need inds_temp because that is the original
-                    inds_i1 = np.where(inds_temp[name][i - 1][i1perm[sel]])
-                    walker_inds_i1 = i1perm[sel][inds_i1[0]]
-                    leaf_inds_i1 = inds_i1[1]
-                    temp_inds_i1 = np.full_like(leaf_inds_i1, i - 1)
-
-                    # go through the values within each branch supplimental holder
-                    # do direct movement of things that need to change
-                    # rather than copying the whole thing
-                    for name2 in branch_supps[name].holder:
-                        # store temperarily
-                        bring_back_branch_supps = (
-                            branch_supps[name]
-                            .holder[name2][(temp_inds_i, walker_inds_i, leaf_inds_i)]
-                            .copy()
-                        )
-
-                        # make switch from i1 to i
-                        branch_supps[name].holder[name2][
-                            (temp_inds_i, walker_inds_i, leaf_inds_i)
-                        ] = branch_supps[name].holder[name2][
-                            (temp_inds_i1, walker_inds_i1, leaf_inds_i1)
-                        ]
-
-                        # make switch from i to i1
-                        branch_supps[name].holder[name2][
-                            (temp_inds_i1, walker_inds_i1, leaf_inds_i1)
-                        ] = bring_back_branch_supps"""
-
-            # switch everythin else from i1 to i
-            logl[i, iperm[sel]] = logl[i - 1, i1perm[sel]]
-            logp[i, iperm[sel]] = logp[i - 1, i1perm[sel]]
-            logP[i, iperm[sel]] = (
-                logP[i - 1, i1perm[sel]] - dbeta * logl[i - 1, i1perm[sel]]
-            )
-            if blobs is not None:
-                blobs[i, iperm[sel]] = blobs[i - 1, i1perm[sel]]
-            if supps is not None:
-                supps[i, iperm[sel]] = supps[i - 1, i1perm[sel]]
-
-            # switch x from i to i1
-            for name in x:
-                x[name][i - 1, i1perm[sel], :, :] = x_temp[name][i, iperm[sel], :, :]
-                if inds is not None:
-                    inds[name][i - 1, i1perm[sel], :] = inds_temp[name][
-                        i, iperm[sel], :
-                    ]
-                if branch_supps[name] is not None:
-                    branch_supps[name][i - 1, i1perm[sel], :] = branch_supps_temp[name][
-                        i, iperm[sel], :
-                    ]
-
-            # switch the rest from i to i1
-            logl[i - 1, i1perm[sel]] = logl_temp
-            logp[i - 1, i1perm[sel]] = logp_temp
-            logP[i - 1, i1perm[sel]] = logP_temp + dbeta * logl_temp
-
-            if blobs is not None:
-                blobs[i - 1, i1perm[sel]] = blobs_temp
-            if supps is not None:
-                supps[i - 1, i1perm[sel]] = supps_temp
+            (x, logP, logl, logp, inds, blobs, supps, branch_supps) = self.do_swaps_indexing(i, iperm[sel], i1perm[sel], dbeta, x, logP, logl, logp, inds=inds, blobs=blobs, supps=supps, branch_supps=branch_supps)
 
         return (x, logP, logl, logp, inds, blobs, supps, branch_supps)
 
@@ -545,6 +579,20 @@ class TemperatureControl(object):
 
         # Don't mutate the ladder here; let the client code do that.
         return betas - betas0
+
+    def adapt_temps(self):
+                # determine ratios of swaps accepted to swaps proposed (the ladder is fixed)
+        ratios = self.swaps_accepted / self.swaps_proposed
+
+        # adapt if desired
+        if self.adaptive and self.ntemps > 1:
+            if self.stop_adaptation < 0 or self.time < self.stop_adaptation:
+                dbetas = self._get_ladder_adjustment(self.time, self.betas, ratios)
+                self.betas += dbetas
+
+            # only increase time if it is adaptive.
+            self.time += 1
+
 
     def temper_comps(self, state, adapt=True):
         """Perfrom temperature-related operations on a state.
@@ -580,17 +628,8 @@ class TemperatureControl(object):
             branch_supps=state.branches_supplimental,
         )
 
-        # determine ratios of swaps accepted to swaps proposed (the ladder is fixed)
-        ratios = self.swaps_accepted / self.swaps_proposed
-
-        # adapt if desired
         if adapt and self.adaptive and self.ntemps > 1:
-            if self.stop_adaptation < 0 or self.time < self.stop_adaptation:
-                dbetas = self._get_ladder_adjustment(self.time, self.betas, ratios)
-                self.betas += dbetas
-
-            # only increase time if it is adaptive.
-            self.time += 1
+            self.adapt_temps()
 
         # create a new state out of the swapped information
         # TODO: make this more memory efficient?

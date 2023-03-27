@@ -31,15 +31,19 @@ with open("README.rst", "w") as fp:
     fp.write(output)
 
 import sys, os
-
-
 import shutil
 
+dir_path = os.path.dirname(os.path.realpath(__file__)) + "/../../"
+
 shutil.copy(
-    "/Users/michaelkatz/Research/Eryn/examples/Eryn_tutorial.ipynb",
-    "/Users/michaelkatz/Research/Eryn/docs/source/tutorial/Eryn_tutorial.ipynb",
+    dir_path + "examples/Eryn_tutorial.ipynb",
+    dir_path + "docs/source/tutorial/Eryn_tutorial.ipynb",
 )
 
+shutil.copy(
+    dir_path + "examples/more_tutorials.ipynb",
+    dir_path + "docs/source/tutorial/more_tutorials.ipynb",
+)
 
 # -- General configuration ---------------------------------------------------
 

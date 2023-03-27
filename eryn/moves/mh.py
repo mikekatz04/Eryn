@@ -19,7 +19,6 @@ class MHMove(Move):
     def __init__(self, **kwargs):
 
         Move.__init__(self, **kwargs)
-        # TODO: check ndim stuff
 
     def get_proposal(self, branches_coords, random, branches_inds=None, **kwargs):
         """Get proposal
@@ -44,6 +43,16 @@ class MHMove(Move):
 
         raise NotImplementedError("The proposal must be implemented by " "subclasses")
 
+    def setup(self, branches_coords):
+        """Any setup for the proposal. 
+        
+        Args:
+            branches_coords (dict): Keys are ``branch_names``. Values are
+                np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent
+                coordinates for all the walkers.
+
+        """
+
     def propose(self, model, state):
         """Use the move to generate a proposal and compute the acceptance
 
@@ -56,6 +65,8 @@ class MHMove(Move):
 
         """
 
+        self.setup(state.branches_coords)
+
         # get all branch names for gibbs setup
         all_branch_names = list(state.branches.keys())
 
@@ -66,7 +77,6 @@ class MHMove(Move):
         for (branch_names_run, inds_run) in self.gibbs_sampling_setup_iterator(
             all_branch_names
         ):
-
             # setup supplimental information
             if not np.all(
                 np.asarray(list(state.branches_supplimental.values())) == None
@@ -93,6 +103,9 @@ class MHMove(Move):
             if not at_least_one_proposal:
                 continue
 
+            self.current_model = model
+            self.current_state = state
+
             # Get the move-specific proposal.
             q, factors = self.get_proposal(
                 coords_going_for_proposal,
@@ -108,20 +121,35 @@ class MHMove(Move):
                 branch_names_run, inds_run, q, state.branches_coords
             )
 
-            # Compute prior of the proposed position
-            logp = model.compute_log_prior_fn(q, inds=state.branches_inds)
-
-            self.fix_logp_gibbs(branch_names_run, inds_run, logp, state.branches_inds)
-
-            # Compute the lnprobs of the proposed position.
-            # Can adjust supplimentals in place
-            logl, new_blobs = model.compute_log_like_fn(
-                q,
-                inds=state.branches_inds,
-                logp=logp,
-                supps=new_supps,
-                branch_supps=new_branch_supps,
+            # order everything properly
+            q, _, new_branch_supps = self.ensure_ordering(
+                list(state.branches.keys()), q, state.branches_inds, new_branch_supps
             )
+
+            # if not wrapping with mutliple try (normal route)
+            if not hasattr(self, "mt_ll") or not hasattr(self, "mt_lp"):
+                # Compute prior of the proposed position
+                logp = model.compute_log_prior_fn(q, inds=state.branches_inds)
+
+                self.fix_logp_gibbs(
+                    branch_names_run, inds_run, logp, state.branches_inds
+                )
+
+                # Compute the lnprobs of the proposed position.
+                # Can adjust supplimentals in place
+                logl, new_blobs = model.compute_log_like_fn(
+                    q,
+                    inds=state.branches_inds,
+                    logp=logp,
+                    supps=new_supps,
+                    branch_supps=new_branch_supps,
+                )
+
+            else:
+                # if already computed in multiple try
+                logl = self.mt_ll
+                logp = self.mt_lp
+                new_blobs = None
 
             # get log posterior
             logP = self.compute_log_posterior(logl, logp)

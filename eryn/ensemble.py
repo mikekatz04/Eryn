@@ -12,7 +12,8 @@ from .moves import StretchMove, TemperatureControl, DistributionGenerateRJ, Gaus
 from .pbar import get_progress_bar
 from .state import State
 from .prior import ProbDistContainer
-from .utils import PlotContainer
+
+# from .utils import PlotContainer
 from .utils import PeriodicContainer
 from .utils.utility import groups_from_inds
 
@@ -33,8 +34,10 @@ class EnsembleSampler(object):
     The class controls the entire sampling run. It can handle
     everything from a basic non-tempered MCMC to a parallel-tempered,
     global fit containing multiple branches (models) and a variable
-    number of leaves (sources) per branch. (# TODO: add link to tree explainer)
-  
+    number of leaves (sources) per branch. 
+    See `here <https://mikekatz04.github.io/Eryn/html/tutorial/Eryn_tutorial.html#The-Tree-Metaphor>`_
+    for a basic explainer.
+
     Parameters related to parallelization can be controlled via the ``pool`` argument.
 
     Args:
@@ -71,7 +74,10 @@ class EnsembleSampler(object):
                 Extra ``args`` and ``kwargs`` for the Likelihood function can be added with the kwargs 
                 ``args`` and ``kwargs`` below.
 
-                Please see the tutorial for more information. (# TODO: add link to tutorial)           
+                Please see the 
+                `tutorial <https://mikekatz04.github.io/Eryn/html/tutorial/Eryn_tutorial.html#>`_ 
+                for more information. 
+
         priors (dict): The prior dictionary can take four forms.
             1) A dictionary with keys as int or tuple containing the int or tuple of int
             that describe the parameter number over which to assess the prior, and values that
@@ -81,11 +87,19 @@ class EnsembleSampler(object):
             each branch as described for (1).
             4) A dictionary with keys that are ``branch_names`` and values are
             :class:`eryn.prior.ProbDistContainer` objects.
+            If the priors dictionary has the specific key ``"all_models_together"`` in it, then a special
+            prior must be input by the user that can produce the prior ``logpdf`` information that can depend on all of the models
+            together rather than handling them separately as is the default. In this case, the user must input
+            as the item attached to this special key a class object with a ``logpdf`` method that takes as input
+            two arguments: ``(coords, inds)``, which are the coordinate and index dictionaries across all models with 
+            shapes of ``(ntemps, nwalkers, nleaves_max, ndim)`` and ``(ntemps, nwalkers, nleaves_max)`` for each 
+            individual model, respectively. This function must then return the numpy array of logpdf values for the 
+            prior value with shape ``(ntemps, nwalkers)``. 
         provide_groups (bool, optional): If ``True``, provide groups as described in ``log_like_fn`` above.
             A group parameter is added for each branch. (default: ``False``)
         provide_supplimental (bool, optional): If ``True``, it will provide keyword arguments to 
-            the Likelihood function: ``supps`` and ``branch_supps``. Please see the Tutorial
-            (# TODO: add tutorial link) and :class:`eryn.state.BranchSupplimental` for more information.
+            the Likelihood function: ``supps`` and ``branch_supps``. Please see the `Tutorial <https://mikekatz04.github.io/Eryn/html/tutorial/Eryn_tutorial.html#>`_
+            and :class:`eryn.state.BranchSupplimental` for more information.
         tempering_kwargs (dict, optional): Keyword arguments for initialization of the
             tempering class: :class:`eryn.moves.tempering.TemperatureControl`.  (default: ``{}``)
         branch_names (list, optional): List of branch names. If ``None``, models will be assigned
@@ -115,7 +129,7 @@ class EnsembleSampler(object):
             (default: ``None``)
         dr_moves (bool, optional): If ``None`` ot ``False``, delayed rejection when proposing "birth"
             of new components/models will be switched off for this run. Requires ``rj_moves`` set to ``True``.
-            # TODO: check in with Nikos about this
+            Not implemented yet. Working on it.
             (default: ``None``)
         dr_max_iter (int, optional): Maximum number of iterations used with delayed rejection. (default: 5)
         args (optional): A list of extra positional arguments for
@@ -192,8 +206,8 @@ class EnsembleSampler(object):
         ndims,  # assumes ndim_max
         log_like_fn,
         priors,
-        provide_groups=False,  # TODO: improve this
-        provide_supplimental=False,  # TODO: improve this
+        provide_groups=False,
+        provide_supplimental=False,
         tempering_kwargs={},
         branch_names=None,
         nbranches=1,
@@ -303,7 +317,8 @@ class EnsembleSampler(object):
 
         elif isinstance(moves, Iterable):
             try:
-                self.moves, self.weights = zip(*moves)
+                self.moves, self.weights = [list(tmp) for tmp in zip(*moves)]
+
             except TypeError:
                 self.moves = moves
                 self.weights = np.ones(len(moves))
@@ -319,7 +334,7 @@ class EnsembleSampler(object):
             self.has_reversible_jump = False
         elif isinstance(rj_moves, bool):
             self.has_reversible_jump = rj_moves
-            # TODO: deal with tuning
+
             if self.has_reversible_jump:
                 if nleaves_min is None:
                     # default to 0 for all models
@@ -338,8 +353,8 @@ class EnsembleSampler(object):
                 # default to DistributionGenerateRJ
                 rj_move = DistributionGenerateRJ(
                     self.priors,
-                    self.nleaves_max,
-                    self.nleaves_min,
+                    max_k=self.nleaves_max,
+                    min_k=self.nleaves_min,
                     dr=dr_moves,
                     dr_max_iter=dr_max_iter,
                     tune=False,
@@ -360,7 +375,7 @@ class EnsembleSampler(object):
 
         else:
             self.has_reversible_jump = True
-            # TODO: fix error catch here
+
             self.rj_moves = [rj_moves]
             self.rj_weights = [1.0]
 
@@ -368,6 +383,13 @@ class EnsembleSampler(object):
         if self.has_reversible_jump:
             self.rj_weights = np.atleast_1d(self.rj_weights).astype(float)
             self.rj_weights /= np.sum(self.rj_weights)
+
+            # warn if base stretch is used
+            for move in self.moves:
+                if type(move) == StretchMove:
+                    warnings.warn(
+                        "If using revisible jump, using the Stretch Move for in-model proposals is not advised. It will run and work, but it will not be using the correct complientary group of parameters meaning it will most likely be very inefficient."
+                    )
 
         # make sure moves have temperature module
         if self.temperature_control is not None:
@@ -468,6 +490,7 @@ class EnsembleSampler(object):
         self.plot_iterations = plot_iterations
 
         if plot_generator is None and self.plot_iterations > 0:
+            raise NotImplementedError
             # set to default if not provided
             if plot_name is not None:
                 name = plot_name
@@ -477,6 +500,7 @@ class EnsembleSampler(object):
                 fp=name, backend=self.backend, thin_chain_by_ac=True
             )
         elif self.plot_iterations > 0:
+            raise NotImplementedError
             self.plot_generator = plot_generator
 
         # prepare stopping functions
@@ -527,33 +551,33 @@ class EnsembleSampler(object):
 
         """
         if isinstance(priors, dict):
-            # TODO: do checks on all priors, not just first
-            test = priors[list(priors.keys())[0]]
-            if isinstance(test, dict):
-                # check all dists
-                for name, priors_temp in priors.items():
-                    for ind, dist in priors_temp.items():
+
+            self._priors = {}
+
+            for key in priors.keys():
+                test = priors[key]
+                if isinstance(test, dict):
+                    # check all dists
+                    for ind, dist in test.items():
                         if not hasattr(dist, "logpdf"):
                             raise ValueError(
                                 "Distribution for model {0} and index {1} does not have logpdf method.".format(
-                                    name, ind
+                                    key, ind
                                 )
                             )
-                self._priors = {
-                    name: ProbDistContainer(priors_temp)
-                    for name, priors_temp in priors.items()
-                }
 
-            elif isinstance(test, ProbDistContainer):
-                self._priors = priors
+                    self._priors[key] = ProbDistContainer(test)
 
-            elif hasattr(test, "logpdf"):
-                self._priors = {"model_0": ProbDistContainer(priors)}
+                elif isinstance(test, ProbDistContainer):
+                    self._priors[key] = test
 
-            else:
-                raise ValueError(
-                    "priors dictionary items must be dictionaries with prior information or instances of the ProbDistContainer class."
-                )
+                elif hasattr(test, "logpdf"):
+                    self._priors[key] = {"model_0": test}
+
+                else:
+                    raise ValueError(
+                        "priors dictionary items must be dictionaries with prior information or instances of the ProbDistContainer class."
+                    )
 
         elif isinstance(priors, ProbDistContainer):
             self._priors = {"model_0": priors}
@@ -628,7 +652,9 @@ class EnsembleSampler(object):
             initial_state (State or ndarray[ntemps, nwalkers, nleaves_max, ndim] or dict): The initial
                 :class:`State` or positions of the walkers in the
                 parameter space. If multiple branches used, must be dict with keys
-                as the ``branch_names`` and values as the positions.
+                as the ``branch_names`` and values as the positions. If ``betas`` are
+                provided in the state object, they will be loaded into the 
+                ``temperature_control``. 
             iterations (int or None, optional): The number of steps to generate.
                 ``None`` generates an infinite stream (requires ``store=False``).
                 (default: 1)
@@ -705,6 +731,15 @@ class EnsembleSampler(object):
                 supps=state.supplimental,  # only used if self.provide_supplimental is True
                 branch_supps=state.branches_supplimental,  # only used if self.provide_supplimental is True
             )
+
+        # get betas out of state object if they are there
+        if state.betas is not None:
+            if state.betas.shape[0] != self.ntemps:
+                raise ValueError(
+                    "Input state has inverse temperatures (betas), but not the correct number of temperatures according to sampler inputs."
+                )
+
+            self.temperature_control.betas = state.betas.copy()
 
         if np.shape(state.log_like) != (self.ntemps, self.nwalkers):
             raise ValueError("incompatible input dimensions")
@@ -821,7 +856,9 @@ class EnsembleSampler(object):
             initial_state (State or ndarray[ntemps, nwalkers, nleaves_max, ndim] or dict): The initial
                 :class:`State` or positions of the walkers in the
                 parameter space. If multiple branches used, must be dict with keys
-                as the ``branch_names`` and values as the positions.
+                as the ``branch_names`` and values as the positions. If ``betas`` are
+                provided in the state object, they will be loaded into the 
+                ``temperature_control``. 
             nsteps (int): The number of steps to generate. The total number of proposals is ``nsteps * thin_by``.
             burn (int, optional): Number of burn steps to run before storing information. The ``thin_by`` kwarg is ignored when counting burn steps since there is no storage (equivalent to ``thin_by=1``).
             post_burn_update (bool, optional): If ``True``, run ``update_fn`` after burn in. 
@@ -945,7 +982,13 @@ class EnsembleSampler(object):
 
         # take information out of dict and spread to x1..xn
         x_in = {}
-        if self.provide_groups:
+
+        # for completely customizable priors
+        if "all_models_together" in self.priors:
+            prior_out = self.priors["all_models_together"].logpdf(coords, inds)
+            assert prior_out.shape == (ntemps, nwalkers)
+
+        elif self.provide_groups:
 
             # get group information from the inds dict
             groups = groups_from_inds(inds)
@@ -982,7 +1025,6 @@ class EnsembleSampler(object):
             prior_out = np.zeros((ntemps, nwalkers))
             for name in x_in:
                 ntemps, nwalkers, nleaves_max, ndim = coords[name].shape
-
                 prior_out_temp = (
                     self.priors[name]
                     .logpdf(x_in[name])
@@ -1063,6 +1105,7 @@ class EnsembleSampler(object):
             # if inds_keep in branch supps, indicate which to not keep
             if (
                 branch_supps is not None
+                and key in branch_supps
                 and branch_supps[key] is not None
                 and "inds_keep" in branch_supps[key]
             ):
@@ -1225,7 +1268,9 @@ class EnsembleSampler(object):
                         if self.provide_supplimental:
                             if supps is not None:
                                 # supps are specific to each group
-                                kwarg_i["supps"] = supps_in[group_i]
+                                kwarg_i["supps"] = {
+                                    key: supps_in[key][group_i] for key in supps_in
+                                }
                             if branch_supps is not None:
                                 # make sure there is a dictionary ready in this kwarg dictionary
                                 if "branch_supps" not in kwarg_i:
@@ -1358,14 +1403,19 @@ class EnsembleSampler(object):
     get_blobs.__doc__ = Backend.get_blobs.__doc__
 
     def get_log_like(self, **kwargs):
-        return self.get_value("log_like", **kwargs)
+        return self.backend.get_log_like(**kwargs)
 
-    get_log_like.__doc__ = Backend.get_log_like.__doc__
+    get_log_like.__doc__ = Backend.get_log_prior.__doc__
 
     def get_log_prior(self, **kwargs):
-        return self.get_value("log_like", **kwargs)
+        return self.backend.get_log_prior(**kwargs)
 
     get_log_prior.__doc__ = Backend.get_log_prior.__doc__
+
+    def get_log_posterior(self, **kwargs):
+        return self.backend.get_log_posterior(**kwargs)
+
+    get_log_posterior.__doc__ = Backend.get_log_posterior.__doc__
 
     def get_inds(self, **kwargs):
         return self.get_value("inds", **kwargs)
@@ -1425,7 +1475,6 @@ class _FunctionWrapper(object):
         try:
             args_in = args_in_add + type(args_in_add)(self.args)
             kwargs_in = {**kwargs_in_add, **self.kwargs}
-            # TODO: this may have pickle issue with multiprocessing (kwargs_in)
 
             out = self.f(*args_in, **kwargs_in)
             return out

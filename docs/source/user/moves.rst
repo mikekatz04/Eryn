@@ -54,13 +54,31 @@ Implemented Red-Blue Moves
     :show-inheritance:
     :inherited-members:
 
+Group Moves
+~~~~~~~~~~~~~~
+
+Group Parent Class
+^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: eryn.moves.GroupMove
+    :members:
+    :show-inheritance:
+    :inherited-members:
+
+Implemented Group Moves
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: eryn.moves.GroupStretchMove
+    :members:
+    :show-inheritance:
+    :inherited-members:
+
 
 Reversible Jump Moves
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Reversible Jump Parent Class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: eryn.moves.ReversibleJump
+.. autoclass:: eryn.moves.ReversibleJumpMove
     :members:
     :show-inheritance:
     :inherited-members:
@@ -72,6 +90,33 @@ Implemented Reversible Jump Moves
     :members:
     :show-inheritance:
     :inherited-members:
+
+Mutliple Try Moves
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Mutliple Try Parent Class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: eryn.moves.MultipleTryMove
+    :members:
+    :show-inheritance:
+    :inherited-members:
+
+Implemented Multiple Try Moves
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: eryn.moves.MTDistGenMove
+    :members:
+    :show-inheritance:
+    :inherited-members:
+
+Implemented Multiple Try RJ Moves
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: eryn.moves.MTDistGenMoveRJ
+    :members:
+    :show-inheritance:
+    :inherited-members:
+
 
 Utility Moves
 ~~~~~~~~~~~~~~~~~~~~~~~

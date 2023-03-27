@@ -41,16 +41,20 @@ class RedBlueMove(Move, ABC):
     def __init__(
         self, nsplits=2, randomize_split=True, live_dangerously=False, **kwargs
     ):
-
-        # TODO: have each move keep track of its own acceptance fraction
         super(RedBlueMove, self).__init__(**kwargs)
         self.nsplits = int(nsplits)
         self.live_dangerously = live_dangerously
         self.randomize_split = randomize_split
 
-    def setup(self, coords):
-        """Any setup necessary for the proposal"""
-        pass
+    def setup(self, branches_coords):
+        """Any setup for the proposal. 
+        
+        Args:
+            branches_coords (dict): Keys are ``branch_names``. Values are
+                np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent
+                coordinates for all the walkers.
+
+        """
 
     @classmethod
     def get_proposal(self, sample, complement, random, gibbs_ndim=None):
@@ -151,32 +155,27 @@ class RedBlueMove(Move, ABC):
                 all_inds_shaped = all_inds[S1].reshape(ntemps, nwalkers_here)
                 fixed_inds_shaped = all_inds[~S1].reshape(ntemps, nwalkers_here)
 
-                # the actual inds for the subset
-                real_inds_subset = {
-                    name: np.take_along_axis(
-                        state.branches[name].inds, all_inds_shaped[:, :, None], axis=1,
-                    )
-                    for name in inds_going_for_proposal
-                }
-
                 # inds including gibbs information
                 new_inds = {
                     name: np.take_along_axis(
-                        inds_going_for_proposal[name],
-                        all_inds_shaped[:, :, None],
-                        axis=1,
+                        state.branches[name].inds, all_inds_shaped[:, :, None], axis=1,
                     )
-                    for name in inds_going_for_proposal
+                    for name in state.branches
+                }
+
+                # the actual inds for the subset
+                real_inds_subset = {
+                    name: new_inds[name] for name in inds_going_for_proposal
                 }
 
                 # actual coordinates of subset
                 temp_coords = {
                     name: np.take_along_axis(
-                        coords_going_for_proposal[name],
+                        state.branches_coords[name],
                         all_inds_shaped[:, :, None, None],
                         axis=1,
                     )
-                    for name in coords_going_for_proposal
+                    for name in state.branches_coords
                 }
 
                 # prepare the sets for each model
@@ -190,7 +189,7 @@ class RedBlueMove(Move, ABC):
                         )
                         for j in range(self.nsplits)
                     ]
-                    for key in state.branches
+                    for key in branch_names_run
                 }
 
                 # setup s and c based on splits
@@ -215,18 +214,12 @@ class RedBlueMove(Move, ABC):
                 # account for gibbs sampling
                 self.cleanup_proposals_gibbs(branch_names_run, inds_run, q, temp_coords)
 
-                # Compute prior of the proposed position
-                # new_inds_prior is adjusted if product-space is used
-                logp = model.compute_log_prior_fn(q, inds=real_inds_subset)
-
-                self.fix_logp_gibbs(branch_names_run, inds_run, logp, real_inds_subset)
-
                 # setup supplimental information
                 if state.supplimental is not None:
                     # TODO: should there be a copy?
                     new_supps = BranchSupplimental(
                         state.supplimental.take_along_axis(all_inds_shaped, axis=1),
-                        obj_contained_shape=(ntemps, nwalkers),
+                        base_shape=(ntemps, nwalkers),
                         copy=False,
                     )
 
@@ -247,7 +240,7 @@ class RedBlueMove(Move, ABC):
                     new_branch_supps = {
                         name: BranchSupplimental(
                             new_branch_supps[name],
-                            obj_contained_shape=new_inds[name].shape,
+                            base_shape=new_inds[name].shape,
                             copy=False,
                         )
                         for name in new_branch_supps
@@ -256,14 +249,21 @@ class RedBlueMove(Move, ABC):
                 else:
                     new_branch_supps = None
 
-                # TODO: add supplimental prepare step
-                # if (new_branch_supps is not None or new_supps is not None) and self.adjust_supps_pre_logl_func is not None:
-                #    self.adjust_supps_pre_logl_func(q, inds=new_inds, logp=logp, supps=new_supps, branch_supps=new_branch_supps, inds_keep=new_inds_adjust)
+                # order everything properly
+                q, new_inds, new_branch_supps = self.ensure_ordering(
+                    list(state.branches.keys()), q, new_inds, new_branch_supps
+                )
+
+                # Compute prior of the proposed position
+                # new_inds_prior is adjusted if product-space is used
+                logp = model.compute_log_prior_fn(q, inds=new_inds)
+
+                self.fix_logp_gibbs(branch_names_run, inds_run, logp, real_inds_subset)
 
                 # Compute the lnprobs of the proposed position.
                 logl, new_blobs = model.compute_log_like_fn(
                     q,
-                    inds=real_inds_subset,
+                    inds=new_inds,
                     logp=logp,
                     supps=new_supps,
                     branch_supps=new_branch_supps,

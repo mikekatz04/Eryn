@@ -30,3 +30,4 @@ Welcome to Eryn's documentation!
   :caption: Tutorial:
 
   tutorial/Eryn_tutorial
+  tutorial/more_tutorials

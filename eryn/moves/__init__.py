@@ -12,7 +12,7 @@ from .stretch import StretchMove
 
 # from .walk import WalkMove
 from .tempering import TemperatureControl
-from .rj import ReversibleJump
+from .rj import ReversibleJumpMove
 from .distgenrj import DistributionGenerateRJ
 from .distgen import DistributionGenerate
 from .multipletry import MultipleTryMove
@@ -20,6 +20,11 @@ from .group import GroupMove
 from .groupstretch import GroupStretchMove
 from .combine import CombineMove
 from .mymove import MyMove
+
+# from .basicmodelswaprj import BasicSymmetricModelSwapRJMove
+from .mtdistgen import MTDistGenMove
+from .mtdistgenrj import MTDistGenMoveRJ
+from .multipletry import MultipleTryMove
 
 __all__ = [
     "Move",
@@ -30,7 +35,7 @@ __all__ = [
     "DistributionGenerateRJ",
     "DistributionGenerate",
     "TemperatureControl",
-    "ReversibleJump",
+    "ReversibleJumpMove",
     "MultipleTryMove",
     "GroupMove",
     "GroupStretchMove",

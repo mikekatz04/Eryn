@@ -29,24 +29,6 @@ class PeriodicContainer:
             key: np.asarray([i for i in periodic[key].values()]) for key in periodic
         }
 
-    def _check_names(self, names):
-        if names is None:
-            # TODO: fix this
-            try:
-                names = p1.keys()
-            except AttributeError:
-                raise ValueError(
-                    "If not providing the names kwarg, must provide dictionaries for p1 and p2."
-                )
-
-        elif isinstance(names, str):
-            names = [names]
-
-        elif not isinstance(names, list):
-            raise ValueError("If providing names, must be a str or list of str.")
-
-        return names
-
     def distance(self, p1, p2, xp=None):
         """Move from p1 to p2 with periodic distance control
 
