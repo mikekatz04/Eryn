@@ -240,7 +240,7 @@ class proposal_template(object):
 
         # array of samples 
         if samp_cov is not None:
-            self.samp_cov = samp_cov[0,:,0,:]
+            self.samp_cov = samp_cov
             self.Cov = np.diag(np.ones(self.samp_cov.shape[-1]))*0.01
         else:
             self.samp_cov = None
@@ -265,12 +265,13 @@ class proposal_template(object):
         else:
             proposal_here = self.proposal
     
-        # if self.samp_cov is not None:
-        #     if (self.it==0) or (self.it%50==0):
-        #         if temp==0:
-        #             maxN = np.min([nw, self.samp_cov.shape[0]])
-        #             self.samp_cov[:maxN] = x0[:maxN].copy()
-        #             self.Cov = np.cov(self.samp_cov, rowvar=False)
+        if self.samp_cov is not None:
+            if (self.it==0) or (self.it%50==0):
+                if temp==0:
+                    print('----- update cov ----- ')
+                    maxN = np.min([nw, self.samp_cov.shape[0]])
+                    self.samp_cov[:maxN] = x0[:maxN].copy()
+                    self.Cov = np.cov(self.samp_cov, rowvar=False) * self.it / (self.it + 1)**2 + self.Cov * self.it / (self.it + 1)
     
 
         self.it += 1
@@ -287,9 +288,6 @@ class proposal_template(object):
                     input_cov = self.Cov[np.ix_(self.sample_list,self.sample_list)]
                 else:
                     input_cov = None
-                # added
-                if isinstance(self.proposal, list):
-                    proposal_here = self.proposal[np.random.randint(len(self.proposal)) ]
                 
                 new_pos[i,self.indx_list[q]] = proposal_here(x0[:,self.sample_list], rng, input_cov=input_cov)[0][i,:]
             return new_pos,  np.zeros(nw)
@@ -387,7 +385,7 @@ class proposal_template(object):
             # cov_samp = np.cov(self.samp_cov, rowvar=False)
             
             if input_cov is not None:
-                tmp_cov = input_cov.copy()
+                tmp_cov = input_cov.copy() #+ np.cov(xtemp, rowvar=False)
             else:
                 tmp_cov = np.cov(xtemp, rowvar=False)
             
