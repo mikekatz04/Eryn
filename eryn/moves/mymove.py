@@ -202,7 +202,17 @@ class MyRJMove(MHMove):
 
 from itertools import permutations
 import random
+from sklearn.mixture import BayesianGaussianMixture
 
+kwargs_BMM = dict(
+n_components=5,
+covariance_type="full",
+weight_concentration_prior=1e2,
+weight_concentration_prior_type="dirichlet_process",
+mean_precision_prior=1e-2,
+init_params="kmeans",
+max_iter=100,
+)
 class proposal_template(object):
 
     def __init__(self, model, proposal, hypermod=False, indx_list=None, samp_cov=None):
@@ -234,6 +244,8 @@ class proposal_template(object):
     
         # iteration
         self.it = 0
+        # mixture model
+
     
     def initial_sample(self):
         
@@ -246,21 +258,18 @@ class proposal_template(object):
         nw, nd = x0.shape
 
         if isinstance(self.proposal, list):
-            if np.random.uniform()<0.7:
-                proposal_here = self.proposal[0]
-            else:
-                proposal_here = self.proposal[1]
+            proposal_here = self.proposal[np.random.randint(len(self.proposal)) ]
         else:
             proposal_here = self.proposal
     
-        if self.samp_cov is not None:
-            if (self.it==0) or (self.it%100==0):
-                if temp==0:
-                    maxN = np.min([nw, self.samp_cov.shape[0]])
-                    self.samp_cov[:maxN] = x0[:maxN].copy()
-                    self.Cov = np.cov(self.samp_cov, rowvar=False) * self.it / (self.it + 1)**2 +\
-                                 + self.Cov * self.it / (self.it + 1)
-        
+        # if self.samp_cov is not None:
+        #     if (self.it==0) or (self.it%50==0):
+        #         if temp==0:
+        #             maxN = np.min([nw, self.samp_cov.shape[0]])
+        #             self.samp_cov[:maxN] = x0[:maxN].copy()
+        #             self.Cov = np.cov(self.samp_cov, rowvar=False)
+    
+
         self.it += 1
 
         self.sample_list = np.ones(nd, dtype=bool)
@@ -272,6 +281,10 @@ class proposal_template(object):
                 self.sample_list = self.indx_list[q]
                 newlist = np.delete( np.arange(nd), self.sample_list)
                 input_cov = self.Cov[np.ix_(self.sample_list,self.sample_list)]
+                # added
+                # if isinstance(self.proposal, list):
+                #     proposal_here = self.proposal[np.random.randint(len(self.proposal)) ]
+                
                 new_pos[i,self.indx_list[q]] = proposal_here(x0[:,self.sample_list], rng, input_cov=input_cov)[0][i,:]
             return new_pos,  np.zeros(nw)
         else:
@@ -294,15 +307,11 @@ class proposal_template(object):
         
         nw, nd = xtemp.shape
         if nw>1:
-            perms = list(permutations(np.arange(nw), 2))
-            pairs = np.asarray(random.sample(perms,nw)).T
+            
+            # if np.random.rand() > 0.5:
+            gamma = 2.38**2 / np.sqrt(2 * nd) 
 
-            if np.random.rand() > 0.5:
-                gamma = 2.38 / np.sqrt(2 * nd) 
-            else:
-                gamma = 1.0
-
-            f = 1e-5 * rng.randn(nw)
+            f = 1e-6 * rng.randn(nw)
 
             if self.hypermod:
                 new_pos[:,:-1] += gamma * (xtemp[pairs[0]]-xtemp[pairs[1]]) + f[:,None]
@@ -310,10 +319,12 @@ class proposal_template(object):
             else:
                 if self.samp_cov is not None:
                     maxN = np.min([nw, self.samp_cov.shape[0]])
-                    xtemp[pairs[0]][:maxN] = self.samp_cov[np.random.randint(maxN), self.sample_list].copy()
-
-                tmp = xtemp[pairs[1]]
-                new_pos += gamma * (xtemp[pairs[0]]-tmp) + f[:,None]
+                    diff = np.asarray([self.samp_cov[np.random.randint(maxN), self.sample_list].copy() - self.samp_cov[np.random.randint(maxN), self.sample_list].copy() for _ in range(nw)])
+                else:
+                    perms = list(permutations(np.arange(nw), 2))
+                    pairs = np.asarray(random.sample(perms,nw)).T
+                    diff = xtemp[pairs[0]]-xtemp[pairs[1]]
+                new_pos += gamma * diff + f[:,None]
             
         return new_pos, np.zeros(nw)
 
@@ -332,17 +343,18 @@ class proposal_template(object):
         mean = np.mean(xtemp, axis=0)
         eps = 1e-3 # makes sure that the covariance matrix is not singular
 
-        
         if input_cov is not None:
             cov = (input_cov.copy() ) * 2.38**2 / nd # + cov
+            # self.mixture = BayesianGaussianMixture(covariance_prior=0.01 * np.eye(new_pos.shape[1]),**kwargs_BMM)
+            # labels = self.mixture.fit_predict(self.samp_cov[:,self.sample_list])
+            # ind = np.random.randint(5)
+            # mu = self.mixture.means_[ind]
+            # cov = self.mixture.covariances_[ind]
+            # new_pos = np.random.multivariate_normal(mu, cov, size=nw)
         else:
             cov = (np.cov(xtemp, rowvar=False) + eps * np.diag(np.ones_like(xtemp[0])) ) * 2.38**2 / nd
-
-        if self.hypermod:
-            new_pos[:,:-1] += np.random.multivariate_normal(mean*0.0,cov,size=nw)
-            new_pos[:,-1] += np.random.normal(np.mean(x0[:,-1])*0.0, np.std(x0[:,-1]),size=nw)#np.array([self.model.initial_sample()[-1] for _ in range(nw)])# 
-        else:
-            new_pos += np.random.multivariate_normal(mean*0.0,cov, size=nw)
+            new_pos += np.random.multivariate_normal(mean * 0.0,cov, size=nw)
+        
 
         return new_pos, np.zeros(nw)
 
@@ -362,9 +374,11 @@ class proposal_template(object):
         try:
 
             # cov_samp = np.cov(self.samp_cov, rowvar=False)
-            tmp_cov = np.cov(xtemp, rowvar=False)
+            
             if input_cov is not None:
-                tmp_cov = input_cov.copy() + tmp_cov
+                tmp_cov = input_cov.copy()
+            else:
+                tmp_cov = np.cov(xtemp, rowvar=False)
             
             U, S, v = np.linalg.svd(tmp_cov)
 
@@ -390,12 +404,11 @@ class proposal_template(object):
             ind_vec = np.arange(nd)
             np.random.shuffle(ind_vec)
             rand_j = ind_vec[:np.random.randint(1,nd)]
-            y[:,rand_j] += np.random.normal(size=nw)[:,None] * np.sqrt(S[None,rand_j]) * 2.38 / np.sqrt(nd)
+            y[:,rand_j] += scale * np.random.normal(size=nw)[:,None] * np.sqrt(S[None,rand_j]) * 2.38 / np.sqrt(nd)
             # go back to the basis
             # if np.random.uniform()>0.7:
             new_pos = np.asarray([np.dot(U, y[i]) for i in range(nw)]) 
             # else:
-
             #     rand_j = np.random.randint(1,nd)
             #     new_pos += (np.random.normal(size=nw) * (np.sqrt(S[rand_j]) * U[:,rand_j]) ).T
             
