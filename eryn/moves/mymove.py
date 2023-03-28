@@ -239,9 +239,12 @@ class proposal_template(object):
             self.split_update = False
 
         # array of samples 
-        self.samp_cov = samp_cov[0,:,0,:]
-        self.Cov = np.diag(np.ones(self.samp_cov.shape[-1]))*0.01
-    
+        if samp_cov is not None:
+            self.samp_cov = samp_cov[0,:,0,:]
+            self.Cov = np.diag(np.ones(self.samp_cov.shape[-1]))*0.01
+        else:
+            self.samp_cov = None
+        
         # iteration
         self.it = 0
         # mixture model
@@ -280,10 +283,13 @@ class proposal_template(object):
                 q = np.random.randint(len(self.indx_list))
                 self.sample_list = self.indx_list[q]
                 newlist = np.delete( np.arange(nd), self.sample_list)
-                input_cov = self.Cov[np.ix_(self.sample_list,self.sample_list)]
+                if self.samp_cov is not None:
+                    input_cov = self.Cov[np.ix_(self.sample_list,self.sample_list)]
+                else:
+                    input_cov = None
                 # added
-                # if isinstance(self.proposal, list):
-                #     proposal_here = self.proposal[np.random.randint(len(self.proposal)) ]
+                if isinstance(self.proposal, list):
+                    proposal_here = self.proposal[np.random.randint(len(self.proposal)) ]
                 
                 new_pos[i,self.indx_list[q]] = proposal_here(x0[:,self.sample_list], rng, input_cov=input_cov)[0][i,:]
             return new_pos,  np.zeros(nw)
@@ -308,23 +314,26 @@ class proposal_template(object):
         nw, nd = xtemp.shape
         if nw>1:
             
-            # if np.random.rand() > 0.5:
-            gamma = 2.38**2 / np.sqrt(2 * nd) 
+            if np.random.rand() > 0.5:
+                gamma = 2.38**2 / nd**2
+            else:
+                gamma = 1
 
-            f = 1e-6 * rng.randn(nw)
+            f = 0.0#1e-6 * rng.randn(nw)
 
             if self.hypermod:
                 new_pos[:,:-1] += gamma * (xtemp[pairs[0]]-xtemp[pairs[1]]) + f[:,None]
                 new_pos[:,-1] += gamma * (xtemp[pairs[0]]-xtemp[pairs[1]])[:,-1]#np.array([self.model.initial_sample()[-1] for _ in range(nw)])# 
             else:
                 if self.samp_cov is not None:
-                    maxN = np.min([nw, self.samp_cov.shape[0]])
-                    diff = np.asarray([self.samp_cov[np.random.randint(maxN), self.sample_list].copy() - self.samp_cov[np.random.randint(maxN), self.sample_list].copy() for _ in range(nw)])
+                    perms = list(permutations(np.arange(self.samp_cov.shape[0]), 2))
+                    pairs = np.asarray(random.sample(perms,nw)).T
+                    diff = self.samp_cov[:, self.sample_list][pairs[0]] - self.samp_cov[:, self.sample_list][pairs[1]] 
                 else:
                     perms = list(permutations(np.arange(nw), 2))
                     pairs = np.asarray(random.sample(perms,nw)).T
                     diff = xtemp[pairs[0]]-xtemp[pairs[1]]
-                new_pos += gamma * diff + f[:,None]
+                new_pos += gamma * diff
             
         return new_pos, np.zeros(nw)
 
@@ -353,7 +362,9 @@ class proposal_template(object):
             # new_pos = np.random.multivariate_normal(mu, cov, size=nw)
         else:
             cov = (np.cov(xtemp, rowvar=False) + eps * np.diag(np.ones_like(xtemp[0])) ) * 2.38**2 / nd
-            new_pos += np.random.multivariate_normal(mean * 0.0,cov, size=nw)
+        
+        
+        new_pos += np.random.multivariate_normal(mean * 0.0,cov, size=nw)
         
 
         return new_pos, np.zeros(nw)
