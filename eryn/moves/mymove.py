@@ -170,17 +170,17 @@ class MyRJMove(MHMove):
 
             inds_here = np.where(inds == True)
             
-            new_coords, _ = proposal_fn(coords[inds_here], random)
-            # for tt in range(ntemps):
+            # new_coords, _ = proposal_fn(coords[inds_here], random)
+            for tt in range(ntemps):
                 
-            #     # new_coords, _ = proposal_fn(coords[tt][], random)
-            #     new_coords = proposal_fn(coords[tt][inds[tt]], random, temp=tt)[0]
+                # new_coords, _ = proposal_fn(coords[tt][], random)
+                new_coords = proposal_fn(coords[tt][inds[tt]], random, temp=tt)[0]
 
-            #     # if np.sum(np.isnan(new_coords))>0:
-            #     #     breakpoint()
+                # if np.sum(np.isnan(new_coords))>0:
+                #     breakpoint()
 
-            #     # put into coords in proper location
-            #     q[name][tt][inds[tt]] = new_coords.copy()
+                # put into coords in proper location
+                q[name][tt][inds[tt]] = new_coords.copy()
 
         # handle periodic parameters
         if self.periodic is not None:
