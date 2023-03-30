@@ -242,7 +242,7 @@ class proposal_template(object):
         # array of samples 
         if samp_cov is not None:
             self.samp_cov = samp_cov
-            self.Cov = np.diag(np.ones(self.samp_cov.shape[-1]))*0.01
+            self.Cov = [np.diag(np.ones(self.samp_cov.shape[-1]))*0.01 for _ in range(self.samp_cov.shape[0]) ]
         else:
             self.samp_cov = None
         
@@ -265,14 +265,12 @@ class proposal_template(object):
             proposal_here = self.proposal[np.random.randint(len(self.proposal)) ]
         else:
             proposal_here = self.proposal
-    
-        # if self.samp_cov is not None:
-        #     if (self.it==0) or (self.it%50==0):
-        #         # if temp==0:
-        #         print('----- update cov ----- ')
-        #         maxN = np.min([nw, self.samp_cov.shape[0]])
-        #         self.samp_cov[:maxN] = x0[:maxN].copy()
-        #         self.Cov = np.cov(self.samp_cov, rowvar=False) * self.it / (self.it + 1)**2 + self.Cov * self.it / (self.it + 1)
+        
+        if self.samp_cov is not None:
+            if (self.it==0) or (self.it%50==0):
+                print('----- update cov ----- ')
+                self.samp_cov[temp][np.random.randint(self.samp_cov[temp].shape[0])] = x0[np.random.randint(nw)]
+                self.Cov[temp] = np.cov(self.samp_cov[temp], rowvar=False) * self.it / (self.it + 1)**2 + self.Cov[temp] * self.it / (self.it + 1)
     
 
         self.it += 1
@@ -285,7 +283,7 @@ class proposal_template(object):
                 q = np.random.randint(len(self.indx_list))
                 self.sample_list = self.indx_list[q]
                 if self.samp_cov is not None:
-                    input_cov = self.Cov[np.ix_(self.sample_list,self.sample_list)]
+                    input_cov = self.Cov[temp][np.ix_(self.sample_list,self.sample_list)]
                 else:
                     input_cov = None
                 
