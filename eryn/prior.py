@@ -78,6 +78,7 @@ class UniformDistribution(object):
         return out
 
     def copy(self):
+        breakpoint()
         return deepcopy(self)
 
 
