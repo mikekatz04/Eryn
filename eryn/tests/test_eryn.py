@@ -10,7 +10,9 @@ from eryn.prior import ProbDistContainer, uniform_dist
 from eryn.utils import TransformContainer
 from eryn.moves import GaussianMove, StretchMove, CombineMove
 from eryn.utils.utility import groups_from_inds
+from eryn.backends import HDFBackend
 
+import os
 import unittest
 import matplotlib.pyplot as plt
 import numpy as np
@@ -395,6 +397,8 @@ class WaveformTest(unittest.TestCase):
 
         moves = GaussianMove(cov)
 
+        fp = "_test_backend.h5"
+
         ensemble = EnsembleSampler(
             nwalkers,
             ndims,
@@ -408,6 +412,7 @@ class WaveformTest(unittest.TestCase):
             nleaves_min=nleaves_min,
             moves=moves,
             rj_moves=True,  # basic generation of new leaves from the prior
+            backend=fp
         )
 
         log_prior = ensemble.compute_log_prior(coords, inds=inds)
@@ -442,6 +447,8 @@ class WaveformTest(unittest.TestCase):
         samples = samples[~np.isnan(samples[:, 0])]
 
         means = np.asarray(gauss_inj_params)[:, 1]
+
+        os.remove(fp)
 
     def test_gibbs_sampling(self):
 
