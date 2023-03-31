@@ -1,97 +1,52 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  <meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>Eryn Basic Tutorial &mdash; Eryn 0.0.1 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-
-  
-  
-
-  
-  
-
-  
-
-  
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/nbsphinx-code-cells.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "document", "processHtmlClass": "math|output_area"}}</script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="More Advanced Eryn Examples" href="more_tutorials.html" />
     <link rel="prev" title="Utilities" href="../user/utils.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search"  style="background: coral" >
-          
 
           
-            <a href="../index.html" class="icon icon-home"> Eryn
           
-
-          
+          <a href="../index.html" class="icon icon-home">
+            Eryn
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Documentation:</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../user/ensemble.html">Ensemble</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/state.html">State</a></li>
@@ -101,7 +56,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../user/temper.html">Parallel Tempering</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/utils.html">Utilities</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Tutorial:</span></p>
+<p class="caption" role="heading"><span class="caption-text">Tutorial:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Eryn Basic Tutorial</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#MCMC-Basics">MCMC Basics</a></li>
@@ -124,6 +79,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#Utilities">Utilities</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Transform-Container">Transform Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Multivariate-Prior-Distributions">Multivariate Prior Distributions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Periodic-Container">Periodic Container</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Stopping-&amp;-Update-Functions">Stopping &amp; Update Functions</a></li>
 </ul>
@@ -133,356 +89,38 @@
 <li class="toctree-l1"><a class="reference internal" href="more_tutorials.html">More Advanced Eryn Examples</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: coral" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">Eryn</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>Eryn Basic Tutorial</li>
-    
-    
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Eryn Basic Tutorial</li>
       <li class="wy-breadcrumbs-aside">
-        
-          
             <a href="../_sources/tutorial/Eryn_tutorial.ipynb.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
-  </ul>
-
-  
-  <div class="rst-breadcrumbs-buttons" role="navigation" aria-label="breadcrumb navigation">
-      
-        <a href="more_tutorials.html" class="btn btn-neutral float-right" title="More Advanced Eryn Examples" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-      
-      
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
         <a href="../user/utils.html" class="btn btn-neutral float-left" title="Utilities" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-      
+        <a href="more_tutorials.html" class="btn btn-neutral float-right" title="More Advanced Eryn Examples" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
   </div>
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  
-<style>
-/* CSS for nbsphinx extension */
-
-/* remove conflicting styling from Sphinx themes */
-div.nbinput.container div.prompt *,
-div.nboutput.container div.prompt *,
-div.nbinput.container div.input_area pre,
-div.nboutput.container div.output_area pre,
-div.nbinput.container div.input_area .highlight,
-div.nboutput.container div.output_area .highlight {
-    border: none;
-    padding: 0;
-    margin: 0;
-    box-shadow: none;
-}
-
-div.nbinput.container > div[class*=highlight],
-div.nboutput.container > div[class*=highlight] {
-    margin: 0;
-}
-
-div.nbinput.container div.prompt *,
-div.nboutput.container div.prompt * {
-    background: none;
-}
-
-div.nboutput.container div.output_area .highlight,
-div.nboutput.container div.output_area pre {
-    background: unset;
-}
-
-div.nboutput.container div.output_area div.highlight {
-    color: unset;  /* override Pygments text color */
-}
-
-/* avoid gaps between output lines */
-div.nboutput.container div[class*=highlight] pre {
-    line-height: normal;
-}
-
-/* input/output containers */
-div.nbinput.container,
-div.nboutput.container {
-    display: -webkit-flex;
-    display: flex;
-    align-items: flex-start;
-    margin: 0;
-    width: 100%;
-}
-@media (max-width: 540px) {
-    div.nbinput.container,
-    div.nboutput.container {
-        flex-direction: column;
-    }
-}
-
-/* input container */
-div.nbinput.container {
-    padding-top: 5px;
-}
-
-/* last container */
-div.nblast.container {
-    padding-bottom: 5px;
-}
-
-/* input prompt */
-div.nbinput.container div.prompt pre {
-    color: #307FC1;
-}
-
-/* output prompt */
-div.nboutput.container div.prompt pre {
-    color: #BF5B3D;
-}
-
-/* all prompts */
-div.nbinput.container div.prompt,
-div.nboutput.container div.prompt {
-    width: 4.5ex;
-    padding-top: 5px;
-    position: relative;
-    user-select: none;
-}
-
-div.nbinput.container div.prompt > div,
-div.nboutput.container div.prompt > div {
-    position: absolute;
-    right: 0;
-    margin-right: 0.3ex;
-}
-
-@media (max-width: 540px) {
-    div.nbinput.container div.prompt,
-    div.nboutput.container div.prompt {
-        width: unset;
-        text-align: left;
-        padding: 0.4em;
-    }
-    div.nboutput.container div.prompt.empty {
-        padding: 0;
-    }
-
-    div.nbinput.container div.prompt > div,
-    div.nboutput.container div.prompt > div {
-        position: unset;
-    }
-}
-
-/* disable scrollbars on prompts */
-div.nbinput.container div.prompt pre,
-div.nboutput.container div.prompt pre {
-    overflow: hidden;
-}
-
-/* input/output area */
-div.nbinput.container div.input_area,
-div.nboutput.container div.output_area {
-    -webkit-flex: 1;
-    flex: 1;
-    overflow: auto;
-}
-@media (max-width: 540px) {
-    div.nbinput.container div.input_area,
-    div.nboutput.container div.output_area {
-        width: 100%;
-    }
-}
-
-/* input area */
-div.nbinput.container div.input_area {
-    border: 1px solid #e0e0e0;
-    border-radius: 2px;
-    /*background: #f5f5f5;*/
-}
-
-/* override MathJax center alignment in output cells */
-div.nboutput.container div[class*=MathJax] {
-    text-align: left !important;
-}
-
-/* override sphinx.ext.imgmath center alignment in output cells */
-div.nboutput.container div.math p {
-    text-align: left;
-}
-
-/* standard error */
-div.nboutput.container div.output_area.stderr {
-    background: #fdd;
-}
-
-/* ANSI colors */
-.ansi-black-fg { color: #3E424D; }
-.ansi-black-bg { background-color: #3E424D; }
-.ansi-black-intense-fg { color: #282C36; }
-.ansi-black-intense-bg { background-color: #282C36; }
-.ansi-red-fg { color: #E75C58; }
-.ansi-red-bg { background-color: #E75C58; }
-.ansi-red-intense-fg { color: #B22B31; }
-.ansi-red-intense-bg { background-color: #B22B31; }
-.ansi-green-fg { color: #00A250; }
-.ansi-green-bg { background-color: #00A250; }
-.ansi-green-intense-fg { color: #007427; }
-.ansi-green-intense-bg { background-color: #007427; }
-.ansi-yellow-fg { color: #DDB62B; }
-.ansi-yellow-bg { background-color: #DDB62B; }
-.ansi-yellow-intense-fg { color: #B27D12; }
-.ansi-yellow-intense-bg { background-color: #B27D12; }
-.ansi-blue-fg { color: #208FFB; }
-.ansi-blue-bg { background-color: #208FFB; }
-.ansi-blue-intense-fg { color: #0065CA; }
-.ansi-blue-intense-bg { background-color: #0065CA; }
-.ansi-magenta-fg { color: #D160C4; }
-.ansi-magenta-bg { background-color: #D160C4; }
-.ansi-magenta-intense-fg { color: #A03196; }
-.ansi-magenta-intense-bg { background-color: #A03196; }
-.ansi-cyan-fg { color: #60C6C8; }
-.ansi-cyan-bg { background-color: #60C6C8; }
-.ansi-cyan-intense-fg { color: #258F8F; }
-.ansi-cyan-intense-bg { background-color: #258F8F; }
-.ansi-white-fg { color: #C5C1B4; }
-.ansi-white-bg { background-color: #C5C1B4; }
-.ansi-white-intense-fg { color: #A1A6B2; }
-.ansi-white-intense-bg { background-color: #A1A6B2; }
-
-.ansi-default-inverse-fg { color: #FFFFFF; }
-.ansi-default-inverse-bg { background-color: #000000; }
-
-.ansi-bold { font-weight: bold; }
-.ansi-underline { text-decoration: underline; }
-
-
-div.nbinput.container div.input_area div[class*=highlight] > pre,
-div.nboutput.container div.output_area div[class*=highlight] > pre,
-div.nboutput.container div.output_area div[class*=highlight].math,
-div.nboutput.container div.output_area.rendered_html,
-div.nboutput.container div.output_area > div.output_javascript,
-div.nboutput.container div.output_area:not(.rendered_html) > img{
-    padding: 5px;
-    margin: 0;
-}
-
-/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
-div.nbinput.container div.input_area > div[class^='highlight'],
-div.nboutput.container div.output_area > div[class^='highlight']{
-    overflow-y: hidden;
-}
-
-/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
-.prompt a.copybtn {
-    display: none;
-}
-
-/* Some additional styling taken form the Jupyter notebook CSS */
-div.rendered_html table {
-  border: none;
-  border-collapse: collapse;
-  border-spacing: 0;
-  color: black;
-  font-size: 12px;
-  table-layout: fixed;
-}
-div.rendered_html thead {
-  border-bottom: 1px solid black;
-  vertical-align: bottom;
-}
-div.rendered_html tr,
-div.rendered_html th,
-div.rendered_html td {
-  text-align: right;
-  vertical-align: middle;
-  padding: 0.5em 0.5em;
-  line-height: normal;
-  white-space: normal;
-  max-width: none;
-  border: none;
-}
-div.rendered_html th {
-  font-weight: bold;
-}
-div.rendered_html tbody tr:nth-child(odd) {
-  background: #f5f5f5;
-}
-div.rendered_html tbody tr:hover {
-  background: rgba(66, 165, 245, 0.2);
-}
-
-/* CSS overrides for sphinx_rtd_theme */
-
-/* 24px margin */
-.nbinput.nblast.container,
-.nboutput.nblast.container {
-    margin-bottom: 19px;  /* padding has already 5px */
-}
-
-/* ... except between code cells! */
-.nblast.container + .nbinput.container {
-    margin-top: -19px;
-}
-
-.admonition > p:before {
-    margin-right: 4px;  /* make room for the exclamation icon */
-}
-
-/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
-.math {
-    text-align: unset;
-}
-</style>
-<div class="nbinput nblast docutils container">
+             
+  <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">eryn.ensemble</span> <span class="kn">import</span> <span class="n">EnsembleSampler</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">eryn.ensemble</span> <span class="kn">import</span> <span class="n">EnsembleSampler</span>
 <span class="kn">from</span> <span class="nn">eryn.state</span> <span class="kn">import</span> <span class="n">State</span>
 <span class="kn">from</span> <span class="nn">eryn.prior</span> <span class="kn">import</span> <span class="n">ProbDistContainer</span><span class="p">,</span> <span class="n">uniform_dist</span>
 <span class="kn">from</span> <span class="nn">eryn.utils</span> <span class="kn">import</span> <span class="n">TransformContainer</span>
@@ -496,18 +134,17 @@ div.rendered_html tbody tr:hover {
 <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
 
 <span class="kn">import</span> <span class="nn">corner</span>
-
-</pre></div>
+<br/></pre></div>
 </div>
 </div>
 <section id="Eryn-Basic-Tutorial">
-<h1>Eryn Basic Tutorial<a class="headerlink" href="#Eryn-Basic-Tutorial" title="Permalink to this headline">¶</a></h1>
+<h1>Eryn Basic Tutorial<a class="headerlink" href="#Eryn-Basic-Tutorial" title="Permalink to this heading"></a></h1>
 <p>Eryn is an advanced MCMC sampler. It has the capability to run with parallel tempering, multiple model types, and unknown counts within each model type using Reversible-Jump MCMC techniques. Eryn is heavily based on <a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a>. The <code class="docutils literal notranslate"><span class="pre">emcee</span></code> base structure with the Ensemble Sampler, State objects, proposal setup, and storage backends is carried over into Eryn with small changes to account for the increased complexity. In a simple sense, Eryn is an
 advanced (and slightly more complicated) version of <code class="docutils literal notranslate"><span class="pre">emcee</span></code>.</p>
 <p>In this tutorial, we will go through much of what is available in Eryn. We will start with a basic sampling operation to illustrate how to build and navigate common objects in Eryn. We will then scale up the complexity to understand how to use Eryn in different circumstances.</p>
 <p>If you use Eryn in your publication, please cite the paper <a class="reference external" href="https://arxiv.org/abs/2303.02164">arXiv:2303.02164</a>, its <a class="reference external" href="https://zenodo.org/record/7705496#.ZAhzukJKjlw">zenodo</a>, and <a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a>. The documentation for Eryn can be found here: <a class="reference external" href="https://mikekatz04.github.io/Eryn">mikekatz04.github.io/Eryn</a>. You will find the code on Github: <a class="reference external" href="https://github.com/mikekatz04/Eryn">github.com/mikekatz04/Eryn</a>.</p>
 <section id="MCMC-Basics">
-<h2>MCMC Basics<a class="headerlink" href="#MCMC-Basics" title="Permalink to this headline">¶</a></h2>
+<h2>MCMC Basics<a class="headerlink" href="#MCMC-Basics" title="Permalink to this heading"></a></h2>
 <p>Here we will go through the basics of MCMC. For a better overall understanding of MCMC, see the Eryn paper: (# TODO: add paper).</p>
 <p>The goal of MCMC is to assess the posterior probablity on parameters <span class="math notranslate nohighlight">\((\vec{\theta})\)</span> from a model (<span class="math notranslate nohighlight">\(\mathcal{M}\)</span>), given some data <span class="math notranslate nohighlight">\(y\)</span>: <span class="math notranslate nohighlight">\(p(\vec{\theta}, \mathcal{M}|y)\)</span>. We can rewrite this probability using Bayes’ rule:</p>
 <div class="math notranslate nohighlight">
@@ -525,15 +162,15 @@ advanced (and slightly more complicated) version of <code class="docutils litera
 probability equal to this fraction. Therefore, as the new value becomes worse and worse compared to the old value, the probability of acceptance decreases.</p>
 </section>
 <section id="The-Tree-Metaphor">
-<h2>The Tree Metaphor<a class="headerlink" href="#The-Tree-Metaphor" title="Permalink to this headline">¶</a></h2>
+<h2>The Tree Metaphor<a class="headerlink" href="#The-Tree-Metaphor" title="Permalink to this heading"></a></h2>
 <p>Before we get into using the sampler, we will discuss the “infamous” tree metaphor. It helped in thinking about the early creation of Eryn and has carried through to the end. <code class="docutils literal notranslate"><span class="pre">Eryn</span></code> is the Sindarin word for “forest” or “woods.” The purpose of this metaphor is to simplify the complex dimensionality associated with changing models and model counts in MCMC. We choose not to use “model” and “model counts” everywhere because those descriptions can quickly become confusing.</p>
-<p>We start with a forest with a bunch of trees. These trees are the MCMC “walkers”. Each tree will have the same number of branches which is fixed throughout a sampling run (i.e. each walker has the same base setup). These branches are our different model types. For example, if you have a signal that is a combination of sine waves and Gaussians. In this case, you have two branches, one for the “sine wave” model and one for the “Gaussian” model. The number of Gaussians or sine waves is accounted
+<p>We start with a forest with a bunch of trees. These trees are the MCMC “walkers”. Each tree will have the same number of branches which is fixed throughout a sampling run (i.e. each walker has the same base setup). These branches are our different model types. For example, if you have a signal that is a combination of sine waves and Gaussians. In this case, you have two branches, one for the “sine wave” model and one for the “Gaussian” model. The number of Gaussians or sine waves is accounted
 for as the number of “leafs” on each branch. So, if 1 walker has 3 Gaussians and 2 sine waves, we can imagine this as a tree with two branches. The first branch for sine waves has 2 leaves and the second branch as 3 leaves for 3 Gaussians.</p>
 <p>When we get to parallel tempering, you can imagine different forests at different temperatures, all having the same number of trees (walkers).</p>
 <p>(# TODO: add image)</p>
 </section>
 <section id="Getting-Started-with-the-Ensemble-Sampler">
-<h2>Getting Started with the Ensemble Sampler<a class="headerlink" href="#Getting-Started-with-the-Ensemble-Sampler" title="Permalink to this headline">¶</a></h2>
+<h2>Getting Started with the Ensemble Sampler<a class="headerlink" href="#Getting-Started-with-the-Ensemble-Sampler" title="Permalink to this heading"></a></h2>
 <p>Let’s start by running on a simple multivariate Gaussian likelihood:</p>
 <div class="math notranslate nohighlight">
 \[\ln{\mathcal{L}}\propto -\frac{1}{2}(\vec{x} - \vec{\mu})^T \tilde{C}^{-1} (\vec{x} - \vec{\mu})\]</div>
@@ -541,13 +178,11 @@ for as the number of “leafs” on each branch. So, if 1 walker has 3 Gaussians
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># Gaussian likelihood</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Gaussian likelihood</span>
 <span class="k">def</span> <span class="nf">log_like_fn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">invcov</span><span class="p">):</span>
     <span class="n">diff</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">mu</span>
     <span class="k">return</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">diff</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">invcov</span><span class="p">,</span> <span class="n">diff</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-
-</pre></div>
+<br/></pre></div>
 </div>
 </div>
 <p>Add the initial settings: number of dimensions and number of walkers. Then, generate a covariance matrix for the given dimensionality for the likelihood and a set of means for each component of the Gaussian.</p>
@@ -555,8 +190,7 @@ for as the number of “leafs” on each branch. So, if 1 walker has 3 Gaussians
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">ndim</span> <span class="o">=</span> <span class="mi">5</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ndim</span> <span class="o">=</span> <span class="mi">5</span>
 <span class="n">nwalkers</span> <span class="o">=</span> <span class="mi">100</span>
 
 <span class="c1"># mean</span>
@@ -582,13 +216,11 @@ like this:</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># set prior limits</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># set prior limits</span>
 <span class="n">lims</span> <span class="o">=</span> <span class="mf">5.0</span>
 <span class="n">priors_in</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="o">-</span><span class="n">lims</span> <span class="o">+</span> <span class="n">means</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">lims</span> <span class="o">+</span> <span class="n">means</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ndim</span><span class="p">)}</span>
 <span class="n">priors</span> <span class="o">=</span> <span class="n">ProbDistContainer</span><span class="p">(</span><span class="n">priors_in</span><span class="p">)</span>
-
-</pre></div>
+<br/></pre></div>
 </div>
 </div>
 <p>In this case, we are not going to use really any of Eryn’s special capabilities. This will allow us to focus on how to navigate the sampler and deal with its output. Then we can add the fun stuff!</p>
@@ -598,8 +230,7 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">ensemble</span> <span class="o">=</span> <span class="n">EnsembleSampler</span><span class="p">(</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ensemble</span> <span class="o">=</span> <span class="n">EnsembleSampler</span><span class="p">(</span>
     <span class="n">nwalkers</span><span class="p">,</span>
     <span class="n">ndim</span><span class="p">,</span>
     <span class="n">log_like_fn</span><span class="p">,</span>
@@ -614,8 +245,7 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># starting positions</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># starting positions</span>
 <span class="c1"># randomize throughout prior</span>
 <span class="n">coords</span> <span class="o">=</span> <span class="n">priors</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">,))</span>
 
@@ -630,8 +260,7 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
     <span class="n">priors</span><span class="o">.</span><span class="n">logpdf</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">)])</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">log_prior</span><span class="p">)</span>
-
-</pre></div>
+<br/></pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -693,8 +322,7 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">nsteps</span> <span class="o">=</span> <span class="mi">500</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">nsteps</span> <span class="o">=</span> <span class="mi">500</span>
 <span class="c1"># burn for 1000 steps</span>
 <span class="n">burn</span> <span class="o">=</span> <span class="mi">100</span>
 <span class="c1"># thin by 5</span>
@@ -708,8 +336,8 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|████████████████████████████████████████| 100/100 [00:00&lt;00:00, 241.43it/s]
-100%|██████████████████████████████████████| 2500/2500 [00:10&lt;00:00, 243.73it/s]
+100%|████████████████████████████████████████| 100/100 [00:00&lt;00:00, 280.45it/s]
+100%|██████████████████████████████████████| 2500/2500 [00:08&lt;00:00, 305.75it/s]
 </pre></div></div>
 </div>
 <p>Similar to <code class="docutils literal notranslate"><span class="pre">emcee</span></code>, all of the sampler information is stored in a backend object. In the default case, this backend is <code class="docutils literal notranslate"><span class="pre">`eryn.backends.Backend</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/build/html/user/backend.html#eryn.backends.Backend">https://mikekatz04.github.io/Eryn/build/html/user/backend.html#eryn.backends.Backend</a>&gt;`__. To retrieve the samples from the backend, you call the <code class="docutils literal notranslate"><span class="pre">get_chain</span></code> method. This will return a dictionary with keys at the omdel names and a 5-dimensional array per model, which can be intimidating. We will cover that array just below. For now, just focus on
@@ -719,8 +347,7 @@ the output of the sampler.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;model_0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ndim</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;model_0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ndim</span><span class="p">)</span>
 <span class="n">corner</span><span class="o">.</span><span class="n">corner</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">truths</span><span class="o">=</span><span class="n">means</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -745,8 +372,7 @@ the output of the sampler.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1">#### Chains</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#### Chains</span>
 <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ndim</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ndim</span><span class="p">):</span>
@@ -764,18 +390,17 @@ the output of the sampler.</p>
 </div>
 </section>
 <section id="Backend-Objects">
-<h2>Backend Objects<a class="headerlink" href="#Backend-Objects" title="Permalink to this headline">¶</a></h2>
+<h2>Backend Objects<a class="headerlink" href="#Backend-Objects" title="Permalink to this heading"></a></h2>
 <p>Backends are where all of the information in the sampler is stored as it runs. It is from these backends that samples are retrieved for plotting. You can find the documentation for the Backend objects <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/backend.html#backends">here</a>. Here, we will go through the most commonly used functions from the backend: * <code class="docutils literal notranslate"><span class="pre">get_chain</span></code>: retrieve all of the samples stored over the course of the sampling run. * <code class="docutils literal notranslate"><span class="pre">get_log_like</span></code>: retrieve the log of the Likelihood
 for each sample. * <code class="docutils literal notranslate"><span class="pre">get_log_prior</span></code>: retrieve the log of the prior for each sample. * <code class="docutils literal notranslate"><span class="pre">get_a_sample</span></code>: retrieve a state object from a specific iteration. <code class="docutils literal notranslate"><span class="pre">get_last_sample</span></code> may be more common. It is just a specific example of <code class="docutils literal notranslate"><span class="pre">get_a_sample</span></code> for the last sample.</p>
 <p>Many (but not all) of the methods from the backend object are also raised to the level of sampler. So you can either call <code class="docutils literal notranslate"><span class="pre">EnsembleSampler.backend.method</span></code> or <code class="docutils literal notranslate"><span class="pre">EnsembleSampler.method</span></code> and it will be equivalent.</p>
 <p>Common properties to get from the backend: * <code class="docutils literal notranslate"><span class="pre">shape</span></code>: returns a dictionary with keys for each branch name and values as tuples representing the specific shape for each model (this shape will not include the <code class="docutils literal notranslate"><span class="pre">nsteps</span></code> outer dimension. * <code class="docutils literal notranslate"><span class="pre">iteration</span></code>: number of stored iterations in the backend.</p>
-<p>Now we will get the likelihood and prior. Notice the shape of the Likelihood is <code class="docutils literal notranslate"><span class="pre">(nsteps,</span> <span class="pre">ntemps,</span> <span class="pre">nwalkers)</span></code> (in this example we have 1 temperature). This will always be the shape of quantities that are a single value per walker (e.g. Likelihood, prior, posterior).</p>
+<p>Now we will get the likelihood and prior. Notice the shape of the Likelihood is <code class="docutils literal notranslate"><span class="pre">(nsteps,</span> <span class="pre">ntemps,</span> <span class="pre">nwalkers)</span></code> (in this example we have 1 temperature). This will always be the shape of quantities that are a single value per walker (e.g. Likelihood, prior, posterior).</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">ll</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">get_log_like</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ll</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">get_log_like</span><span class="p">()</span>
 <span class="n">lp</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">get_log_prior</span><span class="p">()</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of iterations </span><span class="si">{</span><span class="n">ensemble</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">iteration</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -830,7 +455,7 @@ Number of iterations 500
 </pre></div></div>
 </div>
 <section id="5-dimensional-Arrays">
-<h3>5-dimensional Arrays<a class="headerlink" href="#5-dimensional-Arrays" title="Permalink to this headline">¶</a></h3>
+<h3>5-dimensional Arrays<a class="headerlink" href="#5-dimensional-Arrays" title="Permalink to this heading"></a></h3>
 <p>The chain information is returned as a dictionary with keys as the branch names and values as 5-dimensional arrays: <code class="docutils literal notranslate"><span class="pre">(nsteps,</span> <span class="pre">ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max,</span> <span class="pre">ndim)</span></code>. For clarity: * nsteps: number of sampler iterations stored (time evolution of each forest) * ntemps: number of temperatures (which forest you are in) * nwalkers: number of walkers (which tree) * nleaves_max: maximum number of model counts or leaves for each specific branch. * ndim: number of parameters describing a single
 model or leaf.</p>
 <p>In our simple example, we have 1 temperature and our maximum leaf count is 1.</p>
@@ -838,8 +463,7 @@ model or leaf.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># getting the chain</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># getting the chain</span>
 <span class="n">samples</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()</span>
 
 <span class="c1"># same as</span>
@@ -861,8 +485,7 @@ model or leaf.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">ensemble</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">shape</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ensemble</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">shape</span>
 </pre></div>
 </div>
 </div>
@@ -878,7 +501,7 @@ model or leaf.</p>
 </section>
 </section>
 <section id="State-Objects">
-<h2>State Objects<a class="headerlink" href="#State-Objects" title="Permalink to this headline">¶</a></h2>
+<h2>State Objects<a class="headerlink" href="#State-Objects" title="Permalink to this heading"></a></h2>
 <p>Now, we are going to look at <code class="docutils literal notranslate"><span class="pre">`State</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/build/html/user/state.html#eryn.state.State">https://mikekatz04.github.io/Eryn/build/html/user/state.html#eryn.state.State</a>&gt;`__ objects. They carry the current information throughout the sampler about the current state of the sampler. In our simple example, we can examine the current coordinates, likelihood, and prior values.</p>
 <p>Output from the sampler above is the last state of the sampler <code class="docutils literal notranslate"><span class="pre">out</span></code>. This will include any additional objects passed through the sampler like <code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> objects that we will explain below.</p>
 <p>Another way to retrieve the last state is from the backend. That is what we will do here. However, please note, that supplimental information (discussed below) is not stored in the backend, so the state that is returned from the backend will have information that is stored in the backend, but not supplimental information that was passed through the sampler at runtime.</p>
@@ -886,8 +509,7 @@ model or leaf.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">last_state</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">get_last_sample</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">last_state</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">get_last_sample</span><span class="p">()</span>
 <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">last_state</span><span class="p">))</span>
 </pre></div>
 </div>
@@ -905,8 +527,7 @@ model or leaf.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="nb">print</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">log_like</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">log_like</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">log_prior</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">get_log_posterior</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">log_like</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">log_like</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">log_prior</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">get_log_posterior</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
@@ -987,15 +608,14 @@ model or leaf.</p>
 </pre></div></div>
 </div>
 <section id="Branches">
-<h3>Branches<a class="headerlink" href="#Branches" title="Permalink to this headline">¶</a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">State</span></code> objects store quantities at are single values per walker directly in the state as shown above (e.g. <code class="docutils literal notranslate"><span class="pre">State.log_like</span></code>). Information that gets down to the individual branch (or model type) level is stored in a <code class="docutils literal notranslate"><span class="pre">`Branch</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/state.html#eryn.state.Branch">https://mikekatz04.github.io/Eryn/html/user/state.html#eryn.state.Branch</a>&gt;`__ object. These <code class="docutils literal notranslate"><span class="pre">Branch</span></code> objects are stored in a dictionary within the <code class="docutils literal notranslate"><span class="pre">State</span></code> object with keys as branch names and values as the <code class="docutils literal notranslate"><span class="pre">Branch</span></code> object associated with that branch name. The
+<h3>Branches<a class="headerlink" href="#Branches" title="Permalink to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">State</span></code> objects store quantities at are single values per walker directly in the state as shown above (e.g. <code class="docutils literal notranslate"><span class="pre">State.log_like</span></code>). Information that gets down to the individual branch (or model type) level is stored in a <code class="docutils literal notranslate"><span class="pre">`Branch</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/state.html#eryn.state.Branch">https://mikekatz04.github.io/Eryn/html/user/state.html#eryn.state.Branch</a>&gt;`__ object. These <code class="docutils literal notranslate"><span class="pre">Branch</span></code> objects are stored in a dictionary within the <code class="docutils literal notranslate"><span class="pre">State</span></code> object with keys as branch names and values as the <code class="docutils literal notranslate"><span class="pre">Branch</span></code> object associated with that branch name. The
 branch objects can be accessed as <code class="docutils literal notranslate"><span class="pre">state.branches[model_name]</span></code>. With in the branch object, the coordinates are stored. A few other things are stored, but we will get to that later. If you want a dictionary with keys at the branch names and values as the current coordinates, you can also use the property: <code class="docutils literal notranslate"><span class="pre">state.branches_coords</span></code>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">last_state</span><span class="o">.</span><span class="n">branches</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">last_state</span><span class="o">.</span><span class="n">branches</span>
 </pre></div>
 </div>
 </div>
@@ -1005,15 +625,14 @@ branch objects can be accessed as <code class="docutils literal notranslate"><sp
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-{&#39;model_0&#39;: &lt;eryn.state.Branch at 0x159f2d070&gt;}
+{&#39;model_0&#39;: &lt;eryn.state.Branch at 0x7fe51cbb3940&gt;}
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">last_state</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;model_0&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">coords</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">last_state</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;model_0&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">coords</span>
 
 <span class="c1"># same as</span>
 <span class="c1"># last_state.branches_coords[&quot;model_0&quot;]</span>
@@ -1330,7 +949,7 @@ array([[[[ 0.78336101, -0.50304083, -0.16554043,  0.38717246,
 </section>
 </section>
 <section id="Parallel-Tempering">
-<h2>Parallel Tempering<a class="headerlink" href="#Parallel-Tempering" title="Permalink to this headline">¶</a></h2>
+<h2>Parallel Tempering<a class="headerlink" href="#Parallel-Tempering" title="Permalink to this heading"></a></h2>
 <p>Adding tempering to our problem is straight forward. It will effectively just take the <code class="docutils literal notranslate"><span class="pre">ntemps</span></code> dimension that was 1 above and stretch it to the number of temperatures desired. We add tempering information by providing the <code class="docutils literal notranslate"><span class="pre">tempering_kwargs</span></code> argument to the <code class="docutils literal notranslate"><span class="pre">EnsembleSampler</span></code>. The tempering kwargs documentation can be found here because they are the <code class="docutils literal notranslate"><span class="pre">kwargs</span></code> that go into the initialization of the temperature controller:
 <code class="docutils literal notranslate"><span class="pre">`eryn.moves.tempering.TemperatureControl</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/temper.html#eryn.moves.tempering.TemperatureControl">https://mikekatz04.github.io/Eryn/html/user/temper.html#eryn.moves.tempering.TemperatureControl</a>&gt;`__.</p>
 <p>The simplest thing to do is to provide the number of temperatures. In this case, we just pass <code class="docutils literal notranslate"><span class="pre">ntemps</span></code> in a dictionary. You can also provide a direct array of <code class="docutils literal notranslate"><span class="pre">betas</span></code> (inverse temperatures). Under the hood, if only <code class="docutils literal notranslate"><span class="pre">ntemps</span></code> is passed (not <code class="docutils literal notranslate"><span class="pre">betas</span></code>), the sampler will use the <code class="docutils literal notranslate"><span class="pre">`eryn.moves.tempering.make_ladder</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/temper.html#eryn.moves.tempering.make_ladder">https://mikekatz04.github.io/Eryn/html/user/temper.html#eryn.moves.tempering.make_ladder</a>&gt;`__ function. We will go all thr way through to the MCMC run. Notice that we are once
@@ -1353,9 +972,7 @@ Likelihoods just like discussed above.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-
-<span></span><span class="c1"># set up problem</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="c1"># set up problem</span>
 <span class="n">ndim</span> <span class="o">=</span> <span class="mi">5</span>
 <span class="n">nwalkers</span> <span class="o">=</span> <span class="mi">100</span>
 <span class="n">ntemps</span> <span class="o">=</span> <span class="mi">10</span>
@@ -1382,9 +999,7 @@ Likelihoods just like discussed above.</p>
 <span class="c1"># thin by 5</span>
 <span class="n">thin_by</span> <span class="o">=</span> <span class="mi">5</span>
 <span class="n">ensemble_pt</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">nsteps</span><span class="p">,</span> <span class="n">burn</span><span class="o">=</span><span class="n">burn</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="n">thin_by</span><span class="p">)</span>
-
-
-</pre></div>
+<br/><br/></pre></div>
 </div>
 </div>
 <div class="nboutput docutils container">
@@ -1392,8 +1007,8 @@ Likelihoods just like discussed above.</p>
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|███████████████████████████████████████| 1000/1000 [00:14&lt;00:00, 67.77it/s]
-100%|███████████████████████████████████████| 2500/2500 [00:35&lt;00:00, 69.65it/s]
+100%|███████████████████████████████████████| 1000/1000 [00:13&lt;00:00, 75.39it/s]
+100%|███████████████████████████████████████| 2500/2500 [00:33&lt;00:00, 73.56it/s]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1402,7 +1017,7 @@ Likelihoods just like discussed above.</p>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;eryn.state.State at 0x159f2d3a0&gt;
+&lt;eryn.state.State at 0x7fe518eeb640&gt;
 </pre></div></div>
 </div>
 <p>We can plot our samples at different temperatures and see the differences in action.</p>
@@ -1410,8 +1025,7 @@ Likelihoods just like discussed above.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ntemps</span><span class="p">):</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ntemps</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">temp</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
     <span class="n">samples</span> <span class="o">=</span> <span class="n">ensemble_pt</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;model_0&#39;</span><span class="p">][:,</span> <span class="n">temp</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ndim</span><span class="p">)</span>
     <span class="n">corner</span><span class="o">.</span><span class="n">corner</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">truths</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ndim</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
@@ -1509,8 +1123,7 @@ Likelihoods just like discussed above.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1">#### Chains</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#### Chains</span>
 <span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ntemps</span><span class="p">):</span>
     <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ndim</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
@@ -1595,8 +1208,7 @@ Likelihoods just like discussed above.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">ll</span> <span class="o">=</span> <span class="n">ensemble_pt</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">get_log_like</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ll</span> <span class="o">=</span> <span class="n">ensemble_pt</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">get_log_like</span><span class="p">()</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">ll</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
 <span class="c1"># cold chain and highest temperature chain</span>
@@ -1620,7 +1232,7 @@ Likelihoods just like discussed above.</p>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x15a36f8b0&gt;
+&lt;matplotlib.legend.Legend at 0x7fe4eeb56020&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1632,7 +1244,7 @@ Likelihoods just like discussed above.</p>
 </div>
 </section>
 <section id="Add-Reversible-Jump-MCMC-(model-count-uncertainty)">
-<h2>Add Reversible Jump MCMC (model count uncertainty)<a class="headerlink" href="#Add-Reversible-Jump-MCMC-(model-count-uncertainty)" title="Permalink to this headline">¶</a></h2>
+<h2>Add Reversible Jump MCMC (model count uncertainty)<a class="headerlink" href="#Add-Reversible-Jump-MCMC-(model-count-uncertainty)" title="Permalink to this heading"></a></h2>
 <p>We will now add to our sampler the ability to run with one branch, but a variable number of counts or leaves.</p>
 <p>Here we are going to focus on the nested model case where we are just proposing changes in the model count. For more general review on Reversible Jump, see the Eryn paper and sources within.</p>
 <p>In nested models, the acceptance probability for proposing to add a source is given by, <span class="math notranslate nohighlight">\(\alpha_\text{nested}\)</span>,</p>
@@ -1645,8 +1257,7 @@ Likelihoods just like discussed above.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="k">def</span> <span class="nf">gaussian_pulse</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">gaussian_pulse</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
     <span class="n">f_x</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="n">b</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">c</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">f_x</span>
 
@@ -1704,7 +1315,7 @@ Likelihoods just like discussed above.</p>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x15ab05d90&gt;
+&lt;matplotlib.legend.Legend at 0x7fe5065d3a00&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1722,8 +1333,7 @@ Likelihoods just like discussed above.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">coords</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">,</span> <span class="n">ndim</span><span class="p">))}</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">coords</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">,</span> <span class="n">ndim</span><span class="p">))}</span>
 
 <span class="c1"># this is the sigma for the multivariate Gaussian that sets starting points</span>
 <span class="c1"># We need it to be very small to assume we are passed the search phase</span>
@@ -1751,8 +1361,7 @@ Likelihoods just like discussed above.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># describes priors for all leaves independently</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># describes priors for all leaves independently</span>
 <span class="n">priors</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="p">{</span>
         <span class="mi">0</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">),</span>  <span class="c1"># amplitude</span>
@@ -1771,14 +1380,12 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># for the Gaussian Move, will be explained later</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># for the Gaussian Move, will be explained later</span>
 <span class="n">factor</span> <span class="o">=</span> <span class="mf">0.00001</span>
 <span class="n">cov</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">ndim</span><span class="p">))</span> <span class="o">*</span> <span class="n">factor</span><span class="p">}</span>
 
 <span class="n">moves</span> <span class="o">=</span> <span class="n">GaussianMove</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
-
-</pre></div>
+<br/></pre></div>
 </div>
 </div>
 <p>We will now initialize the sampler by adding the branch, tempering, leaf, and move information.</p>
@@ -1786,8 +1393,7 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">ensemble</span> <span class="o">=</span> <span class="n">EnsembleSampler</span><span class="p">(</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ensemble</span> <span class="o">=</span> <span class="n">EnsembleSampler</span><span class="p">(</span>
     <span class="n">nwalkers</span><span class="p">,</span>
     <span class="n">ndim</span><span class="p">,</span>
     <span class="n">log_like_fn_gauss_pulse</span><span class="p">,</span>
@@ -1801,9 +1407,7 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
     <span class="n">moves</span><span class="o">=</span><span class="n">moves</span><span class="p">,</span>
     <span class="n">rj_moves</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># basic generation of new leaves from the prior</span>
 <span class="p">)</span>
-
-
-</pre></div>
+<br/><br/></pre></div>
 </div>
 </div>
 <p>Now we will setup a <code class="docutils literal notranslate"><span class="pre">State</span></code> object and will use the Likelihood (<code class="docutils literal notranslate"><span class="pre">compute_log_like</span></code>) and prior functions (<code class="docutils literal notranslate"><span class="pre">compute_log_prior</span></code>) that are built into the sampler. The Likelihood function in the sampler will check the prior and only run walkers that exist entirely within the prior distribution. We can avoid redoing this computation by passing the prior as the <code class="docutils literal notranslate"><span class="pre">logp</span></code> kwarg to <code class="docutils literal notranslate"><span class="pre">compute_log_like</span></code>. The <code class="docutils literal notranslate"><span class="pre">[0]</span></code> at the end of the line is to grab the log Likelihood and leave behind any blobs.</p>
@@ -1811,9 +1415,7 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-
-<span></span><span class="n">log_prior</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">compute_log_prior</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="n">log_prior</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">compute_log_prior</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">)</span>
 <span class="n">log_like</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">compute_log_like</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">,</span> <span class="n">logp</span><span class="o">=</span><span class="n">log_prior</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
 <span class="c1"># make sure it is reasonably close to the maximum which this is</span>
@@ -1822,8 +1424,7 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 
 <span class="c1"># setup starting state</span>
 <span class="n">state</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">log_like</span><span class="o">=</span><span class="n">log_like</span><span class="p">,</span> <span class="n">log_prior</span><span class="o">=</span><span class="n">log_prior</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">)</span>
-
-</pre></div>
+<br/></pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1901,11 +1502,9 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">nsteps</span> <span class="o">=</span> <span class="mi">2000</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">nsteps</span> <span class="o">=</span> <span class="mi">2000</span>
 <span class="n">last_sample</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">nsteps</span><span class="p">,</span> <span class="n">burn</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-</pre></div>
+<br/></pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1913,8 +1512,8 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|███████████████████████████████████████| 1000/1000 [00:30&lt;00:00, 32.78it/s]
-100%|███████████████████████████████████████| 2000/2000 [00:58&lt;00:00, 33.96it/s]
+100%|███████████████████████████████████████| 1000/1000 [00:29&lt;00:00, 34.26it/s]
+100%|███████████████████████████████████████| 2000/2000 [00:57&lt;00:00, 34.78it/s]
 </pre></div></div>
 </div>
 <p>Let’s look at the last sample in terms of the <code class="docutils literal notranslate"><span class="pre">nleaves</span></code> array.</p>
@@ -1922,8 +1521,7 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">last_sample</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">nleaves</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">last_sample</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">nleaves</span>
 </pre></div>
 </div>
 </div>
@@ -1933,22 +1531,21 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([[3, 4, 4, 4, 4, 4, 3, 4, 5, 4, 4, 4, 4, 4, 3, 4, 4, 5, 4, 4],
-       [3, 3, 4, 4, 4, 5, 3, 4, 3, 4, 4, 4, 4, 3, 3, 3, 5, 4, 3, 3],
-       [3, 4, 3, 3, 4, 4, 5, 3, 5, 3, 4, 3, 5, 4, 3, 3, 3, 4, 3, 3],
-       [3, 3, 4, 2, 3, 4, 3, 3, 3, 3, 4, 4, 3, 3, 5, 4, 3, 3, 3, 3],
-       [3, 2, 4, 3, 3, 3, 2, 5, 3, 4, 3, 2, 4, 3, 5, 4, 3, 2, 3, 3],
-       [2, 3, 4, 5, 3, 2, 4, 3, 2, 4, 2, 2, 1, 3, 2, 3, 3, 5, 4, 2],
-       [4, 3, 3, 4, 8, 3, 2, 3, 3, 7, 5, 1, 1, 3, 6, 2, 4, 2, 3, 5],
-       [2, 3, 7, 4, 8, 4, 2, 4, 3, 4, 4, 5, 3, 5, 2, 3, 4, 2, 4, 2]])
+array([[4, 4, 3, 4, 4, 3, 4, 4, 4, 4, 3, 4, 4, 4, 4, 3, 4, 3, 5, 3],
+       [3, 4, 3, 3, 4, 4, 4, 3, 4, 3, 3, 4, 3, 3, 4, 4, 4, 4, 4, 4],
+       [4, 4, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 3, 5, 3, 4, 5, 4, 3],
+       [3, 4, 3, 3, 3, 3, 3, 4, 3, 3, 4, 5, 3, 4, 4, 3, 3, 3, 4, 4],
+       [3, 3, 2, 3, 4, 5, 5, 5, 4, 6, 4, 3, 5, 3, 3, 5, 3, 4, 4, 5],
+       [4, 4, 3, 3, 2, 2, 2, 4, 3, 3, 3, 3, 3, 2, 5, 3, 2, 3, 3, 4],
+       [3, 3, 2, 2, 4, 4, 2, 3, 4, 2, 2, 4, 3, 2, 3, 6, 3, 2, 2, 2],
+       [2, 5, 5, 3, 4, 3, 4, 4, 7, 2, 3, 2, 5, 5, 3, 3, 4, 2, 2, 3]])
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;max ll: </span><span class="si">{</span><span class="n">ensemble</span><span class="o">.</span><span class="n">get_log_like</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;max ll: </span><span class="si">{</span><span class="n">ensemble</span><span class="o">.</span><span class="n">get_log_like</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
 <span class="n">nleaves</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_nleaves</span><span class="p">()[</span><span class="s1">&#39;gauss&#39;</span><span class="p">]</span>
 <span class="n">bns</span> <span class="o">=</span> <span class="p">(</span>
@@ -1967,7 +1564,7 @@ array([[3, 4, 4, 4, 4, 4, 3, 4, 5, 4, 4, 4, 4, 4, 3, 4, 4, 5, 4, 4],
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-max ll: -261.5166298654944
+max ll: -261.2302411532098
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1982,8 +1579,7 @@ max ll: -261.5166298654944
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;gauss&#39;</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ndim</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;gauss&#39;</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ndim</span><span class="p">)</span>
 
 <span class="c1"># same as ensemble.get_chain()[&#39;gauss&#39;][ensemble.get_inds()[&#39;gauss&#39;]]</span>
 <span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">samples</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])]</span>
@@ -2008,14 +1604,13 @@ max ll: -261.5166298654944
 </div>
 </section>
 <section id="Add-multiple-branches">
-<h2>Add multiple branches<a class="headerlink" href="#Add-multiple-branches" title="Permalink to this headline">¶</a></h2>
+<h2>Add multiple branches<a class="headerlink" href="#Add-multiple-branches" title="Permalink to this heading"></a></h2>
 <p>Now we will add another model to our reversible jump problem. We will add a sine wave model.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="k">def</span> <span class="nf">gaussian_pulse</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">gaussian_pulse</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
     <span class="n">f_x</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="n">b</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">c</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">f_x</span>
 
@@ -2052,9 +1647,9 @@ max ll: -261.5166298654944
 
 <span class="n">nwalkers</span> <span class="o">=</span> <span class="mi">20</span>
 <span class="n">ntemps</span> <span class="o">=</span> <span class="mi">8</span>
-<span class="n">ndims</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
-<span class="n">nleaves_max</span> <span class="o">=</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
-<span class="n">nleaves_min</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="n">ndims</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
+<span class="n">nleaves_max</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">}</span>
+<span class="n">nleaves_min</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
 
 <span class="n">branch_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">,</span> <span class="s2">&quot;sine&quot;</span><span class="p">]</span>
 
@@ -2096,7 +1691,7 @@ max ll: -261.5166298654944
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x15fc53a60&gt;
+&lt;matplotlib.legend.Legend at 0x7fe4f40ce320&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -2111,16 +1706,15 @@ max ll: -261.5166298654944
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">coords</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ndims</span><span class="p">[</span><span class="mi">0</span><span class="p">])),</span>
-    <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ndims</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">coords</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">],</span> <span class="n">ndims</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">])),</span>
+    <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">],</span> <span class="n">ndims</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">]))</span>
 <span class="p">}</span>
 
 <span class="c1"># make sure to start near the proper setup</span>
 <span class="n">inds</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">),</span>
-    <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">),</span>
+    <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
 <span class="p">}</span>
 
 
@@ -2131,7 +1725,7 @@ max ll: -261.5166298654944
 
 <span class="c1"># setup initial walkers to be the correct count (it will spread out)</span>
 <span class="c1"># start with gaussians</span>
-<span class="k">for</span> <span class="n">nn</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+<span class="k">for</span> <span class="n">nn</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]):</span>
     <span class="k">if</span> <span class="n">nn</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">gauss_inj_params</span><span class="p">):</span>
         <span class="c1"># not going to add parameters for these unused leaves</span>
         <span class="k">continue</span>
@@ -2139,14 +1733,13 @@ max ll: -261.5166298654944
     <span class="n">inds</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="n">nn</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
 <span class="c1"># next do sine waves</span>
-<span class="k">for</span> <span class="n">nn</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+<span class="k">for</span> <span class="n">nn</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">]):</span>
     <span class="k">if</span> <span class="n">nn</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sine_inj_params</span><span class="p">):</span>
         <span class="c1"># not going to add parameters for these unused leaves</span>
         <span class="k">continue</span>
     <span class="n">coords</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="n">nn</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">sine_inj_params</span><span class="p">[</span><span class="n">nn</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">sig1</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">))</span>
     <span class="n">inds</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="n">nn</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-
-</pre></div>
+<br/></pre></div>
 </div>
 </div>
 <p>Priors are defined per model for a single model. It will take into account multiple models by summing the prior probability over the leaves.</p>
@@ -2154,8 +1747,7 @@ max ll: -261.5166298654944
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># describes priors for all leaves independently</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># describes priors for all leaves independently</span>
 <span class="n">priors</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="p">{</span>
         <span class="mi">0</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">),</span>  <span class="c1"># amplitude</span>
@@ -2176,17 +1768,15 @@ max ll: -261.5166298654944
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># for the Gaussian Move, will be explained later</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># for the Gaussian Move, will be explained later</span>
 <span class="n">factor</span> <span class="o">=</span> <span class="mf">0.00001</span>
 <span class="n">cov</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">ndims</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span> <span class="o">*</span> <span class="n">factor</span><span class="p">,</span>
-    <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">ndims</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span> <span class="o">*</span> <span class="n">factor</span>
+    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">ndims</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]))</span> <span class="o">*</span> <span class="n">factor</span><span class="p">,</span>
+    <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">ndims</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">]))</span> <span class="o">*</span> <span class="n">factor</span>
 <span class="p">}</span>
 
 <span class="n">moves</span> <span class="o">=</span> <span class="n">GaussianMove</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
-
-</pre></div>
+<br/></pre></div>
 </div>
 </div>
 <p>We will now initialize the sampler by adding the branch, tempering, leaf, and move information.</p>
@@ -2194,8 +1784,7 @@ max ll: -261.5166298654944
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[35]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">ensemble</span> <span class="o">=</span> <span class="n">EnsembleSampler</span><span class="p">(</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ensemble</span> <span class="o">=</span> <span class="n">EnsembleSampler</span><span class="p">(</span>
     <span class="n">nwalkers</span><span class="p">,</span>
     <span class="n">ndims</span><span class="p">,</span>
     <span class="n">log_like_fn_gauss_and_sine</span><span class="p">,</span>
@@ -2209,9 +1798,7 @@ max ll: -261.5166298654944
     <span class="n">moves</span><span class="o">=</span><span class="n">moves</span><span class="p">,</span>
     <span class="n">rj_moves</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># basic generation of new leaves from the prior</span>
 <span class="p">)</span>
-
-
-</pre></div>
+<br/><br/></pre></div>
 </div>
 </div>
 <p>Prior, Likelihood, and initial state.</p>
@@ -2219,9 +1806,7 @@ max ll: -261.5166298654944
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-
-<span></span><span class="n">log_prior</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">compute_log_prior</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="n">log_prior</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">compute_log_prior</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">)</span>
 <span class="n">log_like</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">compute_log_like</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">,</span> <span class="n">logp</span><span class="o">=</span><span class="n">log_prior</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
 <span class="c1"># make sure it is reasonably close to the maximum which this is</span>
@@ -2230,8 +1815,7 @@ max ll: -261.5166298654944
 
 <span class="c1"># setup starting state</span>
 <span class="n">state</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">log_like</span><span class="o">=</span><span class="n">log_like</span><span class="p">,</span> <span class="n">log_prior</span><span class="o">=</span><span class="n">log_prior</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">)</span>
-
-</pre></div>
+<br/></pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -2239,38 +1823,38 @@ max ll: -261.5166298654944
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[[-264.14717872 -260.37491933 -264.92467181 -262.79955026 -263.10779763
-  -267.03413801 -266.63408739 -265.03088856 -268.73094312 -264.89952885
-  -260.77548076 -263.80061981 -263.14493462 -265.66180456 -264.34315609
-  -269.10961219 -266.56975993 -263.04384508 -264.44877394 -264.78032491]
- [-263.46040237 -263.66515265 -266.44191566 -261.87375968 -263.17967415
-  -264.68437624 -263.51766167 -261.56545349 -270.21010095 -262.5005476
-  -266.13279326 -264.06914613 -269.09934061 -264.43392318 -265.13875141
-  -264.12083148 -263.94215575 -265.87916501 -269.93246958 -264.20445324]
- [-264.62053625 -264.48506964 -268.55548092 -265.78691183 -269.35330887
-  -261.84081866 -265.34574503 -267.0154009  -262.42452156 -262.57718384
-  -268.49572743 -264.92614916 -270.55668493 -262.70339922 -265.6342974
-  -264.41785609 -262.25828753 -264.44693339 -270.57212843 -263.89600344]
- [-262.52573254 -261.36276868 -263.46423866 -278.83157716 -264.29741206
-  -268.33464894 -262.29435783 -265.1198114  -275.06644494 -265.58496995
-  -265.16491454 -262.34871184 -263.93797506 -265.55519657 -266.00101106
-  -268.00806964 -262.0242142  -261.61357906 -261.02165864 -262.2985023 ]
- [-263.75664922 -261.93256813 -262.08085516 -264.35832612 -264.08298031
-  -268.36049726 -270.70212607 -262.23188929 -266.21250436 -265.245755
-  -263.41196618 -266.15031289 -265.57575987 -265.3162254  -266.3208631
-  -262.55765945 -262.62254529 -267.18623637 -266.17012031 -264.39205367]
- [-262.20549578 -264.82424885 -262.0082607  -264.34341688 -262.30461914
-  -265.1303825  -269.87232892 -269.69508653 -263.33154127 -263.69032288
-  -268.83797576 -266.38575852 -266.20786104 -264.96850175 -262.49102974
-  -265.18303007 -266.44859887 -269.4580674  -264.91716922 -264.45198902]
- [-266.69222226 -268.91000229 -265.26257512 -265.70464916 -262.79134392
-  -272.75537619 -262.82793802 -264.51346756 -263.43422519 -266.47925923
-  -264.59502808 -267.5867711  -261.70124223 -261.68490571 -262.7879083
-  -265.21383572 -264.47308913 -271.57079504 -268.96410602 -262.8073122 ]
- [-267.524965   -261.50114966 -268.42102398 -265.48304188 -266.18481147
-  -263.3410062  -263.74468099 -265.32657209 -266.92898678 -263.88799784
-  -263.92559148 -268.61624211 -274.24552121 -265.43176215 -260.98160547
-  -262.76093503 -261.30408816 -263.93401068 -266.86840979 -266.5585708 ]] [[-5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916
+[[-229.18441391 -233.51872418 -231.94801463 -235.4050852  -226.670966
+  -232.71483467 -229.99148863 -232.40535129 -229.22825659 -230.16495346
+  -228.29127145 -228.74374649 -226.49117628 -231.25563257 -228.862688
+  -227.44352935 -234.67849744 -231.49859258 -230.65579296 -231.81069992]
+ [-227.81377327 -230.13945878 -229.41654888 -227.94783414 -229.31522738
+  -229.81615798 -229.78817956 -227.80534798 -231.90524192 -228.65212536
+  -230.79128554 -227.40049869 -231.24527916 -234.05736224 -238.63570222
+  -231.43650992 -235.70464801 -231.34328242 -228.12956141 -229.26914673]
+ [-230.26442866 -226.47503056 -231.56851138 -229.37430551 -228.93271986
+  -230.38850202 -232.53092761 -235.03556521 -231.54049548 -229.99913862
+  -232.53777598 -228.16530309 -230.35808751 -227.22674918 -226.15827365
+  -236.00134375 -235.68397539 -226.24369726 -231.68966882 -227.59454795]
+ [-231.95358162 -228.82307944 -235.14353803 -229.14890501 -232.15227879
+  -228.64013278 -228.89132475 -234.37202006 -227.71900568 -227.70720334
+  -230.98768038 -232.11278035 -228.33877408 -241.12287975 -232.40874977
+  -230.84468334 -233.2095918  -230.99834849 -231.10304391 -227.32449253]
+ [-229.1865482  -230.04713397 -232.82592779 -229.51721312 -226.95258359
+  -230.80694449 -228.14420069 -230.90414617 -233.609932   -228.10522529
+  -230.85522437 -229.68349989 -230.10665679 -229.19997595 -234.44616622
+  -228.85330281 -234.27875953 -233.58673313 -228.10932674 -234.29296705]
+ [-233.95788218 -228.0866977  -233.30264265 -228.82346604 -229.72494204
+  -234.28165905 -238.15989341 -234.29506362 -230.50970622 -230.71630602
+  -230.12739788 -231.63811447 -233.83828594 -229.67742849 -228.6620161
+  -238.63551634 -228.32572285 -228.24280784 -234.38914285 -228.14806505]
+ [-229.23356207 -234.67103428 -237.90881138 -233.83466125 -231.34757217
+  -229.55405955 -231.77788649 -232.20798465 -229.09701881 -233.44980698
+  -226.98678903 -231.26528224 -229.38754856 -231.85794747 -231.22487614
+  -234.95102489 -232.95030022 -228.22226315 -231.56264544 -229.59721156]
+ [-231.90934207 -234.26628503 -229.59759858 -226.18117692 -228.3581854
+  -227.89490619 -232.35931607 -227.58448115 -237.42531875 -233.79614919
+  -229.43853536 -232.59733154 -228.00377491 -228.39675954 -233.79924613
+  -226.68628461 -228.18445055 -229.21994604 -229.56782994 -230.51977065]] [[-5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916
   -5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916
   -5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916
   -5.89946916 -5.89946916]
@@ -2309,8 +1893,7 @@ max ll: -261.5166298654944
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[37]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">state</span><span class="o">.</span><span class="n">branches</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state</span><span class="o">.</span><span class="n">branches</span>
 </pre></div>
 </div>
 </div>
@@ -2320,19 +1903,17 @@ max ll: -261.5166298654944
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-{&#39;gauss&#39;: &lt;eryn.state.Branch at 0x15fbbecd0&gt;,
- &#39;sine&#39;: &lt;eryn.state.Branch at 0x15fbbe040&gt;}
+{&#39;gauss&#39;: &lt;eryn.state.Branch at 0x7fe51c85be20&gt;,
+ &#39;sine&#39;: &lt;eryn.state.Branch at 0x7fe51c858970&gt;}
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[38]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">nsteps</span> <span class="o">=</span> <span class="mi">5000</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">nsteps</span> <span class="o">=</span> <span class="mi">5000</span>
 <span class="n">last_sample</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">nsteps</span><span class="p">,</span> <span class="n">burn</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-</pre></div>
+<br/></pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -2340,8 +1921,8 @@ max ll: -261.5166298654944
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|███████████████████████████████████████| 1000/1000 [00:51&lt;00:00, 19.42it/s]
-100%|███████████████████████████████████████| 5000/5000 [03:43&lt;00:00, 22.36it/s]
+100%|███████████████████████████████████████| 1000/1000 [00:46&lt;00:00, 21.64it/s]
+100%|███████████████████████████████████████| 5000/5000 [03:40&lt;00:00, 22.67it/s]
 </pre></div></div>
 </div>
 <p>Let’s look at the last sample in terms of the <code class="docutils literal notranslate"><span class="pre">nleaves</span></code> array for both branches in the cold chain.</p>
@@ -2349,8 +1930,7 @@ max ll: -261.5166298654944
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[39]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">last_sample</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">nleaves</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">last_sample</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">nleaves</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span><span class="o">.</span><span class="n">T</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">last_sample</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">nleaves</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">last_sample</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">nleaves</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span><span class="o">.</span><span class="n">T</span>
 </pre></div>
 </div>
 </div>
@@ -2369,7 +1949,7 @@ array([[4, 2],
        [4, 2],
        [4, 2],
        [4, 2],
-       [4, 2],
+       [3, 3],
        [4, 2],
        [4, 2],
        [4, 2],
@@ -2386,13 +1966,12 @@ array([[4, 2],
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;max ll: </span><span class="si">{</span><span class="n">ensemble</span><span class="o">.</span><span class="n">get_log_like</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;max ll: </span><span class="si">{</span><span class="n">ensemble</span><span class="o">.</span><span class="n">get_log_like</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
 <span class="n">nleaves_gauss</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_nleaves</span><span class="p">()[</span><span class="s1">&#39;gauss&#39;</span><span class="p">]</span>
 <span class="n">nleaves_sine</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_nleaves</span><span class="p">()[</span><span class="s1">&#39;sine&#39;</span><span class="p">]</span>
 <span class="n">bns</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span>
 <span class="p">)</span>  <span class="c1"># Just to make it pretty and center the bins</span>
 
 <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -2409,7 +1988,7 @@ array([[4, 2],
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-max ll: -253.17291957904936
+max ll: -218.81128464457336
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -2418,7 +1997,7 @@ max ll: -253.17291957904936
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x15e15eee0&gt;
+&lt;matplotlib.legend.Legend at 0x7fe51c85b1c0&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -2433,8 +2012,7 @@ max ll: -253.17291957904936
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[41]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;gauss&#39;</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ndim</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;gauss&#39;</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ndim</span><span class="p">)</span>
 
 <span class="c1"># same as ensemble.get_chain()[&#39;gauss&#39;][ensemble.get_inds()[&#39;gauss&#39;]]</span>
 <span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">samples</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])]</span>
@@ -2459,13 +2037,13 @@ max ll: -253.17291957904936
 </div>
 </section>
 <section id="Moves">
-<h2>Moves<a class="headerlink" href="#Moves" title="Permalink to this headline">¶</a></h2>
+<h2>Moves<a class="headerlink" href="#Moves" title="Permalink to this heading"></a></h2>
 <p>Moves are generally implemented with the same three-tier structure that originated in <code class="docutils literal notranslate"><span class="pre">emcee</span></code>. For full documentation on all available moves, as well as class inheritance information, see the <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/moves.html#moves">Move documentation</a>. For implementing customized moves, we recommend using the documentation as well as the various source codes for guidance.</p>
 <p>from <code class="docutils literal notranslate"><span class="pre">eryn.moves</span></code>:</p>
 <ul class="simple">
 <li><p>Base Move Class (<code class="docutils literal notranslate"><span class="pre">Move</span></code>)</p></li>
 <li><p>Move Guide (<code class="docutils literal notranslate"><span class="pre">MHMove</span></code>, <code class="docutils literal notranslate"><span class="pre">RedBlueMove</span></code>, <code class="docutils literal notranslate"><span class="pre">ReversibleJumpMove</span></code>, <code class="docutils literal notranslate"><span class="pre">GroupMove</span></code>)</p></li>
-<li><p>Proposal Class (e.g. <code class="docutils literal notranslate"><span class="pre">StretchMove</span></code>, <code class="docutils literal notranslate"><span class="pre">GaussianMove</span></code>, <code class="docutils literal notranslate"><span class="pre">GroupStretchMove</span></code>, <code class="docutils literal notranslate"><span class="pre">DistributionGenerateRJ</span></code>).</p></li>
+<li><p>Proposal Class (e.g. <code class="docutils literal notranslate"><span class="pre">StretchMove</span></code>, <code class="docutils literal notranslate"><span class="pre">GaussianMove</span></code>, <code class="docutils literal notranslate"><span class="pre">GroupStretchMove</span></code>, <code class="docutils literal notranslate"><span class="pre">DistributionGenerateRJ</span></code>).</p></li>
 </ul>
 <p>The <code class="docutils literal notranslate"><span class="pre">eryn.moves.Move</span></code> class is a base class for all moves. It houses the tempering information class (<code class="docutils literal notranslate"><span class="pre">eryn.moves.TemperatureControl</span></code>), as well as other information and methods that apply universally to most or all moves.</p>
 <p>The Move Guides provide the overall computation of the different <strong>types</strong> of moves depending on how they are executed. Their main purpose is to implement the <code class="docutils literal notranslate"><span class="pre">propose(model,</span> <span class="pre">state)</span></code> function. They all return a tuple of updated <code class="docutils literal notranslate"><span class="pre">State</span></code> objects and an boolean array of accepted information.</p>
@@ -2476,7 +2054,7 @@ max ll: -253.17291957904936
 <li><p><code class="docutils literal notranslate"><span class="pre">ReversibleJumpMove</span></code>: This class guides Reversible Jump MCMC moves. The key difference to the other moves is that the <code class="docutils literal notranslate"><span class="pre">inds</span></code> array changes adjust the model type and/or count. It is very common in Reversible Jump settings to have to implemement a specific RJ proposal. One of the main goals of <code class="docutils literal notranslate"><span class="pre">Eryn</span></code> is to distill this process down to this step and keep the rest of the sampler apparatus the same between projects.</p></li>
 </ul>
 <section id="Gibbs-Sampling">
-<h3>Gibbs Sampling<a class="headerlink" href="#Gibbs-Sampling" title="Permalink to this headline">¶</a></h3>
+<h3>Gibbs Sampling<a class="headerlink" href="#Gibbs-Sampling" title="Permalink to this heading"></a></h3>
 <p>There is a very useful setup for Gibbs sampling of parameters in <code class="docutils literal notranslate"><span class="pre">Eryn</span></code>. To use this feature, you can pass information as the <code class="docutils literal notranslate"><span class="pre">gibbs_sampling_setup</span></code> keyword argument to the chosen Move class. It is handled by the base <code class="docutils literal notranslate"><span class="pre">eryn.moves.Move</span></code> class so it is a feature of all proposals.</p>
 <p>Gibbs sampling allows the user to sample over a specific set of models or parameters to improve sampling efficiency. For example, sampling in a 100-parameter space may be inefficient, but sampling in 10-dimensional sub-spaces consecutively may be more efficient by increasing the acceptance fraction.</p>
 <p>The documentation for the <code class="docutils literal notranslate"><span class="pre">gibbs_sampling_setup</span></code> parameter reads as follows:</p>
@@ -2491,12 +2069,11 @@ be okay.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[42]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">nwalkers</span> <span class="o">=</span> <span class="mi">20</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">nwalkers</span> <span class="o">=</span> <span class="mi">20</span>
 <span class="n">ntemps</span> <span class="o">=</span> <span class="mi">8</span>
-<span class="n">ndims</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
-<span class="n">nleaves_max</span> <span class="o">=</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="c1"># same min and max means no changing</span>
-<span class="n">nleaves_min</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="n">ndims</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
+<span class="n">nleaves_max</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span> <span class="c1"># same min and max means no changing</span>
+<span class="n">nleaves_min</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
 
 <span class="n">branch_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">,</span> <span class="s2">&quot;sine&quot;</span><span class="p">]</span>
 
@@ -2528,14 +2105,14 @@ be okay.</p>
 
 
 <span class="n">coords</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ndims</span><span class="p">[</span><span class="mi">0</span><span class="p">])),</span>
-    <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ndims</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">],</span> <span class="n">ndims</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">])),</span>
+    <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">],</span> <span class="n">ndims</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">]))</span>
 <span class="p">}</span>
 
 <span class="c1"># make sure to start near the proper setup</span>
 <span class="n">inds</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">),</span>
-    <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">),</span>
+    <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
 <span class="p">}</span>
 
 
@@ -2546,7 +2123,7 @@ be okay.</p>
 
 <span class="c1"># setup initial walkers to be the correct count (it will spread out)</span>
 <span class="c1"># start with gaussians</span>
-<span class="k">for</span> <span class="n">nn</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+<span class="k">for</span> <span class="n">nn</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]):</span>
     <span class="k">if</span> <span class="n">nn</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">gauss_inj_params</span><span class="p">):</span>
         <span class="c1"># not going to add parameters for these unused leaves</span>
         <span class="k">continue</span>
@@ -2554,7 +2131,7 @@ be okay.</p>
     <span class="n">inds</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="n">nn</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
 <span class="c1"># next do sine waves</span>
-<span class="k">for</span> <span class="n">nn</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+<span class="k">for</span> <span class="n">nn</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">]):</span>
     <span class="k">if</span> <span class="n">nn</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sine_inj_params</span><span class="p">):</span>
         <span class="c1"># not going to add parameters for these unused leaves</span>
         <span class="k">continue</span>
@@ -2579,16 +2156,16 @@ be okay.</p>
 <span class="c1"># for the Gaussian Move</span>
 <span class="n">factor</span> <span class="o">=</span> <span class="mf">0.00001</span>
 <span class="n">cov</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">ndims</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span> <span class="o">*</span> <span class="n">factor</span><span class="p">,</span>
+    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">ndims</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]))</span> <span class="o">*</span> <span class="n">factor</span><span class="p">,</span>
 <span class="p">}</span>
 
-<span class="c1"># pass boolean array of shape (nleaves_max[0], ndims[0])</span>
+<span class="c1"># pass boolean array of shape (nleaves_max[&quot;gauss&quot;], ndims[&quot;gauss&quot;])</span>
 <span class="n">gibbs_sampling_gauss</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="p">(</span><span class="s2">&quot;gauss&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nleaves_max</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ndims</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">))</span>
-    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="p">(</span><span class="s2">&quot;gauss&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nleaves_max</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">],</span> <span class="n">ndims</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">])</span>
 <span class="p">]</span>
 
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]):</span>
     <span class="n">gibbs_sampling_gauss</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
 <span class="n">gauss_move</span> <span class="o">=</span> <span class="n">GaussianMove</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="n">gibbs_sampling_setup</span><span class="o">=</span><span class="n">gibbs_sampling_gauss</span><span class="p">)</span>
@@ -2596,10 +2173,10 @@ be okay.</p>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;gauss gibbs setup:&quot;</span><span class="p">,</span> <span class="n">gibbs_sampling_gauss</span><span class="p">)</span>
 
 <span class="n">gibbs_sampling_sine</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="p">(</span><span class="s2">&quot;sine&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nleaves_max</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ndims</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">))</span>
-    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="p">(</span><span class="s2">&quot;sine&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nleaves_max</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">],</span> <span class="n">ndims</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">])</span>
 <span class="p">]</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">]):</span>
     <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">gibbs_sampling_sine</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="n">j</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -2639,17 +2216,8 @@ be okay.</p>
 
 <span class="n">nsteps</span> <span class="o">=</span> <span class="mi">500</span>
 <span class="n">last_sample</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">nsteps</span><span class="p">,</span> <span class="n">burn</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-</pre></div>
+<br/></pre></div>
 </div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-  0%|                                                   | 0/100 [00:00&lt;?, ?it/s]
-</pre></div></div>
 </div>
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
@@ -2725,25 +2293,24 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|█████████████████████████████████████████| 100/100 [00:22&lt;00:00,  4.54it/s]
-100%|█████████████████████████████████████████| 500/500 [01:34&lt;00:00,  5.29it/s]
+100%|█████████████████████████████████████████| 100/100 [00:26&lt;00:00,  3.80it/s]
+100%|█████████████████████████████████████████| 500/500 [02:07&lt;00:00,  3.91it/s]
 </pre></div></div>
 </div>
 </section>
 </section>
 <section id="Utilities">
-<h2>Utilities<a class="headerlink" href="#Utilities" title="Permalink to this headline">¶</a></h2>
+<h2>Utilities<a class="headerlink" href="#Utilities" title="Permalink to this heading"></a></h2>
 <p>Eryn provides many different utilities for sampling. We will show a bit of their usages here, but refer to the <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/utils.html#periodic-container">Utility documentation</a> for more direct information.</p>
 <section id="Transform-Container">
-<h3>Transform Container<a class="headerlink" href="#Transform-Container" title="Permalink to this headline">¶</a></h3>
+<h3>Transform Container<a class="headerlink" href="#Transform-Container" title="Permalink to this heading"></a></h3>
 <p>Transform containers are primary used in likelihood functions to transform the arrays incoming from the sampler to the proper setup for likelihood computation. It can transform parameters based on transform functions and fill values into a final array for any value that is fixed during sampling.</p>
 <p>It can be passed to the likeihood function as an <code class="docutils literal notranslate"><span class="pre">arg</span></code> or <code class="docutils literal notranslate"><span class="pre">kwarg</span></code>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[43]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># can be done with lambda or regular function</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># can be done with lambda or regular function</span>
 <span class="c1"># must have same number of inputs and outputs at same index in outer arrays</span>
 <span class="k">def</span> <span class="nf">transform1</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">y</span><span class="p">,</span> <span class="n">y</span> <span class="o">/</span> <span class="n">x</span>
@@ -2772,46 +2339,46 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[[ 2.49306145e+00  1.51806600e+01  1.86958158e+00]
- [-1.10121131e+01  1.31612662e+01 -6.18489766e+00]
- [ 1.80628293e+00  1.26894945e+01  3.90970452e+00]
- [ 7.48175039e+00  1.54022020e+00  7.29185618e+00]
- [ 7.63417061e+00  4.18599357e+00  5.19450882e+00]
- [ 7.33195059e+00  4.85383481e+00  7.40643685e+00]
- [ 1.96445135e+00  2.42076530e-01  3.00875996e+00]
- [ 4.16919483e+00  1.58161287e+01  4.32038627e+00]
- [ 4.73815000e+00  1.29902514e+01  2.99887178e+00]
- [ 1.30874937e+00  1.27742563e+01  5.67422705e+00]
- [ 2.69774746e-01  1.67148611e+00  4.71453164e+00]
- [ 1.01849599e+00  8.06449053e+00  6.21029765e-01]
- [ 7.57386253e-01  1.11729918e-01  1.04466141e+00]
- [ 1.20943897e+01  6.62202502e+00  7.16329398e+00]
- [ 2.35506880e-02  3.95449708e+00  1.24989551e-02]
- [ 2.57869481e+00  9.82416262e-01  1.62428007e+00]
- [-5.56323594e-02  6.63611856e+00 -7.32886151e+01]
- [ 7.95193397e-01  1.53049083e+01  5.37437748e+01]
- [-1.63832644e+01  6.65807351e-01 -9.75195127e+00]
- [ 7.30026220e-01  7.56678542e-01  2.71283554e+01]
- [ 1.46980000e+01  1.51428299e+01  8.76181383e+00]
- [ 2.86516161e-01  4.98085113e+00  4.96795258e+00]
- [-9.21752078e-02  1.20953854e+01 -2.61634912e-01]
- [ 7.58411981e+00  3.45704527e+00  8.33350660e+00]
- [-9.56265857e+00  1.12113073e+01 -2.64649397e+01]
- [ 3.55407801e-01  5.52218405e+00  2.45802996e-01]
- [ 7.12304680e-01  2.98462043e+00  1.50161534e+00]
- [ 3.59130934e-01  8.22553183e-01  4.93943223e+02]
- [ 4.87616301e+00  1.62533706e+00  3.13991141e+01]
- [ 8.92813159e-02  5.23670813e+00  5.32700321e-01]
- [ 2.35141376e+00  1.55916994e+01  5.74041212e+00]
- [ 1.64257595e+00  5.54255699e+00  7.14913080e+00]
- [ 3.51255454e+00  7.24652601e+00  4.03646105e+00]
- [ 1.04313592e+01  1.55460492e-01  2.32791152e+01]
- [ 4.64031851e-01  1.68772459e+00  3.41773904e-01]
- [ 5.64318245e+00  2.88697653e+00  3.20812551e+00]
- [ 4.82256948e+00  3.18278345e+00  4.13115895e+00]
- [-2.25077160e-01  8.30275602e-01 -3.26111942e+01]
- [ 4.15265611e-01  3.10136556e+00  6.16420621e-01]
- [ 8.65498315e+00  3.57026770e+00  1.69133339e+01]]
+[[ 3.08632139e+00  5.60690240e+00  3.63677136e+00]
+ [ 2.58243638e-02  1.80742172e+00  2.48770106e-01]
+ [ 1.02414318e-01  2.89070565e+00  3.86317944e-01]
+ [ 5.01564690e+00  3.49361582e+00  3.56981225e+00]
+ [ 4.94908920e+00  7.00253015e+00  5.23719336e+00]
+ [ 7.87255692e-01  1.37599338e+01  8.58987515e-01]
+ [-9.79614705e-01  1.08905403e+01 -3.22267309e+00]
+ [ 1.51960831e+01  1.23844069e+01  1.12780791e+01]
+ [ 4.37857796e+00  1.84607425e+00  3.84959593e+00]
+ [ 2.08592238e-01  1.16380935e+01  1.08854514e+00]
+ [ 4.30413168e+00  5.31256326e+00  3.34037374e+00]
+ [ 7.05454840e+00  8.62439129e+00  9.84600597e+00]
+ [ 5.24216204e+00  1.06322747e+01  2.75257330e+00]
+ [ 4.74410851e+00  1.45103260e+01  4.66617563e+00]
+ [-3.48807142e-03  2.56103307e-01 -1.11942710e-01]
+ [-1.44459923e+01  1.25724889e+01 -1.33740431e+01]
+ [ 1.17776377e+01  2.82212428e-02  1.49504813e+01]
+ [ 2.95427799e+00  2.14969458e+00  2.49931778e+00]
+ [ 2.89265702e-02  5.07244991e+00  2.59844209e-02]
+ [ 5.26106580e+00  1.55348884e+00  3.11968757e+00]
+ [ 1.68043826e+01  2.77305089e-02  9.66041776e+00]
+ [ 9.76826266e-03  1.13514357e+01  4.38412535e-02]
+ [ 3.42595049e+00  5.56575620e+00  2.41786990e+00]
+ [ 3.45874529e+00  1.59544048e+01  2.07643756e+00]
+ [-2.52261347e+00  6.85639886e-01 -1.39958883e+00]
+ [ 1.60259798e+00  5.66728050e+00  2.24611324e+00]
+ [ 7.58938201e+00  3.44091817e+00  3.96698636e+00]
+ [-9.20763907e+00  1.94697741e+00 -1.86247016e+01]
+ [ 6.62115825e+00  1.27619947e+01  2.09242661e+01]
+ [ 1.93964027e+00  6.24119921e+00  6.74513725e+00]
+ [ 3.10515031e+00  3.64960010e-02  4.52019359e+00]
+ [-1.12740824e+01  6.01697213e-01 -6.75147057e+00]
+ [ 1.09947418e+01  1.47948976e+00  1.69171203e+01]
+ [ 6.29903074e+00  3.53327624e-01  2.35885257e+01]
+ [ 6.32717307e-01  8.35665810e-01  1.34783920e+00]
+ [ 3.33242669e+00  2.70990891e-01  2.79490240e+00]
+ [ 2.79389285e+00  1.26540813e-01  3.54783570e+00]
+ [ 4.47058272e+00  3.28099189e+00  1.01873553e+01]
+ [ 5.12558722e+00  7.83776685e+00  3.91206004e+00]
+ [ 5.97988870e+00  8.17266233e+00  1.35938756e+01]]
 </pre></div></div>
 </div>
 <p>If you have mutliple branches in your sampler, you can add more than one <code class="docutils literal notranslate"><span class="pre">Transform</span> <span class="pre">Container</span></code>.</p>
@@ -2819,8 +2386,7 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="k">def</span> <span class="nf">lnprob</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">group1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">group2</span><span class="p">,</span> <span class="n">transform_containers</span><span class="p">):</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">lnprob</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">group1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">group2</span><span class="p">,</span> <span class="n">transform_containers</span><span class="p">):</span>
     <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">]</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">x_i</span><span class="p">,</span> <span class="n">transform</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">([</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">],</span> <span class="n">transform_containers</span><span class="p">)):</span>
         <span class="n">temp</span> <span class="o">=</span> <span class="n">transform</span><span class="o">.</span><span class="n">transform_base_parameters</span><span class="p">(</span><span class="n">x_i</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_transpose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -2864,7 +2430,192 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 
 <span class="c1"># it can be added via args or kwargs in the ensemble sampler</span>
 <span class="n">lnprob</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">group1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">group2</span><span class="p">,</span> <span class="n">tcs</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[array([[ 4.02075611e-01,  2.02727006e+00,  0.00000000e+00,
+         1.00000000e+00,  3.13876888e+00, -1.00000000e+00],
+       [-2.21750379e+00,  2.63032269e+00,  0.00000000e+00,
+         1.00000000e+00,  2.41364936e+00, -1.00000000e+00],
+       [ 9.82839215e-01,  2.82998951e+00,  0.00000000e+00,
+         1.00000000e+00,  3.53754004e+00, -1.00000000e+00],
+       [ 3.41882314e-01,  1.59755871e+00,  0.00000000e+00,
+         1.00000000e+00,  1.92949537e+00, -1.00000000e+00],
+       [ 1.08356812e+00,  1.08432157e+00,  0.00000000e+00,
+         1.00000000e+00,  3.46321356e+00, -1.00000000e+00],
+       [ 3.31341683e-01,  4.40498524e-01,  0.00000000e+00,
+         1.00000000e+00,  2.76316883e+00, -1.00000000e+00],
+       [ 1.33995872e+00,  2.86607916e-01,  0.00000000e+00,
+         1.00000000e+00,  3.57888534e+00, -1.00000000e+00],
+       [ 1.25180693e+00,  3.62038136e+00,  0.00000000e+00,
+         1.00000000e+00,  2.84363621e+00, -1.00000000e+00],
+       [-8.09868405e-02,  3.22000724e+00,  0.00000000e+00,
+         1.00000000e+00,  2.87755596e+00, -1.00000000e+00],
+       [ 7.80796598e-01,  1.63922890e+00,  0.00000000e+00,
+         1.00000000e+00,  1.51618456e+00, -1.00000000e+00],
+       [ 6.98930985e-01,  3.67700223e+00,  0.00000000e+00,
+         1.00000000e+00,  2.52682127e+00, -1.00000000e+00],
+       [-8.08536016e-02,  2.31094294e+00,  0.00000000e+00,
+         1.00000000e+00,  9.49908409e-01, -1.00000000e+00],
+       [ 9.51746200e-01,  3.67337853e+00,  0.00000000e+00,
+         1.00000000e+00,  1.39781914e+00, -1.00000000e+00],
+       [ 1.36167947e+00,  1.65103017e-01,  0.00000000e+00,
+         1.00000000e+00,  9.06673412e-01, -1.00000000e+00],
+       [ 1.27410329e+00,  5.36771859e-01,  0.00000000e+00,
+         1.00000000e+00,  3.11948520e+00, -1.00000000e+00],
+       [-1.96697065e+00,  3.87492837e+00,  0.00000000e+00,
+         1.00000000e+00,  3.15992865e+00, -1.00000000e+00],
+       [ 1.06106851e+00,  3.71165012e+00,  0.00000000e+00,
+         1.00000000e+00,  2.31258185e+00, -1.00000000e+00],
+       [ 1.27268892e+00,  1.22800190e+00,  0.00000000e+00,
+         1.00000000e+00,  1.36001607e+00, -1.00000000e+00],
+       [ 9.44901909e-01,  2.99355743e+00,  0.00000000e+00,
+         1.00000000e+00,  9.75798659e-01, -1.00000000e+00],
+       [ 1.12911347e+00,  2.25605562e-01,  0.00000000e+00,
+         1.00000000e+00,  1.52691391e+00, -1.00000000e+00],
+       [ 8.70568429e-01,  1.14485121e+00,  0.00000000e+00,
+         1.00000000e+00,  3.27961647e+00, -1.00000000e+00],
+       [ 1.23105790e+00,  5.96911344e-01,  0.00000000e+00,
+         1.00000000e+00,  3.91366683e+00, -1.00000000e+00],
+       [-1.20239492e-03,  2.89449059e+00,  0.00000000e+00,
+         1.00000000e+00,  1.55766542e+00, -1.00000000e+00],
+       [-7.35588882e-01,  3.56631090e+00,  0.00000000e+00,
+         1.00000000e+00,  2.53459398e+00, -1.00000000e+00],
+       [ 1.01526637e+00,  3.47101948e+00,  0.00000000e+00,
+         1.00000000e+00,  3.60993882e+00, -1.00000000e+00],
+       [ 1.32430001e+00,  3.15162482e+00,  0.00000000e+00,
+         1.00000000e+00,  1.48120893e+00, -1.00000000e+00],
+       [ 1.01301454e+00,  1.56145377e+00,  0.00000000e+00,
+         1.00000000e+00,  3.80942539e+00, -1.00000000e+00],
+       [ 7.10765086e-01,  3.55909099e+00,  0.00000000e+00,
+         1.00000000e+00,  1.57522429e+00, -1.00000000e+00],
+       [ 1.04203362e+00,  1.08070163e-01,  0.00000000e+00,
+         1.00000000e+00,  3.98213105e-01, -1.00000000e+00],
+       [ 4.39454748e-01,  2.19214547e+00,  0.00000000e+00,
+         1.00000000e+00,  8.40650911e-01, -1.00000000e+00],
+       [-5.16413152e-01,  3.35632698e+00,  0.00000000e+00,
+         1.00000000e+00,  2.63025658e+00, -1.00000000e+00],
+       [-5.37687786e-01,  8.02628232e-01,  0.00000000e+00,
+         1.00000000e+00,  3.51501868e-01, -1.00000000e+00],
+       [ 2.72271287e-01,  2.82068959e+00,  0.00000000e+00,
+         1.00000000e+00,  2.21476682e+00, -1.00000000e+00],
+       [ 1.24122456e+00,  1.18553959e+00,  0.00000000e+00,
+         1.00000000e+00,  2.01434754e+00, -1.00000000e+00],
+       [ 5.38874332e-01,  1.64379851e+00,  0.00000000e+00,
+         1.00000000e+00,  3.11499059e+00, -1.00000000e+00],
+       [ 1.37829927e+00,  2.00684311e+00,  0.00000000e+00,
+         1.00000000e+00,  7.81023241e-01, -1.00000000e+00],
+       [-2.46053035e-01,  1.42042825e+00,  0.00000000e+00,
+         1.00000000e+00,  2.75255769e+00, -1.00000000e+00],
+       [ 1.06469854e+00,  2.69261136e+00,  0.00000000e+00,
+         1.00000000e+00,  1.30689283e+00, -1.00000000e+00],
+       [ 4.81367142e-01,  2.63242623e+00,  0.00000000e+00,
+         1.00000000e+00,  1.93730454e+00, -1.00000000e+00],
+       [-7.03084230e-02,  1.07013775e+00,  0.00000000e+00,
+         1.00000000e+00,  2.13635829e+00, -1.00000000e+00]]), array([[ 3.21678060e+00, -1.00000000e+00,  1.00032214e-02,
+         5.89371770e+00,  3.59844069e+00],
+       [ 3.39985157e+00, -1.00000000e+00,  2.95887822e-01,
+         1.02129869e+01,  1.22223650e+00],
+       [ 2.92677176e+00, -1.00000000e+00,  1.99364556e-01,
+         1.88707487e+00,  3.22902035e+00],
+       [ 3.52464049e+00, -1.00000000e+00,  1.49669920e+01,
+         7.50811847e+00,  3.22855575e+00],
+       [ 3.78545112e+00, -1.00000000e+00,  1.01431916e+01,
+         1.06786939e+01,  1.21074325e+00],
+       [ 2.02628236e+00, -1.00000000e+00,  3.21973235e+00,
+         3.43413861e+00,  3.44449384e+00],
+       [ 1.71803485e-01, -1.00000000e+00,  3.51851733e+00,
+         3.46613915e-01,  2.62531485e+00],
+       [ 5.77474391e-01, -1.00000000e+00,  1.27060011e+01,
+         1.06155817e+00,  3.66806329e+00],
+       [ 2.91302812e+00, -1.00000000e+00,  3.62315982e+00,
+         1.57017190e+01,  7.90671062e-01],
+       [ 3.76540850e+00, -1.00000000e+00,  2.73521470e-02,
+         1.03881446e-01,  1.80200744e+00],
+       [ 4.01449722e-01, -1.00000000e+00,  2.88268694e+00,
+         1.14821162e+01,  1.35715060e+00],
+       [ 3.34472211e-01, -1.00000000e+00,  1.59493525e+01,
+         1.35923672e+01,  2.72485827e+00],
+       [ 7.81193853e-01, -1.00000000e+00,  6.66683516e+00,
+         4.22249706e-01,  3.81045587e+00],
+       [ 1.83590629e+00, -1.00000000e+00,  6.80074269e-01,
+         2.30521327e-01,  3.50867019e+00],
+       [ 2.85469474e+00, -1.00000000e+00,  9.31847040e+00,
+         3.05376264e+00,  3.87792366e+00],
+       [ 6.94922165e-01, -1.00000000e+00,  1.09566965e+00,
+         1.19092082e+01,  3.34696638e+00],
+       [ 3.08195111e+00, -1.00000000e+00,  8.41405587e-02,
+         6.99578765e+00,  1.91657567e+00],
+       [ 2.25636709e+00, -1.00000000e+00,  4.83607342e-01,
+         9.33607709e+00,  3.18750844e+00],
+       [ 1.60778216e+00, -1.00000000e+00,  2.73751571e+00,
+         9.08492502e+00,  1.80209792e+00],
+       [ 2.66468666e+00, -1.00000000e+00,  2.11461587e+00,
+         7.54591363e+00,  3.42276044e+00],
+       [ 8.15088121e-01, -1.00000000e+00,  9.63183959e+00,
+         1.17278909e+00,  3.66244840e+00],
+       [ 1.34436394e+00, -1.00000000e+00,  2.87594207e+00,
+         9.85351652e-01,  3.07228765e+00],
+       [ 1.38321860e+00, -1.00000000e+00,  1.24509662e+00,
+         5.30999341e-01,  1.01378376e-01],
+       [ 1.28474753e+00, -1.00000000e+00,  6.76497701e+00,
+         1.46788632e+01,  8.93483431e-01],
+       [ 2.72443113e+00, -1.00000000e+00,  8.94829755e+00,
+         1.90424481e-01,  6.26806506e-01],
+       [ 2.30778859e+00, -1.00000000e+00,  1.39320004e+00,
+         5.17337329e+00,  3.16975520e+00],
+       [ 2.71584940e+00, -1.00000000e+00,  1.13700788e+00,
+         1.14224688e+01,  1.44053671e+00],
+       [ 9.57785197e-01, -1.00000000e+00,  1.44352584e+01,
+         5.08684450e+00,  2.69255661e+00],
+       [ 7.21332377e-01, -1.00000000e+00,  4.06559176e-01,
+         3.67692851e-02,  2.91841518e-01],
+       [ 7.62891052e-01, -1.00000000e+00,  2.90707385e+00,
+         9.85404272e+00,  3.11760201e+00],
+       [ 1.52200640e-01, -1.00000000e+00,  1.49409538e+01,
+         1.37689084e+01,  1.27441272e+00],
+       [ 2.44706362e+00, -1.00000000e+00,  8.92012298e-01,
+         5.78031465e+00,  3.60929867e+00],
+       [ 2.39059657e+00, -1.00000000e+00,  2.20317506e+00,
+         7.77252523e+00,  1.83156146e+00],
+       [ 2.84346745e+00, -1.00000000e+00,  1.43270561e+01,
+         4.31445281e+00,  2.49834221e+00],
+       [ 4.50797949e-01, -1.00000000e+00,  1.48447339e+01,
+         6.16676244e-02,  1.82139808e+00],
+       [ 2.26300647e+00, -1.00000000e+00,  3.21061236e+00,
+         1.00085086e+01,  2.34126062e+00],
+       [ 7.23811796e-01, -1.00000000e+00,  9.82912989e+00,
+         9.08120073e+00,  3.01083356e+00],
+       [ 1.74011782e+00, -1.00000000e+00,  1.46993361e+01,
+         1.01741438e+01,  3.64481168e+00],
+       [ 3.53678102e+00, -1.00000000e+00,  4.68002040e+00,
+         1.47414565e+00,  2.97502336e+00],
+       [ 1.33866045e+00, -1.00000000e+00,  1.67242783e+00,
+         3.86238145e+00,  1.30605397e+00]])]
+</pre></div></div>
+</div>
+</section>
+<section id="Multivariate-Prior-Distributions">
+<h3>Multivariate Prior Distributions<a class="headerlink" href="#Multivariate-Prior-Distributions" title="Permalink to this heading"></a></h3>
+<p>Eryn also allows for multivariate prior distributions. To pass these, rather than a single index as the dictionary key like before (e.g.<code class="docutils literal notranslate"><span class="pre">1:</span> <span class="pre">dist()</span></code>), it is not a tuple of inds: <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">1):</span> <span class="pre">dist()</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">multivariate_normal</span>
+<span class="n">cov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.8</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">]])</span>
 
+<span class="n">priors_in</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span> <span class="n">multivariate_normal</span><span class="p">(</span><span class="n">cov</span><span class="o">=</span><span class="n">cov</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="n">priors</span> <span class="o">=</span> <span class="n">ProbDistContainer</span><span class="p">(</span><span class="n">priors_in</span><span class="p">)</span>
+<span class="n">prior_vals</span> <span class="o">=</span> <span class="n">priors</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">prior_vals</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -2873,138 +2624,19 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[array([[-0.48952139,  3.10311029,  0.        ,  1.        ,  1.22029097,
-        -1.        ],
-       [-0.99820115,  2.90433797,  0.        ,  1.        ,  0.41813305,
-        -1.        ],
-       [ 0.65917808,  3.7677441 ,  0.        ,  1.        ,  0.48886542,
-        -1.        ],
-       [ 1.12351936,  1.9805462 ,  0.        ,  1.        ,  0.82419485,
-        -1.        ],
-       [ 0.83614958,  3.51303757,  0.        ,  1.        ,  2.19008221,
-        -1.        ],
-       [ 1.37373533,  1.35978098,  0.        ,  1.        ,  3.18760196,
-        -1.        ],
-       [ 0.33174141,  0.92012133,  0.        ,  1.        ,  0.42084854,
-        -1.        ],
-       [ 0.2502577 ,  3.59077043,  0.        ,  1.        ,  2.23860705,
-        -1.        ],
-       [-0.28621196,  1.51245242,  0.        ,  1.        ,  2.53505148,
-        -1.        ],
-       [ 1.20161158,  2.41612638,  0.        ,  1.        ,  2.03554828,
-        -1.        ],
-       [-1.21207983,  2.63677923,  0.        ,  1.        ,  1.60653035,
-        -1.        ],
-       [ 0.89557455,  3.39715643,  0.        ,  1.        ,  2.30022487,
-        -1.        ],
-       [ 0.17178199,  0.72050575,  0.        ,  1.        ,  0.90168578,
-        -1.        ],
-       [ 0.86316013,  1.16841998,  0.        ,  1.        ,  0.82845592,
-        -1.        ],
-       [ 0.99665268,  2.97714462,  0.        ,  1.        ,  0.2692971 ,
-        -1.        ],
-       [ 0.89416963,  2.18356304,  0.        ,  1.        ,  2.69106262,
-        -1.        ],
-       [ 0.60828206,  2.17593445,  0.        ,  1.        ,  3.31588446,
-        -1.        ],
-       [-0.64910398,  3.9809876 ,  0.        ,  1.        ,  3.28255235,
-        -1.        ],
-       [ 0.08586409,  1.79107614,  0.        ,  1.        ,  3.81885614,
-        -1.        ],
-       [ 1.07813598,  2.1224058 ,  0.        ,  1.        ,  3.76502255,
-        -1.        ],
-       [ 1.32546617,  0.267318  ,  0.        ,  1.        ,  2.77431074,
-        -1.        ],
-       [ 1.29970876,  3.98643365,  0.        ,  1.        ,  3.41250848,
-        -1.        ],
-       [-0.7612753 ,  3.31023175,  0.        ,  1.        ,  3.79116681,
-        -1.        ],
-       [ 1.11778281,  1.37559884,  0.        ,  1.        ,  3.20290006,
-        -1.        ],
-       [ 0.97294149,  3.92886428,  0.        ,  1.        ,  3.86998169,
-        -1.        ],
-       [ 0.76758816,  0.45885045,  0.        ,  1.        ,  0.84519666,
-        -1.        ],
-       [-0.17022688,  0.53366997,  0.        ,  1.        ,  1.15440752,
-        -1.        ],
-       [-0.12470985,  3.71340734,  0.        ,  1.        ,  1.04757277,
-        -1.        ],
-       [ 0.30661798,  1.38951129,  0.        ,  1.        ,  2.85690279,
-        -1.        ],
-       [ 0.99848924,  3.53855579,  0.        ,  1.        ,  1.6797857 ,
-        -1.        ],
-       [-0.40375126,  1.5211981 ,  0.        ,  1.        ,  3.09962661,
-        -1.        ],
-       [ 1.28925145,  0.31283889,  0.        ,  1.        ,  3.38375683,
-        -1.        ],
-       [ 0.93658581,  2.19226061,  0.        ,  1.        ,  1.44860652,
-        -1.        ],
-       [ 0.33982039,  2.91404149,  0.        ,  1.        ,  0.9604615 ,
-        -1.        ],
-       [ 1.33481775,  1.44382369,  0.        ,  1.        ,  2.11796007,
-        -1.        ],
-       [ 0.18800214,  0.9455745 ,  0.        ,  1.        ,  0.9028568 ,
-        -1.        ],
-       [-0.36138481,  2.77115199,  0.        ,  1.        ,  3.6377472 ,
-        -1.        ],
-       [ 1.16764992,  2.94373862,  0.        ,  1.        ,  1.33234936,
-        -1.        ],
-       [ 1.05643955,  3.83180265,  0.        ,  1.        ,  1.89496693,
-        -1.        ],
-       [ 0.2808198 ,  2.40254792,  0.        ,  1.        ,  2.90471108,
-        -1.        ]]), array([[ 2.04477767, -1.        ,  3.93120473,  0.93074433,  1.2620079 ],
-       [ 0.74475301, -1.        , 10.32559783,  3.19065635,  3.95657738],
-       [ 1.34016562, -1.        ,  9.88168115,  2.31439112,  2.42052091],
-       [ 1.60671124, -1.        , 14.36631876,  3.41389775,  2.67103029],
-       [ 2.77168349, -1.        , 15.64172988,  5.43536406,  3.91882742],
-       [ 3.2015518 , -1.        , 11.78350417,  1.48593432,  0.93290379],
-       [ 0.4522307 , -1.        , 13.17028893,  1.83785102,  2.20790585],
-       [ 3.70717705, -1.        ,  3.09441911,  0.47790031,  2.36007959],
-       [ 1.66382693, -1.        ,  5.92559275,  5.05196207,  1.68113503],
-       [ 0.46111806, -1.        ,  1.01637845,  7.79154787,  2.87177141],
-       [ 1.989675  , -1.        , 12.68534523, 13.17106186,  3.52029071],
-       [ 3.66638255, -1.        , 14.83813931,  2.21638719,  3.9444063 ],
-       [ 3.01083782, -1.        ,  5.00355356,  2.42772702,  0.47737753],
-       [ 1.08771655, -1.        ,  0.83331434,  0.06635051,  1.77789524],
-       [ 3.70060104, -1.        ,  4.30464198,  0.21869312,  1.62178788],
-       [ 3.68299903, -1.        , 11.55801392,  3.89481802,  2.57652136],
-       [ 2.90573704, -1.        ,  2.55226856,  1.10483165,  0.48784449],
-       [ 1.51872095, -1.        ,  7.15558669, 14.77188599,  2.5081092 ],
-       [ 1.23332618, -1.        ,  4.01212689,  3.42932303,  1.96883151],
-       [ 0.64933226, -1.        ,  2.78954347,  4.48793492,  1.7031836 ],
-       [ 3.93988752, -1.        ,  9.87929611, 15.32658364,  3.43008824],
-       [ 1.51635471, -1.        ,  4.2177127 ,  5.42746581,  2.8068698 ],
-       [ 2.66272185, -1.        ,  9.02412741,  9.2244977 ,  1.77364768],
-       [ 1.94803606, -1.        ,  0.02421018,  4.58277748,  3.97977446],
-       [ 3.0267136 , -1.        ,  0.44821183,  4.74257565,  2.72281412],
-       [ 3.75867969, -1.        , 15.57114738, 15.01273658,  0.87560318],
-       [ 0.68177359, -1.        ,  0.69320496, 13.50455584,  1.83479464],
-       [ 1.96007446, -1.        ,  0.34710196,  1.44415882,  3.02631104],
-       [ 0.35260308, -1.        ,  3.73001048,  2.30029035,  3.08378223],
-       [ 1.60243247, -1.        , 12.99952398, 11.75013601,  0.28289735],
-       [ 0.32467581, -1.        ,  0.08644556,  0.51441515,  0.42062085],
-       [ 0.57501578, -1.        ,  5.453785  ,  0.08420028,  2.59156694],
-       [ 1.34819516, -1.        ,  3.32508423,  1.35321938,  3.29716809],
-       [ 3.76343671, -1.        ,  9.40869124,  0.39164777,  3.79815486],
-       [ 1.83389917, -1.        , 14.4743163 ,  0.04390521,  0.97469302],
-       [ 3.76265876, -1.        ,  1.06702302,  0.21212391,  3.7851096 ],
-       [ 0.13113037, -1.        ,  1.76353343,  2.7144519 ,  1.98691181],
-       [ 3.40818744, -1.        ,  9.27249853,  3.33314541,  3.98404396],
-       [ 1.66087353, -1.        ,  5.97801129,  1.98001753,  3.59504809],
-       [ 2.22746965, -1.        ,  4.82424589,  0.01793915,  3.53910532]])]
+(12, 2)
 </pre></div></div>
 </div>
 </section>
 <section id="Periodic-Container">
-<h3>Periodic Container<a class="headerlink" href="#Periodic-Container" title="Permalink to this headline">¶</a></h3>
+<h3>Periodic Container<a class="headerlink" href="#Periodic-Container" title="Permalink to this heading"></a></h3>
 <p>The periodic container accounts for periodic parameters by accounting for periodic boundary conditions in terms of distance and parameter wrapping. The input to periodic containers are dictionaries with the parameter index as the key and the period associated with it as the item. Any parameters that are not periodic do not need to be included.</p>
 <p>For example, with a sine model that includes an amplitude (index 0), frequency (index 1), and phase offset (index 2), the phase offset will be periodic.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[46]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">eryn.utils</span> <span class="kn">import</span> <span class="n">PeriodicContainer</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">eryn.utils</span> <span class="kn">import</span> <span class="n">PeriodicContainer</span>
 
 
 <span class="n">periodic</span> <span class="o">=</span> <span class="n">PeriodicContainer</span><span class="p">({</span><span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="p">{</span><span class="mi">2</span><span class="p">:</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">}})</span>
@@ -3030,32 +2662,30 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-3.1409883969973875
-6.280013435573811
+3.1405977954259794
+6.282539820143316
 </pre></div></div>
 </div>
 </section>
 <section id="Stopping-&amp;-Update-Functions">
-<h3>Stopping &amp; Update Functions<a class="headerlink" href="#Stopping-&-Update-Functions" title="Permalink to this headline">¶</a></h3>
+<h3>Stopping &amp; Update Functions<a class="headerlink" href="#Stopping-&-Update-Functions" title="Permalink to this heading"></a></h3>
 <p>Stopping and Update functions are built, declared, and adjusted in the same way. They both have required Parent base classes. The key similarity between them is the <code class="docutils literal notranslate"><span class="pre">__call__</span></code> function has the same signature: <code class="docutils literal notranslate"><span class="pre">(iteration,</span> <span class="pre">last_sample,</span> <span class="pre">sampler)</span></code>, which gives the class access to the all parts of the sampler object.</p>
 <p>Update functions allow the user to adjust anything within the sampler at periodic intervals set by the <code class="docutils literal notranslate"><span class="pre">update_iterations</span></code> kwarg to <code class="docutils literal notranslate"><span class="pre">EnsembleSampler</span></code>. This can also be used to access very types of information. It allows for a ton of customization from the user from within the sampler object. See the <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/utils.html#update-functions">update documentation</a> for more information.</p>
 <p>Stopping functions are effectively convergence functions, allowing the sampler to stop running when it reaches a user-defined criterion. For more information, see the <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/utils.html#stopping-functions">stopping documentation</a>.</p>
 <p>Here, we will just look at a quick example of using the implemented stopping function for Likelihood convergence.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[46]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[47]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">eryn.utils</span> <span class="kn">import</span> <span class="n">SearchConvergeStopping</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">eryn.utils</span> <span class="kn">import</span> <span class="n">SearchConvergeStopping</span>
 </pre></div>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[47]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[48]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># Gaussian likelihood</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Gaussian likelihood</span>
 <span class="k">def</span> <span class="nf">log_like_fn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">invcov</span><span class="p">):</span>
     <span class="n">diff</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">mu</span>
     <span class="k">return</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">diff</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">invcov</span><span class="p">,</span> <span class="n">diff</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
@@ -3116,41 +2746,33 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
- 24%|█████████▊                               | 24/100 [00:00&lt;00:00, 239.30it/s]
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[-2294.17641274 -1879.89324274 -2373.28979528 -2944.89008045
- -2483.40313165  -852.48532665 -1414.27582678 -2604.1287722
- -1003.13756197 -2214.65356359 -2578.2782716  -4233.12219149
-  -857.57152554 -1762.81603749 -3550.58036708 -1981.29515691
- -2897.16430193 -1663.48965635 -2241.54395172 -1890.10372439
- -3702.63480155 -1936.23777872 -4508.89136944 -2300.73499946
- -1782.77855041 -3173.45912848  -638.42152567 -4719.35222249
-  -141.36030605 -1330.73597018 -3474.19381299 -1905.77666365
- -3884.7030255  -2354.25162083 -3030.18504364 -2535.47188611
- -1990.26033203 -1963.48262158 -2462.83628133 -2491.83215805
- -2712.68220804 -1665.19658064 -1570.43874924 -3993.01861526
- -1219.37125753  -571.47504218 -2583.2800482  -1769.29265968
- -2310.65590231 -3446.71129183 -1395.00035753 -1781.20460042
- -1451.17686374 -2072.50894941 -2288.2984789  -3554.64886824
- -1606.07803515 -1878.42149171 -1301.7916453  -1619.76990939
- -1292.97234797 -1208.7004663  -2846.64914312  -476.56929238
- -3085.6639145  -1762.7280522  -3107.29987975 -2183.06575964
- -3127.03967102 -2995.33693371 -1007.54708047 -2094.68186424
- -3992.6460015  -3002.8276983  -2344.48649864 -3078.02358843
- -1500.18840683 -2698.73513132 -1476.98753531 -1654.9223476
- -2293.39774013 -3521.09431654 -1279.23289263 -3605.8579234
- -2179.37515018 -1118.13127152 -1050.24574001 -2130.28450141
- -2575.825388   -3485.3349861  -1778.77066971 -2815.57434143
- -2216.81312919 -1876.62245094 -1805.17733591 -2003.87977758
-  -937.62829448  -669.94627036  -298.02266275 -3609.16173265]
+[-3766.31678229 -2278.39604335 -4059.02192642 -2144.19798244
+  -998.28824411 -1428.11763617 -1849.86261277  -395.82800654
+ -3538.16264136 -2386.93883948 -2649.90937541 -1946.19356638
+ -2282.89975813 -1547.48615372 -1204.51547451  -649.74890771
+ -3215.08254415 -1425.56101932 -2921.47148738 -1583.96524582
+ -1384.47935102 -1485.917688   -1522.66935955 -1244.37480478
+ -1501.36183826 -2138.88955728  -713.31326984 -1724.38252192
+  -967.74170929  -616.752707   -1944.30173589 -1440.93342643
+ -1298.02439483 -1686.88049192 -1388.22694244   -89.51421123
+ -1286.28705614 -1377.81556495 -1310.65173531 -2833.47977965
+ -3491.52561205  -641.48222829 -1573.34755124 -1381.71501128
+ -2655.19429871 -1335.47251394 -3695.80574539 -1375.33229211
+ -2972.09945822 -1740.7113659  -1313.41740737  -545.05618362
+ -1271.52780167 -3677.68425215 -1458.42786266  -621.36007203
+ -1384.94778516  -862.26458892 -3376.97052939 -2738.30382482
+ -2396.04714838 -3847.0369564  -2467.72846803 -2601.9956732
+ -2930.49147807 -2987.61151173 -3122.68430004 -2749.51246169
+  -723.57849073 -1469.36411184 -1917.57389757 -1197.33797897
+ -1442.27625541 -2245.68914219 -1338.98687076 -1862.77573979
+ -2189.02815502 -1591.92946993 -1359.46554231 -3003.49085676
+ -1796.38296258 -2975.3466723  -3485.79013489 -2857.09434732
+ -2081.60939944 -2558.43513486 -2254.20797938 -3483.18026064
+ -3652.11045454 -3119.6491669  -2595.00784266  -854.86242004
+ -2141.24458421 -1239.27101919 -2207.80400398 -1115.71944662
+ -1845.7570246  -3039.2483924   -875.96968329 -1025.23204354]
 [-23.02585093 -23.02585093 -23.02585093 -23.02585093 -23.02585093
  -23.02585093 -23.02585093 -23.02585093 -23.02585093 -23.02585093
  -23.02585093 -23.02585093 -23.02585093 -23.02585093 -23.02585093
@@ -3178,8 +2800,8 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|████████████████████████████████████████| 100/100 [00:00&lt;00:00, 258.54it/s]
-  2%|▉                                       | 61/2500 [00:00&lt;00:08, 298.17it/s]
+100%|████████████████████████████████████████| 100/100 [00:00&lt;00:00, 313.06it/s]
+  2%|▉                                       | 61/2500 [00:00&lt;00:08, 301.09it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -3188,13 +2810,13 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 
-ITERS CONSECUTIVE: 0 Previous best LL: -0.23663477556472573 Current best LL: -0.23663477556472573
+ITERS CONSECUTIVE: 0 Previous best LL: -0.06567225433396463 Current best LL: -0.06567225433396463
 
 
-ITERS CONSECUTIVE: 1 Previous best LL: -0.23663477556472573 Current best LL: -0.23663477556472573
+ITERS CONSECUTIVE: 1 Previous best LL: -0.06567225433396463 Current best LL: -0.06567225433396463
 
 
-ITERS CONSECUTIVE: 0 Previous best LL: -0.15050126493711338 Current best LL: -0.15050126493711338
+ITERS CONSECUTIVE: 2 Previous best LL: -0.06567225433396463 Current best LL: -0.06567225433396463
 
 </pre></div></div>
 </div>
@@ -3203,7 +2825,7 @@ ITERS CONSECUTIVE: 0 Previous best LL: -0.15050126493711338 Current best LL: -0.
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-  6%|██▎                                    | 147/2500 [00:00&lt;00:08, 291.85it/s]
+  6%|██▎                                    | 150/2500 [00:00&lt;00:07, 300.60it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -3212,34 +2834,13 @@ ITERS CONSECUTIVE: 0 Previous best LL: -0.15050126493711338 Current best LL: -0.
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 
-ITERS CONSECUTIVE: 1 Previous best LL: -0.15050126493711338 Current best LL: -0.15050126493711338
+ITERS CONSECUTIVE: 3 Previous best LL: -0.06567225433396463 Current best LL: -0.06567225433396463
 
 
-ITERS CONSECUTIVE: 2 Previous best LL: -0.15050126493711338 Current best LL: -0.15050126493711338
+ITERS CONSECUTIVE: 4 Previous best LL: -0.06567225433396463 Current best LL: -0.06567225433396463
 
 
-ITERS CONSECUTIVE: 3 Previous best LL: -0.15050126493711338 Current best LL: -0.14694621963889948
-
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-  8%|███                                    | 200/2500 [00:00&lt;00:07, 290.18it/s]
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-
-ITERS CONSECUTIVE: 4 Previous best LL: -0.15050126493711338 Current best LL: -0.14392037411771386
-
-
-ITERS CONSECUTIVE: 5 Previous best LL: -0.15050126493711338 Current best LL: -0.14392037411771386
+ITERS CONSECUTIVE: 5 Previous best LL: -0.06567225433396463 Current best LL: -0.06567225433396463
 
 </pre></div></div>
 </div>
@@ -3257,50 +2858,33 @@ ITERS CONSECUTIVE: 5 Previous best LL: -0.15050126493711338 Current best LL: -0.
 
 
            </div>
-           
           </div>
-          <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="more_tutorials.html" class="btn btn-neutral float-right" title="More Advanced Eryn Examples" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="../user/utils.html" class="btn btn-neutral float-left" title="Utilities" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="more_tutorials.html" class="btn btn-neutral float-right" title="More Advanced Eryn Examples" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2021, Michael Katz and Nikos Karnesis.
-
-    </p>
+    <p>&#169; Copyright 2021, Michael Katz and Nikos Karnesis.</p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>
