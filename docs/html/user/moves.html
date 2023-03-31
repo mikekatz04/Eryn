@@ -2810,15 +2810,15 @@ primary ensemble in a <a class="reference internal" href="#eryn.moves.RedBlueMov
 <h3>Reversible Jump Parent Class<a class="headerlink" href="#reversible-jump-parent-class" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="eryn.moves.ReversibleJumpMove">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">ReversibleJumpMove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dr_max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tune</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fix_change</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJumpMove" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">ReversibleJumpMove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nleaves_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dr_max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tune</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fix_change</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJumpMove" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#eryn.moves.Move" title="eryn.moves.move.Move"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.move.Move</span></code></a></p>
 <p>An abstract reversible jump move from # TODO: add citations.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>max_k</strong> (<em>int</em><em> or </em><em>list of int</em>) – Maximum number(s) of leaves for each model.
+<li><p><strong>nleaves_max</strong> (<em>int</em><em> or </em><em>list of int</em>) – Maximum number(s) of leaves for each model.
 This is a keyword argument, nut it is required.</p></li>
-<li><p><strong>min_k</strong> (<em>int</em><em> or </em><em>list of int</em>) – Minimum number(s) of leaves for each model.
+<li><p><strong>nleaves_min</strong> (<em>int</em><em> or </em><em>list of int</em>) – Minimum number(s) of leaves for each model.
 This is a keyword argument, nut it is required.</p></li>
 <li><p><strong>tune</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, tune proposal. (Default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
 <li><p><strong>fix_change</strong> (<em>int</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – Fix the change in the number of leaves. Make them all
@@ -2858,7 +2858,7 @@ coordinates for all the walkers.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.ReversibleJumpMove.get_proposal">
-<span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_k_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_k_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJumpMove.get_proposal" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_min_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_max_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJumpMove.get_proposal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make a proposal</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2869,8 +2869,8 @@ coordinates for all the walkers.</p></li>
 <li><p><strong>all_inds</strong> (<em>dict</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code>. Values are
 np.ndarray[ntemps, nwalkers, nleaves_max]. These are the boolean
 arrays marking which leaves are currently used within each walker.</p></li>
-<li><p><strong>min_k_all</strong> (<em>list</em>) – Minimum values of leaf ount for each model. Must have same order as <code class="docutils literal notranslate"><span class="pre">all_cords</span></code>.</p></li>
-<li><p><strong>max_k_all</strong> (<em>list</em>) – Maximum values of leaf ount for each model. Must have same order as <code class="docutils literal notranslate"><span class="pre">all_cords</span></code>.</p></li>
+<li><p><strong>nleaves_min_all</strong> (<em>list</em>) – Minimum values of leaf ount for each model. Must have same order as <code class="docutils literal notranslate"><span class="pre">all_cords</span></code>.</p></li>
+<li><p><strong>nleaves_max_all</strong> (<em>list</em>) – Maximum values of leaf ount for each model. Must have same order as <code class="docutils literal notranslate"><span class="pre">all_cords</span></code>.</p></li>
 <li><p><strong>random</strong> (<em>object</em>) – Current random state of the sampler.</p></li>
 <li><p><strong>**kwargs</strong> (<em>ignored</em>) – For modularity.</p></li>
 </ul>
@@ -2901,7 +2901,7 @@ in the numerator. -log of factors if in the denominator.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.ReversibleJumpMove.get_model_change_proposal">
-<span class="sig-name descname"><span class="pre">get_model_change_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_k</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJumpMove.get_model_change_proposal" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_model_change_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.ReversibleJumpMove.get_model_change_proposal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper function for changing the model count by 1.</p>
 <p>This helper function works with nested models where you want to add or remove
 one leaf at a time.</p>
@@ -2911,8 +2911,8 @@ one leaf at a time.</p>
 <li><p><strong>inds</strong> (<em>np.ndarray</em>) – <code class="docutils literal notranslate"><span class="pre">inds</span></code> values for this specific branch with shape
 <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max)</span></code>.</p></li>
 <li><p><strong>random</strong> (<em>object</em>) – Current random state of the sampler.</p></li>
-<li><p><strong>min_k</strong> (<em>int</em>) – Minimum allowable leaf count for this branch.</p></li>
-<li><p><strong>max_k</strong> (<em>int</em>) – Maximum allowable leaf count for this branch.</p></li>
+<li><p><strong>nleaves_min</strong> (<em>int</em>) – Minimum allowable leaf count for this branch.</p></li>
+<li><p><strong>nleaves_max</strong> (<em>int</em>) – Maximum allowable leaf count for this branch.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -3159,7 +3159,7 @@ that have <code class="docutils literal notranslate"><span class="pre">logpdf</s
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.DistributionGenerateRJ.get_model_change_proposal">
-<span class="sig-name descname"><span class="pre">get_model_change_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_k</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerateRJ.get_model_change_proposal" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_model_change_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerateRJ.get_model_change_proposal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper function for changing the model count by 1.</p>
 <p>This helper function works with nested models where you want to add or remove
 one leaf at a time.</p>
@@ -3169,8 +3169,8 @@ one leaf at a time.</p>
 <li><p><strong>inds</strong> (<em>np.ndarray</em>) – <code class="docutils literal notranslate"><span class="pre">inds</span></code> values for this specific branch with shape
 <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max)</span></code>.</p></li>
 <li><p><strong>random</strong> (<em>object</em>) – Current random state of the sampler.</p></li>
-<li><p><strong>min_k</strong> (<em>int</em>) – Minimum allowable leaf count for this branch.</p></li>
-<li><p><strong>max_k</strong> (<em>int</em>) – Maximum allowable leaf count for this branch.</p></li>
+<li><p><strong>nleaves_min</strong> (<em>int</em>) – Minimum allowable leaf count for this branch.</p></li>
+<li><p><strong>nleaves_max</strong> (<em>int</em>) – Maximum allowable leaf count for this branch.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -3190,7 +3190,7 @@ The length 3 is the index into each of the <code class="docutils literal notrans
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.DistributionGenerateRJ.get_proposal">
-<span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_k_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_k_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerateRJ.get_proposal" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_min_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_max_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.DistributionGenerateRJ.get_proposal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make a proposal</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -3201,8 +3201,8 @@ coordinates for all the walkers.</p></li>
 <li><p><strong>all_inds</strong> (<em>dict</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code>. Values are
 np.ndarray[ntemps, nwalkers, nleaves_max]. These are the boolean
 arrays marking which leaves are currently used within each walker.</p></li>
-<li><p><strong>min_k_all</strong> (<em>list</em>) – Minimum values of leaf ount for each model. Must have same order as <code class="docutils literal notranslate"><span class="pre">all_cords</span></code>.</p></li>
-<li><p><strong>max_k_all</strong> (<em>list</em>) – Maximum values of leaf ount for each model. Must have same order as <code class="docutils literal notranslate"><span class="pre">all_cords</span></code>.</p></li>
+<li><p><strong>nleaves_min_all</strong> (<em>list</em>) – Minimum values of leaf ount for each model. Must have same order as <code class="docutils literal notranslate"><span class="pre">all_cords</span></code>.</p></li>
+<li><p><strong>nleaves_max_all</strong> (<em>list</em>) – Maximum values of leaf ount for each model. Must have same order as <code class="docutils literal notranslate"><span class="pre">all_cords</span></code>.</p></li>
 <li><p><strong>random</strong> (<em>object</em>) – Current random state of the sampler.</p></li>
 <li><p><strong>**kwargs</strong> (<em>ignored</em>) – For modularity.</p></li>
 </ul>
@@ -4429,7 +4429,7 @@ leaf index associated with this proposal. Should only be used if <code class="do
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.get_model_change_proposal">
-<span class="sig-name descname"><span class="pre">get_model_change_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_k</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.get_model_change_proposal" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_model_change_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.get_model_change_proposal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper function for changing the model count by 1.</p>
 <p>This helper function works with nested models where you want to add or remove
 one leaf at a time.</p>
@@ -4439,8 +4439,8 @@ one leaf at a time.</p>
 <li><p><strong>inds</strong> (<em>np.ndarray</em>) – <code class="docutils literal notranslate"><span class="pre">inds</span></code> values for this specific branch with shape
 <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max)</span></code>.</p></li>
 <li><p><strong>random</strong> (<em>object</em>) – Current random state of the sampler.</p></li>
-<li><p><strong>min_k</strong> (<em>int</em>) – Minimum allowable leaf count for this branch.</p></li>
-<li><p><strong>max_k</strong> (<em>int</em>) – Maximum allowable leaf count for this branch.</p></li>
+<li><p><strong>nleaves_min</strong> (<em>int</em>) – Minimum allowable leaf count for this branch.</p></li>
+<li><p><strong>nleaves_max</strong> (<em>int</em>) – Maximum allowable leaf count for this branch.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -4541,7 +4541,7 @@ Must be provided if <code class="docutils literal notranslate"><span class="pre"
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.MTDistGenMoveRJ.get_proposal">
-<span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_k_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_k_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.get_proposal" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branches_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_min_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_max_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.MTDistGenMoveRJ.get_proposal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make a proposal</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -4552,8 +4552,8 @@ coordinates for all the walkers.</p></li>
 <li><p><strong>all_inds</strong> (<em>dict</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code>. Values are
 np.ndarray[ntemps, nwalkers, nleaves_max]. These are the boolean
 arrays marking which leaves are currently used within each walker.</p></li>
-<li><p><strong>min_k_all</strong> (<em>list</em>) – Minimum values of leaf ount for each model. Must have same order as <code class="docutils literal notranslate"><span class="pre">all_cords</span></code>.</p></li>
-<li><p><strong>max_k_all</strong> (<em>list</em>) – Maximum values of leaf ount for each model. Must have same order as <code class="docutils literal notranslate"><span class="pre">all_cords</span></code>.</p></li>
+<li><p><strong>nleaves_min_all</strong> (<em>list</em>) – Minimum values of leaf ount for each model. Must have same order as <code class="docutils literal notranslate"><span class="pre">all_cords</span></code>.</p></li>
+<li><p><strong>nleaves_max_all</strong> (<em>list</em>) – Maximum values of leaf ount for each model. Must have same order as <code class="docutils literal notranslate"><span class="pre">all_cords</span></code>.</p></li>
 <li><p><strong>random</strong> (<em>object</em>) – Current random state of the sampler.</p></li>
 <li><p><strong>**kwargs</strong> (<em>ignored</em>) – For modularity.</p></li>
 </ul>

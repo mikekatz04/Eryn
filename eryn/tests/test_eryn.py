@@ -8,7 +8,7 @@ from eryn.ensemble import EnsembleSampler
 from eryn.state import State
 from eryn.prior import ProbDistContainer, uniform_dist
 from eryn.utils import TransformContainer
-from eryn.moves import GaussianMove, StretchMove, CombineMove
+from eryn.moves import GaussianMove, StretchMove, CombineMove, DistributionGenerateRJ 
 from eryn.utils.utility import groups_from_inds
 from eryn.backends import HDFBackend
 
@@ -87,7 +87,7 @@ def log_like_fn_gauss_and_sine(params_both, t, data, sigma):
     return ll
 
 
-class WaveformTest(unittest.TestCase):
+class ErynTest(unittest.TestCase):
     def test_base(self):
 
         ndim = 5
@@ -194,8 +194,8 @@ class WaveformTest(unittest.TestCase):
         nwalkers = 20
         ntemps = 8
         ndim = 3
-        nleaves_max = 8
-        nleaves_min = 0
+        nleaves_max = {"gauss": 8}
+        nleaves_min = {"gauss": 0}
 
         branch_names = ["gauss"]
 
@@ -219,7 +219,7 @@ class WaveformTest(unittest.TestCase):
         # produce full data
         y = injection + sigma * np.random.randn(len(injection))
 
-        coords = {"gauss": np.zeros((ntemps, nwalkers, nleaves_max, ndim))}
+        coords = {"gauss": np.zeros((ntemps, nwalkers, nleaves_max["gauss"], ndim))}
 
         # this is the sigma for the multivariate Gaussian that sets starting points
         # We need it to be very small to assume we are passed the search phase
@@ -227,7 +227,7 @@ class WaveformTest(unittest.TestCase):
         sig1 = 0.0001
 
         # setup initial walkers to be the correct count (it will spread out)
-        for nn in range(nleaves_max):
+        for nn in range(nleaves_max["gauss"]):
             if nn >= len(gauss_inj_params):
                 # not going to add parameters for these unused leaves
                 continue
@@ -239,7 +239,7 @@ class WaveformTest(unittest.TestCase):
             )
 
         # make sure to start near the proper setup
-        inds = {"gauss": np.zeros((ntemps, nwalkers, nleaves_max), dtype=bool)}
+        inds = {"gauss": np.zeros((ntemps, nwalkers, nleaves_max['gauss']), dtype=bool)}
 
         # turn False -> True for any binary in the sampler
         inds["gauss"][:, :, : len(gauss_inj_params)] = True
@@ -257,7 +257,9 @@ class WaveformTest(unittest.TestCase):
         factor = 0.00001
         cov = {"gauss": np.diag(np.ones(ndim)) * factor}
 
+        priors_gen = {"gauss": ProbDistContainer(priors["gauss"])}
         moves = GaussianMove(cov)
+        rj_moves = [DistributionGenerateRJ(priors_gen, nleaves_min=nleaves_min, nleaves_max=nleaves_max), DistributionGenerateRJ(priors_gen, nleaves_min=nleaves_min, nleaves_max=nleaves_max)]
 
         ensemble = EnsembleSampler(
             nwalkers,
@@ -271,7 +273,7 @@ class WaveformTest(unittest.TestCase):
             nleaves_max=nleaves_max,
             nleaves_min=nleaves_min,
             moves=moves,
-            rj_moves=True,  # basic generation of new leaves from the prior
+            rj_moves=rj_moves,  # basic generation of new leaves from the prior
         )
 
         log_prior = ensemble.compute_log_prior(coords, inds=inds)
@@ -289,7 +291,7 @@ class WaveformTest(unittest.TestCase):
 
         nleaves = ensemble.get_nleaves()["gauss"]
         bns = (
-            np.arange(1, nleaves_max + 2) - 0.5
+            np.arange(1, nleaves_max["gauss"] + 2) - 0.5
         )  # Just to make it pretty and center the bins
 
         samples = ensemble.get_chain()["gauss"][:, 0].reshape(-1, ndim)
@@ -303,9 +305,9 @@ class WaveformTest(unittest.TestCase):
 
         nwalkers = 20
         ntemps = 8
-        ndims = [3, 3]
-        nleaves_max = [8, 4]
-        nleaves_min = [0, 0]
+        ndims = {"gauss": 3, "sine": 3}
+        nleaves_max = {"gauss": 8, "sine": 4}
+        nleaves_min = {"gauss": 0, "sine": 0}
 
         branch_names = ["gauss", "sine"]
 
@@ -336,14 +338,14 @@ class WaveformTest(unittest.TestCase):
         y = injection + sigma * np.random.randn(len(injection))
 
         coords = {
-            "gauss": np.zeros((ntemps, nwalkers, nleaves_max[0], ndims[0])),
-            "sine": np.zeros((ntemps, nwalkers, nleaves_max[1], ndims[1])),
+            "gauss": np.zeros((ntemps, nwalkers, nleaves_max["gauss"], ndims["gauss"])),
+            "sine": np.zeros((ntemps, nwalkers, nleaves_max["sine"], ndims["sine"])),
         }
 
         # make sure to start near the proper setup
         inds = {
-            "gauss": np.zeros((ntemps, nwalkers, nleaves_max[0]), dtype=bool),
-            "sine": np.zeros((ntemps, nwalkers, nleaves_max[1]), dtype=bool),
+            "gauss": np.zeros((ntemps, nwalkers, nleaves_max["gauss"]), dtype=bool),
+            "sine": np.zeros((ntemps, nwalkers, nleaves_max["sine"]), dtype=bool),
         }
 
         # this is the sigma for the multivariate Gaussian that sets starting points
@@ -353,7 +355,7 @@ class WaveformTest(unittest.TestCase):
 
         # setup initial walkers to be the correct count (it will spread out)
         # start with gaussians
-        for nn in range(nleaves_max[0]):
+        for nn in range(nleaves_max["gauss"]):
             if nn >= len(gauss_inj_params):
                 # not going to add parameters for these unused leaves
                 continue
@@ -365,7 +367,7 @@ class WaveformTest(unittest.TestCase):
             inds["gauss"][:, :, nn] = True
 
         # next do sine waves
-        for nn in range(nleaves_max[1]):
+        for nn in range(nleaves_max["sine"]):
             if nn >= len(sine_inj_params):
                 # not going to add parameters for these unused leaves
                 continue
@@ -391,8 +393,8 @@ class WaveformTest(unittest.TestCase):
         # for the Gaussian Move, will be explained later
         factor = 0.00001
         cov = {
-            "gauss": np.diag(np.ones(ndims[0])) * factor,
-            "sine": np.diag(np.ones(ndims[1])) * factor,
+            "gauss": np.diag(np.ones(ndims["gauss"])) * factor,
+            "sine": np.diag(np.ones(ndims["sine"])) * factor,
         }
 
         moves = GaussianMove(cov)
@@ -441,7 +443,7 @@ class WaveformTest(unittest.TestCase):
         nleaves_gauss = ensemble.get_nleaves()["gauss"]
         nleaves_sine = ensemble.get_nleaves()["sine"]
 
-        samples = ensemble.get_chain()["gauss"][:, 0].reshape(-1, ndims[0])
+        samples = ensemble.get_chain()["gauss"][:, 0].reshape(-1, ndims["gauss"])
 
         # same as ensemble.get_chain()['gauss'][ensemble.get_inds()['gauss']]
         samples = samples[~np.isnan(samples[:, 0])]
@@ -454,9 +456,9 @@ class WaveformTest(unittest.TestCase):
 
         nwalkers = 20
         ntemps = 8
-        ndims = [3, 3]
-        nleaves_max = [8, 2]  # same min and max means no changing
-        nleaves_min = [0, 2]
+        ndims = {"gauss": 3, "sine": 3}
+        nleaves_max = {"gauss": 8, "sine": 2}  # same min and max means no changing
+        nleaves_min = {"gauss": 0, "sine": 2}
 
         branch_names = ["gauss", "sine"]
 
@@ -487,14 +489,14 @@ class WaveformTest(unittest.TestCase):
         y = injection + sigma * np.random.randn(len(injection))
 
         coords = {
-            "gauss": np.zeros((ntemps, nwalkers, nleaves_max[0], ndims[0])),
-            "sine": np.zeros((ntemps, nwalkers, nleaves_max[1], ndims[1])),
+            "gauss": np.zeros((ntemps, nwalkers, nleaves_max["gauss"], ndims["gauss"])),
+            "sine": np.zeros((ntemps, nwalkers, nleaves_max["sine"], ndims["sine"])),
         }
 
         # make sure to start near the proper setup
         inds = {
-            "gauss": np.zeros((ntemps, nwalkers, nleaves_max[0]), dtype=bool),
-            "sine": np.ones((ntemps, nwalkers, nleaves_max[1]), dtype=bool),
+            "gauss": np.zeros((ntemps, nwalkers, nleaves_max["gauss"]), dtype=bool),
+            "sine": np.ones((ntemps, nwalkers, nleaves_max["sine"]), dtype=bool),
         }
 
         # this is the sigma for the multivariate Gaussian that sets starting points
@@ -504,7 +506,7 @@ class WaveformTest(unittest.TestCase):
 
         # setup initial walkers to be the correct count (it will spread out)
         # start with gaussians
-        for nn in range(nleaves_max[0]):
+        for nn in range(nleaves_max["gauss"]):
             if nn >= len(gauss_inj_params):
                 # not going to add parameters for these unused leaves
                 continue
@@ -516,7 +518,7 @@ class WaveformTest(unittest.TestCase):
             inds["gauss"][:, :, nn] = True
 
         # next do sine waves
-        for nn in range(nleaves_max[1]):
+        for nn in range(nleaves_max["sine"]):
             if nn >= len(sine_inj_params):
                 # not going to add parameters for these unused leaves
                 continue
@@ -542,25 +544,25 @@ class WaveformTest(unittest.TestCase):
         # for the Gaussian Move
         factor = 0.00001
         cov = {
-            "gauss": np.diag(np.ones(ndims[0])) * factor,
+            "gauss": np.diag(np.ones(ndims["gauss"])) * factor,
         }
 
-        # pass boolean array of shape (nleaves_max[0], ndims[0])
+        # pass boolean array of shape (nleaves_max["gauss"], ndims["gauss"])
         gibbs_sampling_gauss = [
-            ("gauss", np.zeros((nleaves_max[0], ndims[0]), dtype=bool))
-            for _ in range(nleaves_max[0])
+            ("gauss", np.zeros((nleaves_max["gauss"], ndims["gauss"]), dtype=bool))
+            for _ in range(nleaves_max["gauss"])
         ]
 
-        for i in range(nleaves_max[0]):
+        for i in range(nleaves_max["gauss"]):
             gibbs_sampling_gauss[i][-1][i] = True
 
         gauss_move = GaussianMove(cov, gibbs_sampling_setup=gibbs_sampling_gauss)
 
         gibbs_sampling_sine = [
-            ("sine", np.zeros((nleaves_max[1], ndims[1]), dtype=bool))
-            for _ in range(2 * nleaves_max[1])
+            ("sine", np.zeros((nleaves_max["sine"], ndims["sine"]), dtype=bool))
+            for _ in range(2 * nleaves_max["sine"])
         ]
-        for i in range(nleaves_max[1]):
+        for i in range(nleaves_max["sine"]):
             for j in range(2):
                 if j == 0:
                     gibbs_sampling_sine[2 * i + j][-1][i, :2] = True
@@ -1049,7 +1051,7 @@ class WaveformTest(unittest.TestCase):
         from eryn.moves import MTDistGenMoveRJ
 
         mt_rj_prior = MTDistGenMoveRJ(
-            priors, max_k=[nleaves_max], min_k=[nleaves_min], num_try=25, rj=True
+            priors, nleaves_max={"gauss": nleaves_max}, nleaves_min={"gauss": nleaves_min}, num_try=25, rj=True
         )
 
         ensemble = EnsembleSampler(
@@ -1086,3 +1088,12 @@ class WaveformTest(unittest.TestCase):
             np.arange(1, nleaves_max + 2) - 0.5
         )  # Just to make it pretty and center the bins
 
+    def test_2d_prior(self):
+        cov = np.array([[0.8, -0.2], [-0.2, 0.4]])
+        from scipy.stats import multivariate_normal
+
+        priors_in = {
+            (0, 1): multivariate_normal(cov=cov)
+        }
+        priors = ProbDistContainer(priors_in)
+        prior_vals = priors.rvs(size=12)

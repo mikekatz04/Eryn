@@ -42,8 +42,8 @@ class Backend(object):
         move_info (dict): Dictionary containing move info.
         move_keys (list): List of keys for ``move_info``. 
         nbranches (int): Number of branches.
-        ndims (1D int np.ndarray): Dimensionality of each branch.
-        nleaves_max (1D int np.ndarray): Maximum allowable leaves for each branch.
+        ndims (dict): Dimensionality of each branch.
+        nleaves_max (dict): Maximum allowable leaves for each branch.
         nwalkers (int): The size of the ensemble (per temperature). 
         ntemps (int): Number of rungs in the temperature ladder.
         reset_args (tuple): Arguments to reset backend.
@@ -75,6 +75,7 @@ class Backend(object):
         nleaves_max=1,
         ntemps=1,
         branch_names=None,
+        nbranches=1,
         rj=False,
         moves=None,
         **info,
@@ -83,14 +84,19 @@ class Backend(object):
 
         Args:
             nwalkers (int): The size of the ensemble (per temperature).
-            ndims (int or list of ints): The number of dimensions for each branch.
-            nleaves_max (int or list of ints, optional): Maximum allowable leaf count for each branch. 
-                It should have the same length as the number of branches. (default: ``1``)
+            ndims (int, list of ints, or dict): The number of dimensions for each branch. If
+                ``dict``, keys should be the branch names and values the associated dimensionality.
+            nleaves_max (int, list of ints, or dict, optional): Maximum allowable leaf count for each branch. 
+                It should have the same length as the number of branches. 
+                If ``dict``, keys should be the branch names and values the associated maximal leaf value.
+                (default: ``1``)
             ntemps (int, optional): Number of rungs in the temperature ladder.
                 (default: ``1``)
             branch_names (str or list of str, optional): Names of the branches used. If not given,
                 branches will be names ``model_0``, ..., ``model_n`` for ``n`` branches.
                 (default: ``None``)
+            nbranches (int, optional): Number of branches. This is only used if ``branch_names is None``.
+                (default: ``1``)
             rj (bool, optional): If True, reversible-jump techniques are used.
                 (default: ``False``)
             moves (list, optional): List of all of the move classes input into the sampler.
@@ -119,31 +125,7 @@ class Backend(object):
         self.ntemps = int(ntemps)
         self.rj = rj
 
-        if isinstance(ndims, int):
-            self.ndims = np.array([ndims])
-        elif isinstance(ndims, list) or isinstance(ndims, np.ndarray):
-            self.ndims = np.asarray(ndims)
-        else:
-            raise ValueError("ndims is to be a scalar int or a list.")
-
-        if isinstance(nleaves_max, int):
-            self.nleaves_max = np.array([nleaves_max])
-        elif isinstance(nleaves_max, list) or isinstance(nleaves_max, np.ndarray):
-            self.nleaves_max = np.asarray(nleaves_max)
-        else:
-            raise ValueError("nleaves_max is to be a scalar int or a list.")
-
-        if len(self.nleaves_max) != len(self.ndims):
-            raise ValueError(
-                """Number of branches indicated by nleaves_max and ndims are not equivalent"
-                (nleaves_max: {}, ndims: {}).""".format(
-                    len(self.nleaves_max), len(self.ndims)
-                )
-            )
-
-        self.nbranches = len(self.nleaves_max)
-
-        # fill branch names accordingly
+        # turn things into lists/dicts if needed
         if branch_names is not None:
             if isinstance(branch_names, str):
                 branch_names = [branch_names]
@@ -151,19 +133,48 @@ class Backend(object):
             elif not isinstance(branch_names, list):
                 raise ValueError("branch_names must be string or list of strings.")
 
-            elif len(branch_names) != self.nbranches:
-                raise ValueError(
-                    """Number of branches indicated by nleaves_max and branch_names are not equivalent"
-                       (nleaves_max: {}, branch_names: {}).""".format(
-                        len(self.nleaves_max), len(branch_names)
-                    )
-                )
-
         else:
-            # fill default names if not given
-            branch_names = ["model_{}".format(i) for i in range(self.nbranches)]
+            branch_names = ["model_{}".format(i) for i in range(nbranches)]
+
+        nbranches = len(branch_names)
+
+        if isinstance(ndims, int):
+            assert len(branch_names) == 1
+            ndims = {branch_names[0]: ndims}
+
+        elif isinstance(ndims, list) or isinstance(ndims, np.ndarray):
+            assert len(branch_names) == len(ndims)
+            ndims = {bn: nd for bn, nd in zip(branch_names, ndims)}
+
+        elif isinstance(ndims, dict):
+            assert len(list(ndims.keys())) == len(branch_names)
+            for key in ndims:
+                if key not in branch_names:
+                    raise ValueError(f"{key} is in ndims but does not appear in branch_names: {branch_names}.")
+        else:
+            raise ValueError("ndims is to be a scalar int, list or dict.")
+
+        if isinstance(nleaves_max, int):
+            assert len(branch_names) == 1
+            nleaves_max = {branch_names[0]: nleaves_max}
+
+        elif isinstance(nleaves_max, list) or isinstance(nleaves_max, np.ndarray):
+            assert len(branch_names) == len(nleaves_max)
+            nleaves_max = {bn: nl for bn, nl in zip(branch_names, nleaves_max)}
+
+        elif isinstance(nleaves_max, dict):
+            assert len(list(nleaves_max.keys())) == len(branch_names)
+            for key in nleaves_max:
+                if key not in branch_names:
+                    raise ValueError(f"{key} is in nleaves_max but does not appear in branch_names: {branch_names}.")
+        else:
+            raise ValueError("nleaves_max is to be a scalar int, list, or dict.")
+
+        self.nbranches = len(branch_names)
 
         self.branch_names = branch_names
+        self.ndims = ndims
+        self.nleaves_max = nleaves_max
 
         self.iteration = 0
 
@@ -179,17 +190,15 @@ class Backend(object):
         # chains are stored in dictionaries
         self.chain = {
             name: np.empty(
-                (0, self.ntemps, self.nwalkers, nleaves, ndim), dtype=self.dtype
+                (0, self.ntemps, self.nwalkers, self.nleaves_max[name], self.ndims[name]), dtype=self.dtype
             )
-            for name, nleaves, ndim in zip(
-                self.branch_names, self.nleaves_max, self.ndims
-            )
+            for name in self.branch_names
         }
 
         # inds correspond to leaves used or not
         self.inds = {
-            name: np.empty((0, self.ntemps, self.nwalkers, nleaves), dtype=bool)
-            for name, nleaves in zip(self.branch_names, self.nleaves_max)
+            name: np.empty((0, self.ntemps, self.nwalkers, self.nleaves_max[name]), dtype=bool)
+            for name in self.branch_names
         }
 
         # log likelihood and prior
@@ -210,22 +219,15 @@ class Backend(object):
             self.move_info = {}
             self.move_keys = []
             for move in moves:
-                # get out of tuple if weights are given
-                if isinstance(move, tuple):
-                    move = move[0]
-
-                # get the name of the class instance as a string
-                move_name = move.__class__.__name__
-
                 # prepare information dictionary
-                self.move_info[move_name] = {
+                self.move_info[move] = {
                     "acceptance_fraction": np.zeros(
                         (self.ntemps, self.nwalkers), dtype=self.dtype
                     )
                 }
 
                 # update the move keys to keep proper order
-                self.move_keys.append(move_name)
+                self.move_keys.append(move)
 
         else:
             self.move_info = None
@@ -655,10 +657,8 @@ class Backend(object):
 
         """
         return {
-            key: (self.ntemps, self.nwalkers, nleaves, ndim)
-            for key, nleaves, ndim in zip(
-                self.branch_names, self.nleaves_max, self.ndims
-            )
+            key: (self.ntemps, self.nwalkers, self.nleaves_max[key], self.ndims[key])
+            for key in self.branch_names
         }
 
     def _check_blobs(self, blobs):
@@ -690,20 +690,16 @@ class Backend(object):
         # determine the number of entries in the chains
         i = ngrow - (len(self.chain[list(self.chain.keys())[0]]) - self.iteration)
         {
-            key: (self.ntemps, self.nwalkers, nleaves, ndim)
-            for key, nleaves, ndim in zip(
-                self.branch_names, self.nleaves_max, self.ndims
-            )
+            key: (self.ntemps, self.nwalkers, self.nleaves_max[key], self.ndims[key])
+            for key in self.branch_names
         }
 
         # temperary addition to chains
         a = {
             key: np.empty(
-                (i, self.ntemps, self.nwalkers, nleaves, ndim), dtype=self.dtype
+                (i, self.ntemps, self.nwalkers, self.nleaves_max[key], self.ndims[key]), dtype=self.dtype
             )
-            for key, nleaves, ndim in zip(
-                self.branch_names, self.nleaves_max, self.ndims
-            )
+            for key in self.branch_names
         }
         # combine with original chain
         self.chain = {
@@ -712,8 +708,8 @@ class Backend(object):
 
         # temperorary addition to inds
         a = {
-            key: np.empty((i, self.ntemps, self.nwalkers, nleaves), dtype=bool)
-            for key, nleaves in zip(self.branch_names, self.nleaves_max)
+            key: np.empty((i, self.ntemps, self.nwalkers, self.nleaves_max[key]), dtype=bool)
+            for key in self.branch_names
         }
         # combine with original inds
         self.inds = {key: np.concatenate((self.inds[key], a[key]), axis=0) for key in a}
@@ -847,9 +843,8 @@ class Backend(object):
                 is False, then rj_accepted must be None, which is the default.
             swaps_accepted (ndarray, optional): 1D array with number of swaps accepted
                 for the in-model step. (default: ``None``)
-            moves_accepted_fraction (list, optional): List of acceptance fraction arrays for all of the 
-                moves in the sampler. This list must have the same length as ``self.move_keys``
-                and be in the same order.
+            moves_accepted_fraction (dict, optional): Dict of acceptance fraction arrays for all of the 
+                moves in the sampler. This dict must have the same keys as ``self.move_keys``.
                 (default: ``None``)
 
         """
@@ -894,16 +889,11 @@ class Backend(object):
                     in the reset function."""
                 )
 
-            # make sure they are the same length
-            assert len(moves_accepted_fraction) == len(self.move_keys)
-
             # update acceptance fractions
-            for move_key, move_accepted_fraction in zip(
-                self.move_keys, moves_accepted_fraction
-            ):
+            for move_key in self.move_keys:
                 self.move_info[move_key]["acceptance_fraction"][
                     :
-                ] = move_accepted_fraction[:]
+                ] = moves_accepted_fraction[move_key]
 
         self.random_state = state.random_state
         self.iteration += 1
