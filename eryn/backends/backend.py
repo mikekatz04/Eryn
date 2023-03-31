@@ -252,7 +252,6 @@ class Backend(object):
             dict or np.ndarray: Values requested.
 
         """
-
         if slice_vals is not None:
             raise ValueError("slice_vals can only be used with an HDF Backend.")
 
@@ -271,7 +270,7 @@ class Backend(object):
         if name == "chain":
             v_all = {
                 key: self.chain[key][discard + thin - 1 : self.iteration : thin]
-                for key in self.chain
+                for key in self.branch_names
             }
             return v_all
 
@@ -279,7 +278,7 @@ class Backend(object):
         if name == "inds":
             v_all = {
                 key: self.inds[key][discard + thin - 1 : self.iteration : thin]
-                for key in self.chain
+                for key in self.branch_names
             }
             return v_all
 
