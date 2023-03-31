@@ -260,6 +260,8 @@ class proposal_template(object):
 
     def __call__(self, x0, rng, temp=0):
         nw, nd = x0.shape
+        if nw<1:
+            return x0, np.zeros(nw)
 
         if isinstance(self.proposal, list):
             proposal_here = self.proposal[np.random.randint(len(self.proposal)) ]
