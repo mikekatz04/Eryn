@@ -363,7 +363,7 @@ class ProbDistContainer:
 
         xp = np if not self.use_cupy else cp
 
-        # setup the slicing to probably sample points
+        # setup the slicing to properly sample points
         out_inds = tuple([slice(None) for _ in range(len(size))])
 
         # setup output and loop through priors
@@ -374,8 +374,12 @@ class ProbDistContainer:
                 continue
             # combines outer dimensions with indices of interest
             inds_in = out_inds + (inds,)
+
             # allows for proper adding of quantities to out array
-            adjust_inds = out_inds + (None,)
-            out[inds_in] = prior_i.rvs(size=size)[adjust_inds]
+            if len(inds) == 1:
+                adjust_inds = out_inds + (None,)
+                out[inds_in] = prior_i.rvs(size=size)[adjust_inds]
+            else:
+                out[inds_in] = prior_i.rvs(size=size)
 
         return out

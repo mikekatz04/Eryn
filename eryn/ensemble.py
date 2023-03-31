@@ -42,8 +42,8 @@ class EnsembleSampler(object):
 
     Args:
         nwalkers (int): The number of walkers in the ensemble per temperature.
-        ndims (int or list of ints): Number of dimensions in the parameter space
-            for each branch tested.
+        ndims (int, list of ints, or dict): The number of dimensions for each branch. If
+                ``dict``, keys should be the branch names and values the associated dimensionality.
         log_like_fn (callable): A function that returns the natural logarithm of the
             likelihood for that position. The inputs to ``log_like_fn`` depend on whether
             the function is vectorized (kwarg ``vectorize`` below), if you are using reversible jump, 
@@ -103,13 +103,19 @@ class EnsembleSampler(object):
         tempering_kwargs (dict, optional): Keyword arguments for initialization of the
             tempering class: :class:`eryn.moves.tempering.TemperatureControl`.  (default: ``{}``)
         branch_names (list, optional): List of branch names. If ``None``, models will be assigned
-            names as ``f"model_{index}"``. (default: ``None``)
-        nbranches (int, optional): Number of branches (models) tested. (default: ``1``)
-        nleaves_max (int, list of int, or int np.ndarray[nbranches], optional):
-            Number of maximum allowable leaves for each branch. (default: ``1``)
-        nleaves_min (int, list of int, or int np.ndarray[nbranches], optional):
-            Number of minimum allowable leaves for each branch. This is only
-            used when using reversible jump. (default: ``1``)
+            names as ``f"model_{index}"`` based on ``nbranches``. (default: ``None``)
+        nbranches (int, optional): Number of branches (models) tested. 
+            Only used if ``branch_names is None``.
+            (default: ``1``)
+        nleaves_max (int, list of ints, or dict, optional): Maximum allowable leaf count for each branch. 
+            It should have the same length as the number of branches. 
+            If ``dict``, keys should be the branch names and values the associated maximal leaf value.
+            (default: ``1``)
+        nleaves_min (int, list of ints, or dict, optional): Minimum allowable leaf count for each branch. 
+            It should have the same length as the number of branches. Only used with Reversible Jump.
+            If ``dict``, keys should be the branch names and values the associated maximal leaf value.
+            If ``None`` and using Reversible Jump, will fill all branches with zero.
+            (default: ``0``)
         pool (object, optional): An object with a ``map`` method that follows the same
             calling sequence as the built-in ``map`` function. This is
             generally used to compute the log-probabilities for the ensemble
@@ -190,6 +196,12 @@ class EnsembleSampler(object):
         num_repeats_rj (int, optional): Number of time to repeat the reversible jump step 
             within in one sampler iteration. When analyzing the acceptance fraction, you must 
             include the value of ``num_repeats_rj`` to get the proper denominator.
+        track_moves (bool, optional): If ``True``, track acceptance fraction of each move
+            in the backend. If ``False``, no tracking is done. If ``True`` and run is interrupted, it will check 
+            that the move configuration has not changed. It will not allow the run to go on 
+            if it is changed. In this case, the user should declare a new backend and use the last 
+            state from the previous backend. **Warning**: If the order of moves of the same move class
+            is changed, the check may not catch it, so the tracking may mix move acceptance fractions together.
         verbose (int, optional): # TODO
         info (dict, optional): Key and value pairs reprenting any information
             the user wants to add to the backend if the user is not inputing
@@ -212,7 +224,7 @@ class EnsembleSampler(object):
         branch_names=None,
         nbranches=1,
         nleaves_max=1,
-        nleaves_min=1,
+        nleaves_min=0,
         pool=None,
         moves=None,
         rj_moves=None,
@@ -234,6 +246,7 @@ class EnsembleSampler(object):
         fill_zero_leaves_val=-1e300,
         num_repeats_in_model=1,
         num_repeats_rj=1,
+        track_moves=True,
         verbose=False,
         info={},
     ):
@@ -247,27 +260,63 @@ class EnsembleSampler(object):
         self.fill_zero_leaves_val = fill_zero_leaves_val
         self.num_repeats_in_model = num_repeats_in_model
         self.num_repeats_rj = num_repeats_rj
+        self.track_moves = track_moves
 
         # setup emcee-like basics
         self.pool = pool
         self.vectorize = vectorize
         self.blobs_dtype = blobs_dtype
 
-        # store default branch names if not given
-        if branch_names is None:
+        # turn things into lists/dicts if needed
+        if branch_names is not None:
+            if isinstance(branch_names, str):
+                branch_names = [branch_names]
+
+            elif not isinstance(branch_names, list):
+                raise ValueError("branch_names must be string or list of strings.")
+
+        else:
             branch_names = ["model_{}".format(i) for i in range(nbranches)]
 
-        assert len(branch_names) == nbranches
+        nbranches = len(branch_names)
 
-        # setup dimensions for branches
-        # turn things into lists if ints are given
         if isinstance(ndims, int):
-            ndims = [ndims for _ in range(nbranches)]
-        elif not isinstance(ndims, list):
-            raise ValueError("ndims must be integer or list.")
+            assert len(branch_names) == 1
+            ndims = {branch_names[0]: ndims}
+
+        elif isinstance(ndims, list) or isinstance(ndims, np.ndarray):
+            assert len(branch_names) == len(ndims)
+            ndims = {bn: nd for bn, nd in zip(branch_names, ndims)}
+
+        elif isinstance(ndims, dict):
+            assert len(list(ndims.keys())) == len(branch_names)
+            for key in ndims:
+                if key not in branch_names:
+                    raise ValueError(f"{key} is in ndims but does not appear in branch_names: {branch_names}.")
+        else:
+            raise ValueError("ndims is to be a scalar int, list or dict.")
 
         if isinstance(nleaves_max, int):
-            nleaves_max = [nleaves_max]
+            assert len(branch_names) == 1
+            nleaves_max = {branch_names[0]: nleaves_max}
+
+        elif isinstance(nleaves_max, list) or isinstance(nleaves_max, np.ndarray):
+            assert len(branch_names) == len(nleaves_max)
+            nleaves_max = {bn: nl for bn, nl in zip(branch_names, nleaves_max)}
+
+        elif isinstance(nleaves_max, dict):
+            assert len(list(nleaves_max.keys())) == len(branch_names)
+            for key in nleaves_max:
+                if key not in branch_names:
+                    raise ValueError(f"{key} is in nleaves_max but does not appear in branch_names: {branch_names}.")
+        else:
+            raise ValueError("nleaves_max is to be a scalar int, list, or dict.")
+
+        self.nbranches = len(branch_names)
+
+        self.branch_names = branch_names
+        self.ndims = ndims
+        self.nleaves_max = nleaves_max
 
         # setup temperaing information
         # default is no temperatures
@@ -275,18 +324,19 @@ class EnsembleSampler(object):
             self.ntemps = 1
             self.temperature_control = None
         else:
+            # get effective total dimension
+            total_ndim = 0
+            for key in self.branch_names:
+                total_ndim += self.nleaves_max[key] * self.ndims[key]
             self.temperature_control = TemperatureControl(
-                ndims, nwalkers, nleaves_max, **tempering_kwargs
+                total_ndim, nwalkers, **tempering_kwargs
             )
             self.ntemps = self.temperature_control.ntemps
 
         # set basic variables for sampling settings
-        self.ndims = ndims  # interpeted as ndim_max
         self.nwalkers = nwalkers
         self.nbranches = nbranches
-        self.nleaves_max = nleaves_max
-        self.branch_names = branch_names
-
+        
         # eryn wraps periodic parameters
         if periodic is not None:
             if not isinstance(periodic, PeriodicContainer) and not isinstance(
@@ -337,24 +387,30 @@ class EnsembleSampler(object):
 
             if self.has_reversible_jump:
                 if nleaves_min is None:
-                    # default to 0 for all models
-                    self.nleaves_min = [0 for _ in range(self.nbranches)]
+                    nleaves_min = {bn: 0 for bn in branch_names}
                 elif isinstance(nleaves_min, int):
-                    self.nleaves_min = [nleaves_min for _ in range(self.nbranches)]
-                elif isinstance(nleaves_min, list):
-                    self.nleaves_min = nleaves_min
-                else:
-                    raise ValueError(
-                        "If providing a minimum number of leaves, must be int or list of ints."
-                    )
+                    assert len(branch_names) == 1
+                    nleaves_min = {branch_names[0]: nleaves_min}
 
-                assert len(self.nleaves_min) == self.nbranches
+                elif isinstance(nleaves_min, list) or isinstance(nleaves_min, np.ndarray):
+                    assert len(branch_names) == len(nleaves_min)
+                    nleaves_min = {bn: nl for bn, nl in zip(branch_names, nleaves_min)}
+
+                elif isinstance(nleaves_min, dict):
+                    assert len(list(nleaves_min.keys())) == len(branch_names)
+                    for key in nleaves_min:
+                        if key not in branch_names:
+                            raise ValueError(f"{key} is in nleaves_min but does not appear in branch_names: {branch_names}.")
+                else:
+                    raise ValueError("If providing nleaves_min, nleaves_min is to be a scalar int, list, or dict.")
+
+                self.nleaves_min = nleaves_min
 
                 # default to DistributionGenerateRJ
                 rj_move = DistributionGenerateRJ(
                     self.priors,
-                    max_k=self.nleaves_max,
-                    min_k=self.nleaves_min,
+                    nleaves_max=self.nleaves_max,
+                    nleaves_min=self.nleaves_min,
                     dr=dr_moves,
                     dr_max_iter=dr_max_iter,
                     tune=False,
@@ -431,9 +487,42 @@ class EnsembleSampler(object):
 
         self.info = info
 
-        self.all_moves = (
+        all_moves_tmp = (
             self.moves if not self.has_reversible_jump else self.moves + self.rj_moves
         )
+
+        self.all_moves = {}
+        if self.track_moves:
+            current_indices_move_keys = {}
+            for move in all_moves_tmp:
+                # get out of tuple if weights are given
+                if isinstance(move, tuple):
+                    move = move[0]
+
+                # get the name of the class instance as a string
+                move_name = move.__class__.__name__
+
+                # need to keep track how many times each type of move class has been used
+                if move_name not in current_indices_move_keys:
+                    current_indices_move_keys[move_name] = 0
+
+                else:
+                    current_indices_move_keys[move_name] += 1
+
+                # get the full name including the index
+                full_move_name = (
+                    move_name + f"_{current_indices_move_keys[move_name]}"
+                )
+                self.all_moves[full_move_name] = move
+
+            # get move keys out
+            move_keys = list(self.all_moves.keys())
+
+        else:
+            move_keys = None 
+
+        self.move_keys = move_keys
+
         # Deal with re-used backends
         if not self.backend.initialized:
             self._previous_state = None
@@ -442,18 +531,31 @@ class EnsembleSampler(object):
                 ntemps=self.ntemps,
                 nleaves_max=nleaves_max,
                 rj=self.has_reversible_jump,
-                moves=self.all_moves,
+                moves=move_keys,
                 **info
             )
             state = np.random.get_state()
         else:
+
+            if self.track_moves:
+                moves_okay = True
+                if len(self.move_keys) != len(self.backend.move_keys):
+                    moves_okay = False
+
+                for key in self.move_keys:
+                    if key not in self.backend.move_keys:
+                        moves_okay = False
+
+                if not moves_okay:
+                    raise ValueError("Configuration of moves has changed. Cannot use the same backend. Declare a new backend and start from the previous state. If you would prefer not to track move acceptance fraction, set track_moves to False in the EnsembleSampler.")
+            
             # Check the backend shape
             for i, (name, shape) in enumerate(self.backend.shape.items()):
                 test_shape = (
                     self.ntemps,
                     self.nwalkers,
-                    self.nleaves_max[i],
-                    self.ndims[i],
+                    self.nleaves_max[name],
+                    self.ndims[name],
                 )
                 if shape != test_shape:
                     raise ValueError(
@@ -700,8 +802,8 @@ class EnsembleSampler(object):
             if (ntemps_, nwalkers_, nleaves_, ndim_) != (
                 self.ntemps,
                 self.nwalkers,
-                self.nleaves_max[i],
-                self.ndims[i],
+                self.nleaves_max[name],
+                self.ndims[name],
             ):
                 raise ValueError("incompatible input dimensions")
 
@@ -828,9 +930,13 @@ class EnsembleSampler(object):
                     # Save the new step
                     if store and (i + 1) % checkpoint_step == 0:
 
-                        moves_accepted_fraction = [
-                            move_tmp.acceptance_fraction for move_tmp in self.all_moves
-                        ]
+                        if self.track_moves:
+                            moves_accepted_fraction = {key:
+                                move_tmp.acceptance_fraction for key, move_tmp in self.all_moves.items()
+                            }
+                        else:
+                            moves_accepted_fraction = None
+
                         self.backend.save_step(
                             state,
                             accepted,

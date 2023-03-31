@@ -579,7 +579,7 @@ class MultipleTryMove(ABC):
 
 class MultipleTryMoveRJ(MultipleTryMove):
     def get_proposal(
-        self, branches_coords, branches_inds, min_k_all, max_k_all, random, **kwargs
+        self, branches_coords, branches_inds, nleaves_min_all, nleaves_max_all, random, **kwargs
     ):
         """Make a proposal
 
@@ -590,8 +590,8 @@ class MultipleTryMoveRJ(MultipleTryMove):
             all_inds (dict): Keys are ``branch_names``. Values are
                 np.ndarray[ntemps, nwalkers, nleaves_max]. These are the boolean
                 arrays marking which leaves are currently used within each walker.
-            min_k_all (list): Minimum values of leaf ount for each model. Must have same order as ``all_cords``. 
-            max_k_all (list): Maximum values of leaf ount for each model. Must have same order as ``all_cords``. 
+            nleaves_min_all (list): Minimum values of leaf ount for each model. Must have same order as ``all_cords``. 
+            nleaves_max_all (list): Maximum values of leaf ount for each model. Must have same order as ``all_cords``. 
             random (object): Current random state of the sampler.
             **kwargs (ignored): For modularity. 
 
@@ -631,18 +631,18 @@ class MultipleTryMoveRJ(MultipleTryMove):
         lp_here = self.current_state.log_prior.flatten()
 
         # do rj setup
-        assert len(min_k_all) == 1 and len(max_k_all) == 1
-        min_k = min_k_all[0]
-        max_k = max_k_all[0]
+        assert len(nleaves_min_all) == 1 and len(nleaves_max_all) == 1
+        nleaves_min = nleaves_min_all[key_in]
+        nleaves_max = nleaves_max_all[key_in]
 
-        if min_k == max_k:
-            raise ValueError("MT RJ proposal requires that min_k != max_k.")
-        elif min_k > max_k:
-            raise ValueError("min_k is greater than max_k. Not allowed.")
+        if nleaves_min == nleaves_max:
+            raise ValueError("MT RJ proposal requires that nleaves_min != nleaves_max.")
+        elif nleaves_min > nleaves_max:
+            raise ValueError("nleaves_min is greater than nleaves_max. Not allowed.")
 
         # get the inds adjustment information
         all_inds_for_change = self.get_model_change_proposal(
-            branches_inds[key_in], random, min_k, max_k
+            branches_inds[key_in], random, nleaves_min, nleaves_max
         )
 
         # preparing leaf information for going into the proposal
@@ -704,7 +704,7 @@ class MultipleTryMoveRJ(MultipleTryMove):
                 else self.current_state.branches[key].inds
             )
             temp_reverse_inds[key] = inds_tmp_here.reshape(
-                ntemps * nwalkers, nleaves_max
+                ntemps * nwalkers, nleaves_max_tmp
             )[inds_reverse_rj][None, :]
 
         # calculate information for the reverse
