@@ -359,7 +359,7 @@ class proposal_template(object):
             # cov = self.mixture.covariances_[ind]
             # new_pos = np.random.multivariate_normal(mu, cov, size=nw)
         else:
-            cov = (np.cov(xtemp, rowvar=False) + eps * np.diag(np.ones_like(xtemp[0])) ) * 2.38**2 / nd
+            cov = (np.cov(xtemp, rowvar=False) + eps * np.eye(nd) )* 2.38**2 / nd
         
         
         new_pos += np.random.multivariate_normal(mean * 0.0,cov, size=nw)
