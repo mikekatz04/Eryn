@@ -395,7 +395,7 @@ class proposal_template(object):
             prob = rng.random()
 
             # large jump
-            if prob > 0.99:
+            if prob > 0.97:
                 scale = 10.0
 
             # small jump
@@ -412,7 +412,7 @@ class proposal_template(object):
             # choose a random parameter in the uncorrelated basis
             ind_vec = np.arange(nd)
             np.random.shuffle(ind_vec)
-            rand_j = ind_vec[:np.random.randint(1,nd)]
+            rand_j = ind_vec #[:np.random.randint(1,nd)]
             y[:,rand_j] += scale * np.random.normal(size=nw)[:,None] * np.sqrt(S[None,rand_j]) * 2.38 / np.sqrt(nd)
             # go back to the basis
             # if np.random.uniform()>0.7:
