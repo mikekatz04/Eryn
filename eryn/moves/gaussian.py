@@ -35,7 +35,7 @@ class GaussianMove(MHMove):
 
     """
 
-    def __init__(self, cov_all, mode="vector", factor=None, **kwargs):
+    def __init__(self, cov_all, mode="vector", factor=None, priors=None, **kwargs):
 
         self.all_proposal = {}
         for name, cov in cov_all.items():
@@ -53,7 +53,7 @@ class GaussianMove(MHMove):
                 elif len(cov.shape) == 2 and cov.shape[0] == cov.shape[1]:
                     # The full, square covariance matrix was given.
                     ndim = cov.shape[0]
-                    proposal = _proposal(cov, factor, mode)
+                    proposal = _proposal(cov, factor, mode)#eigproposal(cov) #
 
                 else:
                     raise ValueError("Invalid proposal scale dimensions")
@@ -64,6 +64,7 @@ class GaussianMove(MHMove):
                 proposal = _isotropic_proposal(np.sqrt(cov), factor, mode)
             self.all_proposal[name] = proposal
 
+        self.priors = priors
         super(GaussianMove, self).__init__(**kwargs)
 
     def get_proposal(self, branches_coords, random, branches_inds=None, **kwargs):
@@ -103,7 +104,13 @@ class GaussianMove(MHMove):
             q[name] = coords.copy()
 
             # get new points
+            
             new_coords, _ = proposal_fn(coords[inds_here], random)
+
+            if self.priors is not None:
+                for var in range(new_coords.shape[-1]):
+                    ind_inf = np.isinf(self.priors[name][var].logpdf(new_coords[:,var]))
+                    new_coords[ind_inf,var] = self.priors[name][var].rvs(size=new_coords[ind_inf,var].shape[0])
 
             # put into coords in proper location
             q[name][inds_here] = new_coords.copy()
@@ -185,3 +192,14 @@ class _proposal(_isotropic_proposal):
         return x0 + self.get_factor(rng) * rng.multivariate_normal(
             np.zeros(len(self.scale)), self.scale, size=len(x0)
         )
+
+class eigproposal():
+    def __init__(self, cov):
+        self.w,self.v = np.linalg.eig(cov)
+
+    def __call__(self, x0, rng):
+        nw, nd = x0.shape
+        factors = rng.uniform(size=nw)
+        ind = rng.randint(nd,size=nw)
+
+        return x0 + (factors[None,:] * self.v[:,ind] / self.w[ind]).T, 1
