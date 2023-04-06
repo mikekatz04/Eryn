@@ -31,7 +31,7 @@ class MyMove(MHMove):
 
     """
 
-    def __init__(self, cov_all, prop_func=None, sky_periodic=None, **kwargs):
+    def __init__(self, cov_all, prop_func=None, sky_periodic=None,**kwargs):
 
         self.all_proposal = {}
         self.sky_per = sky_periodic
@@ -124,16 +124,18 @@ class MyRJMove(MHMove):
 
     """
 
-    def __init__(self, cov_all, factor=None, **kwargs):
+    def __init__(self, cov_all, factor=None, priors=None, **kwargs):
 
         self.all_proposal = {}
         for name, cov in cov_all.items():
             # Parse the proposal type.
             self.all_proposal[name] = cov
+        
+        self.priors = priors
 
         super(MyRJMove, self).__init__(**kwargs)
 
-    def get_proposal(self, branches_coords, random, branches_inds=None, **kwargs):
+    def get_proposal(self, branches_coords, random, branches_inds=None, priors=None, **kwargs):
         """Get proposal from Gaussian distribution
 
         Args:
@@ -181,6 +183,11 @@ class MyRJMove(MHMove):
 
                 # put into coords in proper location
                 q[name][tt][inds[tt]] = new_coords.copy()
+
+            if self.priors is not None:
+                for var in range(new_coords.shape[-1]):
+                    ind_inf = np.isinf(self.priors[name][var].logpdf(new_coords[:,var]))
+                    new_coords[ind_inf,var] = self.priors[name][var].rvs(size=new_coords[ind_inf,var].shape[0])
 
         # handle periodic parameters
         if self.periodic is not None:
@@ -415,11 +422,10 @@ class proposal_template(object):
             rand_j = ind_vec #[:np.random.randint(1,nd)]
             y[:,rand_j] += scale * np.random.normal(size=nw)[:,None] * np.sqrt(S[None,rand_j]) * 2.38 / np.sqrt(nd)
             # go back to the basis
-            # if np.random.uniform()>0.7:
-            new_pos = np.asarray([np.dot(U, y[i]) for i in range(nw)]) 
-            # else:
-            #     rand_j = np.random.randint(1,nd)
-            #     new_pos += (np.random.normal(size=nw) * (np.sqrt(S[rand_j]) * U[:,rand_j]) ).T
+            if np.random.uniform()>0.5:
+                new_pos = np.asarray([np.dot(U, y[i]) for i in range(nw)]) 
+            else:
+                new_pos += (np.random.normal(size=nw) * (np.sqrt(S[ind_vec[:nw] ]) * U[:,ind_vec[:nw] ]) ).T * 2.38 / np.sqrt(nd)
             
         except:
             print('------------------------------')
