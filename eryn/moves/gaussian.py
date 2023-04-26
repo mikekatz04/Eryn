@@ -106,11 +106,11 @@ class GaussianMove(MHMove):
             # get new points
             
             new_coords, _ = proposal_fn(coords[inds_here], random)
-
-            if self.priors is not None:
-                for var in range(new_coords.shape[-1]):
-                    ind_inf = np.isinf(self.priors[name][var].logpdf(new_coords[:,var]))
-                    new_coords[ind_inf,var] = self.priors[name][var].rvs(size=new_coords[ind_inf,var].shape[0])
+            # prior is given
+            # if self.priors is not None:
+            #     for var in range(new_coords.shape[-1]):
+            #         ind_inf = np.isinf(self.priors[name][var].logpdf(new_coords[:,var]))
+            #         new_coords[ind_inf,var] = self.priors[name][var].rvs(size=new_coords[ind_inf,var].shape[0])
 
             # put into coords in proper location
             q[name][inds_here] = new_coords.copy()
