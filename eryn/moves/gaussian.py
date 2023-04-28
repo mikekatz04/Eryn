@@ -35,7 +35,7 @@ class GaussianMove(MHMove):
 
     """
 
-    def __init__(self, cov_all, mode="vector", factor=None, priors=None, **kwargs):
+    def __init__(self, cov_all, mode="vector", factor=None, priors=None, swap_walkers=None, **kwargs):
 
         self.all_proposal = {}
         for name, cov in cov_all.items():
@@ -65,6 +65,7 @@ class GaussianMove(MHMove):
             self.all_proposal[name] = proposal
 
         self.priors = priors
+        self.swap_walkers = swap_walkers
         super(GaussianMove, self).__init__(**kwargs)
 
     def get_proposal(self, branches_coords, random, branches_inds=None, **kwargs):
@@ -104,8 +105,14 @@ class GaussianMove(MHMove):
             q[name] = coords.copy()
 
             # get new points
-            
             new_coords, _ = proposal_fn(coords[inds_here], random)
+            
+            if np.random.uniform()<0.1:
+                if self.swap_walkers it not None:
+                    ind_shuffle = np.arange(new_coords.shape[0])
+                    np.random.shuffle(ind_shuffle)
+                    new_coords = new_coords[ind_shuffle].copy()
+            
             if np.random.uniform()>0.9:
                 # prior is given
                 if self.priors is not None:
