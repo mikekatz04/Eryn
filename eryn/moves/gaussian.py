@@ -108,7 +108,7 @@ class GaussianMove(MHMove):
             new_coords, _ = proposal_fn(coords[inds_here], random)
             
             if np.random.uniform()<0.1:
-                if self.swap_walkers it not None:
+                if self.swap_walkers is not None:
                     ind_shuffle = np.arange(new_coords.shape[0])
                     np.random.shuffle(ind_shuffle)
                     new_coords = new_coords[ind_shuffle].copy()
