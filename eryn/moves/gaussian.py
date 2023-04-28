@@ -107,15 +107,14 @@ class GaussianMove(MHMove):
             # get new points
             new_coords, _ = proposal_fn(coords[inds_here], random)
             
-            if np.random.uniform()<0.1:
-                if self.swap_walkers is not None:
+            if self.swap_walkers is not None:
+                if np.random.uniform()<0.1:
                     ind_shuffle = np.arange(new_coords.shape[0])
                     np.random.shuffle(ind_shuffle)
                     new_coords = new_coords[ind_shuffle].copy()
             
-            if np.random.uniform()>0.9:
-                # prior is given
-                if self.priors is not None:
+            if self.priors is not None:
+                if np.random.uniform()>0.9:
                     for var in range(new_coords.shape[-1]):
                         new_coords[:,var] = self.priors[name][var].rvs(size=new_coords[:,var].shape[0])
 
