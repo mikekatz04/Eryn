@@ -113,10 +113,10 @@ class GaussianMove(MHMove):
                     np.random.shuffle(ind_shuffle)
                     new_coords = new_coords[ind_shuffle].copy()
             
-            if self.priors is not None:
-                if np.random.uniform()>0.9:
-                    for var in range(new_coords.shape[-1]):
-                        new_coords[:,var] = self.priors[name][var].rvs(size=new_coords[:,var].shape[0])
+            # if self.priors is not None:
+            #     if np.random.uniform()>0.9:
+            #         for var in range(new_coords.shape[-1]):
+            #             new_coords[:,var] = self.priors[name][var].rvs(size=new_coords[:,var].shape[0])
 
             # put into coords in proper location
             q[name][inds_here] = new_coords.copy()
