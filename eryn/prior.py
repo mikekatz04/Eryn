@@ -19,12 +19,11 @@ class UniformDistribution(object):
             (default: ``False``)
 
     Raises:
-        ValueError: Issue with inputs. 
+        ValueError: Issue with inputs.
 
     """
 
     def __init__(self, min_val, max_val, use_cupy=False):
-
         if min_val > max_val:
             tmp = min_val
             min_val = max_val
@@ -47,7 +46,6 @@ class UniformDistribution(object):
                 raise ValueError("CuPy not found.")
 
     def rvs(self, size=1):
-
         if not isinstance(size, int) and not isinstance(size, tuple):
             raise ValueError("size must be an integer or tuple of ints.")
 
@@ -63,13 +61,11 @@ class UniformDistribution(object):
         return out
 
     def pdf(self, x):
-
         out = self.pdf_val * ((x >= self.min_val) & (x <= self.max_val))
 
         return out
 
     def logpdf(self, x):
-
         xp = np if not self.use_cupy else cp
 
         out = xp.zeros_like(x)
@@ -78,7 +74,6 @@ class UniformDistribution(object):
         return out
 
     def copy(self):
-        breakpoint()
         return deepcopy(self)
 
 
@@ -215,7 +210,6 @@ class ProbDistContainer:
     """
 
     def __init__(self, priors_in, use_cupy=False):
-
         # copy to have
         self.priors_in = priors_in.copy()
 
@@ -225,7 +219,6 @@ class ProbDistContainer:
         # setup lists
         temp_inds = []
         for inds, dist in priors_in.items():
-
             # multiple index
             if isinstance(inds, tuple):
                 inds_in = np.asarray(inds)
