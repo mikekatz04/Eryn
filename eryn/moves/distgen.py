@@ -11,12 +11,17 @@ class DistributionGenerate(MHMove):
     """Generate proposals from a distribution
 
     Args:
-        generate_dist (object): :class:`ProbDistContainer` object that has ``logpdf``
+        generate_dist (dict): Dictionary with keys as branch names and items as
+            :class:`ProbDistContainer` objects that have ``logpdf``
             and ``rvs`` methods.
 
     """
 
     def __init__(self, generate_dist, *args, **kwargs):
+        if not isinstance(generate_dist, dict):
+            raise ValueError(
+                "When entering directly into the DistributionGenerate class, generate_dist must be a dictionary. The keys are branch names and the items are ProbDistContainer objects."
+            )
 
         for key in generate_dist:
             if not isinstance(generate_dist[key], ProbDistContainer):
@@ -26,16 +31,18 @@ class DistributionGenerate(MHMove):
         self.generate_dist = generate_dist
         super(DistributionGenerate, self).__init__(*args, **kwargs)
 
-    def get_proposal(self, all_coords, all_inds, random, **kwargs):
+    def get_proposal(self, branches_coords, random, branches_inds=None, **kwargs):
         """Make a proposal
 
         Args:
-            all_coords (dict): Keys are ``branch_names``. Values are
-                np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent
-                coordinates for all the walkers.
-            all_inds (dict): Keys are ``branch_names``. Values are
-                np.ndarray[ntemps, nwalkers, nleaves_max]. These are the boolean
-                arrays marking which leaves are currently used within each walker.
+            branches_coords (dict): Keys are ``branch_names`` and values are
+                np.ndarray[ntemps, nwalkers, nleaves_max, ndim] representing
+                coordinates for walkers.
+            random (object): Current random state object.
+            branches_inds (dict, optional): Keys are ``branch_names`` and values are
+                np.ndarray[ntemps, nwalkers, nleaves_max] representing which
+                leaves are currently being used. (default: ``None``)
+            **kwargs (ignored): This is added for compatibility. It is ignored in this function.
 
         Returns:
             tuple: Tuple containing proposal information.
@@ -54,15 +61,19 @@ class DistributionGenerate(MHMove):
         q = {}
         factors = {}
         new_inds = {}
-        if all_inds is None:
-            all_inds = {
+        if branches_inds is None:
+            branches_inds = {
                 name: np.ones(coords.shape[:-1], dtype=bool)
-                for name, coords in all_coords
+                for name, coords in branches_coords
             }
 
         # iterate through branches and propose new points where inds == True
         for i, (name, coords, inds) in enumerate(
-            zip(all_coords.keys(), all_coords.values(), all_inds.values(),)
+            zip(
+                branches_coords.keys(),
+                branches_coords.values(),
+                branches_inds.values(),
+            )
         ):
             # copy over previous info
             ntemps, nwalkers, _, _ = coords.shape
