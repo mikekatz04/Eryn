@@ -47,6 +47,10 @@ class Move(object):
             to skip when updating states (:func:`Move.update`). This is useful if a
             large amount of memory is stored in the branch supplimentals.
         is_rj (bool, optional): If using RJ, this should be ``True``. (default: ``False``)
+        use_gpu (bool, optional): If ``True``, use ``CuPy`` for computations.
+            Use ``NumPy`` if ``use_gpu == False``. (default: ``False``)
+        random_seed (int, optional): Set the random seed in ``CuPy/NumPy`` if not ``None``.
+            (default: ``None``)
 
     Raises:
         ValueError: Incorrect inputs.
@@ -56,6 +60,8 @@ class Move(object):
         num_proposals (int): the number of times this move has been run. This is needed to
             compute the acceptance fraction.
         gibbs_sampling_setup (list): All of the Gibbs sampling splits as described above.
+        xp (obj): ``NumPy`` or ``CuPy``.
+        use_gpu (bool): Whether ``Cupy`` (``True``) is used or not (``False``).
 
     """
 

@@ -125,7 +125,7 @@
 <h2>Move Parent Class<a class="headerlink" href="#move-parent-class" title="Permalink to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="eryn.moves.Move">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">Move</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temperature_control</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gibbs_sampling_setup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prevent_swaps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_supp_names_update</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_rj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.Move" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.moves.</span></span><span class="sig-name descname"><span class="pre">Move</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temperature_control</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gibbs_sampling_setup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prevent_swaps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_supp_names_update</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_rj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_gpu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.Move" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Parent class for proposals or “moves”</p>
 <dl class="field-list simple">
@@ -1716,6 +1716,37 @@ randomly generated quantity per walker remains the same over branches.</p></li>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.StretchMove.get_proposal">
+<span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gibbs_ndim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove.get_proposal" title="Permalink to this definition"></a></dt>
+<dd><p>Generate stretch proposal</p>
+<p># TODO: add log proposal from ptemcee</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>s_all</strong> (<em>dict</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are coordinates
+for which a proposal is to be generated.</p></li>
+<li><p><strong>c_all</strong> (<em>dict</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are lists. These
+lists contain all the complement array values.</p></li>
+<li><p><strong>random</strong> (<em>object</em>) – Random state object.</p></li>
+<li><p><strong>gibbs_ndim</strong> (<em>int</em><em> or </em><em>np.ndarray</em><em>, </em><em>optional</em>) – If Gibbs sampling, this indicates
+the true dimension. If given as an array, must have shape <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers)</span></code>.
+See the tutorial for more information.
+(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>First entry is new positions. Second entry is detailed balance factors.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – Issues with dimensionality.</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.moves.StretchMove.acceptance_fraction">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">acceptance_fraction</span></span><a class="headerlink" href="#eryn.moves.StretchMove.acceptance_fraction" title="Permalink to this definition"></a></dt>
@@ -1804,37 +1835,6 @@ randomly generated quantity per walker remains the same over branches.</p></li>
 <li><p><strong>logp</strong> (<em>np.ndarray</em>) – Log of the prior going into final posterior computation.</p></li>
 <li><p><strong>inds</strong> (<em>dict</em>) – Dictionary of <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays for all branches.</p></li>
 </ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="eryn.moves.StretchMove.get_proposal">
-<span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gibbs_ndim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.StretchMove.get_proposal" title="Permalink to this definition"></a></dt>
-<dd><p>Generate stretch proposal</p>
-<p># TODO: add log proposal from ptemcee</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>s_all</strong> (<em>dict</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are coordinates
-for which a proposal is to be generated.</p></li>
-<li><p><strong>c_all</strong> (<em>dict</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are lists. These
-lists contain all the complement array values.</p></li>
-<li><p><strong>random</strong> (<em>object</em>) – Random state object.</p></li>
-<li><p><strong>gibbs_ndim</strong> (<em>int</em><em> or </em><em>np.ndarray</em><em>, </em><em>optional</em>) – If Gibbs sampling, this indicates
-the true dimension. If given as an array, must have shape <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers)</span></code>.
-See the tutorial for more information.
-(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>First entry is new positions. Second entry is detailed balance factors.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – Issues with dimensionality.</p>
 </dd>
 </dl>
 </dd></dl>

@@ -23,18 +23,12 @@ class StretchMove(RedBlueMove):
 
     Args:
         a (double, optional): The stretch scale parameter. (default: ``2.0``)
-        use_gpu (bool, optional): If ``True``, use ``CuPy`` for computations.
-            Use ``NumPy`` if ``use_gpu == False``. (default: ``False``)
         return_gpu (bool, optional): If ``use_gpu == True and return_gpu == True``,
             the returned arrays will be returned as ``CuPy`` arrays. (default: ``False``)
-        random_seed (int, optional): Set the random seed in ``CuPy/NumPy`` if not ``None``.
-            (default: ``None``)
         kwargs (dict, optional): Additional keyword arguments passed down through :class:`RedRedBlueMove`_.
 
     Attributes:
         a (double): The stretch scale parameter.
-        xp (obj): ``NumPy`` or ``CuPy``.
-        use_gpu (bool): Whether ``Cupy`` (``True``) is used or not (``False``).
         return_gpu (bool): Whether the array being returned is in ``Cupy`` (``True``)
             or ``NumPy`` (``False``).
 
