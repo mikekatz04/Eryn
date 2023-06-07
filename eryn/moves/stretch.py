@@ -152,8 +152,6 @@ class StretchMove(RedBlueMove):
     def get_proposal(self, s_all, c_all, random, gibbs_ndim=None, **kwargs):
         """Generate stretch proposal
 
-        # TODO: add log proposal from ptemcee
-
         Args:
             s_all (dict): Keys are ``branch_names`` and values are coordinates
                 for which a proposal is to be generated.
