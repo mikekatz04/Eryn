@@ -154,4 +154,7 @@ This project is licensed under the GNU License - see the
 Acknowledgments
 ---------------
 
--  TODO: add acknowledgements
+-  We wish to thank S. Babak, M. Le Jeune, S. Marsat, T. Littenberg, and
+   N. Cornish for their useful comments and very fruitful discussions.
+-  N Stergioulas and N Karnesis acknowledge support from the Gr-PRODEX
+   2019 funding program (PEA 4000132310).

@@ -88,6 +88,11 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="more_tutorials.html">More Advanced Eryn Examples</a></li>
 </ul>
+<p class="caption" role="heading"><span class="caption-text">General Information:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../general/todos.html">Code Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/todos.html#code-todos">Code TODOs</a></li>
+</ul>
 
         </div>
       </div>
@@ -145,7 +150,7 @@ advanced (and slightly more complicated) version of <code class="docutils litera
 <p>If you use Eryn in your publication, please cite the paper <a class="reference external" href="https://arxiv.org/abs/2303.02164">arXiv:2303.02164</a>, its <a class="reference external" href="https://zenodo.org/record/7705496#.ZAhzukJKjlw">zenodo</a>, and <a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a>. The documentation for Eryn can be found here: <a class="reference external" href="https://mikekatz04.github.io/Eryn">mikekatz04.github.io/Eryn</a>. You will find the code on Github: <a class="reference external" href="https://github.com/mikekatz04/Eryn">github.com/mikekatz04/Eryn</a>.</p>
 <section id="MCMC-Basics">
 <h2>MCMC Basics<a class="headerlink" href="#MCMC-Basics" title="Permalink to this heading"></a></h2>
-<p>Here we will go through the basics of MCMC. For a better overall understanding of MCMC, see the Eryn paper: (# TODO: add paper).</p>
+<p>Here we will go through the basics of MCMC. For a better overall understanding of MCMC, see the Eryn paper: <a class="reference external" href="https://arxiv.org/abs/2303.02164">arXiv:2303.02164</a>.</p>
 <p>The goal of MCMC is to assess the posterior probablity on parameters <span class="math notranslate nohighlight">\((\vec{\theta})\)</span> from a model (<span class="math notranslate nohighlight">\(\mathcal{M}\)</span>), given some data <span class="math notranslate nohighlight">\(y\)</span>: <span class="math notranslate nohighlight">\(p(\vec{\theta}, \mathcal{M}|y)\)</span>. We can rewrite this probability using Bayes’ rule:</p>
 <div class="math notranslate nohighlight">
 \[p(\vec{\theta}|y)=\frac{p(y|\vec{\theta}, \mathcal{M})p(\vec{\theta}, \mathcal{M})}{p(y|\mathcal{M})}\]</div>
@@ -167,7 +172,6 @@ probability equal to this fraction. Therefore, as the new value becomes worse an
 <p>We start with a forest with a bunch of trees. These trees are the MCMC “walkers”. Each tree will have the same number of branches which is fixed throughout a sampling run (i.e. each walker has the same base setup). These branches are our different model types. For example, if you have a signal that is a combination of sine waves and Gaussians. In this case, you have two branches, one for the “sine wave” model and one for the “Gaussian” model. The number of Gaussians or sine waves is accounted
 for as the number of “leafs” on each branch. So, if 1 walker has 3 Gaussians and 2 sine waves, we can imagine this as a tree with two branches. The first branch for sine waves has 2 leaves and the second branch as 3 leaves for 3 Gaussians.</p>
 <p>When we get to parallel tempering, you can imagine different forests at different temperatures, all having the same number of trees (walkers).</p>
-<p>(# TODO: add image)</p>
 </section>
 <section id="Getting-Started-with-the-Ensemble-Sampler">
 <h2>Getting Started with the Ensemble Sampler<a class="headerlink" href="#Getting-Started-with-the-Ensemble-Sampler" title="Permalink to this heading"></a></h2>

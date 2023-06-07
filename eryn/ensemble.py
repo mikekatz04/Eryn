@@ -34,7 +34,7 @@ class EnsembleSampler(object):
     The class controls the entire sampling run. It can handle
     everything from a basic non-tempered MCMC to a parallel-tempered,
     global fit containing multiple branches (models) and a variable
-    number of leaves (sources) per branch. 
+    number of leaves (sources) per branch.
     See `here <https://mikekatz04.github.io/Eryn/html/tutorial/Eryn_tutorial.html#The-Tree-Metaphor>`_
     for a basic explainer.
 
@@ -46,18 +46,18 @@ class EnsembleSampler(object):
                 ``dict``, keys should be the branch names and values the associated dimensionality.
         log_like_fn (callable): A function that returns the natural logarithm of the
             likelihood for that position. The inputs to ``log_like_fn`` depend on whether
-            the function is vectorized (kwarg ``vectorize`` below), if you are using reversible jump, 
-            and how many branches you have. 
-            
-                In the simplest case where ``vectorize == False``, no reversible jump, and only one 
+            the function is vectorized (kwarg ``vectorize`` below), if you are using reversible jump,
+            and how many branches you have.
+
+                In the simplest case where ``vectorize == False``, no reversible jump, and only one
                 type of model, the inputs are just the array of parameters for one walker, so shape is ``(ndim,)``.
 
-                If ``vectorize == True``, no reversible jimp, and only one type of model, the inputs will 
+                If ``vectorize == True``, no reversible jimp, and only one type of model, the inputs will
                 be a 2D array of parameters of all the walkers going in. Shape: ``(num positions, ndim)``.
 
                 If using reversible jump, the leaves that go together in the same Likelihood will be grouped
                 together into a single function call. If ``vectorize == False``, then each group is sent as
-                an individual computation. With ``N`` different branches (``N > 1``), inputs would be a list 
+                an individual computation. With ``N`` different branches (``N > 1``), inputs would be a list
                 of 2D arrays of the coordinates for all leaves within each branch: ``([x0, x1,...,xN])``
                 where ``xi`` is 2D with shape ``(number of leaves in this branch, ndim)``. If ``N == 1``, then
                 a list is not provided, just x0, the 2D array of coordinates for the one branch considered.
@@ -67,16 +67,16 @@ class EnsembleSampler(object):
                 ``([X0, X1,..XN], [group0, group1,...,groupN])`` where ``Xi`` is a 2D array of all
                 leaves in the sampler for branch ``i``. ``groupi`` is an index indicating which unique group
                 that sources belongs. For example, if we have 3 walkers with (1, 2, 1) leaves for model ``i``,
-                respectively, we wil have an ``Xi = array([params0, params1, params2, params3])`` and 
-                ``groupsi = array([0, 1, 1, 2])``. 
-                If ``N == 1``, then the lists are removed and the inputs become ``(X0, group0)``. 
+                respectively, we wil have an ``Xi = array([params0, params1, params2, params3])`` and
+                ``groupsi = array([0, 1, 1, 2])``.
+                If ``N == 1``, then the lists are removed and the inputs become ``(X0, group0)``.
 
-                Extra ``args`` and ``kwargs`` for the Likelihood function can be added with the kwargs 
+                Extra ``args`` and ``kwargs`` for the Likelihood function can be added with the kwargs
                 ``args`` and ``kwargs`` below.
 
-                Please see the 
-                `tutorial <https://mikekatz04.github.io/Eryn/html/tutorial/Eryn_tutorial.html#>`_ 
-                for more information. 
+                Please see the
+                `tutorial <https://mikekatz04.github.io/Eryn/html/tutorial/Eryn_tutorial.html#>`_
+                for more information.
 
         priors (dict): The prior dictionary can take four forms.
             1) A dictionary with keys as int or tuple containing the int or tuple of int
@@ -91,27 +91,27 @@ class EnsembleSampler(object):
             prior must be input by the user that can produce the prior ``logpdf`` information that can depend on all of the models
             together rather than handling them separately as is the default. In this case, the user must input
             as the item attached to this special key a class object with a ``logpdf`` method that takes as input
-            two arguments: ``(coords, inds)``, which are the coordinate and index dictionaries across all models with 
-            shapes of ``(ntemps, nwalkers, nleaves_max, ndim)`` and ``(ntemps, nwalkers, nleaves_max)`` for each 
-            individual model, respectively. This function must then return the numpy array of logpdf values for the 
-            prior value with shape ``(ntemps, nwalkers)``. 
+            two arguments: ``(coords, inds)``, which are the coordinate and index dictionaries across all models with
+            shapes of ``(ntemps, nwalkers, nleaves_max, ndim)`` and ``(ntemps, nwalkers, nleaves_max)`` for each
+            individual model, respectively. This function must then return the numpy array of logpdf values for the
+            prior value with shape ``(ntemps, nwalkers)``.
         provide_groups (bool, optional): If ``True``, provide groups as described in ``log_like_fn`` above.
             A group parameter is added for each branch. (default: ``False``)
-        provide_supplimental (bool, optional): If ``True``, it will provide keyword arguments to 
+        provide_supplimental (bool, optional): If ``True``, it will provide keyword arguments to
             the Likelihood function: ``supps`` and ``branch_supps``. Please see the `Tutorial <https://mikekatz04.github.io/Eryn/html/tutorial/Eryn_tutorial.html#>`_
             and :class:`eryn.state.BranchSupplimental` for more information.
         tempering_kwargs (dict, optional): Keyword arguments for initialization of the
             tempering class: :class:`eryn.moves.tempering.TemperatureControl`.  (default: ``{}``)
         branch_names (list, optional): List of branch names. If ``None``, models will be assigned
             names as ``f"model_{index}"`` based on ``nbranches``. (default: ``None``)
-        nbranches (int, optional): Number of branches (models) tested. 
+        nbranches (int, optional): Number of branches (models) tested.
             Only used if ``branch_names is None``.
             (default: ``1``)
-        nleaves_max (int, list of ints, or dict, optional): Maximum allowable leaf count for each branch. 
-            It should have the same length as the number of branches. 
+        nleaves_max (int, list of ints, or dict, optional): Maximum allowable leaf count for each branch.
+            It should have the same length as the number of branches.
             If ``dict``, keys should be the branch names and values the associated maximal leaf value.
             (default: ``1``)
-        nleaves_min (int, list of ints, or dict, optional): Minimum allowable leaf count for each branch. 
+        nleaves_min (int, list of ints, or dict, optional): Minimum allowable leaf count for each branch.
             It should have the same length as the number of branches. Only used with Reversible Jump.
             If ``dict``, keys should be the branch names and values the associated maximal leaf value.
             If ``None`` and using Reversible Jump, will fill all branches with zero.
@@ -152,37 +152,26 @@ class EnsembleSampler(object):
         vectorize (bool, optional): If ``True``, ``log_like_fn`` is expected
             to accept an array of position vectors instead of just one. Note
             that ``pool`` will be ignored if this is ``True``. See ``log_like_fn`` information
-            above to understand the arguments of ``log_like_fn`` based on whether 
-            ``vectorize`` is ``True``. 
+            above to understand the arguments of ``log_like_fn`` based on whether
+            ``vectorize`` is ``True``.
             (default: ``False``)
-        plot_iterations (int, optional): If ``plot_iterations == -1``, then the
-            diagnostic plots will not be constructed. Otherwise, the diagnostic
-            plots will be constructed every ``plot_iterations`` sampler iterations.
-            (default: -1)
-        plot_generator (optional): # TODO: add class object that controls
-            the diagnostic plotting updates. If not provided and ``plot_iterations > 0``,
-            the ensemble will initialize a default plotting setup.
-            (default: None)
-        plot_name (str, optional): Name of file to save diagnostic plots to. This only
-            applies if ``plot_generator == None`` and ``plot_iterations > 0``.
-            (default: ``None``)
         periodic (dict, optional): Keys are ``branch_names``. Values are dictionaries
             that have (key: value) pairs as (index to parameter: period). Periodic
             parameters are treated as having periodic boundary conditions in proposals.
         update_fn (callable, optional): :class:`eryn.utils.updates.AdjustStretchProposalScale`
             object that allows the user to update the sampler in any preferred way
             every ``update_iterations`` sampler iterations. The callable must have signature:
-            ``(sampler iteration, last sample state object, EnsembleSampler object)``. 
+            ``(sampler iteration, last sample state object, EnsembleSampler object)``.
         update_iterations (int, optional): Number of iterations between sampler
-            updates using ``update_fn``. Updates are only performed at the thinning rate. 
+            updates using ``update_fn``. Updates are only performed at the thinning rate.
             If ``thin_by>1`` when :func:`EnsembleSampler.run_mcmc` is used, the sampler
-            is updated every ``thin_by * update_iterations`` iterations. 
+            is updated every ``thin_by * update_iterations`` iterations.
         stopping_fn (callable, optional): :class:`eryn.utils.stopping.Stopping` object that
             allows the user to end the sampler if specified criteria are met.
             The callable must have signature:
-            ``(sampler iteration, last sample state object, EnsembleSampler object)``. 
+            ``(sampler iteration, last sample state object, EnsembleSampler object)``.
         stopping_iterations (int, optional): Number of iterations between sampler
-            attempts to evaluate the ``stopping_fn``. Stopping checks are only performed at the thinning rate. 
+            attempts to evaluate the ``stopping_fn``. Stopping checks are only performed at the thinning rate.
             If ``thin_by>1`` when :func:`EnsembleSampler.run_mcmc` is used, the sampler
             is checked for the stopping criterion every ``thin_by * stopping_iterations`` iterations.
         fill_zero_leaves_val (double, optional): When there are zero leaves in a
@@ -191,18 +180,17 @@ class EnsembleSampler(object):
             model, this should be set to the value of the contribution to the Likelihood
             from the data. (Default: ``-1e300``).
         num_repeats_in_model (int, optional): Number of times to repeat the in-model step
-            within in one sampler iteration. When analyzing the acceptance fraction, you must 
+            within in one sampler iteration. When analyzing the acceptance fraction, you must
             include the value of ``num_repeats_in_model`` to get the proper denominator.
-        num_repeats_rj (int, optional): Number of time to repeat the reversible jump step 
-            within in one sampler iteration. When analyzing the acceptance fraction, you must 
+        num_repeats_rj (int, optional): Number of time to repeat the reversible jump step
+            within in one sampler iteration. When analyzing the acceptance fraction, you must
             include the value of ``num_repeats_rj`` to get the proper denominator.
         track_moves (bool, optional): If ``True``, track acceptance fraction of each move
-            in the backend. If ``False``, no tracking is done. If ``True`` and run is interrupted, it will check 
-            that the move configuration has not changed. It will not allow the run to go on 
-            if it is changed. In this case, the user should declare a new backend and use the last 
+            in the backend. If ``False``, no tracking is done. If ``True`` and run is interrupted, it will check
+            that the move configuration has not changed. It will not allow the run to go on
+            if it is changed. In this case, the user should declare a new backend and use the last
             state from the previous backend. **Warning**: If the order of moves of the same move class
             is changed, the check may not catch it, so the tracking may mix move acceptance fractions together.
-        verbose (int, optional): # TODO
         info (dict, optional): Key and value pairs reprenting any information
             the user wants to add to the backend if the user is not inputing
             their own backend.
@@ -247,10 +235,8 @@ class EnsembleSampler(object):
         num_repeats_in_model=1,
         num_repeats_rj=1,
         track_moves=True,
-        verbose=False,
         info={},
     ):
-
         # store priors
         self.priors = priors
 
@@ -292,7 +278,9 @@ class EnsembleSampler(object):
             assert len(list(ndims.keys())) == len(branch_names)
             for key in ndims:
                 if key not in branch_names:
-                    raise ValueError(f"{key} is in ndims but does not appear in branch_names: {branch_names}.")
+                    raise ValueError(
+                        f"{key} is in ndims but does not appear in branch_names: {branch_names}."
+                    )
         else:
             raise ValueError("ndims is to be a scalar int, list or dict.")
 
@@ -308,7 +296,9 @@ class EnsembleSampler(object):
             assert len(list(nleaves_max.keys())) == len(branch_names)
             for key in nleaves_max:
                 if key not in branch_names:
-                    raise ValueError(f"{key} is in nleaves_max but does not appear in branch_names: {branch_names}.")
+                    raise ValueError(
+                        f"{key} is in nleaves_max but does not appear in branch_names: {branch_names}."
+                    )
         else:
             raise ValueError("nleaves_max is to be a scalar int, list, or dict.")
 
@@ -336,7 +326,7 @@ class EnsembleSampler(object):
         # set basic variables for sampling settings
         self.nwalkers = nwalkers
         self.nbranches = nbranches
-        
+
         # eryn wraps periodic parameters
         if periodic is not None:
             if not isinstance(periodic, PeriodicContainer) and not isinstance(
@@ -392,7 +382,9 @@ class EnsembleSampler(object):
                     assert len(branch_names) == 1
                     nleaves_min = {branch_names[0]: nleaves_min}
 
-                elif isinstance(nleaves_min, list) or isinstance(nleaves_min, np.ndarray):
+                elif isinstance(nleaves_min, list) or isinstance(
+                    nleaves_min, np.ndarray
+                ):
                     assert len(branch_names) == len(nleaves_min)
                     nleaves_min = {bn: nl for bn, nl in zip(branch_names, nleaves_min)}
 
@@ -400,9 +392,13 @@ class EnsembleSampler(object):
                     assert len(list(nleaves_min.keys())) == len(branch_names)
                     for key in nleaves_min:
                         if key not in branch_names:
-                            raise ValueError(f"{key} is in nleaves_min but does not appear in branch_names: {branch_names}.")
+                            raise ValueError(
+                                f"{key} is in nleaves_min but does not appear in branch_names: {branch_names}."
+                            )
                 else:
-                    raise ValueError("If providing nleaves_min, nleaves_min is to be a scalar int, list, or dict.")
+                    raise ValueError(
+                        "If providing nleaves_min, nleaves_min is to be a scalar int, list, or dict."
+                    )
 
                 self.nleaves_min = nleaves_min
 
@@ -510,16 +506,14 @@ class EnsembleSampler(object):
                     current_indices_move_keys[move_name] += 1
 
                 # get the full name including the index
-                full_move_name = (
-                    move_name + f"_{current_indices_move_keys[move_name]}"
-                )
+                full_move_name = move_name + f"_{current_indices_move_keys[move_name]}"
                 self.all_moves[full_move_name] = move
 
             # get move keys out
             move_keys = list(self.all_moves.keys())
 
         else:
-            move_keys = None 
+            move_keys = None
 
         self.move_keys = move_keys
 
@@ -532,11 +526,10 @@ class EnsembleSampler(object):
                 nleaves_max=nleaves_max,
                 rj=self.has_reversible_jump,
                 moves=move_keys,
-                **info
+                **info,
             )
             state = np.random.get_state()
         else:
-
             if self.track_moves:
                 moves_okay = True
                 if len(self.move_keys) != len(self.backend.move_keys):
@@ -547,8 +540,10 @@ class EnsembleSampler(object):
                         moves_okay = False
 
                 if not moves_okay:
-                    raise ValueError("Configuration of moves has changed. Cannot use the same backend. Declare a new backend and start from the previous state. If you would prefer not to track move acceptance fraction, set track_moves to False in the EnsembleSampler.")
-            
+                    raise ValueError(
+                        "Configuration of moves has changed. Cannot use the same backend. Declare a new backend and start from the previous state. If you would prefer not to track move acceptance fraction, set track_moves to False in the EnsembleSampler."
+                    )
+
             # Check the backend shape
             for i, (name, shape) in enumerate(self.backend.shape.items()):
                 test_shape = (
@@ -585,7 +580,6 @@ class EnsembleSampler(object):
         self.log_like_fn = _FunctionWrapper(log_like_fn, args, kwargs)
 
         self.all_walkers = self.nwalkers * self.ntemps
-        self.verbose = verbose
 
         # prepare plotting
         # TODO: adjust plotting maybe?
@@ -648,12 +642,11 @@ class EnsembleSampler(object):
     @priors.setter
     def priors(self, priors):
         """Set priors information.
-        
+
         This performs checks to make sure the inputs are okay.
 
         """
         if isinstance(priors, dict):
-
             self._priors = {}
 
             for key in priors.keys():
@@ -755,8 +748,8 @@ class EnsembleSampler(object):
                 :class:`State` or positions of the walkers in the
                 parameter space. If multiple branches used, must be dict with keys
                 as the ``branch_names`` and values as the positions. If ``betas`` are
-                provided in the state object, they will be loaded into the 
-                ``temperature_control``. 
+                provided in the state object, they will be loaded into the
+                ``temperature_control``.
             iterations (int or None, optional): The number of steps to generate.
                 ``None`` generates an infinite stream (requires ``store=False``).
                 (default: 1)
@@ -779,7 +772,7 @@ class EnsembleSampler(object):
                 shown. (default: ``False``)
             skip_initial_state_check (bool, optional): If ``True``, a check
                 that the initial_state can fully explore the space will be
-                skipped. If using reversible jump, the user needs to ensure this on their own 
+                skipped. If using reversible jump, the user needs to ensure this on their own
                 (``skip_initial_state_check``is set to ``False`` in this case.
                 (default: ``True``)
 
@@ -884,7 +877,6 @@ class EnsembleSampler(object):
                     # in model moves
                     accepted = np.zeros((self.ntemps, self.nwalkers))
                     for repeat in range(self.num_repeats_in_model):
-
                         # Choose a random move
                         move = self._random.choice(self.moves, p=self.weights)
 
@@ -929,10 +921,10 @@ class EnsembleSampler(object):
 
                     # Save the new step
                     if store and (i + 1) % checkpoint_step == 0:
-
                         if self.track_moves:
-                            moves_accepted_fraction = {key:
-                                move_tmp.acceptance_fraction for key, move_tmp in self.all_moves.items()
+                            moves_accepted_fraction = {
+                                key: move_tmp.acceptance_fraction
+                                for key, move_tmp in self.all_moves.items()
                             }
                         else:
                             moves_accepted_fraction = None
@@ -963,11 +955,11 @@ class EnsembleSampler(object):
                 :class:`State` or positions of the walkers in the
                 parameter space. If multiple branches used, must be dict with keys
                 as the ``branch_names`` and values as the positions. If ``betas`` are
-                provided in the state object, they will be loaded into the 
-                ``temperature_control``. 
+                provided in the state object, they will be loaded into the
+                ``temperature_control``.
             nsteps (int): The number of steps to generate. The total number of proposals is ``nsteps * thin_by``.
             burn (int, optional): Number of burn steps to run before storing information. The ``thin_by`` kwarg is ignored when counting burn steps since there is no storage (equivalent to ``thin_by=1``).
-            post_burn_update (bool, optional): If ``True``, run ``update_fn`` after burn in. 
+            post_burn_update (bool, optional): If ``True``, run ``update_fn`` after burn in.
 
         Other parameters are directly passed to :func:`sample`.
 
@@ -991,9 +983,6 @@ class EnsembleSampler(object):
 
         # run burn in
         if burn is not None and burn != 0:
-            if self.verbose:
-                print("Start burn")
-
             # prepare kwargs that relate to burn
             burn_kwargs = deepcopy(kwargs)
             burn_kwargs["store"] = False
@@ -1015,8 +1004,6 @@ class EnsembleSampler(object):
                 self.update_fn(i, results, self)
 
             initial_state = results
-            if self.verbose:
-                print("Finish burn")
 
         if nsteps == 0:
             return initial_state
@@ -1025,7 +1012,6 @@ class EnsembleSampler(object):
 
         i = 0
         for results in self.sample(initial_state, iterations=nsteps, **kwargs):
-
             # diagnostic plots
             # TODO: adjust diagnostic plots
             if self.plot_iterations > 0 and (i + 1) % (self.plot_iterations) == 0:
@@ -1095,7 +1081,6 @@ class EnsembleSampler(object):
             assert prior_out.shape == (ntemps, nwalkers)
 
         elif self.provide_groups:
-
             # get group information from the inds dict
             groups = groups_from_inds(inds)
 
@@ -1296,7 +1281,6 @@ class EnsembleSampler(object):
 
         # Likelihoods are vectorized across groups
         if self.vectorize:
-
             # prepare args list
             args_in = []
 
@@ -1335,7 +1319,6 @@ class EnsembleSampler(object):
 
         # each Likelihood is computed individually
         else:
-
             # if groups in is an array, need to put it in a list.
             if isinstance(groups_in, np.ndarray):
                 groups_in = [groups_in]
@@ -1346,7 +1329,6 @@ class EnsembleSampler(object):
 
             # each individual group in the groups_map
             for group_i in groups_map:
-
                 # args and kwargs for the individual Likelihood
                 arg_i = [None for _ in self.branch_names]
                 kwarg_i = {}
@@ -1562,7 +1544,10 @@ class _FunctionWrapper(object):
     """
 
     def __init__(
-        self, f, args, kwargs,
+        self,
+        f,
+        args,
+        kwargs,
     ):
         self.f = f
         self.args = [] if args is None else args
@@ -1573,7 +1558,7 @@ class _FunctionWrapper(object):
         Internal function that takes a tuple (args, kwargs) for entrance into the Likelihood.
 
         ``self.args`` and ``self.kwargs`` are added to these inputs.
-        
+
         """
 
         args_in_add, kwargs_in_add = args_and_kwargs
@@ -1602,13 +1587,13 @@ def walkers_independent(coords_in):
     """Determine if walkers are independent
 
     Orginall from ``emcee``.
-    
+
     Args:
         coords_in (np.ndarray[ntemps, nwalkers, nleaves_max, ndim]): Coordinates of the walkers.
 
     Returns:
         bool: If walkers are independent.
-    
+
     """
     # make sure it is 4-dimensional and reshape
     # so it groups by temperature and walker
@@ -1626,6 +1611,6 @@ def walkers_independent(coords_in):
     if np.any(C_colmax == 0):
         return False
     C /= C_colmax
-    C_colsum = np.sqrt(np.sum(C ** 2, axis=0))
+    C_colsum = np.sqrt(np.sum(C**2, axis=0))
     C /= C_colsum
     return np.linalg.cond(C.astype(float)) <= 1e8
