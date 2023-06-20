@@ -128,7 +128,7 @@ class GaussianMove(MHMove):
                     name: tmp.reshape(ntemps * nwalkers, nleaves_max, ndim)
                     for name, tmp in q.items()
                 },
-                xp=self.xp,
+                # xp=self.xp,
             )
 
             q = {
