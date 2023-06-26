@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from ..utils.utility import get_integrated_act, thermodynamic_integration_log_evidence
+from ..utils.utility import get_integrated_act, thermodynamic_integration_log_evidence, stepping_stone_log_evidence
 from ..state import State
 
 __all__ = ["Backend"]
@@ -601,11 +601,12 @@ class Backend(object):
 
         return {name: values * thin_factor for name, values in out.items()}
 
-    def get_evidence_estimate(self, discard=0, thin=1, return_error=True):
+    def get_evidence_estimate(self, discard=0, thin=1, return_error=True, method="therodynamic", **ss_kwargs):
         """Get an estimate of the evidence
 
         This function gets the sample information and uses 
-        :func:`thermodynamic_integration_log_evidence` to compute the evidence estimate.
+        :func:`thermodynamic_integration_log_evidence` or 
+        :func:`stepping_stone_log_evidence` to compute the evidence estimate.
 
         Args:
             discard (int, optional): Discard the first ``discard`` steps in
@@ -616,6 +617,8 @@ class Backend(object):
                 (default: ``1``)
             return_error (bool, optional): If True, return the error associated
                 with the log evidence estimate. (default: ``True``)
+            method (string, optional): Method to compute the evidence. Available
+                methods are the 'thermodynamic' and 'stepping-stone' (default: ``thermodynamic``)
 
         Returns:
             double or tuple: Evidence estimate
@@ -636,11 +639,17 @@ class Backend(object):
 
         # setup information
         betas = betas_all[0]
-        logls = np.mean(logls_all, axis=(0, -1))
 
         # get log evidence and error
-        logZ, dlogZ = thermodynamic_integration_log_evidence(betas, logls)
-
+        if method.lower() in ["therodynamic", "thermodynamic integration", "thermo", "ti"]:
+            logls = np.mean(logls_all, axis=(0, -1))
+            logZ, dlogZ = thermodynamic_integration_log_evidence(betas, logls)
+        elif method.lower() in ["stepping stone", "ss", "step", "stone", "stepping-stone"]:
+            logZ, dlogZ = stepping_stone_log_evidence(betas, logls_all, **ss_kwargs)
+        else:
+            raise ValueError(
+                """Please choose only between 'thermodynamic' and 'stepping-stone' methods.""")
+            
         if return_error:
             return (logZ, dlogZ)
         else:

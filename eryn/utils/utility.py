@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-
 import numpy as np
-
+from scipy.special import logsumexp
+import warnings
 
 def groups_from_inds(inds):
     """Convert inds to group information
@@ -205,3 +205,61 @@ def thermodynamic_integration_log_evidence(betas, logls):
     logZ = -np.trapz(logls, betas)
     logZ2 = -np.trapz(logls2, betas2)
     return logZ, np.abs(logZ - logZ2)
+
+
+def stepping_stone_log_evidence(betas, logls, block_len=50, repeats=100):
+    """
+    Stepping stone approximation for the evidence calculation.
+
+    Based on 
+    a. https://arxiv.org/abs/1810.04488 and
+    b. https://pubmed.ncbi.nlm.nih.gov/21187451/.
+    
+    Args:
+        betas (np.ndarray[ntemps]): The inverse temperatures to use for the quadrature.
+        logls (np.ndarray[ntemps]): The mean log-Likelihoods corresponding to ``betas`` to use for
+            computing the thermodynamic evidence.
+        block_len (int): The length of each chain block to compute the evidence from. Useful for computing the error-bars. 
+        repeats (int): The number of repeats to compute the evidence (using the block above).
+
+    Returns
+        tuple:   ``(logZ, dlogZ)``: 
+            Returns an estimate of the
+            log-evidence and the error associated with the finite
+            number of temperatures at which the posterior has been
+            sampled.
+    """
+    
+    def calculate_stepping_stone(betas, logls):
+        n = logls.shape[0] 
+        delta_betas = betas[1:] - betas[:-1]
+        n_T = betas.shape[0] 
+        log_ratio = logsumexp(delta_betas * logls[:,:-1], axis=0) - np.log(n)
+        return np.sum(log_ratio), log_ratio
+
+    # make sure they are the same length
+    if len(betas) != logls.shape[1]:
+        raise ValueError("Need the log(L).shape[1] to be the same as the number of temperatures.")
+
+    # make sure they are in order
+    order = np.argsort(betas)
+    betas = betas[order]
+    logls = logls[:, order, :]
+    logls = logls.reshape(-1, betas.shape[0]) # Get all samples per temperature 
+    steps = logls.shape[0] # Get number of samples
+        
+    logZ, _ = calculate_stepping_stone(betas, logls)
+    
+    # Estimate the evidence uncertainty (Maturana-Russel et. al. (2019))
+    logZ_i = np.zeros(repeats)
+    try:
+        for i in range(repeats):
+            idxs = [np.random.randint(i, i + block_len) for i in range(steps - block_len)]
+            logZ_i[i] = calculate_stepping_stone(betas, logls[idxs, :])[0]
+        dlogZ = np.std(logZ_i)
+    except ValueError:
+        warnings.warn('Warning: Failed to compute evidence uncertainty via Stepping Stone algorithm')
+        dlogZ = np.nan
+    
+    return logZ, dlogZ
+
