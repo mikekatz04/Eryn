@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from ..utils.utility import get_integrated_act, thermodynamic_integration_log_evidence, stepping_stone_log_evidence
+from ..utils.utility import get_integrated_act, thermodynamic_integration_log_evidence, stepping_stone_log_evidence, psrf
 from ..state import State
 
 __all__ = ["Backend"]
@@ -654,6 +654,61 @@ class Backend(object):
             return (logZ, dlogZ)
         else:
             return logZ
+        
+    def get_gelman_rubin_convergence_diagnostic(self, discard=0, thin=1, doprint=True, **psrf_kwargs):
+        """
+        The Gelman - Rubin convergence diagnostic. 
+        A general approach to monitoring convergence of MCMC output of multiple walkers. 
+        The function makes a comparison of within-chain and between-chain variances. 
+        A large deviation between these two variances indicates non-convergence, and 
+        the output [Rhat] deviates from unity.
+        
+        Based on 
+        a. Brooks, SP. and Gelman, A. (1998) General methods for monitoring convergence 
+        of iterative simulations. Journal of Computational and Graphical Statistics, 7, 434-455
+        b. Gelman, A and Rubin, DB (1992) Inference from iterative simulation using multiple sequences, 
+        Statistical Science, 7, 457-511.
+        
+        Args:
+            C (np.ndarray[nwalkers, ndim]): The parameter traces. The MCMC chains. 
+            doprint (bool, optional): Flag to print the results on screen.
+
+        Returns
+            dict:   ``Rhat_all_branches``: 
+                Returns an estimate of the Gelman-Rubin convergence diagnostic ``Rhat``,
+                per temperature, stored in a dictionary, per branch name.
+        
+        """
+        Rhat_all_branches = dict()
+        # Loop over the different models
+        for branch in self.branch_names:
+            
+            Rhat = dict() # Initialize
+            # Loop over the temperatures
+            for temp in range(self.ntemps):
+                
+                # Get all the chains per branch
+                chains = self.get_chain(discard=discard, thin=thin)[branch][:, temp]
+                
+                # Handle the cases of multiple leaves on a given branch
+                if chains.shape[2] == 1:
+                    chains = chains.squeeze()
+                else:
+                    chains = chains[~np.isnan(chains[:, 0])] # Remove nans (in case or RJ)
+                    raise ValueError(""" Whoops. Not implemented yet. Sorry.""")
+                                
+                Rhat[temp] = psrf(chains, self.ndims[branch], **psrf_kwargs)
+            Rhat_all_branches[branch] = Rhat # Store the Rhat per branch
+        
+        if doprint:
+            for branch in self.branch_names:
+                print(" Model: {}".format(branch))
+                print(" T \t R̂")
+                print("---------------------------")
+                for temp in range(self.ntemps):
+                    print(" {:01d} \t {:3.2f}".format(temp, Rhat_all_branches[branch][temp]))
+                print("\n")
+        return Rhat_all_branches
 
     @property
     def shape(self):

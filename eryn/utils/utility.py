@@ -263,3 +263,53 @@ def stepping_stone_log_evidence(betas, logls, block_len=50, repeats=100):
     
     return logZ, dlogZ
 
+def psrf(C, ndims, per_walker=False):
+    """
+    The Gelman - Rubin convergence diagnostic. 
+    A general approach to monitoring convergence of MCMC output of multiple walkers. 
+    The function makes a comparison of within-chain and between-chain variances. 
+    A large deviation between these two variances indicates non-convergence, and 
+    the output [Rhat] deviates from unity.
+    
+    By default, it combines the MCMC chains for all walkers, and then computes the
+    Rhat for the first and last 1/3 parts of the traces. This can be tuned with the 
+    ``per_walker`` flag.
+    
+    Based on 
+    a. Brooks, SP. and Gelman, A. (1998) General methods for monitoring convergence 
+       of iterative simulations. Journal of Computational and Graphical Statistics, 7, 434-455
+    b. Gelman, A and Rubin, DB (1992) Inference from iterative simulation using multiple sequences, 
+       Statistical Science, 7, 457-511.
+       
+    Args:
+        C (np.ndarray[nwalkers, ndim]): The parameter traces. The MCMC chains. 
+        ndims (int): The dimensions 
+
+    Returns
+        tuple:   ``(Rhat, neff)``: 
+            Returns an estimate of the Gelman-Rubin convergence diagnostic ``Rhat``,
+            and the effective number od samples ``neff``.
+    
+    Code taken from https://joergdietrich.github.io/emcee-convergence.html
+    """
+        
+    if not per_walker:
+        # Split the complete chains into three parts and perform the 
+        # diagnostic on the forst and last 1/3 of the chains.
+        C = C.reshape(-1, ndims)
+        n = int(np.floor(C[:,0].shape[0]/3))
+        c1 = C[0:n,:]
+        c2 = C[-n:,:]
+        C = np.vstack((c1, c2))
+    
+    ssq = np.var(C, axis=1, ddof=1)
+    W   = np.mean(ssq, axis=0)
+    θb  = np.mean(C, axis=1)
+    θbb = np.mean(θb, axis=0)
+    m   = C.shape[0]
+    n   = C.shape[1]
+    B   = n / (m - 1) * np.sum((θbb - θb)**2, axis=0)
+    
+    var_θ = (n - 1) / n * W + 1 / n * B
+    R̂ = np.sqrt(var_θ / W)
+    return R̂
