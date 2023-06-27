@@ -284,6 +284,8 @@ def psrf(C, ndims, per_walker=False):
     Args:
         C (np.ndarray[nwalkers, ndim]): The parameter traces. The MCMC chains. 
         ndims (int): The dimensions 
+        per_walker (bool, optional): Do the test on the combined chains, or using 
+        each if the walkers separatelly.
 
     Returns
         tuple:   ``(Rhat, neff)``: 

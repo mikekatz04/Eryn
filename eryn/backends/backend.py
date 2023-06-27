@@ -672,6 +672,13 @@ class Backend(object):
         Args:
             C (np.ndarray[nwalkers, ndim]): The parameter traces. The MCMC chains. 
             doprint (bool, optional): Flag to print the results on screen.
+        discard (int, optional): Discard the first ``discard`` steps in
+                the chain as burn-in. (default: ``0``)
+        thin (int, optional): Use only every ``thin`` steps from the
+                chain. The returned estimate is multiplied by ``thin`` so the
+                estimated time is in units of steps, not thinned steps.
+                (default: ``1``)
+        doprint (bool, optional): Flag to print a table with the results, per temperature.
 
         Returns
             dict:   ``Rhat_all_branches``: 
@@ -694,20 +701,22 @@ class Backend(object):
                 if chains.shape[2] == 1:
                     chains = chains.squeeze()
                 else:
-                    chains = chains[~np.isnan(chains[:, 0])] # Remove nans (in case or RJ)
+                    # chains = chains[~np.isnan(chains[:, 0])] # Remove nans (in case or RJ)
                     raise ValueError(""" Whoops. Not implemented yet. Sorry.""")
                                 
                 Rhat[temp] = psrf(chains, self.ndims[branch], **psrf_kwargs)
             Rhat_all_branches[branch] = Rhat # Store the Rhat per branch
         
-        if doprint:
+        if doprint: # Print table of results
+            print("  Gelman-Rubin diagnostic")
             for branch in self.branch_names:
                 print(" Model: {}".format(branch))
-                print(" T \t R̂")
-                print("---------------------------")
+                print("   T \t R̂")
+                print("  --------------")
                 for temp in range(self.ntemps):
-                    print(" {:01d} \t {:3.2f}".format(temp, Rhat_all_branches[branch][temp]))
+                    print("   {:01d}\t{:3.2f}".format(temp, Rhat_all_branches[branch][temp]))
                 print("\n")
+
         return Rhat_all_branches
 
     @property
