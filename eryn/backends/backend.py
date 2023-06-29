@@ -670,7 +670,7 @@ class Backend(object):
         Statistical Science, 7, 457-511.
         
         Args:
-            C (np.ndarray[nwalkers, ndim]): The parameter traces. The MCMC chains. 
+            C (np.ndarray[nwalkers, nsamples, ndim]): The parameter traces. The MCMC chains. 
             doprint (bool, optional): Flag to print the results on screen.
         discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
@@ -699,22 +699,29 @@ class Backend(object):
                 
                 # Handle the cases of multiple leaves on a given branch
                 if chains.shape[2] == 1:
-                    chains = chains.squeeze()
+                    # If no multiple leaves, we squeeze and transpose to the 
+                    # right shape to pass to the psrf function, which is  (nwalkers, nsamples, ndim)
+                    chains_in = chains.squeeze().transpose((1, 0, 2))
                 else:
-                    # chains = chains[~np.isnan(chains[:, 0])] # Remove nans (in case or RJ)
-                    raise ValueError(""" Whoops. Not implemented yet. Sorry.""")
+                    # Project onto the model dim all chains [in case of RJ and multiple leaves per branch]
+                    inds = self.get_inds(discard=discard, thin=thin)[branch][:, temp] # [t, w, nleavesmax, dim]
+                    min_leaves = inds.sum(axis=(0,2)).min()
+                    tmp = [inds[:, w].flatten() for w in range(self.nwalkers)]
+                    keep = [np.where( tmp[w] )[0][:min_leaves] for w in range(len(tmp)) ]
+                    chains_in = np.asarray([chains[:,w].reshape(-1, self.ndims[branch])[keep[w]] for w in range(self.nwalkers)])
                                 
-                Rhat[temp] = psrf(chains, self.ndims[branch], **psrf_kwargs)
+                Rhat[temp] = psrf(chains_in, self.ndims[branch], **psrf_kwargs)
             Rhat_all_branches[branch] = Rhat # Store the Rhat per branch
-        
+
         if doprint: # Print table of results
-            print("  Gelman-Rubin diagnostic")
+            print("  Gelman-Rubin diagnostic \n  <R̂>: Mean value for all parameters\n")
+            print("  --------------")
             for branch in self.branch_names:
                 print(" Model: {}".format(branch))
-                print("   T \t R̂")
+                print("   T \t <R̂>")
                 print("  --------------")
                 for temp in range(self.ntemps):
-                    print("   {:01d}\t{:3.2f}".format(temp, Rhat_all_branches[branch][temp]))
+                    print("   {:01d}\t{:3.2f}".format(temp, np.mean(Rhat_all_branches[branch][temp])))
                 print("\n")
 
         return Rhat_all_branches

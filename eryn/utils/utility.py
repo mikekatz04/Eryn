@@ -294,7 +294,6 @@ def psrf(C, ndims, per_walker=False):
     
     Code taken from https://joergdietrich.github.io/emcee-convergence.html
     """
-        
     if not per_walker:
         # Split the complete chains into three parts and perform the 
         # diagnostic on the forst and last 1/3 of the chains.
@@ -302,16 +301,17 @@ def psrf(C, ndims, per_walker=False):
         n = int(np.floor(C[:,0].shape[0]/3))
         c1 = C[0:n,:]
         c2 = C[-n:,:]
-        C = np.vstack((c1, c2))
-    
+        C = np.zeros( (2, c1.shape[0], c1.shape[1] ) )
+        C = np.array([c1, c2])
+        
     ssq = np.var(C, axis=1, ddof=1)
     W   = np.mean(ssq, axis=0)
     θb  = np.mean(C, axis=1)
     θbb = np.mean(θb, axis=0)
     m   = C.shape[0]
-    n   = C.shape[1]
-    B   = n / (m - 1) * np.sum((θbb - θb)**2, axis=0)
+    nn  = C.shape[1]
+    B   = nn / (m - 1) * np.sum((θbb - θb)**2, axis=0)
     
-    var_θ = (n - 1) / n * W + 1 / n * B
+    var_θ = (nn - 1) / nn * W + 1 / nn * B
     R̂ = np.sqrt(var_θ / W)
     return R̂
