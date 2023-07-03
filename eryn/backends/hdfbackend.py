@@ -140,10 +140,14 @@ class HDFBackend(Backend):
                 keys = list(g["chain"])
 
                 # they all have the same dtype so use the first one
-                self.dtype = g["chain"][keys[0]].dtype
+                try:
+                    self.dtype = g["chain"][keys[0]].dtype
 
-                # we now have it
-                self.dtype_set = True
+                    # we now have it
+                    self.dtype_set = True
+                # catch error if the chain has not been initialized yet
+                except IndexError:
+                    pass
 
         return f
 
@@ -154,6 +158,7 @@ class HDFBackend(Backend):
         nleaves_max=1,
         ntemps=1,
         branch_names=None,
+        nbranches=1,
         rj=False,
         moves=None,
         **info,
@@ -162,16 +167,19 @@ class HDFBackend(Backend):
 
         Args:
             nwalkers (int): The size of the ensemble
-            ndims (int or list of ints): The number of dimensions for each branch.
-            nleaves_max (int or list of ints, optional):
-                Maximum allowable leaf count for each branch. It should have
-                the same length as the number of branches.
+            ndims (int, list of ints, or dict): The number of dimensions for each branch. If
+                ``dict``, keys should be the branch names and values the associated dimensionality.
+            nleaves_max (int, list of ints, or dict, optional): Maximum allowable leaf count for each branch. 
+                It should have the same length as the number of branches. 
+                If ``dict``, keys should be the branch names and values the associated maximal leaf value.
                 (default: ``1``)
             ntemps (int, optional): Number of rungs in the temperature ladder.
                 (default: ``1``)
             branch_names (str or list of str, optional): Names of the branches used. If not given,
                 branches will be names ``model_0``, ..., ``model_n`` for ``n`` branches.
                 (default: ``None``)
+            nbranches (int, optional): Number of branches. This is only used if ``branch_names is None``.
+                (default: ``1``)
             rj (bool, optional): If True, reversible-jump techniques are used.
                 (default: ``False``)
             moves (list, optional): List of all of the move classes input into the sampler.
@@ -187,46 +195,7 @@ class HDFBackend(Backend):
             if self.name in f:
                 del f[self.name]
 
-            # set the reset args and kwargs for next time if needed
-            self.reset_args = (nwalkers, ndims)
-            self.reset_kwargs = dict(
-                nleaves_max=nleaves_max,
-                ntemps=ntemps,
-                branch_names=branch_names,
-                rj=rj,
-                moves=moves,
-                info=info,
-            )
-
-            # store important info
-            self.nwalkers = int(nwalkers)  # trees
-            self.ntemps = int(ntemps)
-            self.rj = rj
-
-            # turn things into lists if needed
-
-            if isinstance(ndims, int):
-                self.ndims = np.array([ndims])
-            elif isinstance(ndims, list) or isinstance(ndims, np.ndarray):
-                self.ndims = np.asarray(ndims)
-            else:
-                raise ValueError("ndims is to be a scalar int or a list.")
-
-            if isinstance(nleaves_max, int):
-                self.nleaves_max = np.array([nleaves_max])
-            elif isinstance(nleaves_max, list) or isinstance(nleaves_max, np.ndarray):
-                self.nleaves_max = np.asarray(nleaves_max)
-            else:
-                raise ValueError("nleaves_max is to be a scalar int or a list.")
-
-            if len(self.nleaves_max) != len(self.ndims):
-                raise ValueError(
-                    "Number of branches indicated by nleaves_max and ndims are not equivalent (nleaves_max: {}, ndims: {}).".format(
-                        len(self.nleaves_max), len(self.ndims)
-                    )
-                )
-
-            self.nbranches = len(self.nleaves_max)
+            # turn things into lists/dicts if needed
             if branch_names is not None:
                 if isinstance(branch_names, str):
                     branch_names = [branch_names]
@@ -234,38 +203,71 @@ class HDFBackend(Backend):
                 elif not isinstance(branch_names, list):
                     raise ValueError("branch_names must be string or list of strings.")
 
-                elif len(branch_names) != self.nbranches:
-                    raise ValueError(
-                        """Number of branches indicated by nleaves_max and branch_names are not equivalent 
-                        (nleaves_max: {}, branch_names: {}).""".format(
-                            len(self.nleaves_max), len(branch_names)
-                        )
-                    )
-
             else:
-                branch_names = ["model_{}".format(i) for i in range(self.nbranches)]
+                branch_names = ["model_{}".format(i) for i in range(nbranches)]
+
+            nbranches = len(branch_names)
+
+            if isinstance(ndims, int):
+                assert len(branch_names) == 1
+                ndims = {branch_names[0]: ndims}
+
+            elif isinstance(ndims, list) or isinstance(ndims, np.ndarray):
+                assert len(branch_names) == len(ndims)
+                ndims = {bn: nd for bn, nd in zip(branch_names, ndims)}
+
+            elif isinstance(ndims, dict):
+                assert len(list(ndims.keys())) == len(branch_names)
+                for key in ndims:
+                    if key not in branch_names:
+                        raise ValueError(f"{key} is in ndims but does not appear in branch_names: {branch_names}.")
+            else:
+                raise ValueError("ndims is to be a scalar int, list or dict.")
+
+            if isinstance(nleaves_max, int):
+                assert len(branch_names) == 1
+                nleaves_max = {branch_names[0]: nleaves_max}
+
+            elif isinstance(nleaves_max, list) or isinstance(nleaves_max, np.ndarray):
+                assert len(branch_names) == len(nleaves_max)
+                nleaves_max = {bn: nl for bn, nl in zip(branch_names, nleaves_max)}
+
+            elif isinstance(nleaves_max, dict):
+                assert len(list(nleaves_max.keys())) == len(branch_names)
+                for key in nleaves_max:
+                    if key not in branch_names:
+                        raise ValueError(f"{key} is in nleaves_max but does not appear in branch_names: {branch_names}.")
+            else:
+                raise ValueError("nleaves_max is to be a scalar int, list, or dict.")
 
             # store all the info needed in memory and in the file
 
-            self.branch_names = branch_names
-
             g = f.create_group(self.name)
+
             g.attrs["version"] = __version__
-            g.attrs["nbranches"] = self.nbranches
-            g.attrs["branch_names"] = self.branch_names
+            g.attrs["nbranches"] = len(branch_names)
+            g.attrs["branch_names"] = branch_names
             g.attrs["ntemps"] = ntemps
             g.attrs["nwalkers"] = nwalkers
-            g.attrs["nleaves_max"] = self.nleaves_max
             g.attrs["has_blobs"] = False
             g.attrs["rj"] = rj
             g.attrs["iteration"] = 0
 
+            # create info group
+            g.create_group("info")
             # load info into class and into file
             for key, value in info.items():
                 setattr(self, key, value)
-                g.attrs[key] = value
+                g["info"].attrs[key] = value
 
-            g.attrs["ndims"] = self.ndims
+            # store nleaves max and ndims dicts
+            g.create_group("ndims")
+            for key, value in ndims.items():
+                g["ndims"].attrs[key] = value
+
+            g.create_group("nleaves_max")
+            for key, value in nleaves_max.items():
+                g["nleaves_max"].attrs[key] = value
 
             # prepare all the data sets
 
@@ -323,9 +325,9 @@ class HDFBackend(Backend):
             chain = g.create_group("chain")
             inds = g.create_group("inds")
 
-            for name, nleaves, ndim in zip(
-                self.branch_names, self.nleaves_max, self.ndims
-            ):
+            for name in branch_names:
+                nleaves = self.nleaves_max[name]
+                ndim = self.ndims[name]
                 chain.create_dataset(
                     name,
                     (0, ntemps, nwalkers, nleaves, ndim),
@@ -348,28 +350,8 @@ class HDFBackend(Backend):
             if moves is not None:
                 move_group = g.create_group("moves")
                 # setup info and keys
-                self.move_keys = []
-                current_indices_move_keys = {}
-                for move in moves:
-                    # get out of tuple if weights are given
-                    if isinstance(move, tuple):
-                        move = move[0]
-
-                    # get the name of the class instance as a string
-                    move_name = move.__class__.__name__
-
-                    # need to keep track how many times each type of move class has been used
-                    if move_name not in current_indices_move_keys:
-                        current_indices_move_keys[move_name] = 0
-
-                    else:
-                        current_indices_move_keys[move_name] += 1
-
-                    # get the full name including the index
-                    full_move_name = (
-                        move_name + f"_{current_indices_move_keys[move_name]}"
-                    )
-
+                for full_move_name in moves:
+                
                     single_move = move_group.create_group(full_move_name)
 
                     # prepare information dictionary
@@ -382,13 +364,80 @@ class HDFBackend(Backend):
                         compression_opts=self.compression_opts,
                     )
 
-                    # update the move keys to keep proper order
-                    self.move_keys.append(full_move_name)
-
             else:
                 self.move_info = None
 
             self.blobs = None
+
+    @property
+    def nwalkers(self):
+        """Get nwalkers from h5 file."""
+        with self.open() as f:
+            return f[self.name].attrs["nwalkers"]
+
+    @property
+    def ntemps(self):
+        """Get ntemps from h5 file."""
+        with self.open() as f:
+            return f[self.name].attrs["ntemps"]
+
+    @property
+    def rj(self):
+        """Get rj from h5 file."""
+        with self.open() as f:
+            return f[self.name].attrs["rj"]
+
+    @property
+    def nleaves_max(self):
+        """Get nleaves_max from h5 file."""
+        with self.open() as f:
+            return {key: f[self.name]["nleaves_max"].attrs[key] for key in f[self.name]["nleaves_max"].attrs}
+
+    @property
+    def ndims(self):
+        """Get ndims from h5 file."""
+        with self.open() as f:
+            return {key: f[self.name]["ndims"].attrs[key] for key in f[self.name]["ndims"].attrs}
+
+    @property
+    def move_keys(self):
+        """Get move_keys from h5 file."""
+        with self.open() as f:
+            return list(f[self.name]["moves"])
+
+    @property
+    def branch_names(self):
+        """Get branch names from h5 file."""
+        with self.open() as f:
+            return f[self.name].attrs["branch_names"]
+
+    @property
+    def nbranches(self):
+        """Get number of branches from h5 file."""
+        with self.open() as f:
+            return f[self.name].attrs["nbranches"]
+
+    @property
+    def reset_args(self):
+        """Get reset_args from h5 file."""
+        return [self.nwalkers, self.ndims]
+
+    @property
+    def reset_kwargs(self):
+        """Get reset_kwargs from h5 file."""
+        return dict(
+            nleaves_max=self.nleaves_max,
+            ntemps=self.ntemps,
+            branch_names=self.branch_names,
+            rj=self.rj,
+            moves=self.moves,
+        )
+
+    @property
+    def reset_kwargs(self):
+        """Get reset_kwargs from h5 file."""
+        with self.open() as f:
+            return f[self.name].attrs["reset_kwargs"]
 
     def has_blobs(self):
         """Returns ``True`` if the model includes blobs"""
@@ -492,10 +541,8 @@ class HDFBackend(Backend):
         with self.open() as f:
             g = f[self.name]
             return {
-                key: (g.attrs["ntemps"], g.attrs["nwalkers"], nleaves, ndim)
-                for key, nleaves, ndim in zip(
-                    g.attrs["branch_names"], g.attrs["nleaves_max"], g.attrs["ndims"]
-                )
+                key: (g.attrs["ntemps"], g.attrs["nwalkers"], self.nleaves_max[key], self.ndims[key])
+                for key in g.attrs["branch_names"]
             }
 
     @property
@@ -607,9 +654,8 @@ class HDFBackend(Backend):
                 is False, then rj_accepted must be None, which is the default.
             swaps_accepted (ndarray, optional): 1D array with number of swaps accepted
                 for the in-model step. (default: ``None``)
-            moves_accepted_fraction (list, optional): List of acceptance fraction arrays for all of the 
-                moves in the sampler. This list must have the same length as ``self.move_keys``
-                and be in the same order.
+            moves_accepted_fraction (dict, optional): Dict of acceptance fraction arrays for all of the 
+                moves in the sampler. This dict must have the same keys as ``self.move_keys``.
                 (default: ``None``)
 
         """
@@ -674,19 +720,11 @@ class HDFBackend(Backend):
                         in the reset function."""
                     )
 
-                if not hasattr(self, "move_keys"):
-                    self.move_keys = list(g["moves"])
-
-                # make sure they are the same length
-                assert len(moves_accepted_fraction) == len(self.move_keys)
-
                 # update acceptance fractions
-                for move_key, move_accepted_fraction in zip(
-                    self.move_keys, moves_accepted_fraction
-                ):
+                for move_key in self.move_keys:
                     g["moves"][move_key]["acceptance_fraction"][
                         :
-                    ] = move_accepted_fraction[:]
+                    ] = moves_accepted_fraction[move_key]
 
 
 class TempHDFBackend(object):

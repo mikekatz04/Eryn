@@ -16,9 +16,11 @@ class ReversibleJumpMove(Move):
     An abstract reversible jump move from # TODO: add citations.
 
     Args:
-        max_k (int or list of int): Maximum number(s) of leaves for each model.
+        nleaves_max (dict): Maximum number(s) of leaves for each model.
+            Keys are ``branch_names`` and values are ``nleaves_max`` for each branch.
             This is a keyword argument, nut it is required.
-        min_k (int or list of int): Minimum number(s) of leaves for each model.
+        nleaves_min (dict): Minimum number(s) of leaves for each model.
+            Keys are ``branch_names`` and values are ``nleaves_min`` for each branch.
             This is a keyword argument, nut it is required.
         tune (bool, optional): If True, tune proposal. (Default: ``False``)
         fix_change (int or None, optional): Fix the change in the number of leaves. Make them all 
@@ -29,8 +31,8 @@ class ReversibleJumpMove(Move):
 
     def __init__(
         self,
-        max_k=None,
-        min_k=None,
+        nleaves_max=None,
+        nleaves_min=None,
         dr=None,
         dr_max_iter=5,
         tune=False,
@@ -40,19 +42,14 @@ class ReversibleJumpMove(Move):
         # super(ReversibleJumpMove, self).__init__(**kwargs)
         Move.__init__(self, is_rj=True, **kwargs)
 
-        if max_k is None or min_k is None:
-            raise ValueError("Must provide min_k and max_k keyword arguments for RJ.")
+        if nleaves_max is None or nleaves_min is None:
+            raise ValueError("Must provide nleaves_min and nleaves_max keyword arguments for RJ.")
 
-        # setup leaf limits
-        if isinstance(max_k, int):
-            max_k = [max_k]
-
-        if isinstance(max_k, int):
-            min_k = [min_k]
-
+        if not isinstance(nleaves_max, dict) or not isinstance(nleaves_min, dict):
+            raise ValueError("nleaves_min and nleaves_max must be provided as dictionaries with keys as branch names and values as the max or min leaf count.")
         # store info
-        self.max_k = max_k
-        self.min_k = min_k
+        self.nleaves_max = nleaves_max
+        self.nleaves_min = nleaves_min
         self.tune = tune
         self.dr = dr
         self.fix_change = fix_change
@@ -84,7 +81,7 @@ class ReversibleJumpMove(Move):
         """
 
     def get_proposal(
-        self, all_coords, all_inds, min_k_all, max_k_all, random, **kwargs
+        self, all_coords, all_inds, nleaves_min_all, nleaves_max_all, random, **kwargs
     ):
         """Make a proposal
 
@@ -95,8 +92,8 @@ class ReversibleJumpMove(Move):
             all_inds (dict): Keys are ``branch_names``. Values are
                 np.ndarray[ntemps, nwalkers, nleaves_max]. These are the boolean
                 arrays marking which leaves are currently used within each walker.
-            min_k_all (list): Minimum values of leaf ount for each model. Must have same order as ``all_cords``. 
-            max_k_all (list): Maximum values of leaf ount for each model. Must have same order as ``all_cords``. 
+            nleaves_min_all (dict): Minimum values of leaf ount for each model. Must have same order as ``all_cords``. 
+            nleaves_max_all (dict): Maximum values of leaf ount for each model. Must have same order as ``all_cords``. 
             random (object): Current random state of the sampler.
             **kwargs (ignored): For modularity. 
 
@@ -118,7 +115,7 @@ class ReversibleJumpMove(Move):
         """
         raise NotImplementedError("The proposal must be implemented by " "subclasses")
 
-    def get_model_change_proposal(self, inds, random, min_k, max_k):
+    def get_model_change_proposal(self, inds, random, nleaves_min, nleaves_max):
         """Helper function for changing the model count by 1.
         
         This helper function works with nested models where you want to add or remove
@@ -128,8 +125,8 @@ class ReversibleJumpMove(Move):
             inds (np.ndarray): ``inds`` values for this specific branch with shape 
                 ``(ntemps, nwalkers, nleaves_max)``.
             random (object): Current random state of the sampler.
-            min_k (int): Minimum allowable leaf count for this branch.
-            max_k (int): Maximum allowable leaf count for this branch.
+            nleaves_min (int): Minimum allowable leaf count for this branch.
+            nleaves_max (int): Maximum allowable leaf count for this branch.
 
         Returns:
             dict: Keys are ``"+1"`` and ``"-1"``. Values are indexing information.
@@ -182,17 +179,12 @@ class ReversibleJumpMove(Move):
 
             if len(list(coords_propose_in.keys())) == 0:
                 raise ValueError(
-                    "Right now, no models are getting a reversible jump proposal. Check min_k and max_k or do not use rj proposal."
+                    "Right now, no models are getting a reversible jump proposal. Check nleaves_min and nleaves_max or do not use rj proposal."
                 )
 
             # get min and max leaf information
-            max_k_all = []
-            min_k_all = []
-            for brn in branch_names_run:
-                # get index into all branches to get the proper max_k and min_k
-                ind_keep_here = all_branch_names.index(brn)
-                max_k_all.append(self.max_k[ind_keep_here])
-                min_k_all.append(self.min_k[ind_keep_here])
+            nleaves_max_all = {brn: self.nleaves_max[brn] for brn in branch_names_run}
+            nleaves_min_all = {brn: self.nleaves_min[brn] for brn in branch_names_run}
 
             self.current_model = model
             self.current_state = state
@@ -200,8 +192,8 @@ class ReversibleJumpMove(Move):
             q, new_inds, factors = self.get_proposal(
                 coords_propose_in,
                 inds_propose_in,
-                min_k_all,
-                max_k_all,
+                nleaves_min_all,
+                nleaves_max_all,
                 model.random,
                 branch_supps=branches_supp_propose_in,
                 supps=state.supplimental,
@@ -232,9 +224,9 @@ class ReversibleJumpMove(Move):
 
             edge_factors = np.zeros((ntemps, nwalkers))
             # get factors for edges
-            for (name, branch), min_k, max_k in zip(
-                state.branches.items(), self.min_k, self.max_k
-            ):
+            for (name, branch) in state.branches.items():
+                nleaves_max = self.nleaves_max[name]
+                nleaves_min = self.nleaves_min[name]
 
                 if name not in branch_names_run:
                     continue
@@ -244,32 +236,32 @@ class ReversibleJumpMove(Move):
                 new_nleaves = new_inds[name].sum(axis=-1)
 
                 # do not work on sources with fixed source count
-                if min_k == max_k or min_k + 1 == max_k:
-                    # min_k == max_k --> no rj proposal
-                    # min_k + 1 == max_k --> no edge factors because it is guaranteed to be min_k or max_k
+                if nleaves_min == nleaves_max or nleaves_min + 1 == nleaves_max:
+                    # nleaves_min == nleaves_max --> no rj proposal
+                    # nleaves_min + 1 == nleaves_max --> no edge factors because it is guaranteed to be nleaves_min or nleaves_max
                     continue
 
-                elif min_k > max_k:
-                    raise ValueError("min_k cannot be greater than max_k.")
+                elif nleaves_min > nleaves_max:
+                    raise ValueError("nleaves_min cannot be greater than nleaves_max.")
 
                 else:
                     # fix proposal asymmetry at bottom of k range (kmin -> kmin + 1)
-                    inds_min = np.where(old_nleaves == min_k)
+                    inds_min = np.where(old_nleaves == nleaves_min)
                     # numerator term so +ln
                     edge_factors[inds_min] += np.log(1 / 2.0)
 
                     # fix proposal asymmetry at top of k range (kmax -> kmax - 1)
-                    inds_max = np.where(old_nleaves == max_k)
+                    inds_max = np.where(old_nleaves == nleaves_max)
                     # numerator term so -ln
                     edge_factors[inds_max] += np.log(1 / 2.0)
 
                     # fix proposal asymmetry at bottom of k range (kmin + 1 -> kmin)
-                    inds_min = np.where(new_nleaves == min_k)
+                    inds_min = np.where(new_nleaves == nleaves_min)
                     # numerator term so +ln
                     edge_factors[inds_min] -= np.log(1 / 2.0)
 
                     # fix proposal asymmetry at top of k range (kmax - 1 -> kmax)
-                    inds_max = np.where(new_nleaves == max_k)
+                    inds_max = np.where(new_nleaves == nleaves_max)
                     # numerator term so -ln
                     edge_factors[inds_max] -= np.log(1 / 2.0)
 

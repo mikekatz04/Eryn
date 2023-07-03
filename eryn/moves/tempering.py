@@ -207,10 +207,8 @@ class TemperatureControl(object):
     as a basis for the code below. 
 
     Args:
-        ndims (int or list of int): Dimensions for the model in the sampling run.
+        effective_ndim (int): Effective dimension used to determine temperatures if betas not given.
         nwalkers (int): Number of walkers in the sampler. Must maintain proper order of branches.
-        nleaves_max (int, or list of int, optional): Maximum allowable leaves per branch. 
-            Must maintain proper order of branches. (default: 1)
         ntemps (int, optional): Number of temperatures. If this is provided rather than ``betas``, 
             :func:`make_ladder` will be used to generate the temperature ladder. (default: 1)
         betas (np.ndarray[ntemps], optional): If provided, will use as the array of inverse temperatures. 
@@ -243,9 +241,8 @@ class TemperatureControl(object):
 
     def __init__(
         self,
-        ndims,
+        effective_ndim,
         nwalkers,
-        nleaves_max=1,
         ntemps=1,
         betas=None,
         Tmax=None,
@@ -256,17 +253,7 @@ class TemperatureControl(object):
         permute=True,
         skip_swap_supp_names=[],
     ):
-        # force ndims and nleaves_max to be a list of ints
-        if isinstance(ndims, int):
-            ndims = [ndims]
-        elif not isinstance(ndims, list):
-            raise ValueError("ndims must be an int or list of int.")
-
-        if isinstance(nleaves_max, int):
-            nleaves_max = [nleaves_max]
-        elif not isinstance(nleaves_max, list):
-            raise ValueError("ndims must be an int or list of int.")
-
+        
         if betas is None:
             if ntemps == 1:
                 betas = np.array([1.0])
@@ -275,12 +262,7 @@ class TemperatureControl(object):
                 # We start by assuming that the dimensionality will be defined by the number of
                 # components. We take that maximum divided by two, and multiply it with the higher
                 # dimensional component.
-                if sum(nleaves_max) > 1:
-                    betas = make_ladder(
-                        int(max(ndims) * sum(nleaves_max) / 2), ntemps=ntemps, Tmax=Tmax
-                    )
-                else:
-                    betas = make_ladder(ndims[0], ntemps=ntemps, Tmax=Tmax)
+                betas = make_ladder(effective_ndim, ntemps=ntemps, Tmax=Tmax)
 
         # store information
         self.nwalkers = nwalkers

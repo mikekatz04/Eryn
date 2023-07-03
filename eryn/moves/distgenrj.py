@@ -30,10 +30,9 @@ class DistributionGenerateRJ(ReversibleJumpMove):
                     "Distributions need to be eryn.prior.ProbDistContiner object."
                 )
         self.generate_dist = generate_dist
-
         super(DistributionGenerateRJ, self).__init__(*args, **kwargs)
 
-    def get_model_change_proposal(self, inds, random, min_k, max_k):
+    def get_model_change_proposal(self, inds, random, nleaves_min, nleaves_max):
         """Helper function for changing the model count by 1.
         
         This helper function works with nested models where you want to add or remove
@@ -43,8 +42,8 @@ class DistributionGenerateRJ(ReversibleJumpMove):
             inds (np.ndarray): ``inds`` values for this specific branch with shape 
                 ``(ntemps, nwalkers, nleaves_max)``.
             random (object): Current random state of the sampler.
-            min_k (int): Minimum allowable leaf count for this branch.
-            max_k (int): Maximum allowable leaf count for this branch.
+            nleaves_min (int): Minimum allowable leaf count for this branch.
+            nleaves_max (int): Maximum allowable leaf count for this branch.
 
         Returns:
             dict: Keys are ``"+1"`` and ``"-1"``. Values are indexing information.
@@ -66,9 +65,9 @@ class DistributionGenerateRJ(ReversibleJumpMove):
 
         # fix edge cases
         change = (
-            change * ((nleaves != min_k) & (nleaves != max_k))
-            + (+1) * (nleaves == min_k)
-            + (-1) * (nleaves == max_k)
+            change * ((nleaves != nleaves_min) & (nleaves != nleaves_max))
+            + (+1) * (nleaves == nleaves_min)
+            + (-1) * (nleaves == nleaves_max)
         )
 
         # setup storage for this information
@@ -123,7 +122,7 @@ class DistributionGenerateRJ(ReversibleJumpMove):
         return inds_for_change
 
     def get_proposal(
-        self, all_coords, all_inds, min_k_all, max_k_all, random, **kwargs
+        self, all_coords, all_inds, nleaves_min_all, nleaves_max_all, random, **kwargs
     ):
         """Make a proposal
 
@@ -134,8 +133,8 @@ class DistributionGenerateRJ(ReversibleJumpMove):
             all_inds (dict): Keys are ``branch_names``. Values are
                 np.ndarray[ntemps, nwalkers, nleaves_max]. These are the boolean
                 arrays marking which leaves are currently used within each walker.
-            min_k_all (list): Minimum values of leaf ount for each model. Must have same order as ``all_cords``. 
-            max_k_all (list): Maximum values of leaf ount for each model. Must have same order as ``all_cords``. 
+            nleaves_min_all (dict): Minimum values of leaf ount for each model. Must have same order as ``all_cords``. 
+            nleaves_max_all (dict): Maximum values of leaf ount for each model. Must have same order as ``all_cords``. 
             random (object): Current random state of the sampler.
             **kwargs (ignored): For modularity. 
 
@@ -158,17 +157,19 @@ class DistributionGenerateRJ(ReversibleJumpMove):
         all_inds_for_change = {}
 
         # loop over the models included here
-        assert len(min_k_all)
-        assert len(all_coords.keys()) == len(max_k_all)
-        for (name, inds), min_k, max_k in zip(all_inds.items(), min_k_all, max_k_all):
-            if min_k == max_k:
+        assert len(nleaves_min_all)
+        assert len(all_coords.keys()) == len(nleaves_max_all.keys())
+        for (name, inds) in all_inds.items():
+            nleaves_max = nleaves_max_all[name]
+            nleaves_min = nleaves_min_all[name]
+            if nleaves_min == nleaves_max:
                 continue
-            elif min_k > max_k:
-                raise ValueError("min_k is greater than max_k. Not allowed.")
+            elif nleaves_min > nleaves_max:
+                raise ValueError("nleaves_min is greater than nleaves_max. Not allowed.")
 
             # get the inds adjustment information
             all_inds_for_change[name] = self.get_model_change_proposal(
-                inds, random, min_k, max_k
+                inds, random, nleaves_min, nleaves_max
             )
 
         # loop through branches and propose new points from the prio
