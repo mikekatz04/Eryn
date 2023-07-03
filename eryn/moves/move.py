@@ -25,37 +25,43 @@ class Move(object):
             This object holds periodic information and methods for periodic parameters. It is passed to the parent class
             to moves so that all proposals can share and use periodic information.
             (default: ``None``)
-        gibbs_sampling_setup (str, tuple, dict, or list, optional): This sets the Gibbs Sampling setup if 
+        gibbs_sampling_setup (str, tuple, dict, or list, optional): This sets the Gibbs Sampling setup if
             desired. The Gibbs sampling setup is completely customizable down to the leaf and parameters.
-            All of the separate Gibbs sampling splits will be run within 1 call to this proposal. 
-            If ``None``, run all branches and all parameters. If ``str``, run all parameters within the 
-            branch given as the string. To enter a branch with a specific set of parameters, you can 
+            All of the separate Gibbs sampling splits will be run within 1 call to this proposal.
+            If ``None``, run all branches and all parameters. If ``str``, run all parameters within the
+            branch given as the string. To enter a branch with a specific set of parameters, you can
             provide a 2-tuple with the first entry as the branch name and the second entry as a 2D
             boolean array of shape ``(nleaves_max, ndim)`` that indicates which leaves and/or parameters
-            you want to run. ``None`` can also be entered in the second entry if all parameters are to be run. 
-            A dictionary is also possible with keys as branch names and values as the same 2D boolean array 
+            you want to run. ``None`` can also be entered in the second entry if all parameters are to be run.
+            A dictionary is also possible with keys as branch names and values as the same 2D boolean array
             of shape ``(nleaves_max, ndim)`` that indicates which leaves and/or parameters
             you want to run. ``None`` can also be entered in the value of the dictionary
-            if all parameters are to be run. If multiple keys are provided in the dictionary, those 
-            branches will be run simultaneously in the proposal as one iteration of the proposing loop. 
-            The final option is a list. This is how you make sure to run all the Gibbs splits. Each entry 
-            of the list can be a string, 2-tuple, or dictionary as described above. The list controls 
-            the order in which all of these splits are run. (default: ``None``) 
+            if all parameters are to be run. If multiple keys are provided in the dictionary, those
+            branches will be run simultaneously in the proposal as one iteration of the proposing loop.
+            The final option is a list. This is how you make sure to run all the Gibbs splits. Each entry
+            of the list can be a string, 2-tuple, or dictionary as described above. The list controls
+            the order in which all of these splits are run. (default: ``None``)
         prevent_swaps (bool, optional): If ``True``, do not perform temperature swaps in this move.
-        skip_supp_names_update (list, optional): List of names (`str`), that can be in any 
+        skip_supp_names_update (list, optional): List of names (`str`), that can be in any
             :class:`eryn.state.BranchSupplimental`,
-            to skip when updating states (:func:`Move.update`). This is useful if a 
+            to skip when updating states (:func:`Move.update`). This is useful if a
             large amount of memory is stored in the branch supplimentals.
         is_rj (bool, optional): If using RJ, this should be ``True``. (default: ``False``)
+        use_gpu (bool, optional): If ``True``, use ``CuPy`` for computations.
+            Use ``NumPy`` if ``use_gpu == False``. (default: ``False``)
+        random_seed (int, optional): Set the random seed in ``CuPy/NumPy`` if not ``None``.
+            (default: ``None``)
 
     Raises:
         ValueError: Incorrect inputs.
 
     Attributes:
         Note: All kwargs are stored as attributes.
-        num_proposals (int): the number of times this move has been run. This is needed to 
+        num_proposals (int): the number of times this move has been run. This is needed to
             compute the acceptance fraction.
-        gibbs_sampling_setup (list): All of the Gibbs sampling splits as described above. 
+        gibbs_sampling_setup (list): All of the Gibbs sampling splits as described above.
+        xp (obj): ``NumPy`` or ``CuPy``.
+        use_gpu (bool): Whether ``Cupy`` (``True``) is used or not (``False``).
 
     """
 
@@ -67,6 +73,8 @@ class Move(object):
         prevent_swaps=False,
         skip_supp_names_update=[],
         is_rj=False,
+        use_gpu=False,
+        random_seed=None,
         **kwargs
     ):
         # store all information
@@ -80,6 +88,18 @@ class Move(object):
         # keep track of the number of proposals
         self.num_proposals = 0
         self.time = 0
+
+        # change array library based on GPU usage
+        if use_gpu:
+            self.xp = xp
+        else:
+            self.xp = np
+
+        # set the random seet of the library if desired
+        if random_seed is not None:
+            self.xp.random.seed(random_seed)
+
+        self.use_gpu = use_gpu
 
     def _initialize_branch_setup(self, gibbs_sampling_setup, is_rj=False):
         """Initialize the gibbs setup properly."""
@@ -103,7 +123,6 @@ class Move(object):
 
             gibbs_sampling_setup_tmp = []
             for item in self.gibbs_sampling_setup:
-
                 # all the arguments are treated
 
                 # strings indicate single branch all parameters
@@ -194,20 +213,20 @@ class Move(object):
 
     def gibbs_sampling_setup_iterator(self, all_branch_names):
         """Iterate through the gibbs splits as a generator
-        
+
         Args:
             all_branch_names (list): List of all branch names.
 
         Yields:
             2-tuple: Gibbs sampling split.
                         First entry is the branch names to run and the second entry is the index
-                        into the leaves/parameters for this Gibbs split. 
+                        into the leaves/parameters for this Gibbs split.
 
         Raises:
             ValueError: Incorrect inputs.
 
         """
-        for (branch_names_run, inds_run) in zip(
+        for branch_names_run, inds_run in zip(
             self.branch_names_run_all, self.inds_run_all
         ):
             # adjust if branch_names_run is None
@@ -221,7 +240,7 @@ class Move(object):
         self, branch_names_run, inds_run, branches_coords, branches_inds
     ):
         """Setup proposals when gibbs sampling.
-        
+
         Get inputs into the proposal including Gibbs split information.
 
         Args:
@@ -234,9 +253,9 @@ class Move(object):
             tuple:  (coords, inds, at_least_one_proposal)
                         * Coords including Gibbs sampling info.
                         * ``inds`` including Gibbs sampling info.
-                        * ``at_least_one_proposal`` is boolean. It is passed out to 
+                        * ``at_least_one_proposal`` is boolean. It is passed out to
                             indicate there is at least one leaf available for the requested branch names.
-        
+
         """
         inds_going_for_proposal = {}
         coords_going_for_proposal = {}
@@ -278,7 +297,7 @@ class Move(object):
         branches_supplimental=None,
     ):
         """Set all not Gibbs-sampled parameters back
-        
+
         Args:
             branch_names_run (list): List of branch names to run concurrently.
             inds_run (list): List of ``inds`` arrays including Gibbs sampling information.
@@ -288,7 +307,7 @@ class Move(object):
             branches_inds (dict, optional): Dictionary of old inds arrays for all branches.
             new_branch_supps (dict, optional): Dictionary of new branches supplimental for all proposal branches.
             branches_supplimental (dict, optional): Dictionary of old branches supplimental for all branches.
-            
+
         """
         # add back any parameters that are fixed for this round
         for bnr, ir in zip(branch_names_run, inds_run):
@@ -309,7 +328,7 @@ class Move(object):
 
     def ensure_ordering(self, correct_key_order, q, new_inds, new_branch_supps):
         """Ensure proper order of key in dictionaries.
-        
+
         Args:
             correct_key_order (list): Keys in correct order.
             q (dict): Dictionary of new coordinate arrays for all branches.
@@ -318,7 +337,7 @@ class Move(object):
 
         Returns:
             Tuple: (q, new_inds, new_branch_supps) in correct key order.
-       
+
         """
         if list(q.keys()) != correct_key_order:
             q = {key: q[key] for key in correct_key_order}
@@ -336,13 +355,13 @@ class Move(object):
 
     def fix_logp_gibbs(self, branch_names_run, inds_run, logp, inds):
         """Set any walker with no leaves to have logp = -np.inf
-        
+
         Args:
             branch_names_run (list): List of branch names to run concurrently.
             inds_run (list): List of ``inds`` arrays including Gibbs sampling information.
             logp (np.ndarray): Log of the prior going into final posterior computation.
             inds (dict): Dictionary of ``inds`` arrays for all branches.
-            
+
         """
         total_leaves = np.zeros_like(logp)
         for bnr, ir in zip(branch_names_run, inds_run):
@@ -592,7 +611,6 @@ class Move(object):
 
         # sampler level supplimental
         if old_state.supplimental is not None:
-
             old_suppliment = old_state.supplimental.take_along_axis(subset, axis=1)
             new_suppliment = new_state.supplimental[:]
 
@@ -666,4 +684,3 @@ class Move(object):
             )
 
         return old_state
-

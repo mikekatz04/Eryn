@@ -31,3 +31,9 @@ Welcome to Eryn's documentation!
 
   tutorial/Eryn_tutorial
   tutorial/more_tutorials
+
+.. toctree::
+  :maxdepth: 4
+  :caption: General Information:
+  
+  general/todos

@@ -23,41 +23,23 @@ class StretchMove(RedBlueMove):
 
     Args:
         a (double, optional): The stretch scale parameter. (default: ``2.0``)
-        use_gpu (bool, optional): If ``True``, use ``CuPy`` for computations. 
-            Use ``NumPy`` if ``use_gpu == False``. (default: ``False``)
-        return_gpu (bool, optional): If ``use_gpu == True and return_gpu == True``, 
+        return_gpu (bool, optional): If ``use_gpu == True and return_gpu == True``,
             the returned arrays will be returned as ``CuPy`` arrays. (default: ``False``)
-        random_seed (int, optional): Set the random seed in ``CuPy/NumPy`` if not ``None``.
-            (default: ``None``)
         kwargs (dict, optional): Additional keyword arguments passed down through :class:`RedRedBlueMove`_.
 
     Attributes:
         a (double): The stretch scale parameter.
-        xp (obj): ``NumPy`` or ``CuPy``.
-        use_gpu (bool): Whether ``Cupy`` (``True``) is used or not (``False``). 
-        return_gpu (bool): Whether the array being returned is in ``Cupy`` (``True``) 
+        return_gpu (bool): Whether the array being returned is in ``Cupy`` (``True``)
             or ``NumPy`` (``False``).
-        
+
     """
 
     def __init__(
         self, a=2.0, use_gpu=False, return_gpu=False, random_seed=None, **kwargs
     ):
-
         # store scale factor
         self.a = a
 
-        # change array library based on GPU usage
-        if use_gpu:
-            self.xp = xp
-        else:
-            self.xp = np
-
-        # set the random seet of the library if desired
-        if random_seed is not None:
-            self.xp.random.seed(random_seed)
-
-        self.use_gpu = use_gpu
         self.return_gpu = return_gpu
 
         # pass kwargs up
@@ -67,17 +49,17 @@ class StretchMove(RedBlueMove):
         # super(StretchMove, self).__init__(**kwargs)
 
     def adjust_factors(self, factors, ndims_old, ndims_new):
-        """Adjust the ``factors`` based on changing dimensions. 
+        """Adjust the ``factors`` based on changing dimensions.
 
         ``factors`` is adjusted in place.
 
-        Args: 
+        Args:
             factors (xp.ndarray): Array of ``factors`` values. It is adjusted in place.
             ndims_old (int or xp.ndarray): Old dimension. If given as an ``xp.ndarray``,
                 must be broadcastable with ``factors``.
             ndims_new (int or xp.ndarray): New dimension. If given as an ``xp.ndarray``,
-                must be broadcastable with ``factors``.  
-        
+                must be broadcastable with ``factors``.
+
         """
         # adjusts in place
         logzz = factors / (ndims_old - 1.0)
@@ -85,8 +67,8 @@ class StretchMove(RedBlueMove):
 
     def choose_c_vals(self, c, Nc, Ns, ntemps, random_number_generator, **kwargs):
         """Get the compliment array
-        
-        The compliment represents the points that are used to move the actual points whose position is 
+
+        The compliment represents the points that are used to move the actual points whose position is
         changing.
 
         Args:
@@ -99,9 +81,15 @@ class StretchMove(RedBlueMove):
 
         Returns:
             np.ndarray: Compliment values to use with shape ``(ntemps, Ns, nleaves_max, ndim)``.
-        
+
         """
-        rint = random_number_generator.randint(Nc, size=(ntemps, Ns,))
+        rint = random_number_generator.randint(
+            Nc,
+            size=(
+                ntemps,
+                Ns,
+            ),
+        )
         c_temp = self.xp.take_along_axis(c, rint[:, :, None, None], axis=1)
         return c_temp
 
@@ -109,23 +97,23 @@ class StretchMove(RedBlueMove):
         self, name, s, c_temp, Ns, branch_shape, branch_i, random_number_generator
     ):
         """Get mew points in stretch move.
-        
+
         Takes compliment and uses it to get new points for those being proposed.
 
         Args:
             name (str): Branch name.
-            s (np.ndarray): Points to be moved with shape ``(ntemps, Ns, nleaves_max, ndim)``. 
+            s (np.ndarray): Points to be moved with shape ``(ntemps, Ns, nleaves_max, ndim)``.
             c (np.ndarray): Compliment to move points with shape ``(ntemps, Ns, nleaves_max, ndim)``.
-            Ns (int): Number to generate.  
+            Ns (int): Number to generate.
             branch_shape (tuple): Full branch shape.
-            branch_i (int): Which branch in the order is being run now. This ensures that the 
+            branch_i (int): Which branch in the order is being run now. This ensures that the
                 randomly generated quantity per walker remains the same over branches.
             random_number_generator (object): Random state object.
 
         Returns:
             np.ndarray: New proposed points with shape ``(ntemps, Ns, nleaves_max, ndim)``.
-            
-        
+
+
         """
         ntemps, nwalkers, nleaves_max, ndim_here = branch_shape
 
@@ -163,8 +151,6 @@ class StretchMove(RedBlueMove):
 
     def get_proposal(self, s_all, c_all, random, gibbs_ndim=None, **kwargs):
         """Generate stretch proposal
-
-        # TODO: add log proposal from ptemcee
 
         Args:
             s_all (dict): Keys are ``branch_names`` and values are coordinates
@@ -234,4 +220,3 @@ class StretchMove(RedBlueMove):
             self.adjust_factors(factors, ndim, gibbs_ndim)
 
         return newpos, factors
-

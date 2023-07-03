@@ -13,7 +13,7 @@ __all__ = ["ReversibleJumpMove"]
 
 class ReversibleJumpMove(Move):
     """
-    An abstract reversible jump move from # TODO: add citations.
+    An abstract reversible jump move.
 
     Args:
         nleaves_max (dict): Maximum number(s) of leaves for each model.
@@ -23,7 +23,7 @@ class ReversibleJumpMove(Move):
             Keys are ``branch_names`` and values are ``nleaves_min`` for each branch.
             This is a keyword argument, nut it is required.
         tune (bool, optional): If True, tune proposal. (Default: ``False``)
-        fix_change (int or None, optional): Fix the change in the number of leaves. Make them all 
+        fix_change (int or None, optional): Fix the change in the number of leaves. Make them all
             add a leaf or remove a leaf. This can be useful for some search functions. Options
             are ``+1`` or ``-1``. (default: ``None``)
 
@@ -43,10 +43,14 @@ class ReversibleJumpMove(Move):
         Move.__init__(self, is_rj=True, **kwargs)
 
         if nleaves_max is None or nleaves_min is None:
-            raise ValueError("Must provide nleaves_min and nleaves_max keyword arguments for RJ.")
+            raise ValueError(
+                "Must provide nleaves_min and nleaves_max keyword arguments for RJ."
+            )
 
         if not isinstance(nleaves_max, dict) or not isinstance(nleaves_min, dict):
-            raise ValueError("nleaves_min and nleaves_max must be provided as dictionaries with keys as branch names and values as the max or min leaf count.")
+            raise ValueError(
+                "nleaves_min and nleaves_max must be provided as dictionaries with keys as branch names and values as the max or min leaf count."
+            )
         # store info
         self.nleaves_max = nleaves_max
         self.nleaves_min = nleaves_min
@@ -71,7 +75,7 @@ class ReversibleJumpMove(Move):
             self.dr = DelayedRejection(dr_proposal, max_iter=dr_max_iter)
 
     def setup(self, branches_coords):
-        """Any setup for the proposal. 
+        """Any setup for the proposal.
 
         Args:
             branches_coords (dict): Keys are ``branch_names``. Values are
@@ -92,10 +96,10 @@ class ReversibleJumpMove(Move):
             all_inds (dict): Keys are ``branch_names``. Values are
                 np.ndarray[ntemps, nwalkers, nleaves_max]. These are the boolean
                 arrays marking which leaves are currently used within each walker.
-            nleaves_min_all (dict): Minimum values of leaf ount for each model. Must have same order as ``all_cords``. 
-            nleaves_max_all (dict): Maximum values of leaf ount for each model. Must have same order as ``all_cords``. 
+            nleaves_min_all (dict): Minimum values of leaf ount for each model. Must have same order as ``all_cords``.
+            nleaves_max_all (dict): Maximum values of leaf ount for each model. Must have same order as ``all_cords``.
             random (object): Current random state of the sampler.
-            **kwargs (ignored): For modularity. 
+            **kwargs (ignored): For modularity.
 
         Returns:
             tuple: Tuple containing proposal information.
@@ -117,12 +121,12 @@ class ReversibleJumpMove(Move):
 
     def get_model_change_proposal(self, inds, random, nleaves_min, nleaves_max):
         """Helper function for changing the model count by 1.
-        
+
         This helper function works with nested models where you want to add or remove
-        one leaf at a time. 
+        one leaf at a time.
 
         Args:
-            inds (np.ndarray): ``inds`` values for this specific branch with shape 
+            inds (np.ndarray): ``inds`` values for this specific branch with shape
                 ``(ntemps, nwalkers, nleaves_max)``.
             random (object): Current random state of the sampler.
             nleaves_min (int): Minimum allowable leaf count for this branch.
@@ -133,7 +137,7 @@ class ReversibleJumpMove(Move):
                     ``"+1"`` and ``"-1"`` indicate if a source is being added or removed, respectively.
                     The indexing information is a 2D array with shape ``(number changing, 3)``.
                     The length 3 is the index into each of the ``(ntemps, nwalkers, nleaves_max)``.
-        
+
         """
 
         raise NotImplementedError
@@ -162,10 +166,9 @@ class ReversibleJumpMove(Move):
 
         ntemps, nwalkers, _, _ = state.branches[all_branch_names[0]].shape
 
-        for (branch_names_run, inds_run) in self.gibbs_sampling_setup_iterator(
+        for branch_names_run, inds_run in self.gibbs_sampling_setup_iterator(
             all_branch_names
         ):
-
             # gibbs sampling is only over branches so pick out that info
             coords_propose_in = {
                 key: state.branches_coords[key] for key in branch_names_run
@@ -224,7 +227,7 @@ class ReversibleJumpMove(Move):
 
             edge_factors = np.zeros((ntemps, nwalkers))
             # get factors for edges
-            for (name, branch) in state.branches.items():
+            for name, branch in state.branches.items():
                 nleaves_max = self.nleaves_max[name]
                 nleaves_min = self.nleaves_min[name]
 
