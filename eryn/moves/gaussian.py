@@ -35,9 +35,10 @@ class GaussianMove(MHMove):
 
     """
 
-    def __init__(self, cov_all, mode="vector", factor=None, priors=None, swap_walkers=None, **kwargs):
+    def __init__(self, cov_all, mode="vector", factor=None, priors=None, indx_list=None, swap_walkers=None, **kwargs):
 
         self.all_proposal = {}
+        self.indx_list = indx_list
         for name, cov in cov_all.items():
             # Parse the proposal type.
             try:
@@ -105,7 +106,17 @@ class GaussianMove(MHMove):
             q[name] = coords.copy()
 
             # get new points
-            new_coords, _ = proposal_fn(coords[inds_here], random)
+            new_coords_tmp = proposal_fn(coords[inds_here], random)[0]
+            new_coords = coords[inds_here].copy()
+
+            if self.indx_list is not None:
+                nw = new_coords_tmp.shape[0]
+                for i in range(nw):
+                    temp_ind = np.random.randint(len(self.indx_list))
+                    new_coords[i,self.indx_list[temp_ind]] = new_coords_tmp[i,self.indx_list[temp_ind]]
+            else:
+                new_coords = new_coords_tmp.copy()
+            
             
             if self.swap_walkers is not None:
                 if np.random.uniform()<0.1:
