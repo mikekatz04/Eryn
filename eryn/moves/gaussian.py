@@ -38,7 +38,7 @@ class GaussianMove(MHMove):
     def __init__(self, cov_all, mode="vector", factor=None, priors=None, indx_list=None, swap_walkers=None, **kwargs):
 
         self.all_proposal = {}
-        self.indx_list = indx_list
+        
         for name, cov in cov_all.items():
             # Parse the proposal type.
             try:
@@ -65,8 +65,12 @@ class GaussianMove(MHMove):
                 proposal = _isotropic_proposal(np.sqrt(cov), factor, mode)
             self.all_proposal[name] = proposal
 
+        # priors to draw from
         self.priors = priors
+        # swap walkers
         self.swap_walkers = swap_walkers
+        # propose in blocks
+        self.indx_list = indx_list
         super(GaussianMove, self).__init__(**kwargs)
 
     def get_proposal(self, branches_coords, random, branches_inds=None, **kwargs):
@@ -109,25 +113,31 @@ class GaussianMove(MHMove):
             new_coords_tmp = proposal_fn(coords[inds_here], random)[0]
             new_coords = coords[inds_here].copy()
 
+            # swap walkers, this helps for the search phase
             if self.indx_list is not None:
+                indx_list_here = [el[1] for el in self.indx_list if el[0]==name]
                 nw = new_coords_tmp.shape[0]
                 for i in range(nw):
-                    temp_ind = np.random.randint(len(self.indx_list))
-                    new_coords[i,self.indx_list[temp_ind]] = new_coords_tmp[i,self.indx_list[temp_ind]]
+                    temp_ind = np.random.randint(len(indx_list_here))
+                    if indx_list_here[temp_ind] is not None:
+                        new_coords[i,indx_list_here[temp_ind][0]] = new_coords_tmp[i,indx_list_here[temp_ind][0] ]
+                    else:
+                        new_coords[i,:] = new_coords_tmp[i,:]
             else:
                 new_coords = new_coords_tmp.copy()
             
-            
+            # swap walkers, this helps for the search phase
             if self.swap_walkers is not None:
-                if np.random.uniform()<0.1:
+                if np.random.uniform()>0.9:
                     ind_shuffle = np.arange(new_coords.shape[0])
                     np.random.shuffle(ind_shuffle)
                     new_coords = new_coords[ind_shuffle].copy()
             
-            # if self.priors is not None:
-            #     if np.random.uniform()>0.9:
-            #         for var in range(new_coords.shape[-1]):
-            #             new_coords[:,var] = self.priors[name][var].rvs(size=new_coords[:,var].shape[0])
+            # draw from the prior 10% of the time
+            if self.priors is not None:
+                if np.random.uniform()>0.9:
+                    for var in range(new_coords.shape[-1]):
+                        new_coords[:,var] = self.priors[name][var].rvs(size=new_coords[:,var].shape[0])
 
             # put into coords in proper location
             q[name][inds_here] = new_coords.copy()
