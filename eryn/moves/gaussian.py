@@ -10,10 +10,10 @@ __all__ = ["GaussianMove"]
 class GaussianMove(MHMove):
     """A Metropolis step with a Gaussian proposal function.
 
-    This class is heavily based on the same class in ``emcee``. 
+    This class is heavily based on the same class in ``emcee``.
 
     Args:
-        cov (dict): The covariance of the proposal function. The keys are branch names and the 
+        cov (dict): The covariance of the proposal function. The keys are branch names and the
             values are covariance information. This information can be provided as a scalar,
             vector, or matrix and the proposal will be assumed isotropic,
             axis-aligned, or general, respectively.
@@ -36,7 +36,6 @@ class GaussianMove(MHMove):
     """
 
     def __init__(self, cov_all, mode="vector", factor=None, **kwargs):
-
         self.all_proposal = {}
         for name, cov in cov_all.items():
             # Parse the proposal type.
@@ -127,7 +126,6 @@ class GaussianMove(MHMove):
 
 
 class _isotropic_proposal(object):
-
     allowed_modes = ["vector", "random", "sequential"]
 
     def __init__(self, scale, factor, mode):
@@ -178,7 +176,6 @@ class _diagonal_proposal(_isotropic_proposal):
 
 
 class _proposal(_isotropic_proposal):
-
     allowed_modes = ["vector"]
 
     def get_updated_vector(self, rng, x0):

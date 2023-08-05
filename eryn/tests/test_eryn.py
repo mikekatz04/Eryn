@@ -8,7 +8,7 @@ from eryn.ensemble import EnsembleSampler
 from eryn.state import State
 from eryn.prior import ProbDistContainer, uniform_dist
 from eryn.utils import TransformContainer
-from eryn.moves import GaussianMove, StretchMove, CombineMove, DistributionGenerateRJ 
+from eryn.moves import GaussianMove, StretchMove, CombineMove, DistributionGenerateRJ
 from eryn.utils.utility import groups_from_inds
 from eryn.backends import HDFBackend
 
@@ -22,6 +22,7 @@ np.random.seed(42)
 
 import corner
 
+
 # Gaussian likelihood
 def log_like_fn(x, mu, invcov):
     diff = x - mu
@@ -29,7 +30,7 @@ def log_like_fn(x, mu, invcov):
 
 
 def gaussian_pulse(x, a, b, c):
-    f_x = a * np.exp(-((x - b) ** 2) / (2 * c ** 2))
+    f_x = a * np.exp(-((x - b) ** 2) / (2 * c**2))
     return f_x
 
 
@@ -41,7 +42,6 @@ def combine_gaussians(t, params):
 
 
 def log_like_fn_gauss_pulse(params, t, data, sigma):
-
     template = combine_gaussians(t, params)
 
     ll = -0.5 * np.sum(((template - data) / sigma) ** 2, axis=-1)
@@ -49,7 +49,7 @@ def log_like_fn_gauss_pulse(params, t, data, sigma):
 
 
 def gaussian_pulse(x, a, b, c):
-    f_x = a * np.exp(-((x - b) ** 2) / (2 * c ** 2))
+    f_x = a * np.exp(-((x - b) ** 2) / (2 * c**2))
     return f_x
 
 
@@ -73,7 +73,6 @@ def combine_sine(t, params):
 
 
 def log_like_fn_gauss_and_sine(params_both, t, data, sigma):
-
     params_gauss, params_sine = params_both
     template = np.zeros_like(t)
 
@@ -89,9 +88,8 @@ def log_like_fn_gauss_and_sine(params_both, t, data, sigma):
 
 class ErynTest(unittest.TestCase):
     def test_base(self):
-
         ndim = 5
-        nwalkers = 100
+        nwalkers = 99
 
         means = np.zeros(ndim)  # np.random.rand(ndim)
 
@@ -106,7 +104,11 @@ class ErynTest(unittest.TestCase):
         priors = ProbDistContainer(priors_in)
 
         ensemble = EnsembleSampler(
-            nwalkers, ndim, log_like_fn, priors, args=[means, invcov],
+            nwalkers,
+            ndim,
+            log_like_fn,
+            priors,
+            args=[means, invcov],
         )
 
         coords = priors.rvs(size=(nwalkers,))
@@ -165,7 +167,12 @@ class ErynTest(unittest.TestCase):
         tempering_kwargs = dict(ntemps=ntemps)
 
         # randomize throughout prior
-        coords = priors.rvs(size=(ntemps, nwalkers,))
+        coords = priors.rvs(
+            size=(
+                ntemps,
+                nwalkers,
+            )
+        )
 
         # initialize sampler
         ensemble_pt = EnsembleSampler(
@@ -190,7 +197,6 @@ class ErynTest(unittest.TestCase):
         ll = ensemble_pt.backend.get_log_like()
 
     def test_rj(self):
-
         nwalkers = 20
         ntemps = 8
         ndim = 3
@@ -239,7 +245,7 @@ class ErynTest(unittest.TestCase):
             )
 
         # make sure to start near the proper setup
-        inds = {"gauss": np.zeros((ntemps, nwalkers, nleaves_max['gauss']), dtype=bool)}
+        inds = {"gauss": np.zeros((ntemps, nwalkers, nleaves_max["gauss"]), dtype=bool)}
 
         # turn False -> True for any binary in the sampler
         inds["gauss"][:, :, : len(gauss_inj_params)] = True
@@ -259,7 +265,14 @@ class ErynTest(unittest.TestCase):
 
         priors_gen = {"gauss": ProbDistContainer(priors["gauss"])}
         moves = GaussianMove(cov)
-        rj_moves = [DistributionGenerateRJ(priors_gen, nleaves_min=nleaves_min, nleaves_max=nleaves_max), DistributionGenerateRJ(priors_gen, nleaves_min=nleaves_min, nleaves_max=nleaves_max)]
+        rj_moves = [
+            DistributionGenerateRJ(
+                priors_gen, nleaves_min=nleaves_min, nleaves_max=nleaves_max
+            ),
+            DistributionGenerateRJ(
+                priors_gen, nleaves_min=nleaves_min, nleaves_max=nleaves_max
+            ),
+        ]
 
         ensemble = EnsembleSampler(
             nwalkers,
@@ -302,7 +315,6 @@ class ErynTest(unittest.TestCase):
         means = np.asarray(gauss_inj_params)[:, 1]
 
     def test_rj_multiple_branches(self):
-
         nwalkers = 20
         ntemps = 8
         ndims = {"gauss": 3, "sine": 3}
@@ -414,7 +426,7 @@ class ErynTest(unittest.TestCase):
             nleaves_min=nleaves_min,
             moves=moves,
             rj_moves=True,  # basic generation of new leaves from the prior
-            backend=fp
+            backend=fp,
         )
 
         log_prior = ensemble.compute_log_prior(coords, inds=inds)
@@ -453,7 +465,6 @@ class ErynTest(unittest.TestCase):
         os.remove(fp)
 
     def test_gibbs_sampling(self):
-
         nwalkers = 20
         ntemps = 8
         ndims = {"gauss": 3, "sine": 3}
@@ -611,7 +622,7 @@ class ErynTest(unittest.TestCase):
         # this will do transform lambda x, y: (x**2, y**2) before transform1
         parameter_transforms = {
             0: lambda x: np.log(x),
-            (1, 2): lambda x, y: (x ** 2, y ** 2),
+            (1, 2): lambda x, y: (x**2, y**2),
             (0, 2): transform1,
         }
 
@@ -644,7 +655,7 @@ class ErynTest(unittest.TestCase):
         parameter_transforms1 = {0: lambda x: np.log(x)}
 
         # setup transforms for x2
-        parameter_transforms2 = {(1, 2): lambda x, y: (x ** 2, y ** 2)}
+        parameter_transforms2 = {(1, 2): lambda x, y: (x**2, y**2)}
 
         # fill dict for x1
         fill_dict1 = {
@@ -786,7 +797,7 @@ class ErynTest(unittest.TestCase):
         np.random.seed(42)
 
         def gaussian_pulse(x, a, b, c):
-            f_x = a * np.exp(-((x - b) ** 2) / (2 * c ** 2))
+            f_x = a * np.exp(-((x - b) ** 2) / (2 * c**2))
             return f_x
 
         def combine_gaussians(t, params):
@@ -796,7 +807,6 @@ class ErynTest(unittest.TestCase):
             return template
 
         def log_like_fn_gauss_pulse(params, t, data, sigma):
-
             template = combine_gaussians(t, params)
 
             ll = -0.5 * np.sum(((template - data) / sigma) ** 2, axis=-1)
@@ -962,7 +972,7 @@ class ErynTest(unittest.TestCase):
 
     def test_mt_rj(self):
         def gaussian_pulse(x, a, b, c):
-            f_x = a * np.exp(-((x - b) ** 2) / (2 * c ** 2))
+            f_x = a * np.exp(-((x - b) ** 2) / (2 * c**2))
             return f_x
 
         def combine_gaussians(t, params):
@@ -972,7 +982,6 @@ class ErynTest(unittest.TestCase):
             return template
 
         def log_like_fn_gauss_pulse(params, t, data, sigma):
-
             template = combine_gaussians(t, params)
 
             ll = -0.5 * np.sum(((template - data) / sigma) ** 2, axis=-1)
@@ -1051,7 +1060,11 @@ class ErynTest(unittest.TestCase):
         from eryn.moves import MTDistGenMoveRJ
 
         mt_rj_prior = MTDistGenMoveRJ(
-            priors, nleaves_max={"gauss": nleaves_max}, nleaves_min={"gauss": nleaves_min}, num_try=25, rj=True
+            priors,
+            nleaves_max={"gauss": nleaves_max},
+            nleaves_min={"gauss": nleaves_min},
+            num_try=25,
+            rj=True,
         )
 
         ensemble = EnsembleSampler(
@@ -1092,8 +1105,6 @@ class ErynTest(unittest.TestCase):
         cov = np.array([[0.8, -0.2], [-0.2, 0.4]])
         from scipy.stats import multivariate_normal
 
-        priors_in = {
-            (0, 1): multivariate_normal(cov=cov)
-        }
+        priors_in = {(0, 1): multivariate_normal(cov=cov)}
         priors = ProbDistContainer(priors_in)
         prior_vals = priors.rvs(size=12)

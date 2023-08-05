@@ -16,7 +16,7 @@ class RedBlueMove(Move, ABC):
     An abstract red-blue ensemble move with parallelization as described in
     `Foreman-Mackey et al. (2013) <https://arxiv.org/abs/1202.3665>`_.
 
-    This class is heavily based on the original from ``emcee``. 
+    This class is heavily based on the original from ``emcee``.
 
     Args:
         nsplits (int, optional): The number of sub-ensembles to use. Each
@@ -47,8 +47,8 @@ class RedBlueMove(Move, ABC):
         self.randomize_split = randomize_split
 
     def setup(self, branches_coords):
-        """Any setup for the proposal. 
-        
+        """Any setup for the proposal.
+
         Args:
             branches_coords (dict): Keys are ``branch_names``. Values are
                 np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent
@@ -62,7 +62,7 @@ class RedBlueMove(Move, ABC):
 
         Args:
             sample (dict): Keys are ``branch_names``. Values are
-                np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. 
+                np.ndarray[ntemps, nwalkers, nleaves_max, ndim].
             complement (dict): Keys are ``branch_names``. Values are lists of other
                 other np.ndarray[ntemps, nwalkers - subset size, nleaves_max, ndim] from
                 all other subsets. This is the compliment whose ``coords`` are
@@ -127,10 +127,9 @@ class RedBlueMove(Move, ABC):
         ntemps, nwalkers, _, _ = state.branches[all_branch_names[0]].shape
 
         # get gibbs sampling information
-        for (branch_names_run, inds_run) in self.gibbs_sampling_setup_iterator(
+        for branch_names_run, inds_run in self.gibbs_sampling_setup_iterator(
             all_branch_names
         ):
-
             # setup proposals based on Gibbs sampling
             (
                 coords_going_for_proposal,
@@ -146,19 +145,19 @@ class RedBlueMove(Move, ABC):
             # prepare accepted fraction
             accepted_here = np.zeros((ntemps, nwalkers), dtype=bool)
             for split in range(self.nsplits):
-
                 # get split information
                 S1 = inds == split
                 num_total_here = np.sum(inds == split)
                 nwalkers_here = np.sum(S1[0])
 
                 all_inds_shaped = all_inds[S1].reshape(ntemps, nwalkers_here)
-                fixed_inds_shaped = all_inds[~S1].reshape(ntemps, nwalkers_here)
 
                 # inds including gibbs information
                 new_inds = {
                     name: np.take_along_axis(
-                        state.branches[name].inds, all_inds_shaped[:, :, None], axis=1,
+                        state.branches[name].inds,
+                        all_inds_shaped[:, :, None],
+                        axis=1,
                     )
                     for name in state.branches
                 }
@@ -290,7 +289,10 @@ class RedBlueMove(Move, ABC):
                 # if gibbs sampling, this will say it is accepted if
                 # any of the gibbs proposals were accepted
                 np.put_along_axis(
-                    accepted_here, all_inds_shaped, keep, axis=1,
+                    accepted_here,
+                    all_inds_shaped,
+                    keep,
+                    axis=1,
                 )
 
                 # readout for total
@@ -322,4 +324,3 @@ class RedBlueMove(Move, ABC):
             state = self.temperature_control.temper_comps(state)
 
         return state, accepted
-
