@@ -210,17 +210,7 @@ class MyRJMove(MHMove):
 
 from itertools import permutations
 import random
-from sklearn.mixture import BayesianGaussianMixture
 
-kwargs_BMM = dict(
-n_components=5,
-covariance_type="full",
-weight_concentration_prior=1e2,
-weight_concentration_prior_type="dirichlet_process",
-mean_precision_prior=1e-2,
-init_params="kmeans",
-max_iter=100,
-)
 class proposal_template(object):
 
     def __init__(self, model, proposal, hypermod=False, indx_list=None, samp_cov=None):
@@ -546,8 +536,6 @@ def get_fisher_eigenvectors(params, par_names, par_names_to_perturb, pta, epsilo
         return np.eye(len(par_names_to_perturb))*0.5
 
 
-from numba import njit
-@njit()
 def reflect_cosines_array(cos_ins,angle_ins,rotfac=np.pi,modfac=2*np.pi):
     """helper to reflect cosines of coordinates around poles  to get them between -1 and 1,
         which requires also rotating the signal by rotfac each time, then mod the angle by modfac"""

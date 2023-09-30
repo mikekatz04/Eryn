@@ -35,7 +35,7 @@ class GaussianMove(MHMove):
 
     """
 
-    def __init__(self, cov_all, mode="vector", factor=None, priors=None, indx_list=None, swap_walkers=None, **kwargs):
+    def __init__(self, cov_all, mode="AM", factor=None, priors=None, indx_list=None, swap_walkers=None, **kwargs):
 
         self.all_proposal = {}
         
@@ -54,7 +54,11 @@ class GaussianMove(MHMove):
                 elif len(cov.shape) == 2 and cov.shape[0] == cov.shape[1]:
                     # The full, square covariance matrix was given.
                     ndim = cov.shape[0]
-                    proposal = _proposal(cov, factor, mode)#eigproposal(cov) #
+                    
+                    if mode=="Gaussian":
+                        proposal = _proposal(cov, factor,"vector")
+                    if mode=="AM":
+                        proposal = AM_proposal(cov, factor, "vector")
 
                 else:
                     raise ValueError("Invalid proposal scale dimensions")
@@ -145,8 +149,9 @@ class GaussianMove(MHMove):
         # handle periodic parameters
         if self.periodic is not None:
             for name, tmp in q.items():
-                q[name] = self.periodic.wrap({name: tmp.reshape(ntemps * nwalkers, nleaves_max, tmp.shape[-1] )})
-                q[name] = tmp.reshape(ntemps, nwalkers, nleaves_max, tmp.shape[-1])
+                ntemps, nwalkers, nleaves_max, ndim = tmp.shape
+                q[name] = self.periodic.wrap({name: tmp.reshape(ntemps * nwalkers, nleaves_max, ndim)})
+                q[name] = tmp.reshape(ntemps, nwalkers, nleaves_max, ndim)
 
         return q, np.zeros((ntemps, nwalkers))
 
@@ -221,3 +226,50 @@ class eigproposal():
         ind = rng.randint(nd,size=nw)
 
         return x0 + (factors[None,:] * self.v[:,ind] / self.w[ind]).T, 1
+
+
+
+def propose_AM(x0, rng, tmp_cov, scale):
+    """
+    Adaptive Jump Proposal
+    """
+    new_pos = x0.copy()
+    nw, nd = new_pos.shape
+    U, S, v = np.linalg.svd(tmp_cov)
+
+    # adjust step size
+    prob = rng.random()
+
+    # # large jump
+    # if prob > 0.97:
+    #     scale = 10.0
+
+    # # small jump
+    # elif prob > 0.9:
+    #     scale = 0.2
+
+    # # standard medium jump
+    # else:
+    #     scale = 1.0
+    
+    
+    # go in eigen basis
+    y = np.dot(U.T,x0.T).T # np.asarray([np.dot(U.T, x0[i]) for i in range(nw)])
+    # choose a random parameter in the uncorrelated basis
+    ind_vec = np.arange(nd)
+    np.random.shuffle(ind_vec)
+    rand_j = ind_vec #[:np.random.randint(1,nd)]
+    y[:,rand_j] += scale * np.random.normal(size=nw)[:,None] * np.sqrt(S[None,rand_j]) * 2.38 / np.sqrt(nd)
+    # go back to the basis
+    # if np.random.uniform()>0.5:
+    new_pos = np.dot(U,y.T).T # np.asarray([np.dot(U, y[i]) for i in range(nw)]) 
+
+    return new_pos
+
+
+class AM_proposal(_isotropic_proposal):
+
+    allowed_modes = ["vector"]
+
+    def get_updated_vector(self, rng, x0):
+        return propose_AM(x0, rng, self.scale, self.get_factor(rng))
