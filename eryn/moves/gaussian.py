@@ -35,7 +35,7 @@ class GaussianMove(MHMove):
 
     """
 
-    def __init__(self, cov_all, mode="AM", factor=None, priors=None, indx_list=None, swap_walkers=None, **kwargs):
+    def __init__(self, cov_all, mode="AM", factor=None, priors=None, indx_list=None, swap_walkers=False, **kwargs):
 
         self.all_proposal = {}
         
@@ -131,7 +131,7 @@ class GaussianMove(MHMove):
                 new_coords = new_coords_tmp.copy()
             
             # swap walkers, this helps for the search phase
-            if self.swap_walkers is not None:
+            if self.swap_walkers:
                 if np.random.uniform()>0.9:
                     ind_shuffle = np.arange(new_coords.shape[0])
                     np.random.shuffle(ind_shuffle)
