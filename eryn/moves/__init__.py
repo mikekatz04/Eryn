@@ -8,7 +8,7 @@ from .gaussian import GaussianMove
 from .mh import MHMove
 from .move import Move
 from .red_blue import RedBlueMove
-from .stretch import StretchMove
+from .stretch import StretchMove, DIMEMove
 
 # from .walk import WalkMove
 from .tempering import TemperatureControl
@@ -39,4 +39,5 @@ __all__ = [
     "GroupMove",
     "GroupStretchMove",
     "CombineMove",
+    "DIMEMove"
 ]

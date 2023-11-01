@@ -99,6 +99,7 @@ class RedBlueMove(Move, ABC):
                 The second return value is the accepted count array.
 
         """
+
         # Check that the dimensions are compatible.
         ndim_total = 0
         for branch in state.branches.values():
@@ -153,7 +154,7 @@ class RedBlueMove(Move, ABC):
                 nwalkers_here = np.sum(S1[0])
 
                 all_inds_shaped = all_inds[S1].reshape(ntemps, nwalkers_here)
-                fixed_inds_shaped = all_inds[~S1].reshape(ntemps, nwalkers_here)
+                # fixed_inds_shaped = all_inds[~S1].reshape(ntemps, nwalkers_here)
 
                 # inds including gibbs information
                 new_inds = {
@@ -205,6 +206,14 @@ class RedBlueMove(Move, ABC):
                     else:
                         # nleaves * ndim
                         gibbs_ndim += np.prod(state.branches[brn].shape[-2:])
+
+                prev_logl = np.take_along_axis(state.log_like, all_inds_shaped, axis=1)
+                prev_logp = np.take_along_axis(state.log_prior, all_inds_shaped, axis=1)
+
+                # takes care of tempering
+                prev_logP = self.compute_log_posterior(prev_logl, prev_logp)
+                # store the log post
+                self.lprobs = np.asarray(prev_logP,dtype=float)
 
                 # Get the move-specific proposal.
                 q, factors = self.get_proposal(
@@ -275,14 +284,7 @@ class RedBlueMove(Move, ABC):
                     warnings.warn("Getting Nan in likelihood computation.")
 
                 logP = self.compute_log_posterior(logl, logp)
-
-                prev_logl = np.take_along_axis(state.log_like, all_inds_shaped, axis=1)
-
-                prev_logp = np.take_along_axis(state.log_prior, all_inds_shaped, axis=1)
-
-                # takes care of tempering
-                prev_logP = self.compute_log_posterior(prev_logl, prev_logp)
-
+                
                 lnpdiff = factors + logP - prev_logP
 
                 keep = lnpdiff > np.log(model.random.rand(ntemps, nwalkers_here))
