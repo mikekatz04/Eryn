@@ -131,11 +131,11 @@ class GaussianMove(MHMove):
                 new_coords = new_coords_tmp.copy()
             
             # swap walkers, this helps for the search phase
-            if self.swap_walkers:
-                if np.random.uniform()>0.9:
-                    ind_shuffle = np.arange(new_coords.shape[0])
-                    np.random.shuffle(ind_shuffle)
-                    new_coords = new_coords[ind_shuffle].copy()
+            # if self.swap_walkers:
+            #     if np.random.uniform()>0.9:
+            #         ind_shuffle = np.arange(new_coords.shape[0])
+            #         np.random.shuffle(ind_shuffle)
+            #         new_coords = new_coords[ind_shuffle].copy()
             
             # draw from the prior 10% of the time
             if self.priors is not None:
