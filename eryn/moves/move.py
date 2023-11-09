@@ -477,6 +477,8 @@ class Move(object):
             :class:`eryn.state.State`: ``old_state`` with accepted points added from ``new_state``.
 
         """
+
+        # TODO: update this to be use (tuples of inds) ??
         if subset is None:
             # subset of everything
             subset = np.tile(
@@ -648,11 +650,11 @@ class Move(object):
             name: branch.coords for name, branch in new_state.branches.items()
         }
 
-        temp_change_coords = {
-            name: new_coords[name] * (accepted_temp[:, :, None, None])
-            + old_coords[name] * (~accepted_temp[:, :, None, None])
-            for name in old_coords
-        }
+        # change to copy then fill due to issue of adding Nans
+        temp_change_coords = {name: old_coords[name].copy() for name in old_coords}
+
+        for name in temp_change_coords:
+            temp_change_coords[name][accepted_temp] = new_coords[name][accepted_temp]
 
         [
             np.put_along_axis(
