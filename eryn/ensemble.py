@@ -1161,19 +1161,19 @@ class EnsembleSampler(object):
 
         """
 
-        # Check that the parameters are in physical ranges.
-        for ptemp in coords.values():
-            if np.any(np.isinf(ptemp)):
-                raise ValueError("At least one parameter value was infinite")
-            if np.any(np.isnan(ptemp)):
-                raise ValueError("At least one parameter value was NaN")
-
         # if inds not provided, use all
         if inds is None:
             inds = {
                 name: np.full(coords[name].shape[:-1], True, dtype=bool)
                 for name in coords
             }
+
+        # Check that the parameters are in physical ranges.
+        for name, ptemp in coords.items():
+            if np.any(np.isinf(ptemp[inds[name]])):
+                raise ValueError("At least one parameter value was infinite")
+            if np.any(np.isnan(ptemp[inds[name]])):
+                raise ValueError("At least one parameter value was NaN")
 
         # if no prior values are added, compute_prior
         # this is necessary to ensure Likelihood is not evaluated outside of the prior

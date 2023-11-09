@@ -779,10 +779,11 @@ keys.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.get_evidence_estimate">
-<span class="sig-name descname"><span class="pre">get_evidence_estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_evidence_estimate" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_evidence_estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'therodynamic'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">ss_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_evidence_estimate" title="Permalink to this definition"></a></dt>
 <dd><p>Get an estimate of the evidence</p>
 <p>This function gets the sample information and uses
-<code class="xref py py-func docutils literal notranslate"><span class="pre">thermodynamic_integration_log_evidence()</span></code> to compute the evidence estimate.</p>
+<code class="xref py py-func docutils literal notranslate"><span class="pre">thermodynamic_integration_log_evidence()</span></code> or
+<code class="xref py py-func docutils literal notranslate"><span class="pre">stepping_stone_log_evidence()</span></code> to compute the evidence estimate.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -794,6 +795,8 @@ estimated time is in units of steps, not thinned steps.
 (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
 <li><p><strong>return_error</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, return the error associated
 with the log evidence estimate. (default: <code class="docutils literal notranslate"><span class="pre">True</span></code>)</p></li>
+<li><p><strong>method</strong> (<em>string</em><em>, </em><em>optional</em>) – Method to compute the evidence. Available
+methods are the ‘thermodynamic’ and ‘stepping-stone’ (default: <code class="docutils literal notranslate"><span class="pre">thermodynamic</span></code>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -806,6 +809,46 @@ with the log evidence estimate. (default: <code class="docutils literal notransl
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>double or tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.backends.Backend.get_gelman_rubin_convergence_diagnostic">
+<span class="sig-name descname"><span class="pre">get_gelman_rubin_convergence_diagnostic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">psrf_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_gelman_rubin_convergence_diagnostic" title="Permalink to this definition"></a></dt>
+<dd><p>The Gelman - Rubin convergence diagnostic.
+A general approach to monitoring convergence of MCMC output of multiple walkers.
+The function makes a comparison of within-chain and between-chain variances.
+A large deviation between these two variances indicates non-convergence, and
+the output [Rhat] deviates from unity.</p>
+<p>Based on
+a. Brooks, SP. and Gelman, A. (1998) General methods for monitoring convergence
+of iterative simulations. Journal of Computational and Graphical Statistics, 7, 434-455
+b. Gelman, A and Rubin, DB (1992) Inference from iterative simulation using multiple sequences,
+Statistical Science, 7, 457-511.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>C</strong> (<em>np.ndarray</em><em>[</em><em>nwalkers</em><em>, </em><em>nsamples</em><em>, </em><em>ndim</em><em>]</em>) – The parameter traces. The MCMC chains.</p></li>
+<li><p><strong>doprint</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to print the results on screen.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>discard (int, optional): Discard the first <code class="docutils literal notranslate"><span class="pre">discard</span></code> steps in</dt><dd><p>the chain as burn-in. (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p>
+</dd>
+<dt>thin (int, optional): Use only every <code class="docutils literal notranslate"><span class="pre">thin</span></code> steps from the</dt><dd><p>chain. The returned estimate is multiplied by <code class="docutils literal notranslate"><span class="pre">thin</span></code> so the
+estimated time is in units of steps, not thinned steps.
+(default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p>
+</dd>
+</dl>
+<p>doprint (bool, optional): Flag to print a table with the results, per temperature.</p>
+<dl class="simple">
+<dt>Returns</dt><dd><dl class="simple">
+<dt>dict:   <code class="docutils literal notranslate"><span class="pre">Rhat_all_branches</span></code>:</dt><dd><p>Returns an estimate of the Gelman-Rubin convergence diagnostic <code class="docutils literal notranslate"><span class="pre">Rhat</span></code>,
+per temperature, stored in a dictionary, per branch name.</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
@@ -1377,10 +1420,11 @@ across the branches.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_evidence_estimate">
-<span class="sig-name descname"><span class="pre">get_evidence_estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_evidence_estimate" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_evidence_estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'therodynamic'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">ss_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_evidence_estimate" title="Permalink to this definition"></a></dt>
 <dd><p>Get an estimate of the evidence</p>
 <p>This function gets the sample information and uses
-<code class="xref py py-func docutils literal notranslate"><span class="pre">thermodynamic_integration_log_evidence()</span></code> to compute the evidence estimate.</p>
+<code class="xref py py-func docutils literal notranslate"><span class="pre">thermodynamic_integration_log_evidence()</span></code> or
+<code class="xref py py-func docutils literal notranslate"><span class="pre">stepping_stone_log_evidence()</span></code> to compute the evidence estimate.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1392,6 +1436,8 @@ estimated time is in units of steps, not thinned steps.
 (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
 <li><p><strong>return_error</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, return the error associated
 with the log evidence estimate. (default: <code class="docutils literal notranslate"><span class="pre">True</span></code>)</p></li>
+<li><p><strong>method</strong> (<em>string</em><em>, </em><em>optional</em>) – Method to compute the evidence. Available
+methods are the ‘thermodynamic’ and ‘stepping-stone’ (default: <code class="docutils literal notranslate"><span class="pre">thermodynamic</span></code>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1404,6 +1450,46 @@ with the log evidence estimate. (default: <code class="docutils literal notransl
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>double or tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_gelman_rubin_convergence_diagnostic">
+<span class="sig-name descname"><span class="pre">get_gelman_rubin_convergence_diagnostic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">psrf_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_gelman_rubin_convergence_diagnostic" title="Permalink to this definition"></a></dt>
+<dd><p>The Gelman - Rubin convergence diagnostic.
+A general approach to monitoring convergence of MCMC output of multiple walkers.
+The function makes a comparison of within-chain and between-chain variances.
+A large deviation between these two variances indicates non-convergence, and
+the output [Rhat] deviates from unity.</p>
+<p>Based on
+a. Brooks, SP. and Gelman, A. (1998) General methods for monitoring convergence
+of iterative simulations. Journal of Computational and Graphical Statistics, 7, 434-455
+b. Gelman, A and Rubin, DB (1992) Inference from iterative simulation using multiple sequences,
+Statistical Science, 7, 457-511.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>C</strong> (<em>np.ndarray</em><em>[</em><em>nwalkers</em><em>, </em><em>nsamples</em><em>, </em><em>ndim</em><em>]</em>) – The parameter traces. The MCMC chains.</p></li>
+<li><p><strong>doprint</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to print the results on screen.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>discard (int, optional): Discard the first <code class="docutils literal notranslate"><span class="pre">discard</span></code> steps in</dt><dd><p>the chain as burn-in. (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p>
+</dd>
+<dt>thin (int, optional): Use only every <code class="docutils literal notranslate"><span class="pre">thin</span></code> steps from the</dt><dd><p>chain. The returned estimate is multiplied by <code class="docutils literal notranslate"><span class="pre">thin</span></code> so the
+estimated time is in units of steps, not thinned steps.
+(default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p>
+</dd>
+</dl>
+<p>doprint (bool, optional): Flag to print a table with the results, per temperature.</p>
+<dl class="simple">
+<dt>Returns</dt><dd><dl class="simple">
+<dt>dict:   <code class="docutils literal notranslate"><span class="pre">Rhat_all_branches</span></code>:</dt><dd><p>Returns an estimate of the Gelman-Rubin convergence diagnostic <code class="docutils literal notranslate"><span class="pre">Rhat</span></code>,
+per temperature, stored in a dictionary, per branch name.</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
