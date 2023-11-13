@@ -71,7 +71,7 @@ class ParaBackend(object):
     def reset(
         self,
         ndim: int,
-        nwalker: int,
+        nwalkers: int,
         ngroups: int,
         ntemps: int=1,
         branch_name: str="model_0",
@@ -596,7 +596,7 @@ class ParaBackend(object):
                 "invalid inds dimensions for model {1} with shape {2}; expected {0}".format(
                     (ngroup1,),
                     self.branch_name,
-                    state.branches[self.].groups_running.shape,
+                    state.branches[self.branch_name].groups_running.shape,
                 )
             )
 

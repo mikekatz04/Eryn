@@ -842,6 +842,7 @@ class ParaState(object):
         # check if coords is a State object
         if hasattr(coords, "branches"):
             self.branches = dc(coords.branches)
+            self.groups_running = dc(coords.groups_running)
             self.log_like = dc(coords.log_like)
             self.log_prior = dc(coords.log_prior)
             self.blobs = dc(coords.blobs)
@@ -872,13 +873,7 @@ class ParaState(object):
                         coords.ndim
                     )
                 )
-
-        # if no groups_running given, make sure this is clear for all Branch objects
-        if groups_running is None:
-            groups_running = {key: None for key in coords}
-        elif not isinstance(groups_running, dict):
-            raise ValueError("groups_running must be None or dict.")
-
+ 
         if branch_supplimental is None:
             branch_supplimental = {key: None for key in coords}
         elif not isinstance(branch_supplimental, dict):
@@ -888,22 +883,19 @@ class ParaState(object):
         self.branches = {
             key: Branch(
                 dc(temp_coords),
-                groups_running=groups_running[key],
+                inds=None,
                 branch_supplimental=branch_supplimental[key],
             )
             for key, temp_coords in coords.items()
         }
+
+        self.groups_running = dc(np.atleast_1d(groups_running)) if groups_running is not None else None
         self.log_like = dc(np.atleast_2d(log_like)) if log_like is not None else None
         self.log_prior = dc(np.atleast_2d(log_prior)) if log_prior is not None else None
         self.blobs = dc(np.atleast_3d(blobs)) if blobs is not None else None
         self.betas = dc(np.atleast_1d(betas)) if betas is not None else None
         self.supplimental = dc(supplimental)
         self.random_state = dc(random_state)
-
-    @property
-    def branches_groups_running(self):
-        """Get the ``groups_running`` from all branch objects returned as a dictionary with ``branch_names`` as keys."""
-        return {name: branch.groups_running for name, branch in self.branches.items()}
 
     @property
     def branches_coords(self):

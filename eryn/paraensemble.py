@@ -1,7 +1,13 @@
 from .ensemble import EnsembleSampler
 from .utils import TransformContainer, PeriodicContainer
 from .moves import TemperatureControl, StretchMove
+from .backends.parabackend import ParaBackend
 import numpy as np
+from copy import deepcopy
+from .pbar import get_progress_bar
+from itertools import count
+
+from .state import ParaState
 
 try:
     import cupy as cp
@@ -9,7 +15,7 @@ try:
 except (ModuleNotFoundError, ImportError) as e:
     import numpy as cp
 
-from typing import Union, NoneType
+from typing import Union
 
 
 def shuffle_along_axis(a, axis):
@@ -25,13 +31,12 @@ class ParaEnsembleSampler(EnsembleSampler):
         ngroups : int, 
         log_like_fn,
         priors,
-        tempering_kwargs : Union[dict, NoneType] =None, 
+        tempering_kwargs : Union[dict, None] =None, 
         args : Union[list, tuple] = (),
         kwargs: dict = {},
         gpu : int=None,
-        transform_fn : Union[TransformContainer, NoneType] =None,
-        periodic : Union[dict, NoneType] =None,
-        backend : Union[ParaBackend, ParaHDFBackend] =None,
+        periodic : Union[dict, None] =None,
+        backend : Union[ParaBackend] =None,  # add ParaHDFBackend
         update_fn=None,
         update_iterations=-1,
         stopping_fn=None,
@@ -40,16 +45,14 @@ class ParaEnsembleSampler(EnsembleSampler):
     ):
 
         self.ndim = ndim
-        self.nwalker = nwalkers
+        self.nwalkers = nwalkers
         self.ngroups = ngroups
         self.log_like_fn = log_like_fn
         self.priors = priors
         self.logl_args = args
         self.logl_kwargs = kwargs
         self.gpu = gpu
-        self.transform_fn = transform_fn
         self.periodic = periodic
-        self.backend = backend
         self.update_fn = update_fn
         self.update_iterations = update_iterations
         self.stopping_fn = stopping_fn
@@ -59,37 +62,69 @@ class ParaEnsembleSampler(EnsembleSampler):
         if tempering_kwargs is None:
             self.ntemps = 1
             self.betas = self.xp.ones((self.ngroups, self.ntemps))
-            self.base_tempering_control = None
+            self.base_temperature_control = None
 
         else:
-            self.base_tempering_control = TemperatureControl(**tempering_kwargs)
-            self.ntemps = self.base_tempering_control.ntemps
-            self.betas = self.xp.tile(self.base_tempering_control.betas, (self.ngroups, 1))
+            self.base_temperature_control = TemperatureControl(ndim, nwalkers, **tempering_kwargs)
+            self.ntemps = self.base_temperature_control.ntemps
+            self.betas = self.xp.tile(self.base_temperature_control.betas, (self.ngroups, 1))
 
-        if self.backend.initialized:
+        self.backend = backend
+        
+        if self.backend is not None and self.backend.initialized:
             assert self.backend.shape == (self.ngroups, self.ntemps, self.nwalkers, self.ndim)
 
-        self.move_proposal = StretchMove(periodic=PeriodicContainer(periodic), temperature_control=self.base_temperature_control, return_gpu=self.use_gpu, use_gpu=self.use_gpu)
+        self.periodic = periodic
+        self.move_proposal = StretchMove(periodic=self.periodic, temperature_control=self.base_temperature_control, return_gpu=self.use_gpu, use_gpu=self.use_gpu)
     
-        self.temp_guide = self.xp.repeat(self.xp.arange(ntemps)[:, None], nwalkers * ngroups, axis=-1).reshape(ntemps, nwalkers, ngroups)
-        self.walker_guide = self.xp.repeat(self.xp.arange(nwalkers)[:, None], ntemps * ngroups, axis=-1).reshape(nwalkers, ntemps, ngroups).transpose(1, 0, 2)
-        self.group_guide = self.xp.repeat(self.xp.arange(ngroups)[None, :], ntemps * nwalkers, axis=0).reshape(ntemps, nwalkers, ngroups)
+        self.temp_guide = self.xp.repeat(self.xp.arange(self.ntemps)[:, None], self.nwalkers * self.ngroups, axis=-1).reshape(self.ntemps, self.nwalkers, self.ngroups).transpose(2, 0, 1)
+        self.walker_guide = self.xp.repeat(self.xp.arange(self.nwalkers)[:, None], self.ntemps * self.ngroups, axis=-1).reshape(self.nwalkers, self.ntemps, self.ngroups).transpose(2, 1, 0)
+        self.group_guide = self.xp.repeat(self.xp.arange(self.ngroups)[:, None], self.ntemps * self.nwalkers, axis=0).reshape(self.ngroups, self.ntemps, self.nwalkers)
+        self.random_state = self.xp.random
+        
+    @property
+    def random_state(self):
+        return self._random
+    
+    @random_state.setter
+    def random_state(self, random):
+        self._random = random
+
+    @property
+    def periodic(self):
+        return self._periodic
+    
+    @periodic.setter
+    def periodic(self, periodic):
+        if periodic is not None:
+            if isinstance(periodic, dict):
+                self._periodic = PeriodicContainer(periodic)
+            elif isinstance(periodic, PeriodicContainer):
+                self._periodic = periodic
+        else:
+            self._periodic = periodic
+    @property
+    def backend(self):
+        return self._backend
+    
+    @backend.setter
+    def backend(self, backend):
+        if backend is None:
+            self._backend = ParaBackend()
+            self._backend.reset(
+                self.ndim,
+                self.nwalkers,
+                self.ngroups,
+                ntemps=self.ntemps,
+                branch_name=self.name
+            )
+        else:
+            self._backend = backend
 
     @property
     def xp(self):
         xp = cp if self.use_gpu else np
         return xp
-
-    @property
-    def transform_fn(self, x, *args, **kwargs):
-        if self._transform_fn is None:
-            return lambda x: x
-        else:
-            return self._transform_fn
-
-    @transform_fn.setter
-    def transform_fn(self, transform_fn):
-        self._transform_fn = transform_fn
 
     @property
     def use_gpu(self):
@@ -104,8 +139,9 @@ class ParaEnsembleSampler(EnsembleSampler):
     
     @gpu.setter
     def gpu(self, gpu):
-        cp.set
         self._gpu = gpu
+        if gpu is not None:
+            cp.cuda.runtime.setDevice(gpu)
         
     def add_gpu_index(self, gpu):
         self.gpu = gpu
@@ -182,7 +218,7 @@ class ParaEnsembleSampler(EnsembleSampler):
                 self.ngroups,
                 self.ntemps,
                 self.nwalkers,
-                self.ndims,
+                self.ndim,
             ):
                 raise ValueError("incompatible input dimensions")
 
@@ -193,7 +229,7 @@ class ParaEnsembleSampler(EnsembleSampler):
 
         if state.log_like is None:
             coords = state.branches_coords
-            state.log_like, state.blobs = self.compute_log_like(
+            state.log_like = self.compute_log_like(
                 coords,
                 logp=state.log_prior,
                 supps=state.supplimental,  # only used if self.provide_supplimental is True
@@ -207,11 +243,11 @@ class ParaEnsembleSampler(EnsembleSampler):
                     "Input state has inverse temperatures (betas), but not the correct number of temperatures according to sampler inputs."
                 )
 
-            self.betas = state.betas.copy()
+            self.betas = self.betas.copy()
 
         else:
-            if hasattr(self, "temperature_control") and hasattr(self.temperature_control, "betas"):
-                state.betas = self.temperature_control.betas.copy()
+            if self.betas is not None:
+                state.betas = self.betas.copy()
 
         if self.xp.shape(state.log_like) != (self.ngroups, self.ntemps, self.nwalkers):
             raise ValueError("incompatible input dimensions")
@@ -250,20 +286,23 @@ class ParaEnsembleSampler(EnsembleSampler):
                 for _ in range(yield_step):
                     # in model moves
                     accepted = self.xp.zeros((self.ngroups, self.ntemps, self.nwalkers))
-                    for repeat in range(self.num_repeats_in_model):
-                        
-                        # Propose (in model)
-                        state, accepted_out = self.propose(state)
-                        accepted += accepted_out
+                    # Propose (in model)
+                    state, accepted_out = self.propose(state)
+                    accepted += accepted_out
+
+                    if self.ntemps > 1:
+                        in_model_swaps = self.swaps_accepted
+                    else:
+                        in_model_swaps = None
+
+                    state.random_state = self.random_state
 
                     # Save the new step
                     if store and (i + 1) % checkpoint_step == 0:
                         self.backend.save_step(
                             state,
                             accepted,
-                            rj_accepted=rj_accepted,
                             swaps_accepted=in_model_swaps,
-                            moves_accepted_fraction=moves_accepted_fraction,
                         )
 
                     # update after diagnostic and stopping check
@@ -286,11 +325,15 @@ class ParaEnsembleSampler(EnsembleSampler):
                 groups_running=None,
                 logp=None,
                 supps=None,  # only used if self.provide_supplimental is True
-                branch_supplimental=None
+                branch_supps=None
         ):
 
-        if supps is not None or branch_supplimental is not None:
+        if supps is not None:
             raise NotImplementedError
+        
+        if branch_supps is not None:
+            if branch_supps[self.name] is not None:
+                raise NotImplementedError
 
         if groups_running is None:
             groups_running = self.xp.ones(self.ngroups, dtype=bool)
@@ -302,14 +345,12 @@ class ParaEnsembleSampler(EnsembleSampler):
 
         coords_arr = coords[self.name][groups_running][keep_logp]
 
-        coords_arr_in = transform_fn.both_transforms(coords_arr, xp=self.xp)
-
         logl = self.xp.full_like(logp, -1e300)
 
-        logl[keep_logp] = self.log_like_fn(coords_arr_in, *self.logl_args, **self.logl_kwargs)
+        logl[keep_logp] = self.log_like_fn(coords_arr, *self.logl_args, **self.logl_kwargs)
 
         # fix any nans that may come up
-        logl[xp.isnan(logl)] = -1e300
+        logl[self.xp.isnan(logl)] = -1e300
 
         if self.use_gpu:
             self.xp.cuda.runtime.deviceSynchronize()
@@ -321,11 +362,12 @@ class ParaEnsembleSampler(EnsembleSampler):
         if groups_running is None:
             groups_running = self.xp.ones(self.ngroups, dtype=bool)
             
-        coords_arr = coords[self.name][groups_running].reshape(-1, ndim)
+        shape_in = coords[self.name][groups_running].shape[:-1]
+        coords_arr = coords[self.name][groups_running].reshape(-1, self.ndim)
 
         logp = self.priors[self.name].logpdf(coords_arr)
         
-        return logp.reshape(groups_running.sum().item(), self.ntemps, self.nwalkers)
+        return logp.reshape(shape_in)
 
     def run_mcmc(
         self, initial_state, nsteps, burn=None, post_burn_update=False, **kwargs
@@ -423,6 +465,8 @@ class ParaEnsembleSampler(EnsembleSampler):
         inds_split = np.arange(self.nwalkers)
     
         np.random.shuffle(inds_split)
+
+        accepted = self.xp.zeros((self.ngroups, self.ntemps, self.nwalkers), dtype=int)
         
         for split in range(2):
             inds_here = np.arange(self.nwalkers)[inds_split % 2 == split]
@@ -431,38 +475,45 @@ class ParaEnsembleSampler(EnsembleSampler):
             inds_here = self.xp.asarray(inds_here)
             inds_not_here = self.xp.asarray(inds_not_here)
 
-            breakpoint()
-            s_in = new_state.branches[self.name].coords[:, :, inds_here][groups_running, :, :].reshape((self.ntemps * num_groups_running, int(self.nwalkers/2), 1, -1))
-            c_in = [new_state.branches[self.name].coords[:, :, inds_not_here][groups_running, :, :].reshape((self.ntemps * num_groups_running, int(self.nwalkers/2), 1, -1))]
+            s_in = new_state.branches[self.name].coords[:, :, inds_here][groups_running].reshape((self.ntemps * num_groups_running, int(self.nwalkers/2), 1, -1))
+            c_in = [new_state.branches[self.name].coords[:, :, inds_not_here][groups_running].reshape((self.ntemps * num_groups_running, int(self.nwalkers/2), 1, -1))]
 
-            temps_here = self.temp_guide[:, :, inds_here][groups_running, :, :]
-            walkers_here = self.walker_guide[:, :, inds_here][groups_running, :, :]
-            groups_here = self.group_guide[:, :, inds_here][groups_running, :, :]
+            temps_here = self.temp_guide[:, :, inds_here][groups_running]
+            walkers_here = self.walker_guide[:, :, inds_here][groups_running]
+            groups_here = self.group_guide[:, :, inds_here][groups_running]
 
-            new_points_dict, factors = move_proposal.get_proposal({"gb": s_in}, {"gb": c_in}, new_state.random_state)
+            if not hasattr(new_state, "random_state") or new_state.random_state is None:
+                new_state.random_state = self.random_state
+
+            new_points_dict, factors = self.move_proposal.get_proposal({self.name: s_in}, {self.name: c_in}, new_state.random_state)
             new_points = {self.name: new_points_dict[self.name].reshape(num_groups_running, self.ntemps, int(self.nwalkers/2), -1)}
             logp = self.compute_log_prior(new_points, groups_running=groups_running)
             factors = factors.reshape(logp.shape)
             
             logl = self.compute_log_like(new_points, groups_running=groups_running, logp=logp)
             
-            prev_logl_here = prev_logl[:, :, inds_here][groups_running, :, :]
-            prev_logp_here = prev_logp[:, :, inds_here][groups_running, :, :]
+            prev_logl_here = new_state.log_like[:, :, inds_here][groups_running]
+            prev_logp_here = new_state.log_prior[:, :, inds_here][groups_running]
             
-            breakpoint()
             prev_logP_here = self.betas[groups_running][:, :, None] * prev_logl_here + prev_logp_here
 
-            logP = betas[groups_running][:, :, None] * logl + logp
+            logP = self.betas[groups_running][:, :, None] * logl + logp
 
             lnpdiff = factors + logP - prev_logP_here
             keep = lnpdiff > self.xp.asarray(self.xp.log(new_state.random_state.rand(*logP.shape)))
 
             keep_tuple = (groups_here[keep], temps_here[keep], walkers_here[keep])
+
+            accepted[keep_tuple] = 1
             new_state.log_prior[keep_tuple] = logp[keep]
             new_state.log_like[keep_tuple] = logl[keep]
-            new_state.branches[self.name][keep_tuple] = new_points[self.name][keep]
-            
+            new_state.branches[self.name].coords[keep_tuple] = new_points[self.name][keep]
+    
+        if self.ntemps > 1:
+            self.tempering_operations(new_state)
 
+        return new_state, accepted
+    
     def tempering_operations(self, state):
         """IN-PLACE temperature swapping"""
 
@@ -470,14 +521,14 @@ class ParaEnsembleSampler(EnsembleSampler):
         num_groups_running = groups_running.sum().item()
 
         # prepare information on how many swaps are accepted this time
-        swaps_accepted = xp.zeros((self.ntemps - 1, num_groups_running), dtype=int)
-        swaps_proposed = xp.full_like(swaps_accepted, self.nwalkers)
+        self.swaps_accepted = self.xp.zeros((num_groups_running, self.ntemps - 1), dtype=int)
+        self.swaps_proposed = self.xp.full_like(self.swaps_accepted, self.nwalkers)
 
         # iterate from highest to lowest temperatures
         for i in range(self.ntemps - 1, 0, -1):
             # get both temperature rungs
-            bi = betas[groups_running, i]
-            bi1 = betas[groups_runningm, i - 1]
+            bi = state.betas[groups_running, i]
+            bi1 = state.betas[groups_running, i - 1]
 
             # difference in inverse temps
             dbeta = bi1 - bi
@@ -493,19 +544,18 @@ class ParaEnsembleSampler(EnsembleSampler):
             walker_swap_i = iperm.flatten()
             walker_swap_i1 = i1perm.flatten()
 
-            breakpoint()
             temp_swap_i = np.full_like(walker_swap_i, i)
             temp_swap_i1 = np.full_like(walker_swap_i1, i - 1)
             group_swap = self.xp.repeat(self.xp.arange(len(groups_running))[groups_running], self.nwalkers)
 
             paccept = dbeta[:, None] * (
-                state.log_like[(group_swap, temp_swap_i, walker_swap_i)].reshape(num_groups_running, nwalkers)
-                - state.log_like[(group_swap, temp_swap_i1, walker_swap_i1)].reshape(num_groups_running, nwalkers)
+                state.log_like[(group_swap, temp_swap_i, walker_swap_i)].reshape(num_groups_running, self.nwalkers)
+                - state.log_like[(group_swap, temp_swap_i1, walker_swap_i1)].reshape(num_groups_running, self.nwalkers)
             )
 
             # How many swaps were accepted
             sel = paccept > raccept
-            swaps_accepted[i - 1] = self.xp.sum(sel, axis=-1)
+            self.swaps_accepted[:, i - 1] = self.xp.sum(sel, axis=-1)
 
             temp_swap_i_keep = temp_swap_i[sel.flatten()]
             walker_swap_i_keep = walker_swap_i[sel.flatten()]
@@ -514,8 +564,8 @@ class ParaEnsembleSampler(EnsembleSampler):
             temp_swap_i1_keep = temp_swap_i1[sel.flatten()]
             walker_swap_i1_keep = walker_swap_i1[sel.flatten()]
 
-            keep_i_tuple = (temp_swap_i_keep, walker_swap_i_keep, group_swap_keep)
-            keep_i1_tuple = (temp_swap_i1_keep, walker_swap_i1_keep, group_swap_keep)
+            keep_i_tuple = (group_swap_keep, temp_swap_i_keep, walker_swap_i_keep)
+            keep_i1_tuple = (group_swap_keep, temp_swap_i1_keep, walker_swap_i1_keep)
 
             coords_tmp_i = state.branches[self.name].coords[keep_i_tuple].copy()
             logl_tmp_i = state.log_like[keep_i_tuple].copy()
@@ -531,11 +581,11 @@ class ParaEnsembleSampler(EnsembleSampler):
         # print(prev_logl.max(axis=(1, 2)))
         
         # print(time.perf_counter() - st)
-        ratios = swaps_accepted / swaps_proposed
+        ratios = self.swaps_accepted / self.swaps_proposed
 
         # adjust temps 
-        betas0 = betas[groups_running].copy()
-        betas1 = betas[groups_running].copy()
+        betas0 = self.betas[groups_running].copy()
+        betas1 = self.betas[groups_running].copy()
 
         if not hasattr(self, "time_temp"):
             self.time_temp = 0
@@ -550,8 +600,8 @@ class ParaEnsembleSampler(EnsembleSampler):
         dSs = kappa * (ratios[:, :-1] - ratios[:, 1:])
 
         # Compute new ladder (hottest and coldest chains don't move).
-        deltaTs = xp.diff(1 / betas1[:, :-1], axis=-1)
-        deltaTs *= xp.exp(dSs)
+        deltaTs = self.xp.diff(1 / betas1[:, :-1], axis=-1)
+        deltaTs *= self.xp.exp(dSs)
         betas1[:, 1:-1] = 1 / (np.cumsum(deltaTs, axis=-1) + 1 / betas1[:, 0])
 
         dbetas = betas1 - betas0
