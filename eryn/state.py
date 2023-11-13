@@ -40,7 +40,11 @@ class BranchSupplemental(object):
             and values are arrays. These arrays should have a base shape that is equivalent to
             ``base_shape``, meaning ``array.shape[:len(base_shape)] == self.base_shape``.
             The dimensions beyond the base shape can be anything.
+<<<<<<< HEAD
         base_shape (tuple): Base shape for indexing. Objects stored in the supplemental object
+=======
+        base_shape (tuple): Base shape for indexing. Objects stored in the supplimental object
+>>>>>>> 5a8e6ea (cpu version is working for para)
             will have a shape that at minimum is equivalent to ``base_shape``.
         copy (bool, optional): If ``True``, copy whatever information is given in before it is stored.
             if ``False``, store directly the input information. (default: ``False``)
@@ -49,6 +53,10 @@ class BranchSupplemental(object):
         holder (dict): All of the objects stored for this supplemental object.
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5a8e6ea (cpu version is working for para)
     """
 
     def __init__(self, obj_info: dict, base_shape: tuple, copy: bool = False):
@@ -350,7 +358,11 @@ class Branch(object):
 
     """
 
+<<<<<<< HEAD
     def __init__(self, coords, inds=None, branch_supplemental=None):
+=======
+    def __init__(self, coords, inds=None, branch_supplimental=None):
+>>>>>>> 5a8e6ea (cpu version is working for para)
         # store branch info
         self.coords = coords
         self.ntemps, self.ntrees, self.nleaves_max, self.ndim = coords.shape
@@ -549,6 +561,7 @@ class State(object):
         Returns:
             np.ndarray[ntemps, nwalkers]: Log of the posterior probability.
 
+<<<<<<< HEAD
         """
 
         if temper:
@@ -739,6 +752,8 @@ class ParaState(object):
         Returns:
             np.ndarray[ntemps, nwalkers]: Log of the posterior probability.
 
+=======
+>>>>>>> 5a8e6ea (cpu version is working for para)
         """
 
         if temper:
@@ -771,8 +786,6 @@ class ParaState(object):
             temp += (self.random_state,)
         return iter(temp)
     """
-
-
 
 
 class ParaState(object):
@@ -848,7 +861,9 @@ class ParaState(object):
             self.blobs = dc(coords.blobs)
             self.betas = dc(coords.betas)
             self.supplimental = dc(coords.supplimental)
-            self.random_state = dc(coords.random_state)
+            # self.random_state = dc(coords.random_state)
+            # TODO: check this
+            self.random_state = coords.random_state
             return
 
         # protect against simplifying settings
@@ -873,7 +888,7 @@ class ParaState(object):
                         coords.ndim
                     )
                 )
- 
+
         if branch_supplimental is None:
             branch_supplimental = {key: None for key in coords}
         elif not isinstance(branch_supplimental, dict):
@@ -889,7 +904,9 @@ class ParaState(object):
             for key, temp_coords in coords.items()
         }
 
-        self.groups_running = dc(np.atleast_1d(groups_running)) if groups_running is not None else None
+        self.groups_running = (
+            dc(np.atleast_1d(groups_running)) if groups_running is not None else None
+        )
         self.log_like = dc(np.atleast_2d(log_like)) if log_like is not None else None
         self.log_prior = dc(np.atleast_2d(log_prior)) if log_prior is not None else None
         self.blobs = dc(np.atleast_3d(blobs)) if blobs is not None else None
@@ -920,13 +937,13 @@ class ParaState(object):
 
     def get_log_posterior(self, temper: bool = False):
         """Get the posterior probability
-        
+
         Args:
             temper (bool, optional): If ``True``, apply tempering to the posterior computation.
 
         Returns:
             np.ndarray[ntemps, nwalkers]: Log of the posterior probability.
-        
+
         """
 
         if temper:
@@ -959,6 +976,3 @@ class ParaState(object):
             temp += (self.random_state,)
         return iter(temp)
     """
-
-
-

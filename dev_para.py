@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 import numpy as np
 
 from eryn.paraensemble import ParaEnsembleSampler
@@ -5,14 +7,19 @@ from eryn.paraensemble import ParaEnsembleSampler
 from eryn.prior import ProbDistContainer, uniform_dist
 from eryn.state import ParaState
 
+import corner
+
+
 # Gaussian likelihood
 def log_like_fn(x, mu, invcov):
     diff = x - mu
-    return -0.5 * (diff * np.dot(invcov, diff.T).T).sum()
+    # return -0.5 * (diff * np.dot(invcov, diff.T).T).sum()
+    out = -0.5 * np.einsum("...i,...ij,...j->...", diff, invcov, diff)
+    return out
 
 
 if __name__ == "__main__":
-    ngroups = 15
+    ngroups = 105
     ndim = 5
     ntemps = 10
     nwalkers = 32
@@ -47,12 +54,12 @@ if __name__ == "__main__":
 
     # initialize sampler
     ensemble_pt = ParaEnsembleSampler(
-        ndim, 
-        nwalkers, 
-        ngroups, 
+        ndim,
+        nwalkers,
+        ngroups,
         log_like_fn,
         priors,
-        tempering_kwargs=tempering_kwargs, 
+        tempering_kwargs=tempering_kwargs,
         args=[means, cov],
         kwargs={},
         gpu=None,
@@ -65,17 +72,32 @@ if __name__ == "__main__":
         name="gauss",
     )
 
-    nsteps = 50
+    nsteps = 500
     # burn for 1000 steps
-    burn = 10
+    burn = 1000
     # thin by 5
-    thin_by = 1
+    thin_by = 25
 
     state = ParaState({"gauss": coords}, groups_running=groups_running)
-    
+
     ensemble_pt.run_mcmc(state, nsteps, burn=burn, progress=True, thin_by=thin_by)
 
-    for temp in range(ntemps):
-        samples = ensemble_pt.get_chain()["model_0"][:, temp].reshape(-1, ndim)
+    # ll = ensemble_pt.backend.get_log_like()
 
-    ll = ensemble_pt.backend.get_log_like()
+    samples = (
+        ensemble_pt.get_chain()[:, :, 0]
+        .transpose(1, 0, 2, 3)
+        .reshape(ngroups, -1, ndim)
+    )
+
+    fig = None
+    for i in range(samples.shape[0])[:10]:
+        fig = corner.corner(
+            samples[i],
+            plot_datapoints=False,
+            plot_density=False,
+            color=f"C{i}",
+            levels=1 - np.exp(-0.5 * np.array([1, 2, 3]) ** 2),
+            fig=fig,
+        )
+    breakpoint()

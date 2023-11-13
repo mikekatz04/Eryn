@@ -2,7 +2,12 @@
 
 import numpy as np
 
-from ..utils.utility import get_integrated_act, thermodynamic_integration_log_evidence, stepping_stone_log_evidence, psrf
+from ..utils.utility import (
+    get_integrated_act,
+    thermodynamic_integration_log_evidence,
+    stepping_stone_log_evidence,
+    psrf,
+)
 from ..state import ParaState
 
 __all__ = ["ParaBackend"]
@@ -40,11 +45,11 @@ class ParaBackend(object):
         log_like (3D double np.ndarray): Log of the likelihood values. Shape is
             (nsteps, nwalkers, ntemps).
         move_info (dict): Dictionary containing move info.
-        move_keys (list): List of keys for ``move_info``. 
+        move_keys (list): List of keys for ``move_info``.
         nbranches (int): Number of branches.
         ndims (dict): Dimensionality of each branch.
         nleaves_max (dict): Maximum allowable leaves for each branch.
-        nwalkers (int): The size of the ensemble (per temperature). 
+        nwalkers (int): The size of the ensemble (per temperature).
         ntemps (int): Number of rungs in the temperature ladder.
         reset_args (tuple): Arguments to reset backend.
         reset_kwargs (dict): Keyword arguments to reset backend.
@@ -73,8 +78,8 @@ class ParaBackend(object):
         ndim: int,
         nwalkers: int,
         ngroups: int,
-        ntemps: int=1,
-        branch_name: str="model_0",
+        ntemps: int = 1,
+        branch_name: str = "model_0",
         **info,
     ):
         """Clear the state of the chain and empty the backend
@@ -83,8 +88,8 @@ class ParaBackend(object):
             nwalkers (int): The size of the ensemble (per temperature).
             ndims (int, list of ints, or dict): The number of dimensions for each branch. If
                 ``dict``, keys should be the branch names and values the associated dimensionality.
-            nleaves_max (int, list of ints, or dict, optional): Maximum allowable leaf count for each branch. 
-                It should have the same length as the number of branches. 
+            nleaves_max (int, list of ints, or dict, optional): Maximum allowable leaf count for each branch.
+                It should have the same length as the number of branches.
                 If ``dict``, keys should be the branch names and values the associated maximal leaf value.
                 (default: ``1``)
             ntemps (int, optional): Number of rungs in the temperature ladder.
@@ -125,25 +130,37 @@ class ParaBackend(object):
         self.iteration = 0
 
         # setup all the holder arrays
-        self.accepted = np.zeros((self.ngroups, self.ntemps, self.nwalkers), dtype=self.dtype)
-        self.swaps_accepted = np.zeros((self.ngroups, self.ntemps - 1,), dtype=self.dtype)
+        self.accepted = np.zeros(
+            (self.ngroups, self.ntemps, self.nwalkers), dtype=self.dtype
+        )
+        self.swaps_accepted = np.zeros(
+            (
+                self.ngroups,
+                self.ntemps - 1,
+            ),
+            dtype=self.dtype,
+        )
 
         # chains are stored in dictionaries
         self.chain = {
             self.branch_name: np.empty(
-                (0, self.ngroups, self.ntemps, self.nwalkers, self.ndim), dtype=self.dtype
+                (0, self.ngroups, self.ntemps, self.nwalkers, self.ndim),
+                dtype=self.dtype,
             )
         }
 
         # inds correspond to leaves used or not
         self.groups_running = {
-            self.branch_name: np.empty(
-                (0, self.ngroups), dtype=bool)
+            self.branch_name: np.empty((0, self.ngroups), dtype=bool)
         }
 
         # log likelihood and prior
-        self.log_like = np.empty((0, self.ngroups, self.ntemps, self.nwalkers), dtype=self.dtype)
-        self.log_prior = np.empty((0, self.ngroups, self.ntemps, self.nwalkers), dtype=self.dtype)
+        self.log_like = np.empty(
+            (0, self.ngroups, self.ntemps, self.nwalkers), dtype=self.dtype
+        )
+        self.log_prior = np.empty(
+            (0, self.ngroups, self.ntemps, self.nwalkers), dtype=self.dtype
+        )
 
         # temperature ladder
         self.betas = np.empty((0, self.ngroups, self.ntemps), dtype=self.dtype)
@@ -181,14 +198,18 @@ class ParaBackend(object):
 
         # prepare chain for output
         if name == "chain":
-            v_all = self.chain[self.branch_name][discard + thin - 1 : self.iteration : thin]
+            v_all = self.chain[self.branch_name][
+                discard + thin - 1 : self.iteration : thin
+            ]
 
             return v_all
 
         # prepare inds for output
         if name == "groups_running":
-            v_all = self.groups_running[self.branch_name][discard + thin - 1 : self.iteration : thin]
-            
+            v_all = self.groups_running[self.branch_name][
+                discard + thin - 1 : self.iteration : thin
+            ]
+
             return v_all
 
         # all other requests can filter through array output
@@ -205,9 +226,9 @@ class ParaBackend(object):
             discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
             slice_vals (indexing np.ndarray or slice, optional): This is only available in :class:`eryn.backends.hdfbackend`.
-                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``. 
-                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``. 
-                This is particularly useful if files are very large and the user only wants a 
+                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``.
+                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``.
+                This is particularly useful if files are very large and the user only wants a
                 small subset of the overall array. (default: ``None``)
 
         Returns:
@@ -227,9 +248,9 @@ class ParaBackend(object):
             discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
             slice_vals (indexing np.ndarray or slice, optional): This is only available in :class:`eryn.backends.hdfbackend`.
-                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``. 
-                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``. 
-                This is particularly useful if files are very large and the user only wants a 
+                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``.
+                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``.
+                This is particularly useful if files are very large and the user only wants a
                 small subset of the overall array. (default: ``None``)
 
         Returns:
@@ -249,9 +270,9 @@ class ParaBackend(object):
             discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
             slice_vals (indexing np.ndarray or slice, optional): This is only available in :class:`eryn.backends.hdfbackend`.
-                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``. 
-                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``. 
-                This is particularly useful if files are very large and the user only wants a 
+                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``.
+                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``.
+                This is particularly useful if files are very large and the user only wants a
                 small subset of the overall array. (default: ``None``)
 
         Returns:
@@ -269,9 +290,9 @@ class ParaBackend(object):
             discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
             slice_vals (indexing np.ndarray or slice, optional): This is only available in :class:`eryn.backends.hdfbackend`.
-                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``. 
-                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``. 
-                This is particularly useful if files are very large and the user only wants a 
+                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``.
+                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``.
+                This is particularly useful if files are very large and the user only wants a
                 small subset of the overall array. (default: ``None``)
 
         Returns:
@@ -291,9 +312,9 @@ class ParaBackend(object):
             discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
             slice_vals (indexing np.ndarray or slice, optional): This is only available in :class:`eryn.backends.hdfbackend`.
-                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``. 
-                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``. 
-                This is particularly useful if files are very large and the user only wants a 
+                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``.
+                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``.
+                This is particularly useful if files are very large and the user only wants a
                 small subset of the overall array. (default: ``None``)
 
         Returns:
@@ -320,9 +341,9 @@ class ParaBackend(object):
             discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
             slice_vals (indexing np.ndarray or slice, optional): This is only available in :class:`eryn.backends.hdfbackend`.
-                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``. 
-                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``. 
-                This is particularly useful if files are very large and the user only wants a 
+                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``.
+                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``.
+                This is particularly useful if files are very large and the user only wants a
                 small subset of the overall array. (default: ``None``)
 
         Returns:
@@ -355,13 +376,15 @@ class ParaBackend(object):
         thin = self.iteration - it if it != self.iteration else 1
         discard = it + 1 - thin
         # check for blobs
-        
+
         # fill a ParaState with quantities from the last sample in the chain
         sample = ParaState(
             {self.branch_name: self.get_chain(discard=discard, thin=thin)},
             log_like=self.get_log_like(discard=discard, thin=thin)[0],
             log_prior=self.get_log_prior(discard=discard, thin=thin)[0],
-            groups_running={self.branch_name: self.get_inds(discard=discard, thin=thin)},
+            groups_running={
+                self.branch_name: self.get_inds(discard=discard, thin=thin)
+            },
             betas=self.get_betas(discard=discard, thin=thin).squeeze(),
             random_state=self.random_state,
         )
@@ -380,11 +403,13 @@ class ParaBackend(object):
         last_sample = self.get_a_sample(it)
         return last_sample
 
-    def get_evidence_estimate(self, discard=0, thin=1, return_error=True, method="therodynamic", **ss_kwargs):
+    def get_evidence_estimate(
+        self, discard=0, thin=1, return_error=True, method="therodynamic", **ss_kwargs
+    ):
         """Get an estimate of the evidence
 
-        This function gets the sample information and uses 
-        :func:`thermodynamic_integration_log_evidence` or 
+        This function gets the sample information and uses
+        :func:`thermodynamic_integration_log_evidence` or
         :func:`stepping_stone_log_evidence` to compute the evidence estimate.
 
         Args:
@@ -420,36 +445,50 @@ class ParaBackend(object):
         betas = betas_all[0]
 
         # get log evidence and error
-        if method.lower() in ["therodynamic", "thermodynamic integration", "thermo", "ti"]:
+        if method.lower() in [
+            "therodynamic",
+            "thermodynamic integration",
+            "thermo",
+            "ti",
+        ]:
             logls = np.mean(logls_all, axis=(0, -1))
             logZ, dlogZ = thermodynamic_integration_log_evidence(betas, logls)
-        elif method.lower() in ["stepping stone", "ss", "step", "stone", "stepping-stone"]:
+        elif method.lower() in [
+            "stepping stone",
+            "ss",
+            "step",
+            "stone",
+            "stepping-stone",
+        ]:
             logZ, dlogZ = stepping_stone_log_evidence(betas, logls_all, **ss_kwargs)
         else:
             raise ValueError(
-                """Please choose only between 'thermodynamic' and 'stepping-stone' methods.""")
-            
+                """Please choose only between 'thermodynamic' and 'stepping-stone' methods."""
+            )
+
         if return_error:
             return (logZ, dlogZ)
         else:
             return logZ
-        
-    def get_gelman_rubin_convergence_diagnostic(self, discard=0, thin=1, doprint=True, **psrf_kwargs):
+
+    def get_gelman_rubin_convergence_diagnostic(
+        self, discard=0, thin=1, doprint=True, **psrf_kwargs
+    ):
         """
-        The Gelman - Rubin convergence diagnostic. 
-        A general approach to monitoring convergence of MCMC output of multiple walkers. 
-        The function makes a comparison of within-chain and between-chain variances. 
-        A large deviation between these two variances indicates non-convergence, and 
+        The Gelman - Rubin convergence diagnostic.
+        A general approach to monitoring convergence of MCMC output of multiple walkers.
+        The function makes a comparison of within-chain and between-chain variances.
+        A large deviation between these two variances indicates non-convergence, and
         the output [Rhat] deviates from unity.
-        
-        Based on 
-        a. Brooks, SP. and Gelman, A. (1998) General methods for monitoring convergence 
+
+        Based on
+        a. Brooks, SP. and Gelman, A. (1998) General methods for monitoring convergence
         of iterative simulations. Journal of Computational and Graphical Statistics, 7, 434-455
-        b. Gelman, A and Rubin, DB (1992) Inference from iterative simulation using multiple sequences, 
+        b. Gelman, A and Rubin, DB (1992) Inference from iterative simulation using multiple sequences,
         Statistical Science, 7, 457-511.
-        
+
         Args:
-            C (np.ndarray[nwalkers, nsamples, ndim]): The parameter traces. The MCMC chains. 
+            C (np.ndarray[nwalkers, nsamples, ndim]): The parameter traces. The MCMC chains.
             doprint (bool, optional): Flag to print the results on screen.
         discard (int, optional): Discard the first ``discard`` steps in
                 the chain as burn-in. (default: ``0``)
@@ -460,39 +499,44 @@ class ParaBackend(object):
         doprint (bool, optional): Flag to print a table with the results, per temperature.
 
         Returns
-            dict:   ``Rhat_all_branches``: 
+            dict:   ``Rhat_all_branches``:
                 Returns an estimate of the Gelman-Rubin convergence diagnostic ``Rhat``,
                 per temperature, stored in a dictionary, per branch name.
-        
+
         """
         Rhat_all_branches = dict()
         # Loop over the different models
         for branch in self.branch_names:
-            
-            Rhat = dict() # Initialize
+            Rhat = dict()  # Initialize
             # Loop over the temperatures
             for temp in range(self.ntemps):
-                
                 # Get all the chains per branch
                 chains = self.get_chain(discard=discard, thin=thin)[branch][:, temp]
-                
+
                 # Handle the cases of multiple leaves on a given branch
                 if chains.shape[2] == 1:
-                    # If no multiple leaves, we squeeze and transpose to the 
+                    # If no multiple leaves, we squeeze and transpose to the
                     # right shape to pass to the psrf function, which is  (nwalkers, nsamples, ndim)
                     chains_in = chains.squeeze().transpose((1, 0, 2))
                 else:
                     # Project onto the model dim all chains [in case of RJ and multiple leaves per branch]
-                    inds = self.get_inds(discard=discard, thin=thin)[branch][:, temp] # [t, w, nleavesmax, dim]
-                    min_leaves = inds.sum(axis=(0,2)).min()
+                    inds = self.get_inds(discard=discard, thin=thin)[branch][
+                        :, temp
+                    ]  # [t, w, nleavesmax, dim]
+                    min_leaves = inds.sum(axis=(0, 2)).min()
                     tmp = [inds[:, w].flatten() for w in range(self.nwalkers)]
-                    keep = [np.where( tmp[w] )[0][:min_leaves] for w in range(len(tmp)) ]
-                    chains_in = np.asarray([chains[:,w].reshape(-1, self.ndims[branch])[keep[w]] for w in range(self.nwalkers)])
-                                
-                Rhat[temp] = psrf(chains_in, self.ndims[branch], **psrf_kwargs)
-            Rhat_all_branches[branch] = Rhat # Store the Rhat per branch
+                    keep = [np.where(tmp[w])[0][:min_leaves] for w in range(len(tmp))]
+                    chains_in = np.asarray(
+                        [
+                            chains[:, w].reshape(-1, self.ndims[branch])[keep[w]]
+                            for w in range(self.nwalkers)
+                        ]
+                    )
 
-        if doprint: # Print table of results
+                Rhat[temp] = psrf(chains_in, self.ndims[branch], **psrf_kwargs)
+            Rhat_all_branches[branch] = Rhat  # Store the Rhat per branch
+
+        if doprint:  # Print table of results
             print("  Gelman-Rubin diagnostic \n  <R̂>: Mean value for all parameters\n")
             print("  --------------")
             for branch in self.branch_names:
@@ -500,7 +544,11 @@ class ParaBackend(object):
                 print("   T \t <R̂>")
                 print("  --------------")
                 for temp in range(self.ntemps):
-                    print("   {:01d}\t{:3.2f}".format(temp, np.mean(Rhat_all_branches[branch][temp])))
+                    print(
+                        "   {:01d}\t{:3.2f}".format(
+                            temp, np.mean(Rhat_all_branches[branch][temp])
+                        )
+                    )
                 print("\n")
 
         return Rhat_all_branches
@@ -529,27 +577,30 @@ class ParaBackend(object):
 
         # determine the number of entries in the chains
         i = ngrow - (len(self.chain[list(self.chain.keys())[0]]) - self.iteration)
-        {
-            self.branch_name: (self.ngroups, self.ntemps, self.nwalkers, self.ndim)
-        }
+        {self.branch_name: (self.ngroups, self.ntemps, self.nwalkers, self.ndim)}
 
         # temperary addition to chains
         a = {
             self.branch_name: np.empty(
-                (i, self.ngroups, self.ntemps, self.nwalkers, self.ndim), dtype=self.dtype
+                (i, self.ngroups, self.ntemps, self.nwalkers, self.ndim),
+                dtype=self.dtype,
             )
         }
         # combine with original chain
         self.chain = {
-            self.branch_name: np.concatenate((self.chain[self.branch_name], a[self.branch_name]), axis=0)
+            self.branch_name: np.concatenate(
+                (self.chain[self.branch_name], a[self.branch_name]), axis=0
+            )
         }
 
         # temperorary addition to groups_running
-        a = {
-            self.branch_name: np.empty((i, self.ngroups), dtype=bool)
-        }
+        a = {self.branch_name: np.empty((i, self.ngroups), dtype=bool)}
         # combine with original groups_running
-        self.groups_running = {self.branch_name: np.concatenate((self.groups_running[key], a[key]), axis=0)}
+        self.groups_running = {
+            self.branch_name: np.concatenate(
+                (self.groups_running[self.branch_name], a[self.branch_name]), axis=0
+            )
+        }
 
         # temperorary addition for log likelihood
         a = np.empty((i, self.ngroups, self.ntemps, self.nwalkers), dtype=self.dtype)
@@ -567,12 +618,15 @@ class ParaBackend(object):
         self.betas = np.concatenate((self.betas, a), axis=0)
 
     def _check(
-        self, state, accepted, swaps_accepted=None,
+        self,
+        state,
+        accepted,
+        swaps_accepted=None,
     ):
         """Check all the information going in is okay."""
-       
-        shapes = self.shape
-        
+
+        shape = self.shape
+
         ngroups, ntemps, nwalkers = self.ngroups, self.ntemps, self.nwalkers
 
         # make sure all of the coordinate and inds dimensions are okay
@@ -591,37 +645,65 @@ class ParaBackend(object):
                 )
             )
 
-        if (ngroup1,) != state.branches[self.branch_name].groups_running.shape:
+        if (ngroup1,) != state.groups_running.shape:
             raise ValueError(
                 "invalid inds dimensions for model {1} with shape {2}; expected {0}".format(
                     (ngroup1,),
                     self.branch_name,
-                    state.branches[self.branch_name].groups_running.shape,
+                    state.groups_running.shape,
                 )
             )
 
         # make sure log likelihood, log prior, blobs, accepted, rj_accepted, betas are okay
-        if state.log_like.shape != (ngroups, ntemps, nwalkers,):
+        if state.log_like.shape != (
+            ngroups,
+            ntemps,
+            nwalkers,
+        ):
             raise ValueError(
-                "invalid log probability size; expected {0}".format((ngroups, ntemps, nwalkers))
+                "invalid log probability size; expected {0}".format(
+                    (ngroups, ntemps, nwalkers)
+                )
             )
-        if state.log_prior.shape != (ngroups, ntemps, nwalkers,):
+        if state.log_prior.shape != (
+            ngroups,
+            ntemps,
+            nwalkers,
+        ):
             raise ValueError(
-                "invalid log prior size; expected {0}".format((ngroups, ntemps, nwalkers))
-            )
-    
-        if accepted.shape != (ngroups, ntemps, nwalkers,):
-            raise ValueError(
-                "invalid acceptance size; expected {0}".format((ngroups, ntemps, nwalkers))
+                "invalid log prior size; expected {0}".format(
+                    (ngroups, ntemps, nwalkers)
+                )
             )
 
-        if swaps_accepted is not None and swaps_accepted.shape != (ngroups, ntemps - 1,):
+        if accepted.shape != (
+            ngroups,
+            ntemps,
+            nwalkers,
+        ):
             raise ValueError(
-                "invalid swaps_accepted size; expected {0}".format((ngroups, ntemps - 1))
+                "invalid acceptance size; expected {0}".format(
+                    (ngroups, ntemps, nwalkers)
+                )
             )
 
-        if state.betas is not None and state.betas.shape != (ngroups, ntemps,):
-            raise ValueError("invalid beta size; expected {0}".format((ngroups, ntemps)))
+        if swaps_accepted is not None and swaps_accepted.shape != (
+            ngroups,
+            ntemps - 1,
+        ):
+            raise ValueError(
+                "invalid swaps_accepted size; expected {0}".format(
+                    (ngroups, ntemps - 1)
+                )
+            )
+
+        if state.betas is not None and state.betas.shape != (
+            ngroups,
+            ntemps,
+        ):
+            raise ValueError(
+                "invalid beta size; expected {0}".format((ngroups, ntemps))
+            )
 
     def save_step(
         self,
@@ -642,33 +724,34 @@ class ParaBackend(object):
                 is False, then rj_accepted must be None, which is the default.
             swaps_accepted (ndarray, optional): 1D array with number of swaps accepted
                 for the in-model step. (default: ``None``)
-            moves_accepted_fraction (dict, optional): Dict of acceptance fraction arrays for all of the 
+            moves_accepted_fraction (dict, optional): Dict of acceptance fraction arrays for all of the
                 moves in the sampler. This dict must have the same keys as ``self.move_keys``.
                 (default: ``None``)
 
         """
         # check to make sure all information in the state is okay
         self._check(
-            state, accepted, swaps_accepted=swaps_accepted,
+            state,
+            accepted,
+            swaps_accepted=swaps_accepted,
         )
 
         # save the coordinates and groups_running
-        self.groups_running[self.branch_name][self.iteration] = state.branches[self.branch_name].groups_running
+        self.groups_running[self.branch_name][self.iteration] = state.groups_running
         # use self.store_missing_leaves to set value for missing leaves
         # state retains old coordinates
-        coords_in = state.branches[self.branch_name].coords * state.branches[self.branch_name].groups_running[:, :, :, None]
-
-        groups_running_all = np.repeat(state.branches[self.branch_name].groups_running, state.branches[self.branch_name].coords.shape[-1], axis=-1).reshape(
-            state.branches[self.branch_name].groups_running.shape + (state.branches[self.branch_name].coords.shape[-1],)
+        coords_in = (
+            state.branches[self.branch_name].coords
+            * state.groups_running[:, None, None, None]
         )
 
-        coords_in[~groups_running_all] = self.store_missing_leaves
+        coords_in[~state.groups_running] = self.store_missing_leaves
         self.chain[self.branch_name][self.iteration] = coords_in
 
         # save higher level quantities
         self.log_like[self.iteration, :, :] = state.log_like
         self.log_prior[self.iteration, :, :] = state.log_prior
-        
+
         if state.betas is not None:
             self.betas[self.iteration, :] = state.betas
 
@@ -676,7 +759,7 @@ class ParaBackend(object):
 
         if swaps_accepted is not None:
             self.swaps_accepted += swaps_accepted
-        
+
         self.random_state = state.random_state
         self.iteration += 1
 
