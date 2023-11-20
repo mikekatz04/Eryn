@@ -6,6 +6,21 @@ from .mh import MHMove
 
 __all__ = ["GaussianMove"]
 
+def reflect_cosines_array(cos_ins,angle_ins,rotfac=np.pi,modfac=2*np.pi):
+    """helper to reflect cosines of coordinates around poles  to get them between -1 and 1,
+        which requires also rotating the signal by rotfac each time, then mod the angle by modfac"""
+    if cos_ins < -1.:
+        cos_ins = -1.+(-(cos_ins+1.))%4
+        angle_ins += rotfac
+    if cos_ins > 1.:
+        cos_ins = 1.-(cos_ins-1.)%4
+        angle_ins += rotfac
+        #if this reflects even number of times, params_in[1] after is guaranteed to be between -1 and -3, so one more correction attempt will suffice
+        if cos_ins < -1.:
+            cos_ins = -1.+(-(cos_ins+1.))%4
+            angle_ins += rotfac
+    angle_ins = angle_ins%modfac
+    return cos_ins,angle_ins
 
 class GaussianMove(MHMove):
     """A Metropolis step with a Gaussian proposal function.
@@ -35,7 +50,7 @@ class GaussianMove(MHMove):
 
     """
 
-    def __init__(self, cov_all, mode="AM", factor=None, priors=None, indx_list=None, swap_walkers=None, **kwargs):
+    def __init__(self, cov_all, mode="AM", factor=None, priors=None, indx_list=None, swap_walkers=None, sky_periodic=None, **kwargs):
 
         self.all_proposal = {}
         
@@ -49,7 +64,7 @@ class GaussianMove(MHMove):
                 if len(cov.shape) == 1:
                     # A diagonal proposal was given.
                     ndim = len(cov)
-                    proposal = _diagonal_proposal(np.sqrt(cov), factor, mode)
+                    proposal = _diagonal_proposal(np.sqrt(cov), factor, "vector")
 
                 elif len(cov.shape) == 2 and cov.shape[0] == cov.shape[1]:
                     # The full, square covariance matrix was given.
@@ -66,7 +81,7 @@ class GaussianMove(MHMove):
             else:
                 # This was a scalar proposal.
                 ndim = None
-                proposal = _isotropic_proposal(np.sqrt(cov), factor, mode)
+                proposal = _isotropic_proposal(np.sqrt(cov), factor,  "vector")
             self.all_proposal[name] = proposal
 
         # priors to draw from
@@ -75,6 +90,8 @@ class GaussianMove(MHMove):
         self.swap_walkers = swap_walkers
         # propose in blocks
         self.indx_list = indx_list
+        
+        self.sky_periodic = sky_periodic
         super(GaussianMove, self).__init__(**kwargs)
 
     def get_proposal(self, branches_coords, random, branches_inds=None, **kwargs):
@@ -140,6 +157,14 @@ class GaussianMove(MHMove):
             else:
                 new_coords = new_coords_tmp.copy()
             
+            if self.sky_periodic:
+                indx_list_here = [el[1] for el in self.sky_periodic if el[0]==name]
+                nw = new_coords_tmp.shape[0]
+                for i in range(nw):
+                    temp_ind = 0
+                    # if indx_list_here[temp_ind] is not None:
+                    new_coords[i,indx_list_here[temp_ind][0]] = reflect_cosines_array(*new_coords_tmp[i,indx_list_here[temp_ind][0]])
+                
             # jump in frequency
             # if np.random.uniform()>0.9:
             #     shape = new_coords[...,2].shape
