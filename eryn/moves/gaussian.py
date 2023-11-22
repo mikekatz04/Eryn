@@ -6,21 +6,19 @@ from .mh import MHMove
 
 __all__ = ["GaussianMove"]
 
-def reflect_cosines_array(cos_ins,angle_ins,rotfac=np.pi,modfac=2*np.pi):
-    """helper to reflect cosines of coordinates around poles  to get them between -1 and 1,
-        which requires also rotating the signal by rotfac each time, then mod the angle by modfac"""
-    if cos_ins < -1.:
-        cos_ins = -1.+(-(cos_ins+1.))%4
-        angle_ins += rotfac
-    if cos_ins > 1.:
-        cos_ins = 1.-(cos_ins-1.)%4
-        angle_ins += rotfac
-        #if this reflects even number of times, params_in[1] after is guaranteed to be between -1 and -3, so one more correction attempt will suffice
-        if cos_ins < -1.:
-            cos_ins = -1.+(-(cos_ins+1.))%4
-            angle_ins += rotfac
-    angle_ins = angle_ins%modfac
-    return cos_ins,angle_ins
+
+def ensure_sphere_boundary(costheta, phi):
+    """This function makes sure that if theta is proposed outside of the boundary 
+    we need to flip phi, the ranges are (theta in 0 pi), (phi in 0 2pi)"""
+    theta = np.arccos(costheta)
+    x = np.sin(theta) * np.cos(phi)
+    y = np.sin(theta) * np.sin(phi)
+    z = np.cos(theta)
+    new_theta = np.arccos(z/np.sqrt(x*x + y*y+z*z))
+    new_phi = np.sign(y)*np.arccos(x/np.sqrt(x*x + y*y))
+    mask = (new_phi < 0.0)
+    new_phi[mask] = new_phi[mask] + 2*np.pi
+    return np.cos(new_theta), new_phi
 
 class GaussianMove(MHMove):
     """A Metropolis step with a Gaussian proposal function.
@@ -160,10 +158,10 @@ class GaussianMove(MHMove):
             if self.sky_periodic:
                 indx_list_here = [el[1] for el in self.sky_periodic if el[0]==name]
                 nw = new_coords_tmp.shape[0]
-                for i in range(nw):
-                    temp_ind = 0
-                    # if indx_list_here[temp_ind] is not None:
-                    new_coords[i,indx_list_here[temp_ind][0]] = reflect_cosines_array(*new_coords_tmp[i,indx_list_here[temp_ind][0]])
+                for temp_ind in range(len(indx_list_here)):
+                    csth = new_coords_tmp[:,indx_list_here[temp_ind][0]][:,0]
+                    ph = new_coords_tmp[:,indx_list_here[temp_ind][0]][:,1]
+                    new_coords[:,indx_list_here[temp_ind][0]] = np.asarray(ensure_sphere_boundary(csth, ph)).T
                 
             # jump in frequency
             # if np.random.uniform()>0.9:
