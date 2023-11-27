@@ -20,6 +20,25 @@ def ensure_sphere_boundary(costheta, phi):
     new_phi[mask] = new_phi[mask] + 2*np.pi
     return np.cos(new_theta), new_phi
 
+
+def reflect_cosines_array(cos_ins,angle_ins,rotfac=np.pi,modfac=2*np.pi):
+    """helper to reflect cosines of coordinates around poles  to get them between -1 and 1,
+        which requires also rotating the signal by rotfac each time, then mod the angle by modfac"""
+    for itrk in range(cos_ins.size):
+        if cos_ins[itrk] < -1.:
+            cos_ins[itrk] = -1.+(-(cos_ins[itrk]+1.))%4
+            angle_ins[itrk] += rotfac
+        if cos_ins[itrk] > 1.:
+            cos_ins[itrk] = 1.-(cos_ins[itrk]-1.)%4
+            angle_ins[itrk] += rotfac
+            #if this reflects even number of times, params_in[1] after is guaranteed to be between -1 and -3, so one more correction attempt will suffice
+            if cos_ins[itrk] < -1.:
+                cos_ins[itrk] = -1.+(-(cos_ins[itrk]+1.))%4
+                angle_ins[itrk] += rotfac
+        angle_ins[itrk] = angle_ins[itrk]%modfac
+    return cos_ins,angle_ins
+
+
 class GaussianMove(MHMove):
     """A Metropolis step with a Gaussian proposal function.
 
@@ -161,7 +180,7 @@ class GaussianMove(MHMove):
                 for temp_ind in range(len(indx_list_here)):
                     csth = new_coords_tmp[:,indx_list_here[temp_ind][0]][:,0]
                     ph = new_coords_tmp[:,indx_list_here[temp_ind][0]][:,1]
-                    new_coords[:,indx_list_here[temp_ind][0]] = np.asarray(ensure_sphere_boundary(csth, ph)).T
+                    new_coords[:,indx_list_here[temp_ind][0]] = np.asarray(reflect_cosines_array(csth, ph)).T
                 
             # jump in frequency
             # if np.random.uniform()>0.9:
