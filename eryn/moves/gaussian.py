@@ -159,18 +159,13 @@ class GaussianMove(MHMove):
             else:
                 new_coords_tmp = proposal_fn(coords[inds_here], random)[0]
             
-            
-
             # swap walkers, this helps for the search phase
             if self.indx_list is not None:
-                indx_list_here = [el[1] for el in self.indx_list if el[0]==name]
+                indx_list_here = np.asarray([el[1] for el in self.indx_list if el[0]==name])
                 nw = new_coords_tmp.shape[0]
-                for i in range(nw):
-                    temp_ind = np.random.randint(len(indx_list_here))
-                    if indx_list_here[temp_ind] is not None:
-                        new_coords[i,indx_list_here[temp_ind][0]] = new_coords_tmp[i,indx_list_here[temp_ind][0] ]
-                    else:
-                        new_coords[i,:] = new_coords_tmp[i,:]
+                # list of numbers indicating wich group of parameters to change
+                ind_to_chage = np.random.randint(len(indx_list_here),size=nw)
+                new_coords[indx_list_here[ind_to_chage][:,0,:]] = new_coords_tmp[indx_list_here[ind_to_chage][:,0,:]]
             else:
                 new_coords = new_coords_tmp.copy()
             
@@ -217,6 +212,7 @@ class _isotropic_proposal(object):
     def __init__(self, scale, factor, mode):
         self.index = 0
         self.scale = scale
+        self.svd = None
         self.invscale = np.linalg.inv(np.linalg.cholesky(scale))
         if factor is None:
             self._log_factor = None
@@ -283,13 +279,13 @@ class eigproposal():
 
 
 
-def propose_AM(x0, rng, tmp_cov, scale):
+def propose_AM(x0, rng, svd, scale):
     """
     Adaptive Jump Proposal
     """
     new_pos = x0.copy()
     nw, nd = new_pos.shape
-    U, S, v = np.linalg.svd(tmp_cov)
+    U, S, v = svd
 
     # adjust step size
     prob = rng.random()
@@ -332,6 +328,10 @@ def propose_AM(x0, rng, tmp_cov, scale):
 class AM_proposal(_isotropic_proposal):
 
     allowed_modes = ["vector"]
-
+    
     def get_updated_vector(self, rng, x0):
-        return propose_AM(x0, rng, self.scale, self.get_factor(rng))
+        if self.svd is None:
+            svd = np.linalg.svd(self.scale)
+        else:
+            svd = self.svd
+        return propose_AM(x0, rng, svd, self.get_factor(rng))
