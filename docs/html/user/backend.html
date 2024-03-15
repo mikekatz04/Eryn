@@ -1,21 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Backends &mdash; Eryn 0.0.1 documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../_static/doctools.js"></script>
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -48,8 +50,104 @@
 <li class="toctree-l1"><a class="reference internal" href="ensemble.html">Ensemble</a></li>
 <li class="toctree-l1"><a class="reference internal" href="state.html">State</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Backends</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#regular-backend">Regular Backend</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#hdf-backend">HDF Backend</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#regular-backend">Regular Backend</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.backends.Backend"><code class="docutils literal notranslate"><span class="pre">Backend</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.accepted"><code class="docutils literal notranslate"><span class="pre">Backend.accepted</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.betas"><code class="docutils literal notranslate"><span class="pre">Backend.betas</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.blobs"><code class="docutils literal notranslate"><span class="pre">Backend.blobs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.branch_names"><code class="docutils literal notranslate"><span class="pre">Backend.branch_names</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.chain"><code class="docutils literal notranslate"><span class="pre">Backend.chain</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.dtype"><code class="docutils literal notranslate"><span class="pre">Backend.dtype</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.inds"><code class="docutils literal notranslate"><span class="pre">Backend.inds</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.initiailized"><code class="docutils literal notranslate"><span class="pre">Backend.initiailized</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.iteration"><code class="docutils literal notranslate"><span class="pre">Backend.iteration</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.log_prior"><code class="docutils literal notranslate"><span class="pre">Backend.log_prior</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.log_like"><code class="docutils literal notranslate"><span class="pre">Backend.log_like</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.move_info"><code class="docutils literal notranslate"><span class="pre">Backend.move_info</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.move_keys"><code class="docutils literal notranslate"><span class="pre">Backend.move_keys</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.nbranches"><code class="docutils literal notranslate"><span class="pre">Backend.nbranches</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.ndims"><code class="docutils literal notranslate"><span class="pre">Backend.ndims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.nleaves_max"><code class="docutils literal notranslate"><span class="pre">Backend.nleaves_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.nwalkers"><code class="docutils literal notranslate"><span class="pre">Backend.nwalkers</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.ntemps"><code class="docutils literal notranslate"><span class="pre">Backend.ntemps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.reset_args"><code class="docutils literal notranslate"><span class="pre">Backend.reset_args</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.reset_kwargs"><code class="docutils literal notranslate"><span class="pre">Backend.reset_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.rj"><code class="docutils literal notranslate"><span class="pre">Backend.rj</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.rj_accepted"><code class="docutils literal notranslate"><span class="pre">Backend.rj_accepted</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.store_missing_leaves"><code class="docutils literal notranslate"><span class="pre">Backend.store_missing_leaves</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.reset_base"><code class="docutils literal notranslate"><span class="pre">Backend.reset_base()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.reset"><code class="docutils literal notranslate"><span class="pre">Backend.reset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.has_blobs"><code class="docutils literal notranslate"><span class="pre">Backend.has_blobs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.get_value"><code class="docutils literal notranslate"><span class="pre">Backend.get_value()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.get_chain"><code class="docutils literal notranslate"><span class="pre">Backend.get_chain()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.get_autocorr_thin_burn"><code class="docutils literal notranslate"><span class="pre">Backend.get_autocorr_thin_burn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.get_inds"><code class="docutils literal notranslate"><span class="pre">Backend.get_inds()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.get_nleaves"><code class="docutils literal notranslate"><span class="pre">Backend.get_nleaves()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.get_blobs"><code class="docutils literal notranslate"><span class="pre">Backend.get_blobs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.get_log_like"><code class="docutils literal notranslate"><span class="pre">Backend.get_log_like()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.get_log_prior"><code class="docutils literal notranslate"><span class="pre">Backend.get_log_prior()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.get_log_posterior"><code class="docutils literal notranslate"><span class="pre">Backend.get_log_posterior()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.get_betas"><code class="docutils literal notranslate"><span class="pre">Backend.get_betas()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.get_a_sample"><code class="docutils literal notranslate"><span class="pre">Backend.get_a_sample()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.get_last_sample"><code class="docutils literal notranslate"><span class="pre">Backend.get_last_sample()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.get_autocorr_time"><code class="docutils literal notranslate"><span class="pre">Backend.get_autocorr_time()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.get_evidence_estimate"><code class="docutils literal notranslate"><span class="pre">Backend.get_evidence_estimate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.get_gelman_rubin_convergence_diagnostic"><code class="docutils literal notranslate"><span class="pre">Backend.get_gelman_rubin_convergence_diagnostic()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.shape"><code class="docutils literal notranslate"><span class="pre">Backend.shape</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.grow"><code class="docutils literal notranslate"><span class="pre">Backend.grow()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.get_move_info"><code class="docutils literal notranslate"><span class="pre">Backend.get_move_info()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.save_step"><code class="docutils literal notranslate"><span class="pre">Backend.save_step()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.Backend.get_info"><code class="docutils literal notranslate"><span class="pre">Backend.get_info()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#hdf-backend">HDF Backend</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.backends.HDFBackend"><code class="docutils literal notranslate"><span class="pre">HDFBackend</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.initialized"><code class="docutils literal notranslate"><span class="pre">HDFBackend.initialized</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.open"><code class="docutils literal notranslate"><span class="pre">HDFBackend.open()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.reset"><code class="docutils literal notranslate"><span class="pre">HDFBackend.reset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.nwalkers"><code class="docutils literal notranslate"><span class="pre">HDFBackend.nwalkers</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.ntemps"><code class="docutils literal notranslate"><span class="pre">HDFBackend.ntemps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.rj"><code class="docutils literal notranslate"><span class="pre">HDFBackend.rj</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.nleaves_max"><code class="docutils literal notranslate"><span class="pre">HDFBackend.nleaves_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.ndims"><code class="docutils literal notranslate"><span class="pre">HDFBackend.ndims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.move_keys"><code class="docutils literal notranslate"><span class="pre">HDFBackend.move_keys</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.branch_names"><code class="docutils literal notranslate"><span class="pre">HDFBackend.branch_names</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.nbranches"><code class="docutils literal notranslate"><span class="pre">HDFBackend.nbranches</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.reset_args"><code class="docutils literal notranslate"><span class="pre">HDFBackend.reset_args</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.reset_kwargs"><code class="docutils literal notranslate"><span class="pre">HDFBackend.reset_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.has_blobs"><code class="docutils literal notranslate"><span class="pre">HDFBackend.has_blobs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.get_value"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_value()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.get_move_info"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_move_info()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.shape"><code class="docutils literal notranslate"><span class="pre">HDFBackend.shape</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.iteration"><code class="docutils literal notranslate"><span class="pre">HDFBackend.iteration</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.accepted"><code class="docutils literal notranslate"><span class="pre">HDFBackend.accepted</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.rj_accepted"><code class="docutils literal notranslate"><span class="pre">HDFBackend.rj_accepted</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.swaps_accepted"><code class="docutils literal notranslate"><span class="pre">HDFBackend.swaps_accepted</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.random_state"><code class="docutils literal notranslate"><span class="pre">HDFBackend.random_state</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.grow"><code class="docutils literal notranslate"><span class="pre">HDFBackend.grow()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.save_step"><code class="docutils literal notranslate"><span class="pre">HDFBackend.save_step()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.get_a_sample"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_a_sample()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.get_autocorr_thin_burn"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_autocorr_thin_burn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.get_autocorr_time"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_autocorr_time()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.get_betas"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_betas()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.get_blobs"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_blobs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.get_chain"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_chain()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.get_evidence_estimate"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_evidence_estimate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.get_gelman_rubin_convergence_diagnostic"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_gelman_rubin_convergence_diagnostic()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.get_inds"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_inds()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.get_info"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_info()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.get_last_sample"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_last_sample()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.get_log_like"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_log_like()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.get_log_posterior"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_log_posterior()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.get_log_prior"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_log_prior()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.get_nleaves"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_nleaves()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.backends.HDFBackend.reset_base"><code class="docutils literal notranslate"><span class="pre">HDFBackend.reset_base()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="moves.html">Moves</a></li>
@@ -96,13 +194,13 @@
            <div itemprop="articleBody">
              
   <section id="backends">
-<h1>Backends<a class="headerlink" href="#backends" title="Permalink to this heading"></a></h1>
+<h1>Backends<a class="headerlink" href="#backends" title="Link to this heading"></a></h1>
 <p>Backends are used to store sampler information as it runs.</p>
 <section id="regular-backend">
-<h2>Regular Backend<a class="headerlink" href="#regular-backend" title="Permalink to this heading"></a></h2>
+<h2>Regular Backend<a class="headerlink" href="#regular-backend" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="eryn.backends.Backend">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.backends.</span></span><span class="sig-name descname"><span class="pre">Backend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store_missing_leaves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">nan</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.backends.</span></span><span class="sig-name descname"><span class="pre">Backend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store_missing_leaves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">nan</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A simple default backend that stores the chain in memory</p>
 <dl class="field-list simple">
@@ -117,7 +215,7 @@ program uses np.float64. (default: <code class="docutils literal notranslate"><s
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.accepted">
-<span class="sig-name descname"><span class="pre">accepted</span></span><a class="headerlink" href="#eryn.backends.Backend.accepted" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">accepted</span></span><a class="headerlink" href="#eryn.backends.Backend.accepted" title="Link to this definition"></a></dt>
 <dd><p>Number of accepted steps for within-model moves.
 The shape is (ntemps, nwalkers).</p>
 <dl class="field-list simple">
@@ -129,7 +227,7 @@ The shape is (ntemps, nwalkers).</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.betas">
-<span class="sig-name descname"><span class="pre">betas</span></span><a class="headerlink" href="#eryn.backends.Backend.betas" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">betas</span></span><a class="headerlink" href="#eryn.backends.Backend.betas" title="Link to this definition"></a></dt>
 <dd><p>Inverse temperature latter at each step.
 Shape is (nsteps, ntemps). This keeps track of adjustable temperatures.</p>
 <dl class="field-list simple">
@@ -141,7 +239,7 @@ Shape is (nsteps, ntemps). This keeps track of adjustable temperatures.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.blobs">
-<span class="sig-name descname"><span class="pre">blobs</span></span><a class="headerlink" href="#eryn.backends.Backend.blobs" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">blobs</span></span><a class="headerlink" href="#eryn.backends.Backend.blobs" title="Link to this definition"></a></dt>
 <dd><p>Stores extra blob information returned from
 likelihood function. Shape is (nsteps, ntemps, nwalkers, nblobs).</p>
 <dl class="field-list simple">
@@ -153,7 +251,7 @@ likelihood function. Shape is (nsteps, ntemps, nwalkers, nblobs).</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.branch_names">
-<span class="sig-name descname"><span class="pre">branch_names</span></span><a class="headerlink" href="#eryn.backends.Backend.branch_names" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">branch_names</span></span><a class="headerlink" href="#eryn.backends.Backend.branch_names" title="Link to this definition"></a></dt>
 <dd><p>List of branch names.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -164,7 +262,7 @@ likelihood function. Shape is (nsteps, ntemps, nwalkers, nblobs).</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.chain">
-<span class="sig-name descname"><span class="pre">chain</span></span><a class="headerlink" href="#eryn.backends.Backend.chain" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">chain</span></span><a class="headerlink" href="#eryn.backends.Backend.chain" title="Link to this definition"></a></dt>
 <dd><p>Dictionary with branch_names as keys. The values are
 5D double np.ndarray arrays with shape (nsteps, ntemps, nwalkers, nleaves_max, ndim).
 These are the locations of walkers over the MCMC run.</p>
@@ -177,7 +275,7 @@ These are the locations of walkers over the MCMC run.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.dtype">
-<span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#eryn.backends.Backend.dtype" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#eryn.backends.Backend.dtype" title="Link to this definition"></a></dt>
 <dd><p>Dtype to use for data storage.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -188,7 +286,7 @@ These are the locations of walkers over the MCMC run.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.inds">
-<span class="sig-name descname"><span class="pre">inds</span></span><a class="headerlink" href="#eryn.backends.Backend.inds" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">inds</span></span><a class="headerlink" href="#eryn.backends.Backend.inds" title="Link to this definition"></a></dt>
 <dd><p>Keys are branch_names. Values are 4D bool np.ndarray
 of shape (nsteps, ntemps, nwalkers, nleaves_max). This array details which
 leaves are used in the current step. This is really only
@@ -202,7 +300,7 @@ relevant for reversible jump.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.initiailized">
-<span class="sig-name descname"><span class="pre">initiailized</span></span><a class="headerlink" href="#eryn.backends.Backend.initiailized" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initiailized</span></span><a class="headerlink" href="#eryn.backends.Backend.initiailized" title="Link to this definition"></a></dt>
 <dd><p>If <code class="docutils literal notranslate"><span class="pre">True</span></code>, backend object has been initialized.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -213,7 +311,7 @@ relevant for reversible jump.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.iteration">
-<span class="sig-name descname"><span class="pre">iteration</span></span><a class="headerlink" href="#eryn.backends.Backend.iteration" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">iteration</span></span><a class="headerlink" href="#eryn.backends.Backend.iteration" title="Link to this definition"></a></dt>
 <dd><p>Current index within the data storage arrays.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -224,7 +322,7 @@ relevant for reversible jump.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.log_prior">
-<span class="sig-name descname"><span class="pre">log_prior</span></span><a class="headerlink" href="#eryn.backends.Backend.log_prior" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">log_prior</span></span><a class="headerlink" href="#eryn.backends.Backend.log_prior" title="Link to this definition"></a></dt>
 <dd><p>Log of the prior values. Shape is
 (nsteps, nwalkers, ntemps).</p>
 <dl class="field-list simple">
@@ -236,7 +334,7 @@ relevant for reversible jump.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.log_like">
-<span class="sig-name descname"><span class="pre">log_like</span></span><a class="headerlink" href="#eryn.backends.Backend.log_like" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">log_like</span></span><a class="headerlink" href="#eryn.backends.Backend.log_like" title="Link to this definition"></a></dt>
 <dd><p>Log of the likelihood values. Shape is
 (nsteps, nwalkers, ntemps).</p>
 <dl class="field-list simple">
@@ -248,7 +346,7 @@ relevant for reversible jump.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.move_info">
-<span class="sig-name descname"><span class="pre">move_info</span></span><a class="headerlink" href="#eryn.backends.Backend.move_info" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">move_info</span></span><a class="headerlink" href="#eryn.backends.Backend.move_info" title="Link to this definition"></a></dt>
 <dd><p>Dictionary containing move info.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -259,7 +357,7 @@ relevant for reversible jump.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.move_keys">
-<span class="sig-name descname"><span class="pre">move_keys</span></span><a class="headerlink" href="#eryn.backends.Backend.move_keys" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">move_keys</span></span><a class="headerlink" href="#eryn.backends.Backend.move_keys" title="Link to this definition"></a></dt>
 <dd><p>List of keys for <code class="docutils literal notranslate"><span class="pre">move_info</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -270,7 +368,7 @@ relevant for reversible jump.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.nbranches">
-<span class="sig-name descname"><span class="pre">nbranches</span></span><a class="headerlink" href="#eryn.backends.Backend.nbranches" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">nbranches</span></span><a class="headerlink" href="#eryn.backends.Backend.nbranches" title="Link to this definition"></a></dt>
 <dd><p>Number of branches.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -281,7 +379,7 @@ relevant for reversible jump.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.ndims">
-<span class="sig-name descname"><span class="pre">ndims</span></span><a class="headerlink" href="#eryn.backends.Backend.ndims" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">ndims</span></span><a class="headerlink" href="#eryn.backends.Backend.ndims" title="Link to this definition"></a></dt>
 <dd><p>Dimensionality of each branch.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -292,7 +390,7 @@ relevant for reversible jump.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.nleaves_max">
-<span class="sig-name descname"><span class="pre">nleaves_max</span></span><a class="headerlink" href="#eryn.backends.Backend.nleaves_max" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">nleaves_max</span></span><a class="headerlink" href="#eryn.backends.Backend.nleaves_max" title="Link to this definition"></a></dt>
 <dd><p>Maximum allowable leaves for each branch.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -303,7 +401,7 @@ relevant for reversible jump.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.nwalkers">
-<span class="sig-name descname"><span class="pre">nwalkers</span></span><a class="headerlink" href="#eryn.backends.Backend.nwalkers" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">nwalkers</span></span><a class="headerlink" href="#eryn.backends.Backend.nwalkers" title="Link to this definition"></a></dt>
 <dd><p>The size of the ensemble (per temperature).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -314,7 +412,7 @@ relevant for reversible jump.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.ntemps">
-<span class="sig-name descname"><span class="pre">ntemps</span></span><a class="headerlink" href="#eryn.backends.Backend.ntemps" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">ntemps</span></span><a class="headerlink" href="#eryn.backends.Backend.ntemps" title="Link to this definition"></a></dt>
 <dd><p>Number of rungs in the temperature ladder.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -325,7 +423,7 @@ relevant for reversible jump.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.reset_args">
-<span class="sig-name descname"><span class="pre">reset_args</span></span><a class="headerlink" href="#eryn.backends.Backend.reset_args" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">reset_args</span></span><a class="headerlink" href="#eryn.backends.Backend.reset_args" title="Link to this definition"></a></dt>
 <dd><p>Arguments to reset backend.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -336,7 +434,7 @@ relevant for reversible jump.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.reset_kwargs">
-<span class="sig-name descname"><span class="pre">reset_kwargs</span></span><a class="headerlink" href="#eryn.backends.Backend.reset_kwargs" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">reset_kwargs</span></span><a class="headerlink" href="#eryn.backends.Backend.reset_kwargs" title="Link to this definition"></a></dt>
 <dd><p>Keyword arguments to reset backend.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -347,7 +445,7 @@ relevant for reversible jump.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.rj">
-<span class="sig-name descname"><span class="pre">rj</span></span><a class="headerlink" href="#eryn.backends.Backend.rj" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">rj</span></span><a class="headerlink" href="#eryn.backends.Backend.rj" title="Link to this definition"></a></dt>
 <dd><p>If True, reversible-jump techniques are used.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -358,7 +456,7 @@ relevant for reversible jump.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.rj_accepted">
-<span class="sig-name descname"><span class="pre">rj_accepted</span></span><a class="headerlink" href="#eryn.backends.Backend.rj_accepted" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">rj_accepted</span></span><a class="headerlink" href="#eryn.backends.Backend.rj_accepted" title="Link to this definition"></a></dt>
 <dd><p>Number of accepted steps for between-model moves.
 The shape is (ntemps, nwalkers).</p>
 <dl class="field-list simple">
@@ -370,7 +468,7 @@ The shape is (ntemps, nwalkers).</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.backends.Backend.store_missing_leaves">
-<span class="sig-name descname"><span class="pre">store_missing_leaves</span></span><a class="headerlink" href="#eryn.backends.Backend.store_missing_leaves" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">store_missing_leaves</span></span><a class="headerlink" href="#eryn.backends.Backend.store_missing_leaves" title="Link to this definition"></a></dt>
 <dd><p>Number to store for leaves that are not
 used in a specific step.</p>
 <dl class="field-list simple">
@@ -382,27 +480,27 @@ used in a specific step.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.reset_base">
-<span class="sig-name descname"><span class="pre">reset_base</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.reset_base" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">reset_base</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.reset_base" title="Link to this definition"></a></dt>
 <dd><p>Allows for simple reset based on previous inputs</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.reset">
-<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ntemps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbranches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">info</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.reset" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ntemps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbranches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">info</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.reset" title="Link to this definition"></a></dt>
 <dd><p>Clear the state of the chain and empty the backend</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>nwalkers</strong> (<em>int</em>) – The size of the ensemble (per temperature).</p></li>
-<li><p><strong>ndims</strong> (<em>int</em><em>, </em><em>list of ints</em><em>, or </em><em>dict</em>) – The number of dimensions for each branch. If
+<li><p><strong>ndims</strong> (<em>int</em><em>, </em><em>list</em><em> of </em><em>ints</em><em>, or </em><em>dict</em>) – The number of dimensions for each branch. If
 <code class="docutils literal notranslate"><span class="pre">dict</span></code>, keys should be the branch names and values the associated dimensionality.</p></li>
-<li><p><strong>nleaves_max</strong> (<em>int</em><em>, </em><em>list of ints</em><em>, or </em><em>dict</em><em>, </em><em>optional</em>) – Maximum allowable leaf count for each branch.
+<li><p><strong>nleaves_max</strong> (<em>int</em><em>, </em><em>list</em><em> of </em><em>ints</em><em>, or </em><em>dict</em><em>, </em><em>optional</em>) – Maximum allowable leaf count for each branch.
 It should have the same length as the number of branches.
 If <code class="docutils literal notranslate"><span class="pre">dict</span></code>, keys should be the branch names and values the associated maximal leaf value.
 (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
 <li><p><strong>ntemps</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of rungs in the temperature ladder.
 (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
-<li><p><strong>branch_names</strong> (<em>str</em><em> or </em><em>list of str</em><em>, </em><em>optional</em>) – Names of the branches used. If not given,
+<li><p><strong>branch_names</strong> (<em>str</em><em> or </em><em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Names of the branches used. If not given,
 branches will be names <code class="docutils literal notranslate"><span class="pre">model_0</span></code>, …, <code class="docutils literal notranslate"><span class="pre">model_n</span></code> for <code class="docutils literal notranslate"><span class="pre">n</span></code> branches.
 (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 <li><p><strong>nbranches</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of branches. This is only used if <code class="docutils literal notranslate"><span class="pre">branch_names</span> <span class="pre">is</span> <span class="pre">None</span></code>.
@@ -420,13 +518,13 @@ as attributes to the backend.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.has_blobs">
-<span class="sig-name descname"><span class="pre">has_blobs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.has_blobs" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">has_blobs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.has_blobs" title="Link to this definition"></a></dt>
 <dd><p>Returns <code class="docutils literal notranslate"><span class="pre">True</span></code> if the model includes blobs</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.get_value">
-<span class="sig-name descname"><span class="pre">get_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slice_vals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_value" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slice_vals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_value" title="Link to this definition"></a></dt>
 <dd><p>Returns a requested value to user.</p>
 <p>This function helps to streamline the backend for both
 basic and hdf backend.</p>
@@ -452,7 +550,7 @@ the chain as burn-in. (default: <code class="docutils literal notranslate"><span
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.get_chain">
-<span class="sig-name descname"><span class="pre">get_chain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_chain" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_chain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_chain" title="Link to this definition"></a></dt>
 <dd><p>Get the stored chain of MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -484,7 +582,7 @@ across the branches.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.get_autocorr_thin_burn">
-<span class="sig-name descname"><span class="pre">get_autocorr_thin_burn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_autocorr_thin_burn" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_autocorr_thin_burn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_autocorr_thin_burn" title="Link to this definition"></a></dt>
 <dd><p>Return the discard and thin values based on the autocorrelation length.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">discard</span></code> is determined as 2 times the maximum correlation length among parameters.
 The <code class="docutils literal notranslate"><span class="pre">thin</span></code> is determined using 1/2 times the minimum correlation legnth among parameters.</p>
@@ -504,7 +602,7 @@ The <code class="docutils literal notranslate"><span class="pre">thin</span></co
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.get_inds">
-<span class="sig-name descname"><span class="pre">get_inds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_inds" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_inds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_inds" title="Link to this definition"></a></dt>
 <dd><p>Get the stored chain of MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -536,7 +634,7 @@ across the branches indicated which leaves were used at each step.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.get_nleaves">
-<span class="sig-name descname"><span class="pre">get_nleaves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_nleaves" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_nleaves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_nleaves" title="Link to this definition"></a></dt>
 <dd><p>Get the number of leaves for each walker</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -570,7 +668,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.get_blobs">
-<span class="sig-name descname"><span class="pre">get_blobs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_blobs" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_blobs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_blobs" title="Link to this definition"></a></dt>
 <dd><p>Get the chain of blobs for each sample in the chain</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -597,7 +695,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.get_log_like">
-<span class="sig-name descname"><span class="pre">get_log_like</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_log_like" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_log_like</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_log_like" title="Link to this definition"></a></dt>
 <dd><p>Get the chain of log Likelihood values evaluated at the MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -624,7 +722,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.get_log_prior">
-<span class="sig-name descname"><span class="pre">get_log_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_log_prior" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_log_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_log_prior" title="Link to this definition"></a></dt>
 <dd><p>Get the chain of log Prior evaluated at the MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -651,7 +749,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.get_log_posterior">
-<span class="sig-name descname"><span class="pre">get_log_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temper</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_log_posterior" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_log_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temper</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_log_posterior" title="Link to this definition"></a></dt>
 <dd><p>Get the chain of log posterior values evaluated at the MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -680,7 +778,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.get_betas">
-<span class="sig-name descname"><span class="pre">get_betas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_betas" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_betas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_betas" title="Link to this definition"></a></dt>
 <dd><p>Get the chain of inverse temperatures</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -707,7 +805,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.get_a_sample">
-<span class="sig-name descname"><span class="pre">get_a_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">it</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_a_sample" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_a_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">it</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_a_sample" title="Link to this definition"></a></dt>
 <dd><p>Access a sample in the chain</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -727,7 +825,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.get_last_sample">
-<span class="sig-name descname"><span class="pre">get_last_sample</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_last_sample" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_last_sample</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_last_sample" title="Link to this definition"></a></dt>
 <dd><p>Access the most recent sample in the chain</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -741,7 +839,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.get_autocorr_time">
-<span class="sig-name descname"><span class="pre">get_autocorr_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_temps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multiply_thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_autocorr_time" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_autocorr_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_temps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multiply_thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_autocorr_time" title="Link to this definition"></a></dt>
 <dd><p>Compute an estimate of the autocorrelation time for each parameter</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -779,7 +877,7 @@ keys.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.get_evidence_estimate">
-<span class="sig-name descname"><span class="pre">get_evidence_estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'therodynamic'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">ss_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_evidence_estimate" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_evidence_estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'therodynamic'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">ss_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_evidence_estimate" title="Link to this definition"></a></dt>
 <dd><p>Get an estimate of the evidence</p>
 <p>This function gets the sample information and uses
 <code class="xref py py-func docutils literal notranslate"><span class="pre">thermodynamic_integration_log_evidence()</span></code> or
@@ -815,7 +913,7 @@ methods are the ‘thermodynamic’ and ‘stepping-stone’ (default: <code cla
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.get_gelman_rubin_convergence_diagnostic">
-<span class="sig-name descname"><span class="pre">get_gelman_rubin_convergence_diagnostic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">psrf_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_gelman_rubin_convergence_diagnostic" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_gelman_rubin_convergence_diagnostic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">psrf_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_gelman_rubin_convergence_diagnostic" title="Link to this definition"></a></dt>
 <dd><p>The Gelman - Rubin convergence diagnostic.
 A general approach to monitoring convergence of MCMC output of multiple walkers.
 The function makes a comparison of within-chain and between-chain variances.
@@ -855,7 +953,7 @@ per temperature, stored in a dictionary, per branch name.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.backends.Backend.shape">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#eryn.backends.Backend.shape" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#eryn.backends.Backend.shape" title="Link to this definition"></a></dt>
 <dd><p>The dimensions of the ensemble</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -874,7 +972,7 @@ shapes of individual branches: (ntemps, nwalkers, nleaves_max, ndim).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.grow">
-<span class="sig-name descname"><span class="pre">grow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ngrow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blobs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.grow" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">grow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ngrow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blobs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.grow" title="Link to this definition"></a></dt>
 <dd><p>Expand the storage space by some number of samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -889,7 +987,7 @@ dtype for the blobs array.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.get_move_info">
-<span class="sig-name descname"><span class="pre">get_move_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_move_info" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_move_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_move_info" title="Link to this definition"></a></dt>
 <dd><p>Get move information.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -903,7 +1001,7 @@ dtype for the blobs array.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.save_step">
-<span class="sig-name descname"><span class="pre">save_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rj_accepted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">swaps_accepted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moves_accepted_fraction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.save_step" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">save_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rj_accepted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">swaps_accepted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moves_accepted_fraction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.save_step" title="Link to this definition"></a></dt>
 <dd><p>Save a step to the backend</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -928,7 +1026,7 @@ moves in the sampler. This dict must have the same keys as <code class="docutils
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.Backend.get_info">
-<span class="sig-name descname"><span class="pre">get_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_info" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.Backend.get_info" title="Link to this definition"></a></dt>
 <dd><p>Get an output info dictionary</p>
 <p>This dictionary could be used for diagnostics or plotting.</p>
 <dl class="field-list simple">
@@ -960,10 +1058,10 @@ checks or plotting.</p>
 
 </section>
 <section id="hdf-backend">
-<h2>HDF Backend<a class="headerlink" href="#hdf-backend" title="Permalink to this heading"></a></h2>
+<h2>HDF Backend<a class="headerlink" href="#hdf-backend" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.backends.</span></span><span class="sig-name descname"><span class="pre">HDFBackend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mcmc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compression</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compression_opts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store_missing_leaves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">nan</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.backends.</span></span><span class="sig-name descname"><span class="pre">HDFBackend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mcmc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compression</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compression_opts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store_missing_leaves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">nan</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#eryn.backends.Backend" title="eryn.backends.backend.Backend"><code class="xref py py-class docutils literal notranslate"><span class="pre">Backend</span></code></a></p>
 <p>A backend that stores the chain in an HDF5 file using h5py</p>
 <div class="admonition note">
@@ -999,13 +1097,13 @@ used in a specific step. (default: <code class="docutils literal notranslate"><s
 </dl>
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.initialized">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">initialized</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.initialized" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">initialized</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.initialized" title="Link to this definition"></a></dt>
 <dd><p>Check if backend file has been initialized properly.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.open">
-<span class="sig-name descname"><span class="pre">open</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'r'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.open" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">open</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'r'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.open" title="Link to this definition"></a></dt>
 <dd><p>Opens the h5 file in the proper mode.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1025,21 +1123,21 @@ used in a specific step. (default: <code class="docutils literal notranslate"><s
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.reset">
-<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ntemps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbranches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">info</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.reset" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ntemps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbranches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">info</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.reset" title="Link to this definition"></a></dt>
 <dd><p>Clear the state of the chain and empty the backend</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>nwalkers</strong> (<em>int</em>) – The size of the ensemble</p></li>
-<li><p><strong>ndims</strong> (<em>int</em><em>, </em><em>list of ints</em><em>, or </em><em>dict</em>) – The number of dimensions for each branch. If
+<li><p><strong>ndims</strong> (<em>int</em><em>, </em><em>list</em><em> of </em><em>ints</em><em>, or </em><em>dict</em>) – The number of dimensions for each branch. If
 <code class="docutils literal notranslate"><span class="pre">dict</span></code>, keys should be the branch names and values the associated dimensionality.</p></li>
-<li><p><strong>nleaves_max</strong> (<em>int</em><em>, </em><em>list of ints</em><em>, or </em><em>dict</em><em>, </em><em>optional</em>) – Maximum allowable leaf count for each branch.
+<li><p><strong>nleaves_max</strong> (<em>int</em><em>, </em><em>list</em><em> of </em><em>ints</em><em>, or </em><em>dict</em><em>, </em><em>optional</em>) – Maximum allowable leaf count for each branch.
 It should have the same length as the number of branches.
 If <code class="docutils literal notranslate"><span class="pre">dict</span></code>, keys should be the branch names and values the associated maximal leaf value.
 (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
 <li><p><strong>ntemps</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of rungs in the temperature ladder.
 (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
-<li><p><strong>branch_names</strong> (<em>str</em><em> or </em><em>list of str</em><em>, </em><em>optional</em>) – Names of the branches used. If not given,
+<li><p><strong>branch_names</strong> (<em>str</em><em> or </em><em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Names of the branches used. If not given,
 branches will be names <code class="docutils literal notranslate"><span class="pre">model_0</span></code>, …, <code class="docutils literal notranslate"><span class="pre">model_n</span></code> for <code class="docutils literal notranslate"><span class="pre">n</span></code> branches.
 (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 <li><p><strong>nbranches</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of branches. This is only used if <code class="docutils literal notranslate"><span class="pre">branch_names</span> <span class="pre">is</span> <span class="pre">None</span></code>.
@@ -1057,73 +1155,73 @@ as attributes to the backend. These are also added to the HDF5 file.</p></li>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.nwalkers">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nwalkers</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.nwalkers" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nwalkers</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.nwalkers" title="Link to this definition"></a></dt>
 <dd><p>Get nwalkers from h5 file.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.ntemps">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ntemps</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.ntemps" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ntemps</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.ntemps" title="Link to this definition"></a></dt>
 <dd><p>Get ntemps from h5 file.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.rj">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rj</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.rj" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rj</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.rj" title="Link to this definition"></a></dt>
 <dd><p>Get rj from h5 file.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.nleaves_max">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nleaves_max</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.nleaves_max" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nleaves_max</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.nleaves_max" title="Link to this definition"></a></dt>
 <dd><p>Get nleaves_max from h5 file.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.ndims">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ndims</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.ndims" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ndims</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.ndims" title="Link to this definition"></a></dt>
 <dd><p>Get ndims from h5 file.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.move_keys">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">move_keys</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.move_keys" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">move_keys</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.move_keys" title="Link to this definition"></a></dt>
 <dd><p>Get move_keys from h5 file.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.branch_names">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">branch_names</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.branch_names" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">branch_names</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.branch_names" title="Link to this definition"></a></dt>
 <dd><p>Get branch names from h5 file.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.nbranches">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nbranches</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.nbranches" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nbranches</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.nbranches" title="Link to this definition"></a></dt>
 <dd><p>Get number of branches from h5 file.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.reset_args">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">reset_args</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.reset_args" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">reset_args</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.reset_args" title="Link to this definition"></a></dt>
 <dd><p>Get reset_args from h5 file.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.reset_kwargs">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">reset_kwargs</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.reset_kwargs" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">reset_kwargs</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.reset_kwargs" title="Link to this definition"></a></dt>
 <dd><p>Get reset_kwargs from h5 file.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.has_blobs">
-<span class="sig-name descname"><span class="pre">has_blobs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.has_blobs" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">has_blobs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.has_blobs" title="Link to this definition"></a></dt>
 <dd><p>Returns <code class="docutils literal notranslate"><span class="pre">True</span></code> if the model includes blobs</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_value">
-<span class="sig-name descname"><span class="pre">get_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slice_vals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_value" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slice_vals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_value" title="Link to this definition"></a></dt>
 <dd><p>Returns a requested value to user.</p>
 <p>This function helps to streamline the backend for both
 basic and hdf backend.</p>
@@ -1153,7 +1251,7 @@ very large and the user only wants a small subset of the overall array.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_move_info">
-<span class="sig-name descname"><span class="pre">get_move_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_move_info" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_move_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_move_info" title="Link to this definition"></a></dt>
 <dd><p>Get move information.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -1167,7 +1265,7 @@ very large and the user only wants a small subset of the overall array.
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.shape">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.shape" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.shape" title="Link to this definition"></a></dt>
 <dd><p>The dimensions of the ensemble</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -1186,37 +1284,37 @@ shapes of individual branches: (ntemps, nwalkers, nleaves_max, ndim).</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.iteration">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">iteration</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.iteration" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">iteration</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.iteration" title="Link to this definition"></a></dt>
 <dd><p>Number of iterations stored in the hdf backend so far.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.accepted">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">accepted</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.accepted" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">accepted</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.accepted" title="Link to this definition"></a></dt>
 <dd><p>Number of accepted moves per walker.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.rj_accepted">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rj_accepted</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.rj_accepted" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rj_accepted</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.rj_accepted" title="Link to this definition"></a></dt>
 <dd><p>Number of accepted rj moves per walker.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.swaps_accepted">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">swaps_accepted</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.swaps_accepted" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">swaps_accepted</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.swaps_accepted" title="Link to this definition"></a></dt>
 <dd><p>Number of accepted swaps.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.random_state">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">random_state</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.random_state" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">random_state</span></span><a class="headerlink" href="#eryn.backends.HDFBackend.random_state" title="Link to this definition"></a></dt>
 <dd><p>Get the random state</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.grow">
-<span class="sig-name descname"><span class="pre">grow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ngrow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blobs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.grow" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">grow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ngrow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blobs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.grow" title="Link to this definition"></a></dt>
 <dd><p>Expand the storage space by some number of samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1231,7 +1329,7 @@ dtype for the blobs array.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.save_step">
-<span class="sig-name descname"><span class="pre">save_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rj_accepted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">swaps_accepted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moves_accepted_fraction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.save_step" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">save_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rj_accepted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">swaps_accepted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moves_accepted_fraction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.save_step" title="Link to this definition"></a></dt>
 <dd><p>Save a step to the backend</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1256,7 +1354,7 @@ moves in the sampler. This dict must have the same keys as <code class="docutils
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_a_sample">
-<span class="sig-name descname"><span class="pre">get_a_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">it</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_a_sample" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_a_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">it</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_a_sample" title="Link to this definition"></a></dt>
 <dd><p>Access a sample in the chain</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1276,7 +1374,7 @@ moves in the sampler. This dict must have the same keys as <code class="docutils
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_autocorr_thin_burn">
-<span class="sig-name descname"><span class="pre">get_autocorr_thin_burn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_autocorr_thin_burn" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_autocorr_thin_burn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_autocorr_thin_burn" title="Link to this definition"></a></dt>
 <dd><p>Return the discard and thin values based on the autocorrelation length.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">discard</span></code> is determined as 2 times the maximum correlation length among parameters.
 The <code class="docutils literal notranslate"><span class="pre">thin</span></code> is determined using 1/2 times the minimum correlation legnth among parameters.</p>
@@ -1296,7 +1394,7 @@ The <code class="docutils literal notranslate"><span class="pre">thin</span></co
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_autocorr_time">
-<span class="sig-name descname"><span class="pre">get_autocorr_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_temps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multiply_thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_autocorr_time" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_autocorr_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_temps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multiply_thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_autocorr_time" title="Link to this definition"></a></dt>
 <dd><p>Compute an estimate of the autocorrelation time for each parameter</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1334,7 +1432,7 @@ keys.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_betas">
-<span class="sig-name descname"><span class="pre">get_betas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_betas" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_betas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_betas" title="Link to this definition"></a></dt>
 <dd><p>Get the chain of inverse temperatures</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1361,7 +1459,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_blobs">
-<span class="sig-name descname"><span class="pre">get_blobs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_blobs" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_blobs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_blobs" title="Link to this definition"></a></dt>
 <dd><p>Get the chain of blobs for each sample in the chain</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1388,7 +1486,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_chain">
-<span class="sig-name descname"><span class="pre">get_chain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_chain" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_chain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_chain" title="Link to this definition"></a></dt>
 <dd><p>Get the stored chain of MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1420,7 +1518,7 @@ across the branches.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_evidence_estimate">
-<span class="sig-name descname"><span class="pre">get_evidence_estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'therodynamic'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">ss_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_evidence_estimate" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_evidence_estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'therodynamic'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">ss_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_evidence_estimate" title="Link to this definition"></a></dt>
 <dd><p>Get an estimate of the evidence</p>
 <p>This function gets the sample information and uses
 <code class="xref py py-func docutils literal notranslate"><span class="pre">thermodynamic_integration_log_evidence()</span></code> or
@@ -1456,7 +1554,7 @@ methods are the ‘thermodynamic’ and ‘stepping-stone’ (default: <code cla
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_gelman_rubin_convergence_diagnostic">
-<span class="sig-name descname"><span class="pre">get_gelman_rubin_convergence_diagnostic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">psrf_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_gelman_rubin_convergence_diagnostic" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_gelman_rubin_convergence_diagnostic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">psrf_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_gelman_rubin_convergence_diagnostic" title="Link to this definition"></a></dt>
 <dd><p>The Gelman - Rubin convergence diagnostic.
 A general approach to monitoring convergence of MCMC output of multiple walkers.
 The function makes a comparison of within-chain and between-chain variances.
@@ -1496,7 +1594,7 @@ per temperature, stored in a dictionary, per branch name.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_inds">
-<span class="sig-name descname"><span class="pre">get_inds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_inds" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_inds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_inds" title="Link to this definition"></a></dt>
 <dd><p>Get the stored chain of MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1528,7 +1626,7 @@ across the branches indicated which leaves were used at each step.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_info">
-<span class="sig-name descname"><span class="pre">get_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_info" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_info" title="Link to this definition"></a></dt>
 <dd><p>Get an output info dictionary</p>
 <p>This dictionary could be used for diagnostics or plotting.</p>
 <dl class="field-list simple">
@@ -1558,7 +1656,7 @@ checks or plotting.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_last_sample">
-<span class="sig-name descname"><span class="pre">get_last_sample</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_last_sample" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_last_sample</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_last_sample" title="Link to this definition"></a></dt>
 <dd><p>Access the most recent sample in the chain</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -1572,7 +1670,7 @@ checks or plotting.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_log_like">
-<span class="sig-name descname"><span class="pre">get_log_like</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_log_like" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_log_like</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_log_like" title="Link to this definition"></a></dt>
 <dd><p>Get the chain of log Likelihood values evaluated at the MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1599,7 +1697,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_log_posterior">
-<span class="sig-name descname"><span class="pre">get_log_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temper</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_log_posterior" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_log_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temper</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_log_posterior" title="Link to this definition"></a></dt>
 <dd><p>Get the chain of log posterior values evaluated at the MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1628,7 +1726,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_log_prior">
-<span class="sig-name descname"><span class="pre">get_log_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_log_prior" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_log_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_log_prior" title="Link to this definition"></a></dt>
 <dd><p>Get the chain of log Prior evaluated at the MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1655,7 +1753,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.get_nleaves">
-<span class="sig-name descname"><span class="pre">get_nleaves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_nleaves" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_nleaves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.get_nleaves" title="Link to this definition"></a></dt>
 <dd><p>Get the number of leaves for each walker</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1689,7 +1787,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.backends.HDFBackend.reset_base">
-<span class="sig-name descname"><span class="pre">reset_base</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.reset_base" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">reset_base</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.backends.HDFBackend.reset_base" title="Link to this definition"></a></dt>
 <dd><p>Allows for simple reset based on previous inputs</p>
 </dd></dl>
 

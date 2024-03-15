@@ -6,7 +6,7 @@ try:
     import cupy as xp
 
 except (ModuleNotFoundError, ImportError) as e:
-    import numpy as np
+    import numpy as xp
 
 import numpy as np
 
@@ -21,38 +21,37 @@ class BranchSupplimental(object):
     carried throughout the sampler.
 
     This indexing is based on the ``base_shape``. You can store many objects that have the same base
-    shape and then index across all of them. For example, if you want to store individual leaf 
-    information, the base shape will be ``(ntemps, nwalkers, nleaves_max)``. 
-    If you want to store a 2D array per individual leaf, the overall shape will be 
+    shape and then index across all of them. For example, if you want to store individual leaf
+    information, the base shape will be ``(ntemps, nwalkers, nleaves_max)``.
+    If you want to store a 2D array per individual leaf, the overall shape will be
     ``(ntemps, nwalkers, nleaves_max, dim2_extra, dim1_extra)``. Another type of information is
-    stored in a class object (for example). Using ``numpy`` object arrays, 
+    stored in a class object (for example). Using ``numpy`` object arrays,
     ``ntemps * nwalkers * nleaves_max`` number of class objects can be stored in the array. Then,
-    using special indexing functions, information can be updated/accessed across all objects 
+    using special indexing functions, information can be updated/accessed across all objects
     stored simultaneously. If you index this class, it will give you back a dictionary with
     all objects stored indexed for each leaf. So if you index (0, 0, 0) in our running example,
     you will get back a dictionary with one 2D array and one class object from the ``numpy`` object
-    array. 
+    array.
 
     All of these objects are stored in ``self.holder``.
 
     Args:
         obj_info (dict): Initial information for storage. Keys are the names to be stored under
             and values are arrays. These arrays should have a base shape that is equivalent to
-            ``base_shape``, meaning ``array.shape[:len(base_shape)] == self.base_shape``. 
+            ``base_shape``, meaning ``array.shape[:len(base_shape)] == self.base_shape``.
             The dimensions beyond the base shape can be anything.
-        base_shape (tuple): Base shape for indexing. Objects stored in the supplimental object 
+        base_shape (tuple): Base shape for indexing. Objects stored in the supplimental object
             will have a shape that at minimum is equivalent to ``base_shape``.
-        copy (bool, optional): If ``True``, copy whatever information is given in before it is stored. 
-            if ``False``, store directly the input information. (default: ``False``) 
+        copy (bool, optional): If ``True``, copy whatever information is given in before it is stored.
+            if ``False``, store directly the input information. (default: ``False``)
 
     Attributes:
         holder (dict): All of the objects stored for this supplimental object.
 
-    
+
     """
 
     def __init__(self, obj_info: dict, base_shape: tuple, copy: bool = False):
-
         # store initial information
         self.holder = {}
         self.base_shape = base_shape
@@ -63,18 +62,18 @@ class BranchSupplimental(object):
 
     def add_objects(self, obj_info: dict, copy=False):
         """Add objects to the holder.
-        
+
         Args:
             obj_info (dict): Information for storage. Keys are the names to be stored under
                 and values are arrays. These arrays should have a base shape that is equivalent to
-                ``base_shape``, meaning ``array.shape[:len(base_shape)] == self.base_shape``. 
+                ``base_shape``, meaning ``array.shape[:len(base_shape)] == self.base_shape``.
                 The dimensions beyond the base shape can be anything.
-            copy (bool, optional): If ``True``, copy whatever information is given in before it is stored. 
-                if ``False``, store directly the input information. (default: ``False``) 
+            copy (bool, optional): If ``True``, copy whatever information is given in before it is stored.
+                if ``False``, store directly the input information. (default: ``False``)
 
         Raises:
             ValueError: Shape matching issues.
-        
+
         """
 
         # whether a copy is requested
@@ -147,10 +146,10 @@ class BranchSupplimental(object):
 
         Args:
             names (str or list of str): Strings associated with information to delete.
-                Please note it does not return the information. 
+                Please note it does not return the information.
 
         Raises:
-            ValueError: Input issues. 
+            ValueError: Input issues.
 
 
         """
@@ -176,34 +175,33 @@ class BranchSupplimental(object):
 
     def __getitem__(self, tmp):
         """Special indexing for retrieval.
-        
+
         When indexing the overall class, this will return the slice of each object
-        
+
         Args:
             tmp (int, np.ndarray, or slice): indexing slice of some form.
 
         Returns:
             dict: Keys are names of the objects contained. Values are the slices of those objects.
-        
+
         """
         # slice each object contained
         return {name: values[tmp] for name, values in self.holder.items()}
 
     def __setitem__(self, tmp, new_value):
         """Special indexing for setting elements.
-        
+
         When indexing the overall class, this will set object information.
 
         **Please note**: If you try to input information that is not already stored,
         it will ignore it.
-        
+
         Args:
             tmp (int, np.ndarray, or slice): indexing slice of some form.
 
         """
         # loop through values already in holder
         for name, values in self.holder.items():
-
             if name not in new_value:
                 continue
             # if the name is already contained, update with incoming value
@@ -211,21 +209,21 @@ class BranchSupplimental(object):
 
     def take_along_axis(self, indices, axis: int, skip_names=[]):
         """Take information from contained arrays along an axis.
-        
-        See ```numpy.take_along_axis`` <https://numpy.org/doc/stable/reference/generated/numpy.take_along_axis.html>`_. 
+
+        See ```numpy.take_along_axis`` <https://numpy.org/doc/stable/reference/generated/numpy.take_along_axis.html>`_.
 
         Args:
-            indices (xp.ndarray): Indices to take along each 1d slice of arr. This must match the dimension 
-                of ``self.base_shape``, but other dimensions only need to broadcast against 
+            indices (xp.ndarray): Indices to take along each 1d slice of arr. This must match the dimension
+                of ``self.base_shape``, but other dimensions only need to broadcast against
                 ``self.base_shape``.
             axis (int): The axis to take 1d slices along.
-            skip_names (list of str, optional): By default, this function returns the results for 
+            skip_names (list of str, optional): By default, this function returns the results for
                 all stored objects. This list gives the strings of objects to leave behind and
                 not return.
 
         Returns:
             dict: Keys are names of stored objects and values are the proper array slices.
-        
+
 
         """
         # prepare output dictionary
@@ -260,15 +258,15 @@ class BranchSupplimental(object):
 
     def put_along_axis(self, indices, values_in: dict, axis: int):
         """Put information information into contained arrays along an axis.
-        
-        See ```numpy.put_along_axis`` <https://numpy.org/doc/stable/reference/generated/numpy.put_along_axis.html>`_. 
+
+        See ```numpy.put_along_axis`` <https://numpy.org/doc/stable/reference/generated/numpy.put_along_axis.html>`_.
 
         **Please note** this function is not implemented in ``cupy``, so this is a custom implementation
         for both ``cupy`` and ``numpy``.
 
         Args:
-            indices (xp.ndarray): Indices to put values along each 1d slice of arr. This must match 
-            the dimension of ``self.base_shape``, but other dimensions only need to broadcast against 
+            indices (xp.ndarray): Indices to put values along each 1d slice of arr. This must match
+            the dimension of ``self.base_shape``, but other dimensions only need to broadcast against
             ``self.base_shape``.
             axis (int): The axis to put 1d slices along.
             values_in (dict): Keys are the objects contained to update. Values are the arrays of these
@@ -314,7 +312,7 @@ class BranchSupplimental(object):
         """Get flattened arrays from the stored objects.
 
         Here "flat" is in relation to ``self.base_shape``. Beyond ``self.base_shape``, the shape is mainted.
-        
+
         """
         out = {}
         # loop through holder
@@ -353,7 +351,6 @@ class Branch(object):
     """
 
     def __init__(self, coords, inds=None, branch_supplimental=None):
-
         # store branch info
         self.coords = coords
         self.ntemps, self.ntrees, self.nleaves_max, self.ndim = coords.shape
@@ -463,7 +460,7 @@ class State(object):
             return
 
         # protect against simplifying settings
-        if isinstance(coords, np.ndarray):
+        if isinstance(coords, np.ndarray) or isinstance(coords, xp.ndarray):
             coords = {"model_0": coords}
         elif not isinstance(coords, dict):
             raise ValueError(
@@ -540,13 +537,203 @@ class State(object):
 
     def get_log_posterior(self, temper: bool = False):
         """Get the posterior probability
-        
+
         Args:
             temper (bool, optional): If ``True``, apply tempering to the posterior computation.
 
         Returns:
             np.ndarray[ntemps, nwalkers]: Log of the posterior probability.
-        
+
+        """
+
+        if temper:
+            betas = self.betas
+
+        else:
+            betas = np.ones_like(self.betas)
+
+        return betas * self.log_like + self.log_prior
+
+    """
+    # TODO
+    def __repr__(self):
+        return "State({0}, log_like={1}, blobs={2}, betas={3}, random_state={4})".format(
+            self.coords, self.log_like, self.blobs, self.betas, self.random_state
+        )
+
+    def __iter__(self):
+        temp = (self.coords,)
+        if self.log_like is not None:
+            temp += (self.log_like,)
+
+        if self.blobs is not None:
+            temp += (self.blobs,)
+
+        if self.betas is None:
+            temp += (self.betas,)
+
+        if self.random_state is not None:
+            temp += (self.random_state,)
+        return iter(temp)
+    """
+
+
+class ParaState(object):
+    """The state of the ensemble during an MCMC run
+
+    Args:
+        coords (double ndarray[ntemps, nwalkers, nleaves_max, ndim], dict, or :class:`.State`): The current positions of the walkers
+            in the parameter space. If dict, need to use ``branch_names`` for the keys.
+        groups_running (bool ndarray[ntemps, nwalkers, nleaves_max] or dict, optional): The information
+            on which leaves are used and which are not used. A value of True means the specific leaf
+            was used in this step. If dict, need to use ``branch_names`` for the keys.
+            Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
+            (default: ``None``)
+        log_like (ndarray[ntemps, nwalkers], optional): Log likelihoods
+            for the  walkers at positions given by ``coords``.
+            Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
+            (default: ``None``)
+        log_prior (ndarray[ntemps, nwalkers], optional): Log priors
+            for the  walkers at positions given by ``coords``.
+            Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
+            (default: ``None``)
+        betas (ndarray[ntemps], optional): Temperatures in the sampler at the current step.
+            Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
+            (default: ``None``)
+        blobs (ndarray[ntemps, nwalkers, nblobs], Optional): The metadata “blobs”
+            associated with the current position. The value is only returned if
+            lnpostfn returns blobs too.
+            Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
+            (default: ``None``)
+        random_state (Optional): The current state of the random number
+            generator.
+            Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
+            (default: ``None``)
+        copy (bool, optional): If True, copy the the arrays in the former :class:`.State` obhect.
+
+    Raises:
+        ValueError: Dimensions of inputs or input types are incorrect.
+
+    """
+
+    # __slots__ = (
+    #    "branches",
+    #    "log_like",
+    #    "log_prior",
+    #    "blobs",
+    #    "betas",
+    #    "supplimental",
+    #    "random_state",
+    # )
+
+    def __init__(
+        self,
+        coords,
+        groups_running=None,
+        branch_supplimental=None,
+        supplimental=None,
+        log_like=None,
+        log_prior=None,
+        betas=None,
+        blobs=None,
+        random_state=None,
+        copy=False,
+    ):
+        # decide if copying input info
+        dc = deepcopy if copy else lambda x: x
+
+        # check if coords is a State object
+        if hasattr(coords, "branches"):
+            self.branches = dc(coords.branches)
+            self.groups_running = dc(coords.groups_running)
+            self.log_like = dc(coords.log_like)
+            self.log_prior = dc(coords.log_prior)
+            self.blobs = dc(coords.blobs)
+            self.betas = dc(coords.betas)
+            self.supplimental = dc(coords.supplimental)
+            # self.random_state = dc(coords.random_state)
+            # TODO: check this
+            self.random_state = coords.random_state
+            return
+
+        # protect against simplifying settings
+        if isinstance(coords, np.ndarray) or isinstance(coords, xp.ndarray):
+            coords = {"model_0": coords}
+        elif not isinstance(coords, dict):
+            raise ValueError(
+                "Input coords need to be np.ndarray, dict, or State object."
+            )
+
+        for name in coords:
+            if coords[name].ndim == 2:
+                coords[name] = coords[name][None, :, None, :]
+
+            # assume (ntemps, nwalkers) provided
+            if coords[name].ndim == 3:
+                coords[name] = coords[name][:, :, None, :]
+
+            elif coords[name].ndim < 2 or coords[name].ndim > 4:
+                raise ValueError(
+                    "Dimension off coordinates must be between 2 and 4. coords dimension is {0}.".format(
+                        coords.ndim
+                    )
+                )
+
+        if branch_supplimental is None:
+            branch_supplimental = {key: None for key in coords}
+        elif not isinstance(branch_supplimental, dict):
+            raise ValueError("branch_supplimental must be None or dict.")
+
+        # setup all information for storage
+        self.branches = {
+            key: Branch(
+                dc(temp_coords),
+                inds=None,
+                branch_supplimental=branch_supplimental[key],
+            )
+            for key, temp_coords in coords.items()
+        }
+
+        self.groups_running = (
+            dc(np.atleast_1d(groups_running)) if groups_running is not None else None
+        )
+        self.log_like = dc(np.atleast_2d(log_like)) if log_like is not None else None
+        self.log_prior = dc(np.atleast_2d(log_prior)) if log_prior is not None else None
+        self.blobs = dc(np.atleast_3d(blobs)) if blobs is not None else None
+        self.betas = dc(np.atleast_1d(betas)) if betas is not None else None
+        self.supplimental = dc(supplimental)
+        self.random_state = dc(random_state)
+
+    @property
+    def branches_coords(self):
+        """Get the ``coords`` from all branch objects returned as a dictionary with ``branch_names`` as keys."""
+        return {name: branch.coords for name, branch in self.branches.items()}
+
+    @property
+    def branches_supplimental(self):
+        """Get the ``branch.supplimental`` from all branch objects returned as a dictionary with ``branch_names`` as keys."""
+        return {
+            name: branch.branch_supplimental for name, branch in self.branches.items()
+        }
+
+    @property
+    def branch_names(self):
+        """Get the branch names in this state."""
+        return list(self.branches.keys())
+
+    def copy_into_self(self, state_to_copy):
+        for name in state_to_copy.__slots__:
+            setattr(self, name, getattr(state_to_copy, name))
+
+    def get_log_posterior(self, temper: bool = False):
+        """Get the posterior probability
+
+        Args:
+            temper (bool, optional): If ``True``, apply tempering to the posterior computation.
+
+        Returns:
+            np.ndarray[ntemps, nwalkers]: Log of the posterior probability.
+
         """
 
         if temper:

@@ -255,7 +255,12 @@ class RedBlueMove(Move, ABC):
 
                 # Compute prior of the proposed position
                 # new_inds_prior is adjusted if product-space is used
-                logp = model.compute_log_prior_fn(q, inds=new_inds)
+                logp = model.compute_log_prior_fn(
+                    q, 
+                    inds=new_inds,
+                    supps=new_supps,
+                    branch_supps=new_branch_supps,
+                )
 
                 self.fix_logp_gibbs(branch_names_run, inds_run, logp, real_inds_subset)
 

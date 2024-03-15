@@ -32,6 +32,33 @@ def logsumexp(a, axis=None, xp=None):
     sum_of_exp = xp.exp(ds).sum(axis=axis)
     return max + xp.log(sum_of_exp)
 
+def get_mt_computations(logP, log_proposal_pdf, symmetric=False, xp=None):
+
+    if xp is None:
+        xp = np
+
+        # set weights based on if symmetric
+    if symmetric:
+        log_importance_weights = logP
+    else:
+        log_importance_weights = logP - log_proposal_pdf
+
+    # get the sum of weights
+    log_sum_weights = logsumexp(log_importance_weights, axis=-1, xp=xp)
+
+    # probs = wi / sum(wi)
+    log_of_probs = log_importance_weights - log_sum_weights[:, None]
+
+    # probabilities to choose try
+    probs = xp.exp(log_of_probs)
+
+    # draw based on likelihood
+    inds_keep = (
+        probs.cumsum(1) > xp.random.rand(probs.shape[0])[:, None]
+    ).argmax(1)
+
+    return log_importance_weights, log_sum_weights, inds_keep
+
 
 class MultipleTryMove(ABC):
     """Generate multiple proposal tries.
@@ -320,25 +347,7 @@ class MultipleTryMove(ABC):
         # get posterior distribution including tempering
         logP = self.get_mt_log_posterior(ll, lp, betas=betas)
 
-        # set weights based on if symmetric
-        if self.symmetric:
-            log_importance_weights = logP
-        else:
-            log_importance_weights = logP - log_proposal_pdf
-
-        # get the sum of weights
-        log_sum_weights = logsumexp(log_importance_weights, axis=-1, xp=self.xp)
-
-        # probs = wi / sum(wi)
-        log_of_probs = log_importance_weights - log_sum_weights[:, None]
-
-        # probabilities to choose try
-        probs = self.xp.exp(log_of_probs)
-
-        # draw based on likelihood
-        inds_keep = (
-            probs.cumsum(1) > self.xp.random.rand(probs.shape[0])[:, None]
-        ).argmax(1)
+        log_importance_weights, log_sum_weights, inds_keep = get_mt_computations(logP, log_proposal_pdf, symmetric=self.symmetric, xp=self.xp)
 
         # tuple of index arrays of which try chosen per walker
         inds_tuple = (self.xp.arange(len(inds_keep)), inds_keep)

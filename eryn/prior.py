@@ -249,12 +249,16 @@ class ProbDistContainer:
         for key, item in self.priors_in.items():
             item.use_cupy = use_cupy
 
-    def logpdf(self, x):
+    def logpdf(self, x, keys=None):
         """Get logpdf by summing logpdf of individual distributions
 
         Args:
             x (double np.ndarray[..., ndim]):
                 Input parameters to get prior values.
+            keys (list, optional): List of keys related to which parameters to gather the logpdf for.
+                They must exactly match the input keys for the ``priors_in`` dictionary for the ``__init__`` 
+                function. Even when using this kwarg, must provide all ``ndim`` parameters as input. The prior will just not 
+                be calculated if its associated key is not included. Default is ``None``.
 
         Returns:
             np.ndarray[...]: Prior values.
@@ -277,13 +281,22 @@ class ProbDistContainer:
 
         # sum the logs (assumes parameters are independent)
         for i, (inds, prior_i) in enumerate(self.priors):
-            vals_in = x[:, inds].squeeze()
+
+            if keys is not None:
+                if len(inds) > 1:
+                    if tuple(inds) not in keys:
+                        continue
+                else:
+                    if inds[0] not in keys:
+                        continue
+
+            vals_in = x[:, inds]
             if hasattr(prior_i, "logpdf"):
                 temp = prior_i.logpdf(vals_in)
             else:
                 temp = prior_i.logpmf(vals_in)
 
-            prior_vals += temp
+            prior_vals += temp.squeeze()
 
         # if only one walker was asked for, return a scalar value not an array
         if squeeze:
@@ -302,7 +315,7 @@ class ProbDistContainer:
             np.ndarray[...]: Prior values.
 
         """
-
+        raise NotImplementedError
         if groups is not None:
             raise NotImplementedError
 
@@ -327,7 +340,7 @@ class ProbDistContainer:
             return out_vals.squeeze()
         return out_vals
 
-    def rvs(self, size=1):
+    def rvs(self, size=1, keys=None):
         """Generate random values according to prior distribution
 
         The user will have to be careful if there are prior functions that
@@ -338,6 +351,10 @@ class ProbDistContainer:
         Args:
             size (int or tuple of ints, optional): Output size for number of generated
                 sources from prior distributions.
+            keys (list, optional): List of keys related to which parameters to generate.
+                They must exactly match the input keys for the ``priors_in`` dictionary for the ``__init__`` 
+                function. If used, it will produce and output array of ``tuple(size) + (len(keys),)``. 
+                Default is ``None``.
 
         Returns:
             np.ndarray[``size + (self.ndim,)``]: Generated samples.
@@ -361,8 +378,20 @@ class ProbDistContainer:
         out_inds = tuple([slice(None) for _ in range(len(size))])
 
         # setup output and loop through priors
-        out = xp.zeros(size + (self.ndim,))
+
+        ndim = self.ndim
+
+        out = xp.zeros(size + (ndim,))
         for i, (inds, prior_i) in enumerate(self.priors):
+            # only generate desired parameters
+            if keys is not None:
+                if len(inds) > 1:
+                    if tuple(inds) not in keys:
+                        continue
+                else:
+                    if inds[0] not in keys:
+                        continue
+
             # guard against extra prior functions without rvs methods
             if not hasattr(prior_i, "rvs"):
                 continue

@@ -1,22 +1,24 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Eryn Basic Tutorial &mdash; Eryn 0.0.1 documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/nbsphinx-code-cells.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+  
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../_static/doctools.js"></script>
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -143,13 +145,13 @@
 </div>
 </div>
 <section id="Eryn-Basic-Tutorial">
-<h1>Eryn Basic Tutorial<a class="headerlink" href="#Eryn-Basic-Tutorial" title="Permalink to this heading"></a></h1>
+<h1>Eryn Basic Tutorial<a class="headerlink" href="#Eryn-Basic-Tutorial" title="Link to this heading"></a></h1>
 <p>Eryn is an advanced MCMC sampler. It has the capability to run with parallel tempering, multiple model types, and unknown counts within each model type using Reversible-Jump MCMC techniques. Eryn is heavily based on <a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a>. The <code class="docutils literal notranslate"><span class="pre">emcee</span></code> base structure with the Ensemble Sampler, State objects, proposal setup, and storage backends is carried over into Eryn with small changes to account for the increased complexity. In a simple sense, Eryn is an
 advanced (and slightly more complicated) version of <code class="docutils literal notranslate"><span class="pre">emcee</span></code>.</p>
 <p>In this tutorial, we will go through much of what is available in Eryn. We will start with a basic sampling operation to illustrate how to build and navigate common objects in Eryn. We will then scale up the complexity to understand how to use Eryn in different circumstances.</p>
 <p>If you use Eryn in your publication, please cite the paper <a class="reference external" href="https://arxiv.org/abs/2303.02164">arXiv:2303.02164</a>, its <a class="reference external" href="https://zenodo.org/record/7705496#.ZAhzukJKjlw">zenodo</a>, and <a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a>. The documentation for Eryn can be found here: <a class="reference external" href="https://mikekatz04.github.io/Eryn">mikekatz04.github.io/Eryn</a>. You will find the code on Github: <a class="reference external" href="https://github.com/mikekatz04/Eryn">github.com/mikekatz04/Eryn</a>.</p>
 <section id="MCMC-Basics">
-<h2>MCMC Basics<a class="headerlink" href="#MCMC-Basics" title="Permalink to this heading"></a></h2>
+<h2>MCMC Basics<a class="headerlink" href="#MCMC-Basics" title="Link to this heading"></a></h2>
 <p>Here we will go through the basics of MCMC. For a better overall understanding of MCMC, see the Eryn paper: <a class="reference external" href="https://arxiv.org/abs/2303.02164">arXiv:2303.02164</a>.</p>
 <p>The goal of MCMC is to assess the posterior probablity on parameters <span class="math notranslate nohighlight">\((\vec{\theta})\)</span> from a model (<span class="math notranslate nohighlight">\(\mathcal{M}\)</span>), given some data <span class="math notranslate nohighlight">\(y\)</span>: <span class="math notranslate nohighlight">\(p(\vec{\theta}, \mathcal{M}|y)\)</span>. We can rewrite this probability using Bayes’ rule:</p>
 <div class="math notranslate nohighlight">
@@ -167,14 +169,14 @@ advanced (and slightly more complicated) version of <code class="docutils litera
 probability equal to this fraction. Therefore, as the new value becomes worse and worse compared to the old value, the probability of acceptance decreases.</p>
 </section>
 <section id="The-Tree-Metaphor">
-<h2>The Tree Metaphor<a class="headerlink" href="#The-Tree-Metaphor" title="Permalink to this heading"></a></h2>
+<h2>The Tree Metaphor<a class="headerlink" href="#The-Tree-Metaphor" title="Link to this heading"></a></h2>
 <p>Before we get into using the sampler, we will discuss the “infamous” tree metaphor. It helped in thinking about the early creation of Eryn and has carried through to the end. <code class="docutils literal notranslate"><span class="pre">Eryn</span></code> is the Sindarin word for “forest” or “woods.” The purpose of this metaphor is to simplify the complex dimensionality associated with changing models and model counts in MCMC. We choose not to use “model” and “model counts” everywhere because those descriptions can quickly become confusing.</p>
 <p>We start with a forest with a bunch of trees. These trees are the MCMC “walkers”. Each tree will have the same number of branches which is fixed throughout a sampling run (i.e. each walker has the same base setup). These branches are our different model types. For example, if you have a signal that is a combination of sine waves and Gaussians. In this case, you have two branches, one for the “sine wave” model and one for the “Gaussian” model. The number of Gaussians or sine waves is accounted
 for as the number of “leafs” on each branch. So, if 1 walker has 3 Gaussians and 2 sine waves, we can imagine this as a tree with two branches. The first branch for sine waves has 2 leaves and the second branch as 3 leaves for 3 Gaussians.</p>
 <p>When we get to parallel tempering, you can imagine different forests at different temperatures, all having the same number of trees (walkers).</p>
 </section>
 <section id="Getting-Started-with-the-Ensemble-Sampler">
-<h2>Getting Started with the Ensemble Sampler<a class="headerlink" href="#Getting-Started-with-the-Ensemble-Sampler" title="Permalink to this heading"></a></h2>
+<h2>Getting Started with the Ensemble Sampler<a class="headerlink" href="#Getting-Started-with-the-Ensemble-Sampler" title="Link to this heading"></a></h2>
 <p>Let’s start by running on a simple multivariate Gaussian likelihood:</p>
 <div class="math notranslate nohighlight">
 \[\ln{\mathcal{L}}\propto -\frac{1}{2}(\vec{x} - \vec{\mu})^T \tilde{C}^{-1} (\vec{x} - \vec{\mu})\]</div>
@@ -394,7 +396,7 @@ the output of the sampler.</p>
 </div>
 </section>
 <section id="Backend-Objects">
-<h2>Backend Objects<a class="headerlink" href="#Backend-Objects" title="Permalink to this heading"></a></h2>
+<h2>Backend Objects<a class="headerlink" href="#Backend-Objects" title="Link to this heading"></a></h2>
 <p>Backends are where all of the information in the sampler is stored as it runs. It is from these backends that samples are retrieved for plotting. You can find the documentation for the Backend objects <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/backend.html#backends">here</a>. Here, we will go through the most commonly used functions from the backend: * <code class="docutils literal notranslate"><span class="pre">get_chain</span></code>: retrieve all of the samples stored over the course of the sampling run. * <code class="docutils literal notranslate"><span class="pre">get_log_like</span></code>: retrieve the log of the Likelihood
 for each sample. * <code class="docutils literal notranslate"><span class="pre">get_log_prior</span></code>: retrieve the log of the prior for each sample. * <code class="docutils literal notranslate"><span class="pre">get_a_sample</span></code>: retrieve a state object from a specific iteration. <code class="docutils literal notranslate"><span class="pre">get_last_sample</span></code> may be more common. It is just a specific example of <code class="docutils literal notranslate"><span class="pre">get_a_sample</span></code> for the last sample.</p>
 <p>Many (but not all) of the methods from the backend object are also raised to the level of sampler. So you can either call <code class="docutils literal notranslate"><span class="pre">EnsembleSampler.backend.method</span></code> or <code class="docutils literal notranslate"><span class="pre">EnsembleSampler.method</span></code> and it will be equivalent.</p>
@@ -459,7 +461,7 @@ Number of iterations 500
 </pre></div></div>
 </div>
 <section id="5-dimensional-Arrays">
-<h3>5-dimensional Arrays<a class="headerlink" href="#5-dimensional-Arrays" title="Permalink to this heading"></a></h3>
+<h3>5-dimensional Arrays<a class="headerlink" href="#5-dimensional-Arrays" title="Link to this heading"></a></h3>
 <p>The chain information is returned as a dictionary with keys as the branch names and values as 5-dimensional arrays: <code class="docutils literal notranslate"><span class="pre">(nsteps,</span> <span class="pre">ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max,</span> <span class="pre">ndim)</span></code>. For clarity: * nsteps: number of sampler iterations stored (time evolution of each forest) * ntemps: number of temperatures (which forest you are in) * nwalkers: number of walkers (which tree) * nleaves_max: maximum number of model counts or leaves for each specific branch. * ndim: number of parameters describing a single
 model or leaf.</p>
 <p>In our simple example, we have 1 temperature and our maximum leaf count is 1.</p>
@@ -505,7 +507,7 @@ model or leaf.</p>
 </section>
 </section>
 <section id="State-Objects">
-<h2>State Objects<a class="headerlink" href="#State-Objects" title="Permalink to this heading"></a></h2>
+<h2>State Objects<a class="headerlink" href="#State-Objects" title="Link to this heading"></a></h2>
 <p>Now, we are going to look at <code class="docutils literal notranslate"><span class="pre">`State</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/build/html/user/state.html#eryn.state.State">https://mikekatz04.github.io/Eryn/build/html/user/state.html#eryn.state.State</a>&gt;`__ objects. They carry the current information throughout the sampler about the current state of the sampler. In our simple example, we can examine the current coordinates, likelihood, and prior values.</p>
 <p>Output from the sampler above is the last state of the sampler <code class="docutils literal notranslate"><span class="pre">out</span></code>. This will include any additional objects passed through the sampler like <code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> objects that we will explain below.</p>
 <p>Another way to retrieve the last state is from the backend. That is what we will do here. However, please note, that supplimental information (discussed below) is not stored in the backend, so the state that is returned from the backend will have information that is stored in the backend, but not supplimental information that was passed through the sampler at runtime.</p>
@@ -612,7 +614,7 @@ model or leaf.</p>
 </pre></div></div>
 </div>
 <section id="Branches">
-<h3>Branches<a class="headerlink" href="#Branches" title="Permalink to this heading"></a></h3>
+<h3>Branches<a class="headerlink" href="#Branches" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">State</span></code> objects store quantities at are single values per walker directly in the state as shown above (e.g. <code class="docutils literal notranslate"><span class="pre">State.log_like</span></code>). Information that gets down to the individual branch (or model type) level is stored in a <code class="docutils literal notranslate"><span class="pre">`Branch</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/state.html#eryn.state.Branch">https://mikekatz04.github.io/Eryn/html/user/state.html#eryn.state.Branch</a>&gt;`__ object. These <code class="docutils literal notranslate"><span class="pre">Branch</span></code> objects are stored in a dictionary within the <code class="docutils literal notranslate"><span class="pre">State</span></code> object with keys as branch names and values as the <code class="docutils literal notranslate"><span class="pre">Branch</span></code> object associated with that branch name. The
 branch objects can be accessed as <code class="docutils literal notranslate"><span class="pre">state.branches[model_name]</span></code>. With in the branch object, the coordinates are stored. A few other things are stored, but we will get to that later. If you want a dictionary with keys at the branch names and values as the current coordinates, you can also use the property: <code class="docutils literal notranslate"><span class="pre">state.branches_coords</span></code>.</p>
 <div class="nbinput docutils container">
@@ -953,7 +955,7 @@ array([[[[ 0.78336101, -0.50304083, -0.16554043,  0.38717246,
 </section>
 </section>
 <section id="Parallel-Tempering">
-<h2>Parallel Tempering<a class="headerlink" href="#Parallel-Tempering" title="Permalink to this heading"></a></h2>
+<h2>Parallel Tempering<a class="headerlink" href="#Parallel-Tempering" title="Link to this heading"></a></h2>
 <p>Adding tempering to our problem is straight forward. It will effectively just take the <code class="docutils literal notranslate"><span class="pre">ntemps</span></code> dimension that was 1 above and stretch it to the number of temperatures desired. We add tempering information by providing the <code class="docutils literal notranslate"><span class="pre">tempering_kwargs</span></code> argument to the <code class="docutils literal notranslate"><span class="pre">EnsembleSampler</span></code>. The tempering kwargs documentation can be found here because they are the <code class="docutils literal notranslate"><span class="pre">kwargs</span></code> that go into the initialization of the temperature controller:
 <code class="docutils literal notranslate"><span class="pre">`eryn.moves.tempering.TemperatureControl</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/temper.html#eryn.moves.tempering.TemperatureControl">https://mikekatz04.github.io/Eryn/html/user/temper.html#eryn.moves.tempering.TemperatureControl</a>&gt;`__.</p>
 <p>The simplest thing to do is to provide the number of temperatures. In this case, we just pass <code class="docutils literal notranslate"><span class="pre">ntemps</span></code> in a dictionary. You can also provide a direct array of <code class="docutils literal notranslate"><span class="pre">betas</span></code> (inverse temperatures). Under the hood, if only <code class="docutils literal notranslate"><span class="pre">ntemps</span></code> is passed (not <code class="docutils literal notranslate"><span class="pre">betas</span></code>), the sampler will use the <code class="docutils literal notranslate"><span class="pre">`eryn.moves.tempering.make_ladder</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/temper.html#eryn.moves.tempering.make_ladder">https://mikekatz04.github.io/Eryn/html/user/temper.html#eryn.moves.tempering.make_ladder</a>&gt;`__ function. We will go all thr way through to the MCMC run. Notice that we are once
@@ -1248,7 +1250,7 @@ Likelihoods just like discussed above.</p>
 </div>
 </section>
 <section id="Add-Reversible-Jump-MCMC-(model-count-uncertainty)">
-<h2>Add Reversible Jump MCMC (model count uncertainty)<a class="headerlink" href="#Add-Reversible-Jump-MCMC-(model-count-uncertainty)" title="Permalink to this heading"></a></h2>
+<h2>Add Reversible Jump MCMC (model count uncertainty)<a class="headerlink" href="#Add-Reversible-Jump-MCMC-(model-count-uncertainty)" title="Link to this heading"></a></h2>
 <p>We will now add to our sampler the ability to run with one branch, but a variable number of counts or leaves.</p>
 <p>Here we are going to focus on the nested model case where we are just proposing changes in the model count. For more general review on Reversible Jump, see the Eryn paper and sources within.</p>
 <p>In nested models, the acceptance probability for proposing to add a source is given by, <span class="math notranslate nohighlight">\(\alpha_\text{nested}\)</span>,</p>
@@ -1608,7 +1610,7 @@ max ll: -261.2302411532098
 </div>
 </section>
 <section id="Add-multiple-branches">
-<h2>Add multiple branches<a class="headerlink" href="#Add-multiple-branches" title="Permalink to this heading"></a></h2>
+<h2>Add multiple branches<a class="headerlink" href="#Add-multiple-branches" title="Link to this heading"></a></h2>
 <p>Now we will add another model to our reversible jump problem. We will add a sine wave model.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
@@ -2041,7 +2043,7 @@ max ll: -218.81128464457336
 </div>
 </section>
 <section id="Moves">
-<h2>Moves<a class="headerlink" href="#Moves" title="Permalink to this heading"></a></h2>
+<h2>Moves<a class="headerlink" href="#Moves" title="Link to this heading"></a></h2>
 <p>Moves are generally implemented with the same three-tier structure that originated in <code class="docutils literal notranslate"><span class="pre">emcee</span></code>. For full documentation on all available moves, as well as class inheritance information, see the <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/moves.html#moves">Move documentation</a>. For implementing customized moves, we recommend using the documentation as well as the various source codes for guidance.</p>
 <p>from <code class="docutils literal notranslate"><span class="pre">eryn.moves</span></code>:</p>
 <ul class="simple">
@@ -2058,7 +2060,7 @@ max ll: -218.81128464457336
 <li><p><code class="docutils literal notranslate"><span class="pre">ReversibleJumpMove</span></code>: This class guides Reversible Jump MCMC moves. The key difference to the other moves is that the <code class="docutils literal notranslate"><span class="pre">inds</span></code> array changes adjust the model type and/or count. It is very common in Reversible Jump settings to have to implemement a specific RJ proposal. One of the main goals of <code class="docutils literal notranslate"><span class="pre">Eryn</span></code> is to distill this process down to this step and keep the rest of the sampler apparatus the same between projects.</p></li>
 </ul>
 <section id="Gibbs-Sampling">
-<h3>Gibbs Sampling<a class="headerlink" href="#Gibbs-Sampling" title="Permalink to this heading"></a></h3>
+<h3>Gibbs Sampling<a class="headerlink" href="#Gibbs-Sampling" title="Link to this heading"></a></h3>
 <p>There is a very useful setup for Gibbs sampling of parameters in <code class="docutils literal notranslate"><span class="pre">Eryn</span></code>. To use this feature, you can pass information as the <code class="docutils literal notranslate"><span class="pre">gibbs_sampling_setup</span></code> keyword argument to the chosen Move class. It is handled by the base <code class="docutils literal notranslate"><span class="pre">eryn.moves.Move</span></code> class so it is a feature of all proposals.</p>
 <p>Gibbs sampling allows the user to sample over a specific set of models or parameters to improve sampling efficiency. For example, sampling in a 100-parameter space may be inefficient, but sampling in 10-dimensional sub-spaces consecutively may be more efficient by increasing the acceptance fraction.</p>
 <p>The documentation for the <code class="docutils literal notranslate"><span class="pre">gibbs_sampling_setup</span></code> parameter reads as follows:</p>
@@ -2304,10 +2306,10 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </section>
 </section>
 <section id="Utilities">
-<h2>Utilities<a class="headerlink" href="#Utilities" title="Permalink to this heading"></a></h2>
+<h2>Utilities<a class="headerlink" href="#Utilities" title="Link to this heading"></a></h2>
 <p>Eryn provides many different utilities for sampling. We will show a bit of their usages here, but refer to the <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/utils.html#periodic-container">Utility documentation</a> for more direct information.</p>
 <section id="Transform-Container">
-<h3>Transform Container<a class="headerlink" href="#Transform-Container" title="Permalink to this heading"></a></h3>
+<h3>Transform Container<a class="headerlink" href="#Transform-Container" title="Link to this heading"></a></h3>
 <p>Transform containers are primary used in likelihood functions to transform the arrays incoming from the sampler to the proper setup for likelihood computation. It can transform parameters based on transform functions and fill values into a final array for any value that is fixed during sampling.</p>
 <p>It can be passed to the likeihood function as an <code class="docutils literal notranslate"><span class="pre">arg</span></code> or <code class="docutils literal notranslate"><span class="pre">kwarg</span></code>.</p>
 <div class="nbinput docutils container">
@@ -2605,7 +2607,7 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </div>
 </section>
 <section id="Multivariate-Prior-Distributions">
-<h3>Multivariate Prior Distributions<a class="headerlink" href="#Multivariate-Prior-Distributions" title="Permalink to this heading"></a></h3>
+<h3>Multivariate Prior Distributions<a class="headerlink" href="#Multivariate-Prior-Distributions" title="Link to this heading"></a></h3>
 <p>Eryn also allows for multivariate prior distributions. To pass these, rather than a single index as the dictionary key like before (e.g.<code class="docutils literal notranslate"><span class="pre">1:</span> <span class="pre">dist()</span></code>), it is not a tuple of inds: <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">1):</span> <span class="pre">dist()</span></code>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
@@ -2633,7 +2635,7 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </div>
 </section>
 <section id="Periodic-Container">
-<h3>Periodic Container<a class="headerlink" href="#Periodic-Container" title="Permalink to this heading"></a></h3>
+<h3>Periodic Container<a class="headerlink" href="#Periodic-Container" title="Link to this heading"></a></h3>
 <p>The periodic container accounts for periodic parameters by accounting for periodic boundary conditions in terms of distance and parameter wrapping. The input to periodic containers are dictionaries with the parameter index as the key and the period associated with it as the item. Any parameters that are not periodic do not need to be included.</p>
 <p>For example, with a sine model that includes an amplitude (index 0), frequency (index 1), and phase offset (index 2), the phase offset will be periodic.</p>
 <div class="nbinput docutils container">
@@ -2672,7 +2674,7 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </div>
 </section>
 <section id="Stopping-&amp;-Update-Functions">
-<h3>Stopping &amp; Update Functions<a class="headerlink" href="#Stopping-&-Update-Functions" title="Permalink to this heading"></a></h3>
+<h3>Stopping &amp; Update Functions<a class="headerlink" href="#Stopping-&-Update-Functions" title="Link to this heading"></a></h3>
 <p>Stopping and Update functions are built, declared, and adjusted in the same way. They both have required Parent base classes. The key similarity between them is the <code class="docutils literal notranslate"><span class="pre">__call__</span></code> function has the same signature: <code class="docutils literal notranslate"><span class="pre">(iteration,</span> <span class="pre">last_sample,</span> <span class="pre">sampler)</span></code>, which gives the class access to the all parts of the sampler object.</p>
 <p>Update functions allow the user to adjust anything within the sampler at periodic intervals set by the <code class="docutils literal notranslate"><span class="pre">update_iterations</span></code> kwarg to <code class="docutils literal notranslate"><span class="pre">EnsembleSampler</span></code>. This can also be used to access very types of information. It allows for a ton of customization from the user from within the sampler object. See the <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/utils.html#update-functions">update documentation</a> for more information.</p>
 <p>Stopping functions are effectively convergence functions, allowing the sampler to stop running when it reaches a user-defined criterion. For more information, see the <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/utils.html#stopping-functions">stopping documentation</a>.</p>

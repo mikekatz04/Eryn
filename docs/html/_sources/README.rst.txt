@@ -36,7 +36,9 @@ To import eryn:
 
 See `examples
 notebook <https://github.com/mikekatz04/Eryn/blob/main/examples/Eryn_tutorial.ipynb>`__
-for more info.
+for more info. You can also navigate the
+`Documentation <https://mikekatz04.github.io/Eryn/html/index.html>`__
+pages.
 
 Prerequisites
 ~~~~~~~~~~~~~
@@ -79,7 +81,7 @@ We use `SemVer <http://semver.org/>`__ for versioning. For the versions
 available, see the `tags on this
 repository <https://github.com/BlackHolePerturbationToolkit/FastEMRIWaveforms/tags>`__.
 
-Current Version: 1.1.5
+Current Version: 1.1.6
 
 Citation
 --------

@@ -1,22 +1,24 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>More Advanced Eryn Examples &mdash; Eryn 0.0.1 documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/nbsphinx-code-cells.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+  
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../_static/doctools.js"></script>
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -99,7 +101,7 @@
            <div itemprop="articleBody">
              
   <section id="More-Advanced-Eryn-Examples">
-<h1>More Advanced Eryn Examples<a class="headerlink" href="#More-Advanced-Eryn-Examples" title="Permalink to this heading"></a></h1>
+<h1>More Advanced Eryn Examples<a class="headerlink" href="#More-Advanced-Eryn-Examples" title="Link to this heading"></a></h1>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -133,7 +135,7 @@
 </div>
 </div>
 <section id="Searching-for-Gaussian-pulses-in-2D">
-<h2>Searching for Gaussian pulses in 2D<a class="headerlink" href="#Searching-for-Gaussian-pulses-in-2D" title="Permalink to this heading"></a></h2>
+<h2>Searching for Gaussian pulses in 2D<a class="headerlink" href="#Searching-for-Gaussian-pulses-in-2D" title="Link to this heading"></a></h2>
 <p>In this simple example we generate a noisy figure, which contains signals in the shape of 2D Gaussian pulses. We will attempt to estimate the nubmer of signals, as well as the level of the synthetic noise. First, we generate the data.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -610,7 +612,7 @@ WARNING:chainconsumer:Parameter $y$ in chain Pulses is not constrained
 </div>
 </section>
 <section id="Choosing-the-optimal-B-Spline-order">
-<h2>Choosing the optimal B-Spline order<a class="headerlink" href="#Choosing-the-optimal-B-Spline-order" title="Permalink to this heading"></a></h2>
+<h2>Choosing the optimal B-Spline order<a class="headerlink" href="#Choosing-the-optimal-B-Spline-order" title="Link to this heading"></a></h2>
 <p>In this section we will attempt to fit a spectrum using a shape-agnostic model based on B-spline interpolation. The motivation of the problem is to determine the optimal number of free knots that are best describing the data, avoiding over-fitting situations. A very useful package is <a class="reference external" href="https://github.com/karnesis/spectral">this</a> one, which is a simple package for performing spectral analysis. Has a lot of window functions, but more importantly, it contains the log-PSD function, which we will
 use in order to reduce the computational complexity of the problem. For more invormation about the <code class="docutils literal notranslate"><span class="pre">lpsd</span></code> method you can check <a class="reference external" href="https://pure.mpg.de/rest/items/item_150688/component/file_150687/content">this</a> paper.</p>
 <p>First we set-up the type of measurement. The duration, cadence, also try to define the total number of steps for our sampler.</p>

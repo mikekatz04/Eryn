@@ -27,6 +27,8 @@ class GroupMove(Move, ABC):
             be set to the number of walkers. (default: ``None``)
         n_iter_update (int, optional): Number of iterations to run before updating the 
             stationary distribution. (default: 100). 
+        live_dangerously (bool, optional): If ``True``, allow for ``n_iter_update == 1``.
+            (deafault: ``False``)
 
     ``kwargs`` are passed to :class:`Move` class.
 
@@ -36,6 +38,7 @@ class GroupMove(Move, ABC):
         self,
         nfriends=None,
         n_iter_update=100,
+        live_dangerously=False,
         **kwargs
     ):
 
@@ -43,7 +46,7 @@ class GroupMove(Move, ABC):
         self.nfriends = int(nfriends)
         self.n_iter_update = n_iter_update
 
-        if self.n_iter_update <= 1:
+        if self.n_iter_update <= 1 and not live_dangerously:
             raise ValueError("n_iter_update must be greather than or equal to 2.")
 
         self.iter = 0
@@ -131,7 +134,7 @@ class GroupMove(Move, ABC):
         # Run any move-specific setup.
         self.setup(state.branches)
 
-        if self.iter == 0:
+        if self.iter == 0 or self.iter % self.n_iter_update == 0:
             self.setup_friends(state.branches)
 
         if self.iter != 0 and self.iter % self.n_iter_update == 0:

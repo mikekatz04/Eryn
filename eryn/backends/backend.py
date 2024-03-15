@@ -522,8 +522,9 @@ class Backend(object):
             )
 
         thin = self.iteration - it if it != self.iteration else 1
+        discard = it + 1 - thin
         # check for blobs
-        blobs = self.get_blobs(discard=it - 1, thin=thin)
+        blobs = self.get_blobs(discard=discard, thin=thin)
         if blobs is not None:
             blobs = blobs[0]
 
@@ -531,15 +532,15 @@ class Backend(object):
         sample = State(
             {
                 name: temp[0]
-                for name, temp in self.get_chain(discard=it - 1, thin=thin).items()
+                for name, temp in self.get_chain(discard=discard, thin=thin).items()
             },
-            log_like=self.get_log_like(discard=it - 1, thin=thin)[0],
-            log_prior=self.get_log_prior(discard=it - 1, thin=thin)[0],
+            log_like=self.get_log_like(discard=discard, thin=thin)[0],
+            log_prior=self.get_log_prior(discard=discard, thin=thin)[0],
             inds={
                 name: temp[0]
-                for name, temp in self.get_inds(discard=it - 1, thin=thin).items()
+                for name, temp in self.get_inds(discard=discard, thin=thin).items()
             },
-            betas=self.get_betas(discard=it - 1, thin=thin).squeeze(),
+            betas=self.get_betas(discard=discard, thin=thin).squeeze(),
             blobs=blobs,
             random_state=self.random_state,
         )
@@ -552,7 +553,7 @@ class Backend(object):
             State: :class:`eryn.state.State` object containing the last sample from the chain.
 
         """
-        it = self.iteration
+        it = self.iteration - 1
 
         # get the state from the last iteration
         last_sample = self.get_a_sample(it)

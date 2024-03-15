@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 try:
-    import cupy as xp
+    import cupy as cp
 except (ModuleNotFoundError, ImportError):
     pass
 
@@ -34,16 +34,20 @@ class StretchMove(RedBlueMove):
 
     """
 
-    def __init__(
-        self, a=2.0, use_gpu=False, return_gpu=False, random_seed=None, **kwargs
-    ):
+    def __init__(self, a=2.0, return_gpu=False, random_seed=None, **kwargs):
         # store scale factor
         self.a = a
 
-        self.return_gpu = return_gpu
-
         # pass kwargs up
         RedBlueMove.__init__(self, **kwargs)
+
+        # change array library based on GPU usage
+
+        # set the random seet of the library if desired
+        if random_seed is not None:
+            self.xp.random.seed(random_seed)
+
+        self.return_gpu = return_gpu
 
         # how it was formerly
         # super(StretchMove, self).__init__(**kwargs)
@@ -62,6 +66,8 @@ class StretchMove(RedBlueMove):
 
         """
         # adjusts in place
+        if ndims_old == ndims_new:
+            return
         logzz = factors / (ndims_old - 1.0)
         factors[:] = logzz * (ndims_new - 1.0)
 
@@ -83,6 +89,7 @@ class StretchMove(RedBlueMove):
             np.ndarray: Compliment values to use with shape ``(ntemps, Ns, nleaves_max, ndim)``.
 
         """
+
         rint = random_number_generator.randint(
             Nc,
             size=(
@@ -115,6 +122,7 @@ class StretchMove(RedBlueMove):
 
 
         """
+
         ntemps, nwalkers, nleaves_max, ndim_here = branch_shape
 
         # only for the first branch do we draw for zz
@@ -170,6 +178,7 @@ class StretchMove(RedBlueMove):
             ValueError: Issues with dimensionality.
 
         """
+
         # needs to be set before we reach the end
         self.zz = None
         random_number_generator = random if not self.use_gpu else self.xp.random

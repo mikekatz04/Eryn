@@ -6,9 +6,9 @@ import numpy as np
 from copy import deepcopy
 
 try:
-    import cupy as xp
+    import cupy as cp
 except (ModuleNotFoundError, ImportError):
-    import numpy as xp
+    import numpy as cp
 
 __all__ = ["Move"]
 
@@ -89,17 +89,26 @@ class Move(object):
         self.num_proposals = 0
         self.time = 0
 
-        # change array library based on GPU usage
-        if use_gpu:
-            self.xp = xp
-        else:
-            self.xp = np
+        self.use_gpu = use_gpu
 
         # set the random seet of the library if desired
         if random_seed is not None:
             self.xp.random.seed(random_seed)
 
-        self.use_gpu = use_gpu
+    @property
+    def use_gpu(self):
+        return self._use_gpu
+
+    @use_gpu.setter
+    def use_gpu(self, use_gpu):
+        self._use_gpu = use_gpu
+
+    @property
+    def xp(self):
+        if self._use_gpu is None:
+            raise ValueError("use_gpu has not been set.")
+        xp = cp if self.use_gpu else np
+        return xp
 
     def _initialize_branch_setup(self, gibbs_sampling_setup, is_rj=False):
         """Initialize the gibbs setup properly."""

@@ -1,21 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Welcome to Eryn’s documentation! &mdash; Eryn 0.0.1 documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="_static/doctools.js"></script>
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -90,11 +92,11 @@
            <div itemprop="articleBody">
              
   <section id="welcome-to-eryn-s-documentation">
-<h1>Welcome to Eryn’s documentation!<a class="headerlink" href="#welcome-to-eryn-s-documentation" title="Permalink to this heading"></a></h1>
+<h1>Welcome to Eryn’s documentation!<a class="headerlink" href="#welcome-to-eryn-s-documentation" title="Link to this heading"></a></h1>
 <a class="reference internal image-reference" href="_images/ents.jpg"><img alt="Alternative text" class="align-center" src="_images/ents.jpg" style="width: 400px;" /></a>
 </section>
 <section id="eryn-a-multi-purpose-mcmc-sampler">
-<h1>Eryn: a multi-purpose MCMC sampler<a class="headerlink" href="#eryn-a-multi-purpose-mcmc-sampler" title="Permalink to this heading"></a></h1>
+<h1>Eryn: a multi-purpose MCMC sampler<a class="headerlink" href="#eryn-a-multi-purpose-mcmc-sampler" title="Link to this heading"></a></h1>
 <p>Eryn is an advanced MCMC sampler. It has the capability to run with
 parallel tempering, multiple model types, and unknown counts within each
 model type using Reversible Jump MCMC techniques. Eryn is heavily based
@@ -112,7 +114,7 @@ for Eryn can be found here:
 will find the code on Github:
 <a class="reference external" href="https://github.com/mikekatz04/Eryn">github.com/mikekatz04/Eryn</a>.</p>
 <section id="getting-started">
-<h2>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this heading"></a></h2>
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h2>
 <p>Below is a quick set of instructions to get you started with <code class="docutils literal notranslate"><span class="pre">eryn</span></code>.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">eryn</span>
 </pre></div>
@@ -123,14 +125,16 @@ will find the code on Github:
 </div>
 <p>See <a class="reference external" href="https://github.com/mikekatz04/Eryn/blob/main/examples/Eryn_tutorial.ipynb">examples
 notebook</a>
-for more info.</p>
+for more info. You can also navigate the
+<a class="reference external" href="https://mikekatz04.github.io/Eryn/html/index.html">Documentation</a>
+pages.</p>
 <section id="prerequisites">
-<h3>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this heading"></a></h3>
+<h3>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h3>
 <p>Eryn has only a few python-based dependencies: <code class="docutils literal notranslate"><span class="pre">tqdm</span></code>, <code class="docutils literal notranslate"><span class="pre">corner</span></code> for
 plotting, <code class="docutils literal notranslate"><span class="pre">numpy</span></code>, <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code>.</p>
 </section>
 <section id="installing">
-<h3>Installing<a class="headerlink" href="#installing" title="Permalink to this heading"></a></h3>
+<h3>Installing<a class="headerlink" href="#installing" title="Link to this heading"></a></h3>
 <p>If you are not planning to develop the code, you can just install the
 latest version with the pip installation technique given above.
 Otherwise, you can just clone the repo and run <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">.</span></code> inside
@@ -142,26 +146,26 @@ run the following in the main Eryn directory:</p>
 </section>
 </section>
 <section id="running-the-tests">
-<h2>Running the Tests<a class="headerlink" href="#running-the-tests" title="Permalink to this heading"></a></h2>
+<h2>Running the Tests<a class="headerlink" href="#running-the-tests" title="Link to this heading"></a></h2>
 <p>In the main directory of the package run in the terminal:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">unittest</span> <span class="n">discover</span>
 </pre></div>
 </div>
 </section>
 <section id="contributing">
-<h2>Contributing<a class="headerlink" href="#contributing" title="Permalink to this heading"></a></h2>
+<h2>Contributing<a class="headerlink" href="#contributing" title="Link to this heading"></a></h2>
 <p>Please read <a class="reference external" href="CONTRIBUTING.md">CONTRIBUTING.md</a> for details on our
 code of conduct, and the process for submitting pull requests to us.</p>
 </section>
 <section id="versioning">
-<h2>Versioning<a class="headerlink" href="#versioning" title="Permalink to this heading"></a></h2>
+<h2>Versioning<a class="headerlink" href="#versioning" title="Link to this heading"></a></h2>
 <p>We use <a class="reference external" href="http://semver.org/">SemVer</a> for versioning. For the versions
 available, see the <a class="reference external" href="https://github.com/BlackHolePerturbationToolkit/FastEMRIWaveforms/tags">tags on this
 repository</a>.</p>
-<p>Current Version: 1.1.5</p>
+<p>Current Version: 1.1.6</p>
 </section>
 <section id="citation">
-<h2>Citation<a class="headerlink" href="#citation" title="Permalink to this heading"></a></h2>
+<h2>Citation<a class="headerlink" href="#citation" title="Link to this heading"></a></h2>
 <p>When using this package, please cite at minimum the following sources:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@article</span><span class="p">{</span><span class="n">Karnesis</span><span class="p">:</span><span class="mi">2023</span><span class="n">ras</span><span class="p">,</span>
     <span class="n">author</span> <span class="o">=</span> <span class="s2">&quot;Karnesis, Nikolaos and Katz, Michael L. and Korsakova, Natalia and Gair, Jonathan R. and Stergioulas, Nikolaos&quot;</span><span class="p">,</span>
@@ -209,7 +213,7 @@ repository</a>.</p>
 sources. Please make sure you do this properly.</p>
 </section>
 <section id="authors">
-<h2>Authors<a class="headerlink" href="#authors" title="Permalink to this heading"></a></h2>
+<h2>Authors<a class="headerlink" href="#authors" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p><strong>Michael Katz</strong></p></li>
 <li><p>Nikos Karnesis</p></li>
@@ -217,19 +221,19 @@ sources. Please make sure you do this properly.</p>
 <li><p>Jonathan Gair</p></li>
 </ul>
 <section id="contibutors">
-<h3>Contibutors<a class="headerlink" href="#contibutors" title="Permalink to this heading"></a></h3>
+<h3>Contibutors<a class="headerlink" href="#contibutors" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Maybe you!</p></li>
 </ul>
 </section>
 </section>
 <section id="license">
-<h2>License<a class="headerlink" href="#license" title="Permalink to this heading"></a></h2>
+<h2>License<a class="headerlink" href="#license" title="Link to this heading"></a></h2>
 <p>This project is licensed under the GNU License - see the
 <a class="reference external" href="LICENSE.md">LICENSE.md</a> file for details.</p>
 </section>
 <section id="acknowledgments">
-<h2>Acknowledgments<a class="headerlink" href="#acknowledgments" title="Permalink to this heading"></a></h2>
+<h2>Acknowledgments<a class="headerlink" href="#acknowledgments" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>We wish to thank S. Babak, M. Le Jeune, S. Marsat, T. Littenberg, and
 N. Cornish for their useful comments and very fruitful discussions.</p></li>
@@ -239,65 +243,353 @@ N. Cornish for their useful comments and very fruitful discussions.</p></li>
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Documentation:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="user/ensemble.html">Ensemble</a></li>
-<li class="toctree-l1"><a class="reference internal" href="user/state.html">State</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/ensemble.html">Ensemble</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.random_state"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.random_state</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.priors"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.priors</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.reset"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.reset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_model"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.sample"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.sample()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.run_mcmc"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.run_mcmc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.compute_log_prior"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.compute_log_prior()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.compute_log_like"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.compute_log_like()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.acceptance_fraction"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.acceptance_fraction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.rj_acceptance_fraction"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.rj_acceptance_fraction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.swap_acceptance_fraction"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.swap_acceptance_fraction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.rj_swap_acceptance_fraction"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.rj_swap_acceptance_fraction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_chain"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_chain()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_blobs"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_blobs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_log_like"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_log_like()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_log_prior"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_log_prior()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_log_posterior"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_log_posterior()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_inds"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_inds()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_nleaves"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_nleaves()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_last_sample"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_last_sample()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_betas"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_betas()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_value"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_value()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/ensemble.html#eryn.ensemble.EnsembleSampler.get_autocorr_time"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_autocorr_time()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user/state.html">State</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/state.html#eryn.state.State"><code class="docutils literal notranslate"><span class="pre">State</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user/state.html#eryn.state.State.branches_inds"><code class="docutils literal notranslate"><span class="pre">State.branches_inds</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/state.html#eryn.state.State.branches_coords"><code class="docutils literal notranslate"><span class="pre">State.branches_coords</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/state.html#eryn.state.State.branches_supplimental"><code class="docutils literal notranslate"><span class="pre">State.branches_supplimental</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/state.html#eryn.state.State.branch_names"><code class="docutils literal notranslate"><span class="pre">State.branch_names</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/state.html#eryn.state.State.get_log_posterior"><code class="docutils literal notranslate"><span class="pre">State.get_log_posterior()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="user/state.html#eryn.state.Branch"><code class="docutils literal notranslate"><span class="pre">Branch</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user/state.html#eryn.state.Branch.nleaves"><code class="docutils literal notranslate"><span class="pre">Branch.nleaves</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="user/state.html#eryn.state.BranchSupplimental"><code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user/state.html#eryn.state.BranchSupplimental.holder"><code class="docutils literal notranslate"><span class="pre">BranchSupplimental.holder</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/state.html#eryn.state.BranchSupplimental.add_objects"><code class="docutils literal notranslate"><span class="pre">BranchSupplimental.add_objects()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/state.html#eryn.state.BranchSupplimental.remove_objects"><code class="docutils literal notranslate"><span class="pre">BranchSupplimental.remove_objects()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/state.html#eryn.state.BranchSupplimental.contained_objects"><code class="docutils literal notranslate"><span class="pre">BranchSupplimental.contained_objects</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/state.html#eryn.state.BranchSupplimental.take_along_axis"><code class="docutils literal notranslate"><span class="pre">BranchSupplimental.take_along_axis()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/state.html#eryn.state.BranchSupplimental.put_along_axis"><code class="docutils literal notranslate"><span class="pre">BranchSupplimental.put_along_axis()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/state.html#eryn.state.BranchSupplimental.flat"><code class="docutils literal notranslate"><span class="pre">BranchSupplimental.flat</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="user/backend.html">Backends</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="user/backend.html#regular-backend">Regular Backend</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/backend.html#hdf-backend">HDF Backend</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/backend.html#regular-backend">Regular Backend</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user/backend.html#eryn.backends.Backend"><code class="docutils literal notranslate"><span class="pre">Backend</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.accepted"><code class="docutils literal notranslate"><span class="pre">Backend.accepted</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.betas"><code class="docutils literal notranslate"><span class="pre">Backend.betas</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.blobs"><code class="docutils literal notranslate"><span class="pre">Backend.blobs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.branch_names"><code class="docutils literal notranslate"><span class="pre">Backend.branch_names</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.chain"><code class="docutils literal notranslate"><span class="pre">Backend.chain</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.dtype"><code class="docutils literal notranslate"><span class="pre">Backend.dtype</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.inds"><code class="docutils literal notranslate"><span class="pre">Backend.inds</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.initiailized"><code class="docutils literal notranslate"><span class="pre">Backend.initiailized</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.iteration"><code class="docutils literal notranslate"><span class="pre">Backend.iteration</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.log_prior"><code class="docutils literal notranslate"><span class="pre">Backend.log_prior</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.log_like"><code class="docutils literal notranslate"><span class="pre">Backend.log_like</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.move_info"><code class="docutils literal notranslate"><span class="pre">Backend.move_info</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.move_keys"><code class="docutils literal notranslate"><span class="pre">Backend.move_keys</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.nbranches"><code class="docutils literal notranslate"><span class="pre">Backend.nbranches</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.ndims"><code class="docutils literal notranslate"><span class="pre">Backend.ndims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.nleaves_max"><code class="docutils literal notranslate"><span class="pre">Backend.nleaves_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.nwalkers"><code class="docutils literal notranslate"><span class="pre">Backend.nwalkers</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.ntemps"><code class="docutils literal notranslate"><span class="pre">Backend.ntemps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.reset_args"><code class="docutils literal notranslate"><span class="pre">Backend.reset_args</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.reset_kwargs"><code class="docutils literal notranslate"><span class="pre">Backend.reset_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.rj"><code class="docutils literal notranslate"><span class="pre">Backend.rj</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.rj_accepted"><code class="docutils literal notranslate"><span class="pre">Backend.rj_accepted</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.store_missing_leaves"><code class="docutils literal notranslate"><span class="pre">Backend.store_missing_leaves</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.reset_base"><code class="docutils literal notranslate"><span class="pre">Backend.reset_base()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.reset"><code class="docutils literal notranslate"><span class="pre">Backend.reset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.has_blobs"><code class="docutils literal notranslate"><span class="pre">Backend.has_blobs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.get_value"><code class="docutils literal notranslate"><span class="pre">Backend.get_value()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.get_chain"><code class="docutils literal notranslate"><span class="pre">Backend.get_chain()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.get_autocorr_thin_burn"><code class="docutils literal notranslate"><span class="pre">Backend.get_autocorr_thin_burn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.get_inds"><code class="docutils literal notranslate"><span class="pre">Backend.get_inds()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.get_nleaves"><code class="docutils literal notranslate"><span class="pre">Backend.get_nleaves()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.get_blobs"><code class="docutils literal notranslate"><span class="pre">Backend.get_blobs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.get_log_like"><code class="docutils literal notranslate"><span class="pre">Backend.get_log_like()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.get_log_prior"><code class="docutils literal notranslate"><span class="pre">Backend.get_log_prior()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.get_log_posterior"><code class="docutils literal notranslate"><span class="pre">Backend.get_log_posterior()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.get_betas"><code class="docutils literal notranslate"><span class="pre">Backend.get_betas()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.get_a_sample"><code class="docutils literal notranslate"><span class="pre">Backend.get_a_sample()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.get_last_sample"><code class="docutils literal notranslate"><span class="pre">Backend.get_last_sample()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.get_autocorr_time"><code class="docutils literal notranslate"><span class="pre">Backend.get_autocorr_time()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.get_evidence_estimate"><code class="docutils literal notranslate"><span class="pre">Backend.get_evidence_estimate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.get_gelman_rubin_convergence_diagnostic"><code class="docutils literal notranslate"><span class="pre">Backend.get_gelman_rubin_convergence_diagnostic()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.shape"><code class="docutils literal notranslate"><span class="pre">Backend.shape</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.grow"><code class="docutils literal notranslate"><span class="pre">Backend.grow()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.get_move_info"><code class="docutils literal notranslate"><span class="pre">Backend.get_move_info()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.save_step"><code class="docutils literal notranslate"><span class="pre">Backend.save_step()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.Backend.get_info"><code class="docutils literal notranslate"><span class="pre">Backend.get_info()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="user/backend.html#hdf-backend">HDF Backend</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend"><code class="docutils literal notranslate"><span class="pre">HDFBackend</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.initialized"><code class="docutils literal notranslate"><span class="pre">HDFBackend.initialized</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.open"><code class="docutils literal notranslate"><span class="pre">HDFBackend.open()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.reset"><code class="docutils literal notranslate"><span class="pre">HDFBackend.reset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.nwalkers"><code class="docutils literal notranslate"><span class="pre">HDFBackend.nwalkers</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.ntemps"><code class="docutils literal notranslate"><span class="pre">HDFBackend.ntemps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.rj"><code class="docutils literal notranslate"><span class="pre">HDFBackend.rj</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.nleaves_max"><code class="docutils literal notranslate"><span class="pre">HDFBackend.nleaves_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.ndims"><code class="docutils literal notranslate"><span class="pre">HDFBackend.ndims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.move_keys"><code class="docutils literal notranslate"><span class="pre">HDFBackend.move_keys</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.branch_names"><code class="docutils literal notranslate"><span class="pre">HDFBackend.branch_names</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.nbranches"><code class="docutils literal notranslate"><span class="pre">HDFBackend.nbranches</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.reset_args"><code class="docutils literal notranslate"><span class="pre">HDFBackend.reset_args</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.reset_kwargs"><code class="docutils literal notranslate"><span class="pre">HDFBackend.reset_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.has_blobs"><code class="docutils literal notranslate"><span class="pre">HDFBackend.has_blobs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.get_value"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_value()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.get_move_info"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_move_info()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.shape"><code class="docutils literal notranslate"><span class="pre">HDFBackend.shape</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.iteration"><code class="docutils literal notranslate"><span class="pre">HDFBackend.iteration</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.accepted"><code class="docutils literal notranslate"><span class="pre">HDFBackend.accepted</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.rj_accepted"><code class="docutils literal notranslate"><span class="pre">HDFBackend.rj_accepted</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.swaps_accepted"><code class="docutils literal notranslate"><span class="pre">HDFBackend.swaps_accepted</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.random_state"><code class="docutils literal notranslate"><span class="pre">HDFBackend.random_state</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.grow"><code class="docutils literal notranslate"><span class="pre">HDFBackend.grow()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.save_step"><code class="docutils literal notranslate"><span class="pre">HDFBackend.save_step()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.get_a_sample"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_a_sample()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.get_autocorr_thin_burn"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_autocorr_thin_burn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.get_autocorr_time"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_autocorr_time()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.get_betas"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_betas()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.get_blobs"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_blobs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.get_chain"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_chain()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.get_evidence_estimate"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_evidence_estimate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.get_gelman_rubin_convergence_diagnostic"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_gelman_rubin_convergence_diagnostic()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.get_inds"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_inds()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.get_info"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_info()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.get_last_sample"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_last_sample()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.get_log_like"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_log_like()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.get_log_posterior"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_log_posterior()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.get_log_prior"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_log_prior()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.get_nleaves"><code class="docutils literal notranslate"><span class="pre">HDFBackend.get_nleaves()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/backend.html#eryn.backends.HDFBackend.reset_base"><code class="docutils literal notranslate"><span class="pre">HDFBackend.reset_base()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="user/moves.html">Moves</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="user/moves.html#move-parent-class">Move Parent Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/moves.html#move-parent-class">Move Parent Class</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user/moves.html#eryn.moves.Move"><code class="docutils literal notranslate"><span class="pre">Move</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.Move.Note"><code class="docutils literal notranslate"><span class="pre">Move.Note</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.Move.num_proposals"><code class="docutils literal notranslate"><span class="pre">Move.num_proposals</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.Move.gibbs_sampling_setup"><code class="docutils literal notranslate"><span class="pre">Move.gibbs_sampling_setup</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.Move.xp"><code class="docutils literal notranslate"><span class="pre">Move.xp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.Move.use_gpu"><code class="docutils literal notranslate"><span class="pre">Move.use_gpu</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.Move.gibbs_sampling_setup_iterator"><code class="docutils literal notranslate"><span class="pre">Move.gibbs_sampling_setup_iterator()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.Move.setup_proposals"><code class="docutils literal notranslate"><span class="pre">Move.setup_proposals()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.Move.cleanup_proposals_gibbs"><code class="docutils literal notranslate"><span class="pre">Move.cleanup_proposals_gibbs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.Move.ensure_ordering"><code class="docutils literal notranslate"><span class="pre">Move.ensure_ordering()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.Move.fix_logp_gibbs"><code class="docutils literal notranslate"><span class="pre">Move.fix_logp_gibbs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.Move.accepted"><code class="docutils literal notranslate"><span class="pre">Move.accepted</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.Move.acceptance_fraction"><code class="docutils literal notranslate"><span class="pre">Move.acceptance_fraction</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.Move.temperature_control"><code class="docutils literal notranslate"><span class="pre">Move.temperature_control</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.Move.compute_log_posterior_basic"><code class="docutils literal notranslate"><span class="pre">Move.compute_log_posterior_basic()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.Move.tune"><code class="docutils literal notranslate"><span class="pre">Move.tune()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.Move.update"><code class="docutils literal notranslate"><span class="pre">Move.update()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="user/moves.html#metropolis-hastings-moves">Metropolis-Hastings Moves</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="user/moves.html#mh-parent-class">MH Parent Class</a></li>
-<li class="toctree-l3"><a class="reference internal" href="user/moves.html#implemented-mh-moves">Implemented MH Moves</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/moves.html#mh-parent-class">MH Parent Class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.MHMove"><code class="docutils literal notranslate"><span class="pre">MHMove</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="user/moves.html#implemented-mh-moves">Implemented MH Moves</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.GaussianMove"><code class="docutils literal notranslate"><span class="pre">GaussianMove</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.DistributionGenerate"><code class="docutils literal notranslate"><span class="pre">DistributionGenerate</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="user/moves.html#red-blue-moves">Red-Blue Moves</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="user/moves.html#red-blue-parent-class">Red-Blue Parent Class</a></li>
-<li class="toctree-l3"><a class="reference internal" href="user/moves.html#implemented-red-blue-moves">Implemented Red-Blue Moves</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/moves.html#red-blue-parent-class">Red-Blue Parent Class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.RedBlueMove"><code class="docutils literal notranslate"><span class="pre">RedBlueMove</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="user/moves.html#implemented-red-blue-moves">Implemented Red-Blue Moves</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.StretchMove"><code class="docutils literal notranslate"><span class="pre">StretchMove</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="user/moves.html#group-moves">Group Moves</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="user/moves.html#group-parent-class">Group Parent Class</a></li>
-<li class="toctree-l3"><a class="reference internal" href="user/moves.html#implemented-group-moves">Implemented Group Moves</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/moves.html#group-parent-class">Group Parent Class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.GroupMove"><code class="docutils literal notranslate"><span class="pre">GroupMove</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="user/moves.html#implemented-group-moves">Implemented Group Moves</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.GroupStretchMove"><code class="docutils literal notranslate"><span class="pre">GroupStretchMove</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="user/moves.html#reversible-jump-moves">Reversible Jump Moves</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="user/moves.html#reversible-jump-parent-class">Reversible Jump Parent Class</a></li>
-<li class="toctree-l3"><a class="reference internal" href="user/moves.html#implemented-reversible-jump-moves">Implemented Reversible Jump Moves</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/moves.html#reversible-jump-parent-class">Reversible Jump Parent Class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.ReversibleJumpMove"><code class="docutils literal notranslate"><span class="pre">ReversibleJumpMove</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="user/moves.html#implemented-reversible-jump-moves">Implemented Reversible Jump Moves</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.DistributionGenerateRJ"><code class="docutils literal notranslate"><span class="pre">DistributionGenerateRJ</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="user/moves.html#mutliple-try-moves">Mutliple Try Moves</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="user/moves.html#mutliple-try-parent-class">Mutliple Try Parent Class</a></li>
-<li class="toctree-l3"><a class="reference internal" href="user/moves.html#implemented-multiple-try-moves">Implemented Multiple Try Moves</a></li>
-<li class="toctree-l3"><a class="reference internal" href="user/moves.html#implemented-multiple-try-rj-moves">Implemented Multiple Try RJ Moves</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/moves.html#mutliple-try-parent-class">Mutliple Try Parent Class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.MultipleTryMove"><code class="docutils literal notranslate"><span class="pre">MultipleTryMove</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="user/moves.html#utility-moves">Utility Moves</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/moves.html#implemented-multiple-try-moves">Implemented Multiple Try Moves</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.MTDistGenMove"><code class="docutils literal notranslate"><span class="pre">MTDistGenMove</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="user/moves.html#implemented-multiple-try-rj-moves">Implemented Multiple Try RJ Moves</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.MTDistGenMoveRJ"><code class="docutils literal notranslate"><span class="pre">MTDistGenMoveRJ</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="user/moves.html#utility-moves">Utility Moves</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user/moves.html#eryn.moves.CombineMove"><code class="docutils literal notranslate"><span class="pre">CombineMove</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.CombineMove.accepted"><code class="docutils literal notranslate"><span class="pre">CombineMove.accepted</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.CombineMove.acceptance_fraction"><code class="docutils literal notranslate"><span class="pre">CombineMove.acceptance_fraction</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.CombineMove.acceptance_fraction_separate"><code class="docutils literal notranslate"><span class="pre">CombineMove.acceptance_fraction_separate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.CombineMove.temperature_control"><code class="docutils literal notranslate"><span class="pre">CombineMove.temperature_control</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.CombineMove.cleanup_proposals_gibbs"><code class="docutils literal notranslate"><span class="pre">CombineMove.cleanup_proposals_gibbs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.CombineMove.compute_log_posterior_basic"><code class="docutils literal notranslate"><span class="pre">CombineMove.compute_log_posterior_basic()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.CombineMove.ensure_ordering"><code class="docutils literal notranslate"><span class="pre">CombineMove.ensure_ordering()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.CombineMove.fix_logp_gibbs"><code class="docutils literal notranslate"><span class="pre">CombineMove.fix_logp_gibbs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.CombineMove.gibbs_sampling_setup_iterator"><code class="docutils literal notranslate"><span class="pre">CombineMove.gibbs_sampling_setup_iterator()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.CombineMove.setup_proposals"><code class="docutils literal notranslate"><span class="pre">CombineMove.setup_proposals()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.CombineMove.tune"><code class="docutils literal notranslate"><span class="pre">CombineMove.tune()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.CombineMove.update"><code class="docutils literal notranslate"><span class="pre">CombineMove.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.CombineMove.periodic"><code class="docutils literal notranslate"><span class="pre">CombineMove.periodic</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/moves.html#eryn.moves.CombineMove.propose"><code class="docutils literal notranslate"><span class="pre">CombineMove.propose()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="user/prior.html">Priors</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="user/prior.html#probability-distribution-container">Probability Distribution Container</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/prior.html#available-probability-distributions">Available Probability Distributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/prior.html#probability-distribution-container">Probability Distribution Container</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user/prior.html#eryn.prior.ProbDistContainer"><code class="docutils literal notranslate"><span class="pre">ProbDistContainer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/prior.html#eryn.prior.ProbDistContainer.priors_in"><code class="docutils literal notranslate"><span class="pre">ProbDistContainer.priors_in</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/prior.html#eryn.prior.ProbDistContainer.priors"><code class="docutils literal notranslate"><span class="pre">ProbDistContainer.priors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/prior.html#eryn.prior.ProbDistContainer.ndim"><code class="docutils literal notranslate"><span class="pre">ProbDistContainer.ndim</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/prior.html#eryn.prior.ProbDistContainer.use_cupy"><code class="docutils literal notranslate"><span class="pre">ProbDistContainer.use_cupy</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/prior.html#eryn.prior.ProbDistContainer.logpdf"><code class="docutils literal notranslate"><span class="pre">ProbDistContainer.logpdf()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/prior.html#eryn.prior.ProbDistContainer.ppf"><code class="docutils literal notranslate"><span class="pre">ProbDistContainer.ppf()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/prior.html#eryn.prior.ProbDistContainer.rvs"><code class="docutils literal notranslate"><span class="pre">ProbDistContainer.rvs()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="user/temper.html">Parallel Tempering</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="user/prior.html#available-probability-distributions">Available Probability Distributions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user/prior.html#eryn.prior.uniform_dist"><code class="docutils literal notranslate"><span class="pre">uniform_dist()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/prior.html#eryn.prior.log_uniform"><code class="docutils literal notranslate"><span class="pre">log_uniform()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/prior.html#eryn.prior.MappedUniformDistribution"><code class="docutils literal notranslate"><span class="pre">MappedUniformDistribution</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/prior.html#eryn.prior.MappedUniformDistribution.logpdf"><code class="docutils literal notranslate"><span class="pre">MappedUniformDistribution.logpdf()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/prior.html#eryn.prior.MappedUniformDistribution.rvs"><code class="docutils literal notranslate"><span class="pre">MappedUniformDistribution.rvs()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user/temper.html">Parallel Tempering</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/temper.html#eryn.moves.tempering.TemperatureControl"><code class="docutils literal notranslate"><span class="pre">TemperatureControl</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user/temper.html#eryn.moves.tempering.TemperatureControl.compute_log_posterior_tempered"><code class="docutils literal notranslate"><span class="pre">TemperatureControl.compute_log_posterior_tempered()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/temper.html#eryn.moves.tempering.TemperatureControl.tempered_likelihood"><code class="docutils literal notranslate"><span class="pre">TemperatureControl.tempered_likelihood()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/temper.html#eryn.moves.tempering.TemperatureControl.temperature_swaps"><code class="docutils literal notranslate"><span class="pre">TemperatureControl.temperature_swaps()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/temper.html#eryn.moves.tempering.TemperatureControl.temper_comps"><code class="docutils literal notranslate"><span class="pre">TemperatureControl.temper_comps()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="user/temper.html#eryn.moves.tempering.make_ladder"><code class="docutils literal notranslate"><span class="pre">make_ladder()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="user/utils.html">Utilities</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="user/utils.html#periodic-container">Periodic Container</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/utils.html#transformcontainer">TransformContainer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/utils.html#periodic-container">Periodic Container</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user/utils.html#eryn.utils.PeriodicContainer"><code class="docutils literal notranslate"><span class="pre">PeriodicContainer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/utils.html#eryn.utils.PeriodicContainer.distance"><code class="docutils literal notranslate"><span class="pre">PeriodicContainer.distance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/utils.html#eryn.utils.PeriodicContainer.wrap"><code class="docutils literal notranslate"><span class="pre">PeriodicContainer.wrap()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="user/utils.html#transformcontainer">TransformContainer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user/utils.html#eryn.utils.TransformContainer"><code class="docutils literal notranslate"><span class="pre">TransformContainer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/utils.html#eryn.utils.TransformContainer.transform_base_parameters"><code class="docutils literal notranslate"><span class="pre">TransformContainer.transform_base_parameters()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/utils.html#eryn.utils.TransformContainer.fill_values"><code class="docutils literal notranslate"><span class="pre">TransformContainer.fill_values()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/utils.html#eryn.utils.TransformContainer.both_transforms"><code class="docutils literal notranslate"><span class="pre">TransformContainer.both_transforms()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="user/utils.html#update-functions">Update functions</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="user/utils.html#update-base-class">Update Base Class</a></li>
-<li class="toctree-l3"><a class="reference internal" href="user/utils.html#implemented-update-functions">Implemented Update Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/utils.html#update-base-class">Update Base Class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/utils.html#eryn.utils.Update"><code class="docutils literal notranslate"><span class="pre">Update</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="user/utils.html#implemented-update-functions">Implemented Update Functions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/utils.html#eryn.utils.AdjustStretchProposalScale"><code class="docutils literal notranslate"><span class="pre">AdjustStretchProposalScale</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="user/utils.html#stopping-functions">Stopping functions</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="user/utils.html#stopping-base-class">Stopping Base Class</a></li>
-<li class="toctree-l3"><a class="reference internal" href="user/utils.html#implemented-stopping-functions">Implemented Stopping Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/utils.html#stopping-base-class">Stopping Base Class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/utils.html#eryn.utils.Stopping"><code class="docutils literal notranslate"><span class="pre">Stopping</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="user/utils.html#implemented-stopping-functions">Implemented Stopping Functions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/utils.html#eryn.utils.SearchConvergeStopping"><code class="docutils literal notranslate"><span class="pre">SearchConvergeStopping</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="user/utils.html#sampler-model-container">Sampler Model Container</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/utils.html#module-eryn.utils.utility">Other Utility Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/utils.html#module-eryn.utils.utility">Other Utility Functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user/utils.html#eryn.utils.utility.groups_from_inds"><code class="docutils literal notranslate"><span class="pre">groups_from_inds()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/utils.html#eryn.utils.utility.get_acf"><code class="docutils literal notranslate"><span class="pre">get_acf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/utils.html#eryn.utils.utility.get_integrated_act"><code class="docutils literal notranslate"><span class="pre">get_integrated_act()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/utils.html#eryn.utils.utility.thermodynamic_integration_log_evidence"><code class="docutils literal notranslate"><span class="pre">thermodynamic_integration_log_evidence()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/utils.html#eryn.utils.utility.stepping_stone_log_evidence"><code class="docutils literal notranslate"><span class="pre">stepping_stone_log_evidence()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/utils.html#eryn.utils.utility.psrf"><code class="docutils literal notranslate"><span class="pre">psrf()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

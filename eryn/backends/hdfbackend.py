@@ -5,6 +5,7 @@ from __future__ import division, print_function
 __all__ = ["HDFBackend", "TempHDFBackend", "does_hdf5_support_longdouble"]
 
 import os
+import time
 from tempfile import NamedTemporaryFile
 
 import numpy as np
@@ -129,7 +130,21 @@ class HDFBackend(Backend):
             )
 
         # open the file
-        f = h5py.File(self.filename, mode)
+        file_opened = False
+
+        try_num = 0
+        max_tries = 100
+        while not file_opened:
+            try:
+                f = h5py.File(self.filename, mode)
+                file_opened = True
+                
+            except BlockingIOError:
+                try_num += 1
+                if try_num >= max_tries:
+                    raise BlockingIOError("Max tries exceeded trying to open h5 file.")
+                print("Failed to open h5 file. Trying again.")
+                time.sleep(10.0)
 
         # get the data type and store it if it is not previously set
         if not self.dtype_set and self.name in f:
@@ -659,73 +674,86 @@ class HDFBackend(Backend):
                 (default: ``None``)
 
         """
-        # open for appending in with statement
-        with self.open("a") as f:
-            g = f[self.name]
-            # get the iteration left off on
-            iteration = g.attrs["iteration"]
+        file_opened = False
+        max_tries = 100
+        try_num = 0
+        while not file_opened:
+            try:
+                        
+                # open for appending in with statement
+                with self.open("a") as f:
+                    g = f[self.name]
+                    # get the iteration left off on
+                    iteration = g.attrs["iteration"]
 
-            # make sure the backend has all the information needed to store everything
-            for key in [
-                "rj",
-                "ntemps",
-                "nwalkers",
-                "nbranches",
-                "branch_names",
-                "ndims",
-            ]:
-                if not hasattr(self, key):
-                    setattr(self, key, g.attrs[key])
+                    # make sure the backend has all the information needed to store everything
+                    for key in [
+                        "rj",
+                        "ntemps",
+                        "nwalkers",
+                        "nbranches",
+                        "branch_names",
+                        "ndims",
+                    ]:
+                        if not hasattr(self, key):
+                            setattr(self, key, g.attrs[key])
 
-            # check the inputs are okay
-            self._check(
-                state, accepted, rj_accepted=rj_accepted, swaps_accepted=swaps_accepted,
-            )
-
-            # branch-specific
-            for name, model in state.branches.items():
-                g["inds"][name][iteration] = model.inds
-                # use self.store_missing_leaves to set value for missing leaves
-                # state retains old coordinates
-                coords_in = model.coords * model.inds[:, :, :, None]
-                inds_all = np.repeat(model.inds, coords_in.shape[-1], axis=-1).reshape(
-                    model.inds.shape + (coords_in.shape[-1],)
-                )
-                coords_in[~inds_all] = self.store_missing_leaves
-                g["chain"][name][self.iteration] = coords_in
-
-            # store everything else in the file
-            g["log_like"][iteration, :] = state.log_like
-            g["log_prior"][iteration, :] = state.log_prior
-            if state.blobs is not None:
-                g["blobs"][iteration, :] = state.blobs
-            if state.betas is not None:
-                g["betas"][self.iteration, :] = state.betas
-            g["accepted"][:] += accepted
-            if swaps_accepted is not None:
-                g["swaps_accepted"][:] += swaps_accepted
-            if self.rj:
-                g["rj_accepted"][:] += rj_accepted
-
-            for i, v in enumerate(state.random_state):
-                g.attrs["random_state_{0}".format(i)] = v
-
-            g.attrs["iteration"] = iteration + 1
-
-            # moves
-            if moves_accepted_fraction is not None:
-                if "moves" not in g:
-                    raise ValueError(
-                        """moves_accepted_fraction was passed, but moves_info was not initialized. Use the moves kwarg 
-                        in the reset function."""
+                    # check the inputs are okay
+                    self._check(
+                        state, accepted, rj_accepted=rj_accepted, swaps_accepted=swaps_accepted,
                     )
 
-                # update acceptance fractions
-                for move_key in self.move_keys:
-                    g["moves"][move_key]["acceptance_fraction"][
-                        :
-                    ] = moves_accepted_fraction[move_key]
+                    # branch-specific
+                    for name, model in state.branches.items():
+                        g["inds"][name][iteration] = model.inds
+                        # use self.store_missing_leaves to set value for missing leaves
+                        # state retains old coordinates
+                        coords_in = model.coords * model.inds[:, :, :, None]
+                        inds_all = np.repeat(model.inds, coords_in.shape[-1], axis=-1).reshape(
+                            model.inds.shape + (coords_in.shape[-1],)
+                        )
+                        coords_in[~inds_all] = self.store_missing_leaves
+                        g["chain"][name][self.iteration] = coords_in
 
+                    # store everything else in the file
+                    g["log_like"][iteration, :] = state.log_like
+                    g["log_prior"][iteration, :] = state.log_prior
+                    if state.blobs is not None:
+                        g["blobs"][iteration, :] = state.blobs
+                    if state.betas is not None:
+                        g["betas"][self.iteration, :] = state.betas
+                    g["accepted"][:] += accepted
+                    if swaps_accepted is not None:
+                        g["swaps_accepted"][:] += swaps_accepted
+                    if self.rj:
+                        g["rj_accepted"][:] += rj_accepted
+
+                    for i, v in enumerate(state.random_state):
+                        g.attrs["random_state_{0}".format(i)] = v
+
+                    g.attrs["iteration"] = iteration + 1
+
+                    # moves
+                    if moves_accepted_fraction is not None:
+                        if "moves" not in g:
+                            raise ValueError(
+                                """moves_accepted_fraction was passed, but moves_info was not initialized. Use the moves kwarg 
+                                in the reset function."""
+                            )
+
+                        # update acceptance fractions
+                        for move_key in self.move_keys:
+                            g["moves"][move_key]["acceptance_fraction"][
+                                :
+                            ] = moves_accepted_fraction[move_key]
+                file_opened = True
+                
+            except BlockingIOError:
+                try_num += 1
+                if try_num >= max_tries:
+                    raise BlockingIOError("Max tries exceeded trying to open h5 file.")
+                print("Failed to open h5 file. Trying again.")
+                time.sleep(10.0)
 
 class TempHDFBackend(object):
     """Check if HDF5 is working and available."""
