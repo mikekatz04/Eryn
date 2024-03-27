@@ -91,6 +91,9 @@ class GaussianMove(MHMove):
                         proposal = _proposal(cov, factor,"vector")
                     if mode=="AM":
                         proposal = AM_proposal(cov, factor, "vector")
+                    if mode=="DE":
+                        proposal = DE_proposal(cov, factor, "vector")
+                        
 
                 else:
                     raise ValueError("Invalid proposal scale dimensions")
@@ -335,3 +338,48 @@ class AM_proposal(_isotropic_proposal):
         else:
             svd = self.svd
         return propose_AM(x0, rng, svd, self.get_factor(rng))
+
+
+def de_proposal(current_state, F=0.5, CR=0.5):
+    """
+    Provides a proposal for MCMC using Differential Evolution (DE/rand/1).
+
+    Parameters:
+        current_state (numpy.ndarray): The current state of the MCMC chain. Shape: (n_walkers, n_params).
+        F (float): The differential weight (default is 0.5).
+        CR (float): The crossover probability (default is 0.5).
+
+    Returns:
+        numpy.ndarray: The proposed state. Shape: (n_walkers, n_params).
+    """
+    n_walkers, n_params = current_state.shape
+
+    # Randomly select three distinct indices for each walker
+    indices = np.random.choice(n_walkers, size=(n_walkers, 3), replace=True)
+    
+    # Generate mutant vectors using DE/rand/1
+    # mutant_vectors = current_state[indices[:, 0]] + F * (current_state[indices[:, 1]] - current_state[indices[:, 2]])
+    mutant_vectors = current_state + F * (current_state[indices[:, 1]] - current_state[indices[:, 2]])
+
+    # Perform crossover with the current state to create the proposed state
+    crossover_mask = (np.random.rand(n_walkers, n_params) <= CR) | (np.arange(n_params) == np.random.randint(n_params, size=(n_walkers, 1)))
+    proposed_state = np.where(crossover_mask, mutant_vectors, current_state)
+
+    return proposed_state
+
+class DE_proposal(_isotropic_proposal):
+
+    allowed_modes = ["vector"]
+    
+    def get_updated_vector(self, rng, x0):
+        # get jump scale size
+        prob = rng.random()
+
+        # mode jump
+        if prob > 0.5:
+            # np.sqrt(np.diag(self.scale))
+            F = np.random.rand() * 2.38 / np.sqrt(2 * x0.shape[1])
+        else:
+            F = 0.5
+        
+        return de_proposal(x0,F=F)
