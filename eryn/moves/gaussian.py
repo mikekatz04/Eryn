@@ -216,7 +216,10 @@ class _isotropic_proposal(object):
         self.index = 0
         self.scale = scale
         self.svd = None
+        self.chain = None
         self.invscale = np.linalg.inv(np.linalg.cholesky(scale))
+        self.use_current_state = True
+        
         if factor is None:
             self._log_factor = None
         else:
@@ -269,22 +272,10 @@ class _proposal(_isotropic_proposal):
             np.zeros(len(self.scale)), self.scale, size=len(x0)
         )
 
-class eigproposal():
-    def __init__(self, cov):
-        self.w,self.v = np.linalg.eig(cov)
-
-    def __call__(self, x0, rng):
-        nw, nd = x0.shape
-        factors = rng.uniform(size=nw)
-        ind = rng.randint(nd,size=nw)
-
-        return x0 + (factors[None,:] * self.v[:,ind] / self.w[ind]).T, 1
-
-
-
 def propose_AM(x0, rng, svd, scale):
     """
-    Adaptive Jump Proposal
+    Adaptive Jump Proposal.
+    Single Component Adaptive Jump Proposal.
     """
     new_pos = x0.copy()
     nw, nd = new_pos.shape
@@ -292,37 +283,23 @@ def propose_AM(x0, rng, svd, scale):
 
     # adjust step size
     prob = rng.random()
-
-    # # large jump
-    # if prob > 0.97:
-    #     scale = 10.0
-
-    # # small jump
-    # elif prob > 0.9:
-    #     scale = 0.2
-
-    # # standard medium jump
-    # else:
-    #     scale = 1.0
-    
     
     # go in eigen basis
     y = np.dot(U.T,x0.T).T # np.asarray([np.dot(U.T, x0[i]) for i in range(nw)])
     # choose a random parameter in the uncorrelated basis
     ind_vec = np.arange(nd)
     
-
-    if np.random.uniform()>0.5:
-        # move along one component
+    if prob>0.5:
+        # move along only one uncorrelated direction SCAM
         np.random.shuffle(ind_vec)
         rand_j = ind_vec[:1]
     else:
-        # move along all
+        # move along all of them AM
         rand_j = ind_vec
     
     y[:,rand_j] += scale * np.random.normal(size=nw)[:,None] * np.sqrt(S[None,rand_j]) * 2.38 / np.sqrt(nd)
+    
     # go back to the basis
-    # if np.random.uniform()>0.5:
     new_pos = np.dot(U,y.T).T # np.asarray([np.dot(U, y[i]) for i in range(nw)]) 
 
     return new_pos
@@ -340,14 +317,15 @@ class AM_proposal(_isotropic_proposal):
         return propose_AM(x0, rng, svd, self.get_factor(rng))
 
 
-def de_proposal(current_state, F=0.5, CR=0.5):
+def propose_DE(current_state, chain, F=0.5, CR=0.9, use_current_state=True):
     """
     Provides a proposal for MCMC using Differential Evolution (DE/rand/1).
 
     Parameters:
         current_state (numpy.ndarray): The current state of the MCMC chain. Shape: (n_walkers, n_params).
-        F (float): The differential weight (default is 0.5).
-        CR (float): The crossover probability (default is 0.5).
+        chain (numpy.ndarray): The chain from which to take the mutant. Shape: (n_mutants, n_params).
+        F (float): The differential weight (default is 0.5), in [0,2].
+        CR (float): The crossover probability (default is 0.9), in [0,1].
 
     Returns:
         numpy.ndarray: The proposed state. Shape: (n_walkers, n_params).
@@ -355,11 +333,13 @@ def de_proposal(current_state, F=0.5, CR=0.5):
     n_walkers, n_params = current_state.shape
 
     # Randomly select three distinct indices for each walker
-    indices = np.random.choice(n_walkers, size=(n_walkers, 3), replace=True)
+    indices = np.random.choice(chain.shape[0], size=(chain.shape[0], 3), replace=True)
     
     # Generate mutant vectors using DE/rand/1
-    # mutant_vectors = current_state[indices[:, 0]] + F * (current_state[indices[:, 1]] - current_state[indices[:, 2]])
-    mutant_vectors = current_state + F * (current_state[indices[:, 1]] - current_state[indices[:, 2]])
+    if use_current_state:
+        mutant_vectors = current_state + F * (current_state[indices[:, 1]] - current_state[indices[:, 2]])
+    else:
+        mutant_vectors = chain[indices[:, 0]] + F * (chain[indices[:, 1]] - chain[indices[:, 2]])
 
     # Perform crossover with the current state to create the proposed state
     crossover_mask = (np.random.rand(n_walkers, n_params) <= CR) | (np.arange(n_params) == np.random.randint(n_params, size=(n_walkers, 1)))
@@ -375,11 +355,19 @@ class DE_proposal(_isotropic_proposal):
         # get jump scale size
         prob = rng.random()
 
-        # mode jump
+        # scaling
         if prob > 0.5:
-            # np.sqrt(np.diag(self.scale))
-            F = np.random.rand() * 2.38 / np.sqrt(2 * x0.shape[1])
+            # random in range
+            F = self.get_factor(rng)
+            CR = np.random.uniform(0.5,1.0)
         else:
+            # default
             F = 0.5
+            CR = 0.9
         
-        return de_proposal(x0,F=F)
+        if self.chain is None:
+            # use current state to update
+            return propose_DE(x0, x0.copy(), F=F, CR=CR, use_current_state=self.use_current_state)
+        else:
+            # take from the pool
+            return propose_DE(x0, self.chain, F=F, CR=CR, use_current_state=self.use_current_state)
