@@ -67,7 +67,7 @@ class GaussianMove(MHMove):
 
     """
 
-    def __init__(self, cov_all, mode="AM", factor=None, priors=None, indx_list=None, swap_walkers=None, sky_periodic=None, **kwargs):
+    def __init__(self, cov_all, mode="AM", factor=None, indx_list=None, sky_periodic=None, shift_value=None, **kwargs):
 
         self.all_proposal = {}
         
@@ -104,14 +104,12 @@ class GaussianMove(MHMove):
                 proposal = _isotropic_proposal(np.sqrt(cov), factor,  "vector")
             self.all_proposal[name] = proposal
 
-        # priors to draw from
-        self.priors = priors
-        # swap walkers
-        self.swap_walkers = swap_walkers
         # propose in blocks
         self.indx_list = indx_list
-        
+        # ensure sky periodicity
         self.sky_periodic = sky_periodic
+        # add random shift (how often, param index as in self.indx_list, value to shift)
+        self.shift_value = shift_value
         super(GaussianMove, self).__init__(**kwargs)
 
     def get_proposal(self, branches_coords, random, branches_inds=None, **kwargs):
@@ -151,16 +149,10 @@ class GaussianMove(MHMove):
             q[name] = coords.copy()
 
             # get new points
-            # draw from the prior 10% of the time
             new_coords_tmp = coords[inds_here].copy()
             new_coords = coords[inds_here].copy()
             
-            if self.priors is not None:
-                # if np.random.uniform()>0.9:
-                for var in range(new_coords.shape[-1]):
-                    new_coords_tmp[:,var] = self.priors[name][var].rvs(size=new_coords[:,var].shape[0])
-            else:
-                new_coords_tmp = proposal_fn(coords[inds_here], random)[0]
+            new_coords_tmp = proposal_fn(coords[inds_here], random)[0]
             
             # swap walkers, this helps for the search phase
             if self.indx_list is not None:
@@ -172,6 +164,18 @@ class GaussianMove(MHMove):
             else:
                 new_coords = new_coords_tmp.copy()
             
+            # shift
+            if self.shift_value is not None:
+                # first value tells how often to shift, self.shift_value[0]=1, always
+                if np.random.uniform()<self.shift_value[0]:
+                    indx_list_here = np.asarray([el[1] for el in self.shift_value[1] if el[0]==name])
+                    nw = new_coords_tmp.shape[0]
+                    # list of numbers indicating wich group of parameters to change
+                    ind_to_chage = np.random.randint(len(indx_list_here),size=nw)
+                    random_number = np.random.choice([-1, 1])
+                    # add value
+                    new_coords[indx_list_here[ind_to_chage][:,0,:]] += random_number*self.shift_value[2]
+
             if self.sky_periodic:
                 indx_list_here = [el[1] for el in self.sky_periodic if el[0]==name]
                 nw = new_coords_tmp.shape[0]
@@ -180,20 +184,6 @@ class GaussianMove(MHMove):
                     ph = new_coords_tmp[:,indx_list_here[temp_ind][0]][:,1]
                     new_coords[:,indx_list_here[temp_ind][0]] = np.asarray(reflect_cosines_array(csth, ph)).T
                 
-            # jump in frequency
-            # if np.random.uniform()>0.9:
-            #     shape = new_coords[...,2].shape
-            #     new_coords[...,2] += np.sign(np.random.uniform(-1,1))*np.ones(shape)*np.log10(np.random.randint(1,4,size=shape))
-            #     new_coords[...,3] += np.sign(np.random.uniform(-1,1))*np.ones(shape)*np.log10(np.random.randint(1,4,size=shape))
-
-            # swap walkers, this helps for the search phase
-            if self.swap_walkers is not None:
-                if np.random.uniform()>self.swap_walkers:
-                    ind_shuffle = np.arange(new_coords.shape[0])
-                    np.random.shuffle(ind_shuffle)
-                    new_coords = new_coords[ind_shuffle].copy()
-            
-            
 
             # put into coords in proper location
             q[name][inds_here] = new_coords.copy()
@@ -342,8 +332,11 @@ def propose_DE(current_state, chain, F=0.5, CR=0.9, use_current_state=True):
         mutant_vectors = chain[indices[:, 0]] + F * (chain[indices[:, 1]] - chain[indices[:, 2]])
 
     # Perform crossover with the current state to create the proposed state
-    crossover_mask = (np.random.rand(n_walkers, n_params) <= CR) | (np.arange(n_params) == np.random.randint(n_params, size=(n_walkers, 1)))
+    # crossover_mask = (np.random.rand(n_walkers, n_params) <= CR) | (np.arange(n_params) == np.random.randint(n_params, size=(n_walkers, 1)))
+    # to update all
+    crossover_mask = np.ones((n_walkers, n_params), dtype=bool)
     proposed_state = np.where(crossover_mask, mutant_vectors, current_state)
+    
 
     return proposed_state
 
