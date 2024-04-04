@@ -209,6 +209,7 @@ class _isotropic_proposal(object):
         self.chain = None
         self.invscale = np.linalg.inv(np.linalg.cholesky(scale))
         self.use_current_state = True
+        self.crossover = False
         
         if factor is None:
             self._log_factor = None
@@ -307,7 +308,7 @@ class AM_proposal(_isotropic_proposal):
         return propose_AM(x0, rng, svd, self.get_factor(rng))
 
 
-def propose_DE(current_state, chain, F=0.5, CR=0.9, use_current_state=True):
+def propose_DE(current_state, chain, F=0.5, CR=0.9, use_current_state=True, crossover=False):
     """
     Provides a proposal for MCMC using Differential Evolution (DE/rand/1).
 
@@ -332,9 +333,11 @@ def propose_DE(current_state, chain, F=0.5, CR=0.9, use_current_state=True):
         mutant_vectors = chain[indices[:, 0]] + F * (chain[indices[:, 1]] - chain[indices[:, 2]])
 
     # Perform crossover with the current state to create the proposed state
-    # crossover_mask = (np.random.rand(n_walkers, n_params) <= CR) | (np.arange(n_params) == np.random.randint(n_params, size=(n_walkers, 1)))
-    # to update all
-    crossover_mask = np.ones((n_walkers, n_params), dtype=bool)
+    if crossover:
+        crossover_mask = (np.random.rand(n_walkers, n_params) <= CR) | (np.arange(n_params) == np.random.randint(n_params, size=(n_walkers, 1)))
+    else:
+        # to update all
+        crossover_mask = np.ones((n_walkers, n_params), dtype=bool)
     proposed_state = np.where(crossover_mask, mutant_vectors, current_state)
     
 
@@ -343,6 +346,11 @@ def propose_DE(current_state, chain, F=0.5, CR=0.9, use_current_state=True):
 class DE_proposal(_isotropic_proposal):
 
     allowed_modes = ["vector"]
+    
+    def get_factor(self, rng):
+        if self._log_factor is None:
+            return 1.0
+        return np.exp( rng.uniform( -self._log_factor, 0.0 ) )
     
     def get_updated_vector(self, rng, x0):
         # get jump scale size
@@ -360,7 +368,7 @@ class DE_proposal(_isotropic_proposal):
         
         if self.chain is None:
             # use current state to update
-            return propose_DE(x0, x0.copy(), F=F, CR=CR, use_current_state=self.use_current_state)
+            return propose_DE(x0, x0.copy(), F=F, CR=CR, use_current_state=self.use_current_state, crossover=self.crossover)
         else:
             # take from the pool
-            return propose_DE(x0, self.chain, F=F, CR=CR, use_current_state=self.use_current_state)
+            return propose_DE(x0, self.chain, F=F, CR=CR, use_current_state=self.use_current_state, crossover=self.crossover)
