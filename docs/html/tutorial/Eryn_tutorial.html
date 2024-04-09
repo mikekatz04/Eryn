@@ -76,6 +76,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#Add-Reversible-Jump-MCMC-(model-count-uncertainty)">Add Reversible Jump MCMC (model count uncertainty)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Add-multiple-branches">Add multiple branches</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Moves">Moves</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Example-diagonal-covariance-move">Example diagonal covariance move</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Gibbs-Sampling">Gibbs Sampling</a></li>
 </ul>
 </li>
@@ -342,8 +343,8 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|████████████████████████████████████████| 100/100 [00:00&lt;00:00, 280.45it/s]
-100%|██████████████████████████████████████| 2500/2500 [00:08&lt;00:00, 305.75it/s]
+100%|████████████████████████████████████████| 100/100 [00:00&lt;00:00, 277.20it/s]
+100%|██████████████████████████████████████| 2500/2500 [00:08&lt;00:00, 293.00it/s]
 </pre></div></div>
 </div>
 <p>Similar to <code class="docutils literal notranslate"><span class="pre">emcee</span></code>, all of the sampler information is stored in a backend object. In the default case, this backend is <code class="docutils literal notranslate"><span class="pre">`eryn.backends.Backend</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/build/html/user/backend.html#eryn.backends.Backend">https://mikekatz04.github.io/Eryn/build/html/user/backend.html#eryn.backends.Backend</a>&gt;`__. To retrieve the samples from the backend, you call the <code class="docutils literal notranslate"><span class="pre">get_chain</span></code> method. This will return a dictionary with keys at the omdel names and a 5-dimensional array per model, which can be intimidating. We will cover that array just below. For now, just focus on
@@ -631,7 +632,7 @@ branch objects can be accessed as <code class="docutils literal notranslate"><sp
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-{&#39;model_0&#39;: &lt;eryn.state.Branch at 0x7fe51cbb3940&gt;}
+{&#39;model_0&#39;: &lt;eryn.state.Branch at 0x14bf49370&gt;}
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -1013,8 +1014,8 @@ Likelihoods just like discussed above.</p>
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|███████████████████████████████████████| 1000/1000 [00:13&lt;00:00, 75.39it/s]
-100%|███████████████████████████████████████| 2500/2500 [00:33&lt;00:00, 73.56it/s]
+100%|███████████████████████████████████████| 1000/1000 [00:13&lt;00:00, 75.99it/s]
+100%|███████████████████████████████████████| 2500/2500 [00:34&lt;00:00, 71.76it/s]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1023,7 +1024,7 @@ Likelihoods just like discussed above.</p>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;eryn.state.State at 0x7fe518eeb640&gt;
+&lt;eryn.state.State at 0x14b68efc0&gt;
 </pre></div></div>
 </div>
 <p>We can plot our samples at different temperatures and see the differences in action.</p>
@@ -1238,7 +1239,7 @@ Likelihoods just like discussed above.</p>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x7fe4eeb56020&gt;
+&lt;matplotlib.legend.Legend at 0x150d9b0e0&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1321,7 +1322,7 @@ Likelihoods just like discussed above.</p>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x7fe5065d3a00&gt;
+&lt;matplotlib.legend.Legend at 0x150babcb0&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1518,8 +1519,8 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|███████████████████████████████████████| 1000/1000 [00:29&lt;00:00, 34.26it/s]
-100%|███████████████████████████████████████| 2000/2000 [00:57&lt;00:00, 34.78it/s]
+100%|███████████████████████████████████████| 1000/1000 [00:32&lt;00:00, 30.41it/s]
+100%|███████████████████████████████████████| 2000/2000 [01:04&lt;00:00, 31.25it/s]
 </pre></div></div>
 </div>
 <p>Let’s look at the last sample in terms of the <code class="docutils literal notranslate"><span class="pre">nleaves</span></code> array.</p>
@@ -1697,7 +1698,7 @@ max ll: -261.2302411532098
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x7fe4f40ce320&gt;
+&lt;matplotlib.legend.Legend at 0x14c6faf00&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1909,8 +1910,8 @@ max ll: -261.2302411532098
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-{&#39;gauss&#39;: &lt;eryn.state.Branch at 0x7fe51c85be20&gt;,
- &#39;sine&#39;: &lt;eryn.state.Branch at 0x7fe51c858970&gt;}
+{&#39;gauss&#39;: &lt;eryn.state.Branch at 0x150160080&gt;,
+ &#39;sine&#39;: &lt;eryn.state.Branch at 0x14f481d30&gt;}
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -1927,8 +1928,8 @@ max ll: -261.2302411532098
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|███████████████████████████████████████| 1000/1000 [00:46&lt;00:00, 21.64it/s]
-100%|███████████████████████████████████████| 5000/5000 [03:40&lt;00:00, 22.67it/s]
+100%|███████████████████████████████████████| 1000/1000 [00:50&lt;00:00, 19.83it/s]
+100%|███████████████████████████████████████| 5000/5000 [03:58&lt;00:00, 20.94it/s]
 </pre></div></div>
 </div>
 <p>Let’s look at the last sample in terms of the <code class="docutils literal notranslate"><span class="pre">nleaves</span></code> array for both branches in the cold chain.</p>
@@ -1994,7 +1995,7 @@ array([[4, 2],
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-max ll: -218.81128464457336
+max ll: -218.81128464457333
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -2003,7 +2004,7 @@ max ll: -218.81128464457336
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x7fe51c85b1c0&gt;
+&lt;matplotlib.legend.Legend at 0x14c8938c0&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -2059,6 +2060,60 @@ max ll: -218.81128464457336
 <li><p><code class="docutils literal notranslate"><span class="pre">GroupMoves</span></code>: These moves can move all walkers at once. They are similar to the <code class="docutils literal notranslate"><span class="pre">RedBlueMove</span></code> but instead of using current walkers, they use a stationary distribution of walkers that does not change each proposal. Ideally, the distribution changes infrequently.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ReversibleJumpMove</span></code>: This class guides Reversible Jump MCMC moves. The key difference to the other moves is that the <code class="docutils literal notranslate"><span class="pre">inds</span></code> array changes adjust the model type and/or count. It is very common in Reversible Jump settings to have to implemement a specific RJ proposal. One of the main goals of <code class="docutils literal notranslate"><span class="pre">Eryn</span></code> is to distill this process down to this step and keep the rest of the sampler apparatus the same between projects.</p></li>
 </ul>
+<section id="Example-diagonal-covariance-move">
+<h3>Example diagonal covariance move<a class="headerlink" href="#Example-diagonal-covariance-move" title="Link to this heading"></a></h3>
+<p>When implemented a move at the Proposal Class layer, you only <strong>need</strong> to implement the <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> method. Look at the call signature from the chosen Move Guide. You can obviously implemente more than that.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[42]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">eryn.moves</span> <span class="kn">import</span> <span class="n">MHMove</span>
+
+<span class="k">class</span> <span class="nc">NonScaledDiagonalGaussianMove</span><span class="p">(</span><span class="n">MHMove</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cov_all</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="c1"># checks</span>
+        <span class="k">for</span> <span class="n">branch_name</span><span class="p">,</span> <span class="n">cov</span> <span class="ow">in</span> <span class="n">cov_all</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">cov</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span>
+
+        <span class="c1"># store for later</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cov</span> <span class="o">=</span> <span class="n">cov_all</span>
+
+        <span class="c1"># initialize any parent class information</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">NonScaledDiagonalGaussianMove</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_proposal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">branches_coords</span><span class="p">,</span> <span class="n">random</span><span class="p">,</span> <span class="n">branches_inds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="k">assert</span> <span class="n">branches_inds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">new_points</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">cov</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">assert</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">branches_coords</span>
+            <span class="n">coords</span> <span class="o">=</span> <span class="n">branches_coords</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="n">inds</span> <span class="o">=</span> <span class="n">branches_inds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+
+            <span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">,</span> <span class="n">ndim</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">shape</span>
+
+            <span class="c1"># generate sigma from normal distribution</span>
+            <span class="n">sigma</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">)</span>
+
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">coords</span> <span class="o">+</span> <span class="n">sigma</span><span class="p">[:,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">cov</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="c1"># symmetric</span>
+            <span class="n">new_points</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+
+            <span class="c1"># this is not necessary as the inds will remove there changes in the parent class</span>
+            <span class="c1"># but I put it here to indicate to think about it</span>
+            <span class="n">new_points</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span>
+
+        <span class="c1"># symmetric</span>
+        <span class="n">factors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">new_points</span><span class="p">,</span> <span class="n">factors</span>
+</pre></div>
+</div>
+</div>
+</section>
 <section id="Gibbs-Sampling">
 <h3>Gibbs Sampling<a class="headerlink" href="#Gibbs-Sampling" title="Link to this heading"></a></h3>
 <p>There is a very useful setup for Gibbs sampling of parameters in <code class="docutils literal notranslate"><span class="pre">Eryn</span></code>. To use this feature, you can pass information as the <code class="docutils literal notranslate"><span class="pre">gibbs_sampling_setup</span></code> keyword argument to the chosen Move class. It is handled by the base <code class="docutils literal notranslate"><span class="pre">eryn.moves.Move</span></code> class so it is a feature of all proposals.</p>
@@ -2072,7 +2127,7 @@ be okay.</p>
 <p>Here we will fix the model count of the sine waves to the true value in order to use the stretch proposal on that model. We will still sample over Gaussian pulses with an uncertain model count. We will choose for the sake of example to sample leaf by leaf over the first 2 parameters of the sine wave and then the last one. For the Gaussians, we will sample all the parameters together, but leaf by leaf.</p>
 <p>We will also use the <code class="docutils literal notranslate"><span class="pre">CombineMove</span></code> to make sure these all happen one after another.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[42]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[43]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">nwalkers</span> <span class="o">=</span> <span class="mi">20</span>
@@ -2299,8 +2354,8 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|█████████████████████████████████████████| 100/100 [00:26&lt;00:00,  3.80it/s]
-100%|█████████████████████████████████████████| 500/500 [02:07&lt;00:00,  3.91it/s]
+100%|█████████████████████████████████████████| 100/100 [00:28&lt;00:00,  3.56it/s]
+100%|█████████████████████████████████████████| 500/500 [02:14&lt;00:00,  3.71it/s]
 </pre></div></div>
 </div>
 </section>
@@ -2313,7 +2368,7 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 <p>Transform containers are primary used in likelihood functions to transform the arrays incoming from the sampler to the proper setup for likelihood computation. It can transform parameters based on transform functions and fill values into a final array for any value that is fixed during sampling.</p>
 <p>It can be passed to the likeihood function as an <code class="docutils literal notranslate"><span class="pre">arg</span></code> or <code class="docutils literal notranslate"><span class="pre">kwarg</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[43]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># can be done with lambda or regular function</span>
@@ -2389,7 +2444,7 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </div>
 <p>If you have mutliple branches in your sampler, you can add more than one <code class="docutils literal notranslate"><span class="pre">Transform</span> <span class="pre">Container</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">lnprob</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">group1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">group2</span><span class="p">,</span> <span class="n">transform_containers</span><span class="p">):</span>
@@ -2610,7 +2665,7 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 <h3>Multivariate Prior Distributions<a class="headerlink" href="#Multivariate-Prior-Distributions" title="Link to this heading"></a></h3>
 <p>Eryn also allows for multivariate prior distributions. To pass these, rather than a single index as the dictionary key like before (e.g.<code class="docutils literal notranslate"><span class="pre">1:</span> <span class="pre">dist()</span></code>), it is not a tuple of inds: <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">1):</span> <span class="pre">dist()</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[46]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">multivariate_normal</span>
@@ -2639,7 +2694,7 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 <p>The periodic container accounts for periodic parameters by accounting for periodic boundary conditions in terms of distance and parameter wrapping. The input to periodic containers are dictionaries with the parameter index as the key and the period associated with it as the item. Any parameters that are not periodic do not need to be included.</p>
 <p>For example, with a sine model that includes an amplitude (index 0), frequency (index 1), and phase offset (index 2), the phase offset will be periodic.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[46]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[47]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">eryn.utils</span> <span class="kn">import</span> <span class="n">PeriodicContainer</span>
@@ -2680,7 +2735,7 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 <p>Stopping functions are effectively convergence functions, allowing the sampler to stop running when it reaches a user-defined criterion. For more information, see the <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/utils.html#stopping-functions">stopping documentation</a>.</p>
 <p>Here, we will just look at a quick example of using the implemented stopping function for Likelihood convergence.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[47]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[48]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">eryn.utils</span> <span class="kn">import</span> <span class="n">SearchConvergeStopping</span>
@@ -2688,7 +2743,7 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[48]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[49]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Gaussian likelihood</span>
@@ -2806,8 +2861,8 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|████████████████████████████████████████| 100/100 [00:00&lt;00:00, 313.06it/s]
-  2%|▉                                       | 61/2500 [00:00&lt;00:08, 301.09it/s]
+100%|████████████████████████████████████████| 100/100 [00:00&lt;00:00, 286.24it/s]
+  2%|▉                                       | 59/2500 [00:00&lt;00:08, 291.52it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -2831,7 +2886,7 @@ ITERS CONSECUTIVE: 2 Previous best LL: -0.06567225433396463 Current best LL: -0.
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-  6%|██▎                                    | 150/2500 [00:00&lt;00:07, 300.60it/s]
+  6%|██▎                                    | 150/2500 [00:00&lt;00:08, 288.78it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
