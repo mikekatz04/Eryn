@@ -484,7 +484,9 @@ class EnsembleSampler(object):
         self.info = info
 
         all_moves_tmp = list(
-            tuple(self.moves) if not self.has_reversible_jump else tuple(self.moves) + tuple(self.rj_moves)
+            tuple(self.moves)
+            if not self.has_reversible_jump
+            else tuple(self.moves) + tuple(self.rj_moves)
         )
 
         self.all_moves = {}
@@ -790,7 +792,11 @@ class EnsembleSampler(object):
 
         # initial_state.__class__ rather than State in case it is a subclass
         # of State
-        if hasattr(initial_state, "__class__") and issubclass(initial_state.__class__, State) and not isinstance(initial_state.__class__, State):
+        if (
+            hasattr(initial_state, "__class__")
+            and issubclass(initial_state.__class__, State)
+            and not isinstance(initial_state.__class__, State)
+        ):
             state = initial_state.__class__(initial_state, copy=True)
         else:
             state = State(initial_state, copy=True)
@@ -843,7 +849,9 @@ class EnsembleSampler(object):
             self.temperature_control.betas = state.betas.copy()
 
         else:
-            if hasattr(self, "temperature_control") and hasattr(self.temperature_control, "betas"):
+            if hasattr(self, "temperature_control") and hasattr(
+                self.temperature_control, "betas"
+            ):
                 state.betas = self.temperature_control.betas.copy()
 
         if np.shape(state.log_like) != (self.ntemps, self.nwalkers):
@@ -1047,7 +1055,7 @@ class EnsembleSampler(object):
                     break
 
             i += 1
-            
+
         # Store so that the ``initial_state=None`` case will work
         self._previous_state = results
 
@@ -1087,7 +1095,9 @@ class EnsembleSampler(object):
 
         # for completely customizable priors
         if "all_models_together" in self.priors:
-            prior_out = self.priors["all_models_together"].logpdf(coords, inds, supps=supps, branch_supps=branch_supps)
+            prior_out = self.priors["all_models_together"].logpdf(
+                coords, inds, supps=supps, branch_supps=branch_supps
+            )
             assert prior_out.shape == (ntemps, nwalkers)
 
         elif self.provide_groups:
@@ -1188,7 +1198,9 @@ class EnsembleSampler(object):
         # if no prior values are added, compute_prior
         # this is necessary to ensure Likelihood is not evaluated outside of the prior
         if logp is None:
-            logp = self.compute_log_prior(coords, inds=inds, supps=supps, branch_supps=branch_supps)
+            logp = self.compute_log_prior(
+                coords, inds=inds, supps=supps, branch_supps=branch_supps
+            )
 
         # if all points are outside the prior
         if np.all(np.isinf(logp)):
@@ -1377,9 +1389,9 @@ class EnsembleSampler(object):
                                 # fill these branch supplimentals for the specific group
                                 if branch_supps_in[branch_name_i] is not None:
                                     # get list of branch_supps values
-                                    kwarg_i["branch_supps"][
-                                        branch_name_i
-                                    ] = branch_supps_in[branch_name_i][inds_keep]
+                                    kwarg_i["branch_supps"][branch_name_i] = (
+                                        branch_supps_in[branch_name_i][inds_keep]
+                                    )
                                 else:
                                     kwarg_i["branch_supps"][branch_name_i] = None
 
@@ -1477,18 +1489,10 @@ class EnsembleSampler(object):
 
     @property
     def swap_acceptance_fraction(self):
-        """The fraction of proposed steps that were accepted"""
-        # print(self.backend.iteration) # np.sum(self.backend.accepted)
-        return self.backend.swaps_accepted / float(self.backend.iteration)
-
-    @property
-    def rj_swap_acceptance_fraction(self):
-        """The fraction of proposed reversible jump steps that were accepted"""
-        if self.has_reversible_jump:
-            # print(self.backend.iteration, np.sum(self.backend.rj_accepted))
-            return self.backend.rj_swaps_accepted / float(self.backend.iteration)
-        else:
-            return None
+        """The fraction of proposed temperature swaps that were accepted"""
+        return self.backend.swaps_accepted / float(
+            self.backend.iteration * self.nwalkers
+        )
 
     def get_chain(self, **kwargs):
         return self.get_value("chain", **kwargs)

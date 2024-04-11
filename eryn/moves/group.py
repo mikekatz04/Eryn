@@ -15,18 +15,18 @@ class GroupMove(Move, ABC):
     """
     A "group" ensemble move based on the :class:`eryn.moves.RedBlueMove`.
 
-    In moves like the :class:`eryn.moves.StretchMove`, the complimentary 
-    group for which the proposal is used is chosen from the current points in 
+    In moves like the :class:`eryn.moves.StretchMove`, the complimentary
+    group for which the proposal is used is chosen from the current points in
     the ensemble. In "group" moves the complimentary group is a stationary group
-    that is updated every `n_iter_update` iterations. This update is performed with the 
+    that is updated every `n_iter_update` iterations. This update is performed with the
     last set of coordinates to maintain detailed balance.
 
     Args:
         nfriends (int, optional): The number of friends to draw from as the complimentary
-            ensemble. This group is determined from the stationary group. If ``None``, it will  
+            ensemble. This group is determined from the stationary group. If ``None``, it will
             be set to the number of walkers. (default: ``None``)
-        n_iter_update (int, optional): Number of iterations to run before updating the 
-            stationary distribution. (default: 100). 
+        n_iter_update (int, optional): Number of iterations to run before updating the
+            stationary distribution. (default: 100).
         live_dangerously (bool, optional): If ``True``, allow for ``n_iter_update == 1``.
             (deafault: ``False``)
 
@@ -35,11 +35,7 @@ class GroupMove(Move, ABC):
     """
 
     def __init__(
-        self,
-        nfriends=None,
-        n_iter_update=100,
-        live_dangerously=False,
-        **kwargs
+        self, nfriends=None, n_iter_update=100, live_dangerously=False, **kwargs
     ):
 
         Move.__init__(self, **kwargs)
@@ -53,7 +49,7 @@ class GroupMove(Move, ABC):
 
     def find_friends(self, name, s, s_inds=None):
         """Function for finding friends.
-        
+
         Args:
             name (str): Branch name for proposal coordinates.
             s (np.ndarray): Coordinates array for the points to be moved.
@@ -61,8 +57,8 @@ class GroupMove(Move, ABC):
                 (default: ``None``)
 
         Return:
-            np.ndarray: Complimentary values. 
-        
+            np.ndarray: Complimentary values.
+
         """
         raise NotImplementedError
 
@@ -76,10 +72,10 @@ class GroupMove(Move, ABC):
 
     def setup_friends(self, branches):
         """Setup anything for finding friends.
-        
+
         Args:
             branches (dict): Dictionary with all the current branches in the sampler.
-        
+
         """
         raise NotImplementedError
 
@@ -95,7 +91,7 @@ class GroupMove(Move, ABC):
                 the true dimension. If given as an array, must have shape ``(ntemps, nwalkers)``.
                 See the tutorial for more information.
                 (default: ``None``)
-            s_inds_all (dict, optional): Keys are ``branch_names`` and values are 
+            s_inds_all (dict, optional): Keys are ``branch_names`` and values are
                 ``inds`` arrays indicating which leaves are currently used. (default: ``None``)
 
         Returns:
@@ -147,7 +143,7 @@ class GroupMove(Move, ABC):
         all_branch_names = list(state.branches.keys())
 
         # get gibbs sampling information
-        for (branch_names_run, inds_run) in self.gibbs_sampling_setup_iterator(
+        for branch_names_run, inds_run in self.gibbs_sampling_setup_iterator(
             all_branch_names
         ):
 
@@ -189,11 +185,16 @@ class GroupMove(Move, ABC):
             self.current_state = state
             # Get the move-specific proposal.
             q, factors = self.get_proposal(
-                coords_going_for_proposal, model.random, gibbs_ndim=gibbs_ndim, s_inds_all=inds_going_for_proposal
+                coords_going_for_proposal,
+                model.random,
+                gibbs_ndim=gibbs_ndim,
+                s_inds_all=inds_going_for_proposal,
             )
 
             # account for gibbs sampling
-            self.cleanup_proposals_gibbs(branch_names_run, inds_run, q, state.branches_coords)
+            self.cleanup_proposals_gibbs(
+                branch_names_run, inds_run, q, state.branches_coords
+            )
 
             # Compute prior of the proposed position
             # new_inds_prior is adjusted if product-space is used
@@ -251,5 +252,5 @@ class GroupMove(Move, ABC):
             # nfriends
             self.setup_friends(old_branches)
 
+        self.iter += 1
         return state, accepted
-
