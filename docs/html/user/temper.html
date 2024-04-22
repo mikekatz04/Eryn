@@ -1,21 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Parallel Tempering &mdash; Eryn 0.0.1 documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../_static/doctools.js"></script>
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -52,7 +54,17 @@
 <li class="toctree-l1"><a class="reference internal" href="backend.html">Backends</a></li>
 <li class="toctree-l1"><a class="reference internal" href="moves.html">Moves</a></li>
 <li class="toctree-l1"><a class="reference internal" href="prior.html">Priors</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Parallel Tempering</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Parallel Tempering</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#eryn.moves.tempering.TemperatureControl"><code class="docutils literal notranslate"><span class="pre">TemperatureControl</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.moves.tempering.TemperatureControl.compute_log_posterior_tempered"><code class="docutils literal notranslate"><span class="pre">TemperatureControl.compute_log_posterior_tempered()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.moves.tempering.TemperatureControl.tempered_likelihood"><code class="docutils literal notranslate"><span class="pre">TemperatureControl.tempered_likelihood()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.moves.tempering.TemperatureControl.temperature_swaps"><code class="docutils literal notranslate"><span class="pre">TemperatureControl.temperature_swaps()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.moves.tempering.TemperatureControl.temper_comps"><code class="docutils literal notranslate"><span class="pre">TemperatureControl.temper_comps()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#eryn.moves.tempering.make_ladder"><code class="docutils literal notranslate"><span class="pre">make_ladder()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="utils.html">Utilities</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorial:</span></p>
@@ -94,11 +106,11 @@
            <div itemprop="articleBody">
              
   <section id="parallel-tempering">
-<h1>Parallel Tempering<a class="headerlink" href="#parallel-tempering" title="Permalink to this heading"></a></h1>
+<h1>Parallel Tempering<a class="headerlink" href="#parallel-tempering" title="Link to this heading"></a></h1>
 <p>The tempering is controlled from <a class="reference internal" href="#eryn.moves.tempering.TemperatureControl" title="eryn.moves.tempering.TemperatureControl"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.moves.tempering.TemperatureControl</span></code></a>.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="eryn.moves.tempering.TemperatureControl">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.moves.tempering.</span></span><span class="sig-name descname"><span class="pre">TemperatureControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">effective_ndim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ntemps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Tmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptation_lag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptation_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_adaptation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">permute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_swap_supp_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.tempering.TemperatureControl" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.moves.tempering.</span></span><span class="sig-name descname"><span class="pre">TemperatureControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">effective_ndim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ntemps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Tmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptation_lag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptation_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_adaptation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">permute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_swap_supp_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.tempering.TemperatureControl" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Controls the temperature ladder and operations in the sampler.</p>
 <p>All of the tempering features within Eryn are controlled from this class.
@@ -143,7 +155,7 @@ swaps. (default: <code class="docutils literal notranslate"><span class="pre">Tr
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.tempering.TemperatureControl.compute_log_posterior_tempered">
-<span class="sig-name descname"><span class="pre">compute_log_posterior_tempered</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.tempering.TemperatureControl.compute_log_posterior_tempered" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">compute_log_posterior_tempered</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.tempering.TemperatureControl.compute_log_posterior_tempered" title="Link to this definition"></a></dt>
 <dd><p>Compute the log of the tempered posterior</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -172,7 +184,7 @@ If not provided, it will use <code class="docutils literal notranslate"><span cl
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.tempering.TemperatureControl.tempered_likelihood">
-<span class="sig-name descname"><span class="pre">tempered_likelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.tempering.TemperatureControl.tempered_likelihood" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">tempered_likelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.tempering.TemperatureControl.tempered_likelihood" title="Link to this definition"></a></dt>
 <dd><p>Compute the log of the tempered Likelihood</p>
 <p>From <cite>ptemcee</cite>: “This is usually a mundane multiplication, except for the special case where
 beta == 0 <em>and</em> we’re outside the likelihood support.
@@ -203,7 +215,7 @@ If not provided, it will use <code class="docutils literal notranslate"><span cl
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.tempering.TemperatureControl.temperature_swaps">
-<span class="sig-name descname"><span class="pre">temperature_swaps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logP</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.tempering.TemperatureControl.temperature_swaps" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">temperature_swaps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logP</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.tempering.TemperatureControl.temperature_swaps" title="Link to this definition"></a></dt>
 <dd><p>Perform parallel-tempering temperature swaps</p>
 <p>This function performs the swapping between neighboring temperatures. It cascades from
 high temperature down to low temperature.</p>
@@ -233,7 +245,7 @@ indicating which leaves are used. (default: <code class="docutils literal notran
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.tempering.TemperatureControl.temper_comps">
-<span class="sig-name descname"><span class="pre">temper_comps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adapt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.tempering.TemperatureControl.temper_comps" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">temper_comps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adapt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.tempering.TemperatureControl.temper_comps" title="Link to this definition"></a></dt>
 <dd><p>Perfrom temperature-related operations on a state.</p>
 <p>This includes making swaps and then adapting the temperatures for the next round.</p>
 <dl class="field-list simple">
@@ -258,7 +270,7 @@ adaptation is made. In this case, <code class="docutils literal notranslate"><sp
 
 <dl class="py function">
 <dt class="sig sig-object py" id="eryn.moves.tempering.make_ladder">
-<span class="sig-prename descclassname"><span class="pre">eryn.moves.tempering.</span></span><span class="sig-name descname"><span class="pre">make_ladder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ndim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ntemps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Tmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.tempering.make_ladder" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">eryn.moves.tempering.</span></span><span class="sig-name descname"><span class="pre">make_ladder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ndim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ntemps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Tmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.tempering.make_ladder" title="Link to this definition"></a></dt>
 <dd><p>Returns a ladder of <span class="math notranslate nohighlight">\(\beta \equiv 1/T\)</span> under a geometric spacing that is determined by the
 arguments <code class="docutils literal notranslate"><span class="pre">ntemps</span></code> and <code class="docutils literal notranslate"><span class="pre">Tmax</span></code>.  The temperature selection algorithm works as follows:
 Ideally, <code class="docutils literal notranslate"><span class="pre">Tmax</span></code> should be specified such that the tempered posterior looks like the prior at

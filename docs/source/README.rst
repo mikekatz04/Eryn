@@ -36,7 +36,9 @@ To import eryn:
 
 See `examples
 notebook <https://github.com/mikekatz04/Eryn/blob/main/examples/Eryn_tutorial.ipynb>`__
-for more info.
+for more info. You can also navigate the
+`Documentation <https://mikekatz04.github.io/Eryn/html/index.html>`__
+pages.
 
 Prerequisites
 ~~~~~~~~~~~~~

@@ -1,21 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ensemble &mdash; Eryn 0.0.1 documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../_static/doctools.js"></script>
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -45,7 +47,35 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Documentation:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Ensemble</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Ensemble</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.random_state"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.random_state</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.priors"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.priors</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.reset"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.reset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.get_model"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.sample"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.sample()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.run_mcmc"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.run_mcmc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.compute_log_prior"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.compute_log_prior()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.compute_log_like"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.compute_log_like()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.acceptance_fraction"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.acceptance_fraction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.rj_acceptance_fraction"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.rj_acceptance_fraction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.swap_acceptance_fraction"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.swap_acceptance_fraction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.rj_swap_acceptance_fraction"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.rj_swap_acceptance_fraction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.get_chain"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_chain()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.get_blobs"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_blobs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.get_log_like"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_log_like()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.get_log_prior"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_log_prior()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.get_log_posterior"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_log_posterior()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.get_inds"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_inds()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.get_nleaves"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_nleaves()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.get_last_sample"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_last_sample()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.get_betas"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_betas()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.get_value"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_value()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.ensemble.EnsembleSampler.get_autocorr_time"><code class="docutils literal notranslate"><span class="pre">EnsembleSampler.get_autocorr_time()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="state.html">State</a></li>
 <li class="toctree-l1"><a class="reference internal" href="backend.html">Backends</a></li>
 <li class="toctree-l1"><a class="reference internal" href="moves.html">Moves</a></li>
@@ -92,11 +122,11 @@
            <div itemprop="articleBody">
              
   <section id="ensemble">
-<h1>Ensemble<a class="headerlink" href="#ensemble" title="Permalink to this heading"></a></h1>
+<h1>Ensemble<a class="headerlink" href="#ensemble" title="Link to this heading"></a></h1>
 <p>The <code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.ensemble.Ensemble</span></code> is the main driver and container for MCMC runs.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.ensemble.</span></span><span class="sig-name descname"><span class="pre">EnsembleSampler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_like_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">provide_groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">provide_supplimental</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tempering_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbranches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rj_moves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dr_moves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dr_max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blobs_dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_generator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stopping_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stopping_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_zero_leaves_val</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1e+300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_repeats_in_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_repeats_rj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_moves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.ensemble.</span></span><span class="sig-name descname"><span class="pre">EnsembleSampler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_like_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">provide_groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">provide_supplimental</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tempering_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbranches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nleaves_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rj_moves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dr_moves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dr_max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blobs_dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_generator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stopping_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stopping_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_zero_leaves_val</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1e+300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_repeats_in_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_repeats_rj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_moves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>An ensemble MCMC sampler</p>
 <p>The class controls the entire sampling run. It can handle
@@ -110,7 +140,7 @@ for a basic explainer.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>nwalkers</strong> (<em>int</em>) – The number of walkers in the ensemble per temperature.</p></li>
-<li><p><strong>ndims</strong> (<em>int</em><em>, </em><em>list of ints</em><em>, or </em><em>dict</em>) – The number of dimensions for each branch. If
+<li><p><strong>ndims</strong> (<em>int</em><em>, </em><em>list</em><em> of </em><em>ints</em><em>, or </em><em>dict</em>) – The number of dimensions for each branch. If
 <code class="docutils literal notranslate"><span class="pre">dict</span></code>, keys should be the branch names and values the associated dimensionality.</p></li>
 <li><p><strong>log_like_fn</strong> (<em>callable</em>) – <p>A function that returns the natural logarithm of the
 likelihood for that position. The inputs to <code class="docutils literal notranslate"><span class="pre">log_like_fn</span></code> depend on whether
@@ -172,11 +202,11 @@ names as <code class="docutils literal notranslate"><span class="pre">f&quot;mod
 <li><p><strong>nbranches</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of branches (models) tested.
 Only used if <code class="docutils literal notranslate"><span class="pre">branch_names</span> <span class="pre">is</span> <span class="pre">None</span></code>.
 (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
-<li><p><strong>nleaves_max</strong> (<em>int</em><em>, </em><em>list of ints</em><em>, or </em><em>dict</em><em>, </em><em>optional</em>) – Maximum allowable leaf count for each branch.
+<li><p><strong>nleaves_max</strong> (<em>int</em><em>, </em><em>list</em><em> of </em><em>ints</em><em>, or </em><em>dict</em><em>, </em><em>optional</em>) – Maximum allowable leaf count for each branch.
 It should have the same length as the number of branches.
 If <code class="docutils literal notranslate"><span class="pre">dict</span></code>, keys should be the branch names and values the associated maximal leaf value.
 (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
-<li><p><strong>nleaves_min</strong> (<em>int</em><em>, </em><em>list of ints</em><em>, or </em><em>dict</em><em>, </em><em>optional</em>) – Minimum allowable leaf count for each branch.
+<li><p><strong>nleaves_min</strong> (<em>int</em><em>, </em><em>list</em><em> of </em><em>ints</em><em>, or </em><em>dict</em><em>, </em><em>optional</em>) – Minimum allowable leaf count for each branch.
 It should have the same length as the number of branches. Only used with Reversible Jump.
 If <code class="docutils literal notranslate"><span class="pre">dict</span></code>, keys should be the branch names and values the associated maximal leaf value.
 If <code class="docutils literal notranslate"><span class="pre">None</span></code> and using Reversible Jump, will fill all branches with zero.
@@ -267,7 +297,7 @@ their own backend.</p></li>
 </dl>
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.random_state">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">random_state</span></span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.random_state" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">random_state</span></span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.random_state" title="Link to this definition"></a></dt>
 <dd><p>The state of the internal random number generator. In practice, it’s
 the result of calling <code class="docutils literal notranslate"><span class="pre">get_state()</span></code> on a
 <code class="docutils literal notranslate"><span class="pre">numpy.random.mtrand.RandomState</span></code> object. You can try to set this
@@ -277,13 +307,13 @@ so silently.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.priors">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">priors</span></span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.priors" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">priors</span></span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.priors" title="Link to this definition"></a></dt>
 <dd><p>Return the priors in the sampler.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.reset">
-<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">info</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.reset" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">info</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.reset" title="Link to this definition"></a></dt>
 <dd><p>Reset the backend.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -294,7 +324,7 @@ so silently.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.get_model">
-<span class="sig-name descname"><span class="pre">get_model</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_model" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_model</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_model" title="Link to this definition"></a></dt>
 <dd><p>Get <code class="docutils literal notranslate"><span class="pre">Model</span></code> object from sampler</p>
 <p>The model object is used to pass necessary information to the
 proposals. This method can be used to retrieve the <code class="docutils literal notranslate"><span class="pre">model</span></code> used
@@ -311,7 +341,7 @@ in the sampler from outside the sampler.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.sample">
-<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tune</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_initial_state_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.sample" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tune</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_initial_state_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.sample" title="Link to this definition"></a></dt>
 <dd><p>Advance the chain as a generator</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -363,7 +393,7 @@ skipped. If using reversible jump, the user needs to ensure this on their own
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.run_mcmc">
-<span class="sig-name descname"><span class="pre">run_mcmc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">burn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">post_burn_update</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.run_mcmc" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">run_mcmc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">burn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">post_burn_update</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.run_mcmc" title="Link to this definition"></a></dt>
 <dd><p>Iterate <a class="reference internal" href="#eryn.ensemble.EnsembleSampler.sample" title="eryn.ensemble.EnsembleSampler.sample"><code class="xref py py-func docutils literal notranslate"><span class="pre">sample()</span></code></a> for <code class="docutils literal notranslate"><span class="pre">nsteps</span></code> iterations and return the result.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -396,7 +426,7 @@ provided in the state object, they will be loaded into the
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.compute_log_prior">
-<span class="sig-name descname"><span class="pre">compute_log_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.compute_log_prior" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">compute_log_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.compute_log_prior" title="Link to this definition"></a></dt>
 <dd><p>Calculate the vector of log-prior for the walkers</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -423,7 +453,7 @@ which leaves are being used. This dictionary is created with the
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.compute_log_like">
-<span class="sig-name descname"><span class="pre">compute_log_like</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.compute_log_like" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">compute_log_like</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.compute_log_like" title="Link to this definition"></a></dt>
 <dd><p>Calculate the vector of log-likelihood for the walkers</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -465,31 +495,31 @@ to the log likelihood of each walker. Second entry is <code class="docutils lite
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.acceptance_fraction">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">acceptance_fraction</span></span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.acceptance_fraction" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">acceptance_fraction</span></span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.acceptance_fraction" title="Link to this definition"></a></dt>
 <dd><p>The fraction of proposed steps that were accepted</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.rj_acceptance_fraction">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rj_acceptance_fraction</span></span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.rj_acceptance_fraction" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rj_acceptance_fraction</span></span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.rj_acceptance_fraction" title="Link to this definition"></a></dt>
 <dd><p>The fraction of proposed reversible jump steps that were accepted</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.swap_acceptance_fraction">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">swap_acceptance_fraction</span></span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.swap_acceptance_fraction" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">swap_acceptance_fraction</span></span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.swap_acceptance_fraction" title="Link to this definition"></a></dt>
 <dd><p>The fraction of proposed steps that were accepted</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.rj_swap_acceptance_fraction">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rj_swap_acceptance_fraction</span></span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.rj_swap_acceptance_fraction" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rj_swap_acceptance_fraction</span></span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.rj_swap_acceptance_fraction" title="Link to this definition"></a></dt>
 <dd><p>The fraction of proposed reversible jump steps that were accepted</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.get_chain">
-<span class="sig-name descname"><span class="pre">get_chain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_chain" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_chain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_chain" title="Link to this definition"></a></dt>
 <dd><p>Get the stored chain of MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -521,7 +551,7 @@ across the branches.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.get_blobs">
-<span class="sig-name descname"><span class="pre">get_blobs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_blobs" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_blobs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_blobs" title="Link to this definition"></a></dt>
 <dd><p>Get the chain of blobs for each sample in the chain</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -548,7 +578,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.get_log_like">
-<span class="sig-name descname"><span class="pre">get_log_like</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_log_like" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_log_like</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_log_like" title="Link to this definition"></a></dt>
 <dd><p>Get the chain of log Prior evaluated at the MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -575,7 +605,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.get_log_prior">
-<span class="sig-name descname"><span class="pre">get_log_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_log_prior" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_log_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_log_prior" title="Link to this definition"></a></dt>
 <dd><p>Get the chain of log Prior evaluated at the MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -602,7 +632,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.get_log_posterior">
-<span class="sig-name descname"><span class="pre">get_log_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_log_posterior" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_log_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_log_posterior" title="Link to this definition"></a></dt>
 <dd><p>Get the chain of log posterior values evaluated at the MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -631,7 +661,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.get_inds">
-<span class="sig-name descname"><span class="pre">get_inds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_inds" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_inds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_inds" title="Link to this definition"></a></dt>
 <dd><p>Get the stored chain of MCMC samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -663,7 +693,7 @@ across the branches indicated which leaves were used at each step.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.get_nleaves">
-<span class="sig-name descname"><span class="pre">get_nleaves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_nleaves" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_nleaves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_nleaves" title="Link to this definition"></a></dt>
 <dd><p>Get the number of leaves for each walker</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -697,7 +727,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.get_last_sample">
-<span class="sig-name descname"><span class="pre">get_last_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_last_sample" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_last_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_last_sample" title="Link to this definition"></a></dt>
 <dd><p>Access the most recent sample in the chain</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -711,7 +741,7 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.get_betas">
-<span class="sig-name descname"><span class="pre">get_betas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_betas" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_betas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_betas" title="Link to this definition"></a></dt>
 <dd><p>Get the chain of inverse temperatures</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -738,13 +768,13 @@ small subset of the overall array. (default: <code class="docutils literal notra
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.get_value">
-<span class="sig-name descname"><span class="pre">get_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_value" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_value" title="Link to this definition"></a></dt>
 <dd><p>Get a specific value</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.ensemble.EnsembleSampler.get_autocorr_time">
-<span class="sig-name descname"><span class="pre">get_autocorr_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_autocorr_time" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_autocorr_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.ensemble.EnsembleSampler.get_autocorr_time" title="Link to this definition"></a></dt>
 <dd><p>Compute an estimate of the autocorrelation time for each parameter</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>

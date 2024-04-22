@@ -1,21 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Utilities &mdash; Eryn 0.0.1 documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../_static/doctools.js"></script>
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -52,20 +54,55 @@
 <li class="toctree-l1"><a class="reference internal" href="prior.html">Priors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="temper.html">Parallel Tempering</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Utilities</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#periodic-container">Periodic Container</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#transformcontainer">TransformContainer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#periodic-container">Periodic Container</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.utils.PeriodicContainer"><code class="docutils literal notranslate"><span class="pre">PeriodicContainer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.utils.PeriodicContainer.distance"><code class="docutils literal notranslate"><span class="pre">PeriodicContainer.distance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.utils.PeriodicContainer.wrap"><code class="docutils literal notranslate"><span class="pre">PeriodicContainer.wrap()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#transformcontainer">TransformContainer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.utils.TransformContainer"><code class="docutils literal notranslate"><span class="pre">TransformContainer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.utils.TransformContainer.transform_base_parameters"><code class="docutils literal notranslate"><span class="pre">TransformContainer.transform_base_parameters()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.utils.TransformContainer.fill_values"><code class="docutils literal notranslate"><span class="pre">TransformContainer.fill_values()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.utils.TransformContainer.both_transforms"><code class="docutils literal notranslate"><span class="pre">TransformContainer.both_transforms()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#update-functions">Update functions</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#update-base-class">Update Base Class</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#implemented-update-functions">Implemented Update Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#update-base-class">Update Base Class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.utils.Update"><code class="docutils literal notranslate"><span class="pre">Update</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#implemented-update-functions">Implemented Update Functions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.utils.AdjustStretchProposalScale"><code class="docutils literal notranslate"><span class="pre">AdjustStretchProposalScale</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#stopping-functions">Stopping functions</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#stopping-base-class">Stopping Base Class</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#implemented-stopping-functions">Implemented Stopping Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#stopping-base-class">Stopping Base Class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.utils.Stopping"><code class="docutils literal notranslate"><span class="pre">Stopping</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#implemented-stopping-functions">Implemented Stopping Functions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#eryn.utils.SearchConvergeStopping"><code class="docutils literal notranslate"><span class="pre">SearchConvergeStopping</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#sampler-model-container">Sampler Model Container</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eryn.utils.utility">Other Utility Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-eryn.utils.utility">Other Utility Functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.utils.utility.groups_from_inds"><code class="docutils literal notranslate"><span class="pre">groups_from_inds()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.utils.utility.get_acf"><code class="docutils literal notranslate"><span class="pre">get_acf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.utils.utility.get_integrated_act"><code class="docutils literal notranslate"><span class="pre">get_integrated_act()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.utils.utility.thermodynamic_integration_log_evidence"><code class="docutils literal notranslate"><span class="pre">thermodynamic_integration_log_evidence()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.utils.utility.stepping_stone_log_evidence"><code class="docutils literal notranslate"><span class="pre">stepping_stone_log_evidence()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eryn.utils.utility.psrf"><code class="docutils literal notranslate"><span class="pre">psrf()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -108,13 +145,13 @@
            <div itemprop="articleBody">
              
   <section id="utilities">
-<h1>Utilities<a class="headerlink" href="#utilities" title="Permalink to this heading"></a></h1>
+<h1>Utilities<a class="headerlink" href="#utilities" title="Link to this heading"></a></h1>
 <p>Utility functions and classes.</p>
 <section id="periodic-container">
-<h2>Periodic Container<a class="headerlink" href="#periodic-container" title="Permalink to this heading"></a></h2>
+<h2>Periodic Container<a class="headerlink" href="#periodic-container" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="eryn.utils.PeriodicContainer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.utils.</span></span><span class="sig-name descname"><span class="pre">PeriodicContainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">periodic</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PeriodicContainer" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.utils.</span></span><span class="sig-name descname"><span class="pre">PeriodicContainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">periodic</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PeriodicContainer" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Perform operations for periodic parameters</p>
 <dl class="field-list simple">
@@ -126,7 +163,7 @@ indexes and values their associated period.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.utils.PeriodicContainer.distance">
-<span class="sig-name descname"><span class="pre">distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PeriodicContainer.distance" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PeriodicContainer.distance" title="Link to this definition"></a></dt>
 <dd><p>Move from p1 to p2 with periodic distance control</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -154,7 +191,7 @@ and values are positions with parameters along the final dimension.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.utils.PeriodicContainer.wrap">
-<span class="sig-name descname"><span class="pre">wrap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PeriodicContainer.wrap" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">wrap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.PeriodicContainer.wrap" title="Link to this definition"></a></dt>
 <dd><p>Wrap p with periodic distance control</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -172,10 +209,10 @@ and values are positions with parameters along the final dimension.</p></li>
 
 </section>
 <section id="transformcontainer">
-<h2>TransformContainer<a class="headerlink" href="#transformcontainer" title="Permalink to this heading"></a></h2>
+<h2>TransformContainer<a class="headerlink" href="#transformcontainer" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="eryn.utils.TransformContainer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.utils.</span></span><span class="sig-name descname"><span class="pre">TransformContainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameter_transforms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.TransformContainer" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.utils.</span></span><span class="sig-name descname"><span class="pre">TransformContainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameter_transforms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.TransformContainer" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Container for helpful transformations</p>
 <dl class="field-list simple">
@@ -203,7 +240,7 @@ for filling. (default: <code class="docutils literal notranslate"><span class="p
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.utils.TransformContainer.transform_base_parameters">
-<span class="sig-name descname"><span class="pre">transform_base_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_transpose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.TransformContainer.transform_base_parameters" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">transform_base_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_transpose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.TransformContainer.transform_base_parameters" title="Link to this definition"></a></dt>
 <dd><p>Transform the base parameters</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -229,7 +266,7 @@ array. (default: <code class="docutils literal notranslate"><span class="pre">Fa
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.utils.TransformContainer.fill_values">
-<span class="sig-name descname"><span class="pre">fill_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.TransformContainer.fill_values" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">fill_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.TransformContainer.fill_values" title="Link to this definition"></a></dt>
 <dd><p>fill fixed parameters</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -251,7 +288,7 @@ filled with values according to the <code class="docutils literal notranslate"><
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.utils.TransformContainer.both_transforms">
-<span class="sig-name descname"><span class="pre">both_transforms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_transpose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.TransformContainer.both_transforms" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">both_transforms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_transpose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.TransformContainer.both_transforms" title="Link to this definition"></a></dt>
 <dd><p>Transform the parameters and fill fixed parameters</p>
 <p>This fills the fixed parameters and then transforms all of them. Therefore, the user
 must be careful with the indexes input.</p>
@@ -287,17 +324,17 @@ indexing easier, but removes the ability of fixed parameters to affect transform
 
 </section>
 <section id="update-functions">
-<h2>Update functions<a class="headerlink" href="#update-functions" title="Permalink to this heading"></a></h2>
+<h2>Update functions<a class="headerlink" href="#update-functions" title="Link to this heading"></a></h2>
 <section id="update-base-class">
-<h3>Update Base Class<a class="headerlink" href="#update-base-class" title="Permalink to this heading"></a></h3>
+<h3>Update Base Class<a class="headerlink" href="#update-base-class" title="Link to this heading"></a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="eryn.utils.Update">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.utils.</span></span><span class="sig-name descname"><span class="pre">Update</span></span><a class="headerlink" href="#eryn.utils.Update" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.utils.</span></span><span class="sig-name descname"><span class="pre">Update</span></span><a class="headerlink" href="#eryn.utils.Update" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Update the sampler.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.utils.Update.__call__">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last_sample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampler</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.Update.__call__" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last_sample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampler</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.Update.__call__" title="Link to this definition"></a></dt>
 <dd><p>Call update function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -314,14 +351,14 @@ indexing easier, but removes the ability of fixed parameters to affect transform
 
 </section>
 <section id="implemented-update-functions">
-<h3>Implemented Update Functions<a class="headerlink" href="#implemented-update-functions" title="Permalink to this heading"></a></h3>
+<h3>Implemented Update Functions<a class="headerlink" href="#implemented-update-functions" title="Link to this heading"></a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="eryn.utils.AdjustStretchProposalScale">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.utils.</span></span><span class="sig-name descname"><span class="pre">AdjustStretchProposalScale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_acceptance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.22</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">supression_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_change</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.AdjustStretchProposalScale" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.utils.</span></span><span class="sig-name descname"><span class="pre">AdjustStretchProposalScale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_acceptance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.22</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">supression_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_change</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.AdjustStretchProposalScale" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#eryn.utils.Update" title="eryn.utils.updates.Update"><code class="xref py py-class docutils literal notranslate"><span class="pre">Update</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.utils.AdjustStretchProposalScale.__call__">
-<span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last_sample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampler</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.AdjustStretchProposalScale.__call__" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last_sample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampler</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.AdjustStretchProposalScale.__call__" title="Link to this definition"></a></dt>
 <dd><p>Call update function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -339,18 +376,18 @@ indexing easier, but removes the ability of fixed parameters to affect transform
 </section>
 </section>
 <section id="stopping-functions">
-<h2>Stopping functions<a class="headerlink" href="#stopping-functions" title="Permalink to this heading"></a></h2>
+<h2>Stopping functions<a class="headerlink" href="#stopping-functions" title="Link to this heading"></a></h2>
 <section id="stopping-base-class">
-<h3>Stopping Base Class<a class="headerlink" href="#stopping-base-class" title="Permalink to this heading"></a></h3>
+<h3>Stopping Base Class<a class="headerlink" href="#stopping-base-class" title="Link to this heading"></a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="eryn.utils.Stopping">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.utils.</span></span><span class="sig-name descname"><span class="pre">Stopping</span></span><a class="headerlink" href="#eryn.utils.Stopping" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.utils.</span></span><span class="sig-name descname"><span class="pre">Stopping</span></span><a class="headerlink" href="#eryn.utils.Stopping" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Base class for stopping.</p>
 <p>Stopping checks are only performed every <code class="docutils literal notranslate"><span class="pre">thin_by</span></code> iterations.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.utils.Stopping.__call__">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last_sample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampler</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.Stopping.__call__" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last_sample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampler</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.Stopping.__call__" title="Link to this definition"></a></dt>
 <dd><p>Call update function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -373,10 +410,10 @@ indexing easier, but removes the ability of fixed parameters to affect transform
 
 </section>
 <section id="implemented-stopping-functions">
-<h3>Implemented Stopping Functions<a class="headerlink" href="#implemented-stopping-functions" title="Permalink to this heading"></a></h3>
+<h3>Implemented Stopping Functions<a class="headerlink" href="#implemented-stopping-functions" title="Link to this heading"></a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="eryn.utils.SearchConvergeStopping">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.utils.</span></span><span class="sig-name descname"><span class="pre">SearchConvergeStopping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_iters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_iteration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.SearchConvergeStopping" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">eryn.utils.</span></span><span class="sig-name descname"><span class="pre">SearchConvergeStopping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_iters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_iteration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.SearchConvergeStopping" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#eryn.utils.Stopping" title="eryn.utils.stopping.Stopping"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stopping</span></code></a></p>
 <p>Stopping function based on a convergence to a maximunm Likelihood.</p>
 <p>Stopping checks are only performed every <code class="docutils literal notranslate"><span class="pre">thin_by</span></code> iterations.
@@ -398,7 +435,7 @@ reset. (default: 0.1).</p></li>
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.utils.SearchConvergeStopping.iters_consecutive">
-<span class="sig-name descname"><span class="pre">iters_consecutive</span></span><a class="headerlink" href="#eryn.utils.SearchConvergeStopping.iters_consecutive" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">iters_consecutive</span></span><a class="headerlink" href="#eryn.utils.SearchConvergeStopping.iters_consecutive" title="Link to this definition"></a></dt>
 <dd><p>Number of consecutive passes of the stopping check.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -409,7 +446,7 @@ reset. (default: 0.1).</p></li>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="eryn.utils.SearchConvergeStopping.past_like_best">
-<span class="sig-name descname"><span class="pre">past_like_best</span></span><a class="headerlink" href="#eryn.utils.SearchConvergeStopping.past_like_best" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">past_like_best</span></span><a class="headerlink" href="#eryn.utils.SearchConvergeStopping.past_like_best" title="Link to this definition"></a></dt>
 <dd><p>Previous best Likelihood. The initial value is <code class="docutils literal notranslate"><span class="pre">-np.inf</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -420,7 +457,7 @@ reset. (default: 0.1).</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.utils.SearchConvergeStopping.__call__">
-<span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampler</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.SearchConvergeStopping.__call__" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampler</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.SearchConvergeStopping.__call__" title="Link to this definition"></a></dt>
 <dd><p>Call update function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -444,14 +481,14 @@ reset. (default: 0.1).</p></li>
 </section>
 </section>
 <section id="sampler-model-container">
-<h2>Sampler Model Container<a class="headerlink" href="#sampler-model-container" title="Permalink to this heading"></a></h2>
+<h2>Sampler Model Container<a class="headerlink" href="#sampler-model-container" title="Link to this heading"></a></h2>
 <p>The sampler model container (<code class="docutils literal notranslate"><span class="pre">eryn.model.Model</span></code>) is a named tuple that carries around some of the most important objects in the sampler. These are then passed into proposals for usage. The model container has keys: <code class="docutils literal notranslate"><span class="pre">[&quot;log_like_fn&quot;,</span> <span class="pre">&quot;compute_log_like_fn&quot;,</span> <span class="pre">&quot;compute_log_prior_fn&quot;,</span> <span class="pre">&quot;temperature_control&quot;,</span> <span class="pre">&quot;map_fn&quot;,</span> <span class="pre">&quot;random&quot;]</span></code>. These correspond, respectively, to the log Likelihood function in the form of the function wrapper with <code class="docutils literal notranslate"><span class="pre">ensemble.py</span></code>; the log Likelihood function from the sampler; the log prior function from the sampler; the temperature controller; the map function where <code class="docutils literal notranslate"><span class="pre">pool</span></code> objects can be found; and the random generator. After initializing the <a class="reference internal" href="ensemble.html#eryn.ensemble.EnsembleSampler" title="eryn.ensemble.EnsembleSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">eryn.ensemble.EnsembleSampler</span></code></a> object, the model container tuple can be accessed with the <a class="reference internal" href="ensemble.html#eryn.ensemble.EnsembleSampler.get_model" title="eryn.ensemble.EnsembleSampler.get_model"><code class="xref py py-func docutils literal notranslate"><span class="pre">eryn.ensemble.EnsembleSampler.get_model()</span></code></a> method. If you store this in a variable <code class="docutils literal notranslate"><span class="pre">model</span></code>, you can access each member as an attribute, e.g. <code class="docutils literal notranslate"><span class="pre">model.compute_log_like_fn</span></code>.</p>
 </section>
 <section id="module-eryn.utils.utility">
-<span id="other-utility-functions"></span><h2>Other Utility Functions<a class="headerlink" href="#module-eryn.utils.utility" title="Permalink to this heading"></a></h2>
+<span id="other-utility-functions"></span><h2>Other Utility Functions<a class="headerlink" href="#module-eryn.utils.utility" title="Link to this heading"></a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="eryn.utils.utility.groups_from_inds">
-<span class="sig-prename descclassname"><span class="pre">eryn.utils.utility.</span></span><span class="sig-name descname"><span class="pre">groups_from_inds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.utility.groups_from_inds" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">eryn.utils.utility.</span></span><span class="sig-name descname"><span class="pre">groups_from_inds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.utility.groups_from_inds" title="Link to this definition"></a></dt>
 <dd><p>Convert inds to group information</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -475,7 +512,7 @@ np.ndarray[total number of used leaves]. The array is flat.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="eryn.utils.utility.get_acf">
-<span class="sig-prename descclassname"><span class="pre">eryn.utils.utility.</span></span><span class="sig-name descname"><span class="pre">get_acf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fast</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.utility.get_acf" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">eryn.utils.utility.</span></span><span class="sig-name descname"><span class="pre">get_acf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fast</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.utility.get_acf" title="Link to this definition"></a></dt>
 <dd><p>Estimate the autocorrelation function of a time series using the FFT.
 :param x:</p>
 <blockquote>
@@ -498,7 +535,7 @@ If <code class="docutils literal notranslate"><span class="pre">True</span></cod
 
 <dl class="py function">
 <dt class="sig sig-object py" id="eryn.utils.utility.get_integrated_act">
-<span class="sig-prename descclassname"><span class="pre">eryn.utils.utility.</span></span><span class="sig-name descname"><span class="pre">get_integrated_act</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fast</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">average</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.utility.get_integrated_act" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">eryn.utils.utility.</span></span><span class="sig-name descname"><span class="pre">get_integrated_act</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fast</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">average</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.utility.get_integrated_act" title="Link to this definition"></a></dt>
 <dd><p>Estimate the integrated autocorrelation time of a time series.
 See <a class="reference external" href="http://www.stat.unc.edu/faculty/cji/Sokal.pdf">Sokal’s notes</a> on
 MCMC and sample estimators for autocorrelation times.
@@ -525,7 +562,7 @@ If <code class="docutils literal notranslate"><span class="pre">True</span></cod
 
 <dl class="py function">
 <dt class="sig sig-object py" id="eryn.utils.utility.thermodynamic_integration_log_evidence">
-<span class="sig-prename descclassname"><span class="pre">eryn.utils.utility.</span></span><span class="sig-name descname"><span class="pre">thermodynamic_integration_log_evidence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">betas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.utility.thermodynamic_integration_log_evidence" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">eryn.utils.utility.</span></span><span class="sig-name descname"><span class="pre">thermodynamic_integration_log_evidence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">betas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.utility.thermodynamic_integration_log_evidence" title="Link to this definition"></a></dt>
 <dd><p>Thermodynamic integration estimate of the evidence.</p>
 <p>This function origindated in <code class="docutils literal notranslate"><span class="pre">ptemcee</span></code>.</p>
 <dl class="field-list simple">
@@ -583,7 +620,7 @@ integral.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="eryn.utils.utility.stepping_stone_log_evidence">
-<span class="sig-prename descclassname"><span class="pre">eryn.utils.utility.</span></span><span class="sig-name descname"><span class="pre">stepping_stone_log_evidence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">betas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block_len</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repeats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.utility.stepping_stone_log_evidence" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">eryn.utils.utility.</span></span><span class="sig-name descname"><span class="pre">stepping_stone_log_evidence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">betas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block_len</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repeats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.utility.stepping_stone_log_evidence" title="Link to this definition"></a></dt>
 <dd><p>Stepping stone approximation for the evidence calculation.</p>
 <p>Based on
 a. <a class="reference external" href="https://arxiv.org/abs/1810.04488">https://arxiv.org/abs/1810.04488</a> and
@@ -613,7 +650,7 @@ sampled.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="eryn.utils.utility.psrf">
-<span class="sig-prename descclassname"><span class="pre">eryn.utils.utility.</span></span><span class="sig-name descname"><span class="pre">psrf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">C</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">per_walker</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.utility.psrf" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">eryn.utils.utility.</span></span><span class="sig-name descname"><span class="pre">psrf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">C</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">per_walker</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.utils.utility.psrf" title="Link to this definition"></a></dt>
 <dd><p>The Gelman - Rubin convergence diagnostic.
 A general approach to monitoring convergence of MCMC output of multiple walkers.
 The function makes a comparison of within-chain and between-chain variances.
