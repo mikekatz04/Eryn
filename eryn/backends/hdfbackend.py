@@ -139,7 +139,7 @@ class HDFBackend(Backend):
                 f = h5py.File(self.filename, mode)
                 file_opened = True
                 
-            except BlockingIOError:
+            except (BlockingIOError, OSError) as e:
                 try_num += 1
                 if try_num >= max_tries:
                     raise BlockingIOError("Max tries exceeded trying to open h5 file.")
@@ -424,7 +424,7 @@ class HDFBackend(Backend):
     def branch_names(self):
         """Get branch names from h5 file."""
         with self.open() as f:
-            return f[self.name].attrs["branch_names"]
+            return list(f[self.name].attrs["branch_names"])
 
     @property
     def nbranches(self):
@@ -445,14 +445,8 @@ class HDFBackend(Backend):
             ntemps=self.ntemps,
             branch_names=self.branch_names,
             rj=self.rj,
-            moves=self.moves,
+            moves=list(self.get_move_info().keys()),
         )
-
-    @property
-    def reset_kwargs(self):
-        """Get reset_kwargs from h5 file."""
-        with self.open() as f:
-            return f[self.name].attrs["reset_kwargs"]
 
     def has_blobs(self):
         """Returns ``True`` if the model includes blobs"""
@@ -492,33 +486,46 @@ class HDFBackend(Backend):
         if slice_vals is None:
             slice_vals = slice(discard + thin - 1, self.iteration, thin)
 
-        # open the file wrapped in a "with" statement
-        with self.open() as f:
-            # get the group that everything is stored in
-            g = f[self.name]
-            iteration = g.attrs["iteration"]
-            if iteration <= 0:
-                raise AttributeError(
-                    "You must run the sampler with "
-                    "'store == True' before accessing the "
-                    "results"
-                )
+        successful = False
+        num_try = 0
+        while not successful and num_try < 100:
+            try:
+                # open the file wrapped in a "with" statement
+                with self.open() as f:
+                    # get the group that everything is stored in
+                    g = f[self.name]
+                    iteration = g.attrs["iteration"]
+                    if iteration <= 0:
+                        raise AttributeError(
+                            "You must run the sampler with "
+                            "'store == True' before accessing the "
+                            "results"
+                        )
 
-            if name == "blobs" and not g.attrs["has_blobs"]:
-                return None
+                    if name == "blobs" and not g.attrs["has_blobs"]:
+                        v_all = None
 
-            if name == "chain":
-                v_all = {key: g["chain"][key][slice_vals] for key in g["chain"]}
-                return v_all
+                    elif name == "chain":
+                        v_all = {key: g["chain"][key][slice_vals] for key in g["chain"]}
+                        
 
-            if name == "inds":
-                v_all = {key: g["inds"][key][slice_vals] for key in g["inds"]}
+                    elif name == "inds":
+                        v_all = {key: g["inds"][key][slice_vals] for key in g["inds"]}
 
-                return v_all
+                    else:
+                        v_all = g[name][slice_vals]
 
-            v = g[name][slice_vals]
+                    successful = True
+            
+            except OSError:
+                num_try += 1
+                print(f"Unable to read h5 file {num_try} times.")
+                time.sleep(20.0)
 
-            return v
+        if not successful:
+            raise OSError("Attempted to open file max try number of times. Likely cannot read data.")
+                
+        return v_all
 
     def get_move_info(self):
         """Get move information.
@@ -748,7 +755,7 @@ class HDFBackend(Backend):
                             ] = moves_accepted_fraction[move_key]
                 file_opened = True
                 
-            except BlockingIOError:
+            except (BlockingIOError, OSError) as e:
                 try_num += 1
                 if try_num >= max_tries:
                     raise BlockingIOError("Max tries exceeded trying to open h5 file.")

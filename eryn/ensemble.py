@@ -939,6 +939,7 @@ class EnsembleSampler(object):
                         else:
                             moves_accepted_fraction = None
 
+                        print("RIGHT BEFORE SAVE", self.backend.filename)
                         self.backend.save_step(
                             state,
                             accepted,
@@ -946,6 +947,7 @@ class EnsembleSampler(object):
                             swaps_accepted=in_model_swaps,
                             moves_accepted_fraction=moves_accepted_fraction,
                         )
+                        print("RIGHT AFTER SAVE", self.backend.filename)
 
                     # update after diagnostic and stopping check
                     if (
