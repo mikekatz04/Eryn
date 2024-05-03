@@ -67,7 +67,7 @@ class GaussianMove(MHMove):
 
     """
 
-    def __init__(self, cov_all, mode="AM", factor=None, indx_list=None, sky_periodic=None, shift_value=None, **kwargs):
+    def __init__(self, cov_all, mode="AM", factor=None, indx_list=None, sky_periodic=None, shift_value=None, prop=None, **kwargs):
 
         self.all_proposal = {}
         
@@ -92,7 +92,7 @@ class GaussianMove(MHMove):
                     if mode=="AM":
                         proposal = AM_proposal(cov, factor, "vector")
                     if mode=="DE":
-                        proposal = DE_proposal(cov, factor, "vector")
+                        proposal = DE_proposal(cov, factor, "vector", prop=prop)
                         
 
                 else:
@@ -202,14 +202,17 @@ class _isotropic_proposal(object):
 
     allowed_modes = ["vector", "random", "sequential"]
 
-    def __init__(self, scale, factor, mode):
+    def __init__(self, scale, factor, mode, prop=None):
         self.index = 0
         self.scale = scale
         self.svd = None
         self.chain = None
+        self.mean = None
+        self.loglambda = 1.0
         self.invscale = np.linalg.inv(np.linalg.cholesky(scale))
         self.use_current_state = True
         self.crossover = False
+        self.propose_transform = prop
         
         if factor is None:
             self._log_factor = None
@@ -225,6 +228,14 @@ class _isotropic_proposal(object):
                 )
             )
         self.mode = mode
+        
+    def update_proposal(self, new_X, gamma, delta_alpha):
+        if self.mean is None:
+            self.mean = np.zeros(self.scale.shape[0])
+        self.loglambda += gamma * delta_alpha
+        self.mean += gamma * (new_X - self.mean)
+        self.scale += gamma * ((new_X - self.mean) @ (new_X - self.mean).T - self.scale)
+        self.scale *= self.loglambda
 
     def get_factor(self, rng):
         if self._log_factor is None:
@@ -347,16 +358,17 @@ class DE_proposal(_isotropic_proposal):
 
     allowed_modes = ["vector"]
     
-    def get_factor(self, rng):
-        if self._log_factor is None:
-            return 1.0
-        return np.exp( rng.uniform( -self._log_factor, 0.0 ) )
+    # def get_factor(self, rng):
+    #     if self._log_factor is None:
+    #         return 1.0
+    #     return np.exp( rng.uniform( -self._log_factor, 0.0 ) )
     
     def get_updated_vector(self, rng, x0):
         # get jump scale size
         prob = rng.random()
 
         # scaling
+        
         if prob > 0.5:
             # random in range
             F = self.get_factor(rng)
@@ -365,6 +377,9 @@ class DE_proposal(_isotropic_proposal):
             # default
             F = 0.5
             CR = 0.9
+
+        if self.propose_transform is not None:
+            return self.propose_transform(x0)
         
         if self.chain is None:
             # use current state to update
