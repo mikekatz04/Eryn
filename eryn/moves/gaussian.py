@@ -375,7 +375,7 @@ class DE_proposal(_isotropic_proposal):
             CR = np.random.uniform(0.5,1.0)
         else:
             # default
-            F = 0.5
+            F = np.random.normal(0, 1.68/np.sqrt(x0.shape[-1])) #0.5
             CR = 0.9
 
         if self.propose_transform is not None:
