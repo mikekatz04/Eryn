@@ -130,7 +130,7 @@ class GroupMove(Move, ABC):
         # Run any move-specific setup.
         self.setup(state.branches)
 
-        if self.iter == 0 or self.iter % self.n_iter_update == 0:
+        if self.iter == 0:
             self.setup_friends(state.branches)
 
         if self.iter != 0 and self.iter % self.n_iter_update == 0:
