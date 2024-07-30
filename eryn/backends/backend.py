@@ -741,7 +741,7 @@ class Backend(object):
                 if chains.shape[2] == 1:
                     # If no multiple leaves, we squeeze and transpose to the
                     # right shape to pass to the psrf function, which is  (nwalkers, nsamples, ndim)
-                    chains_in = chains.squeeze().transpose((1, 0, 2))
+                    chains_in = chains.squeeze(axis=2).transpose((1, 0, 2))
                 else:
                     # Project onto the model dim all chains [in case of RJ and multiple leaves per branch]
                     inds = self.get_inds(discard=discard, thin=thin)[branch][
