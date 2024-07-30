@@ -956,6 +956,8 @@ class EnsembleSampler(object):
                         )
 
                     # update after diagnostic and stopping check
+                    # if updating and using burn_in, need to make sure it does not use
+                    # previous chain samples since they are not stored.
                     if (
                         self.update_iterations > 0
                         and self.update_fn is not None
@@ -1004,9 +1006,6 @@ class EnsembleSampler(object):
                 )
             initial_state = self._previous_state
 
-        # setup thin_by info
-        thin_by = 1 if "thin_by" not in kwargs else kwargs["thin_by"]
-
         # run burn in
         if burn is not None and burn != 0:
             # prepare kwargs that relate to burn
@@ -1015,14 +1014,6 @@ class EnsembleSampler(object):
             burn_kwargs["thin_by"] = 1
             i = 0
             for results in self.sample(initial_state, iterations=burn, **burn_kwargs):
-                # if updating and using burn_in, need to make sure it does not use
-                # previous chain samples since they are not stored.
-                if (
-                    self.update_iterations > 0
-                    and self.update_fn is not None
-                    and (i + 1) % (self.update_iterations * thin_by) == 0
-                ):
-                    self.update_fn(i, results, self)
                 i += 1
 
             # run post-burn update
