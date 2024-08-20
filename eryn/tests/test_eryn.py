@@ -413,6 +413,24 @@ class ErynTest(unittest.TestCase):
 
         fp = "_test_backend.h5"
 
+        # just to test iterate_branches
+        tmp = EnsembleSampler(
+            nwalkers,
+            ndims,
+            log_like_fn_gauss_and_sine,
+            priors,
+            args=[t, y, sigma],
+            tempering_kwargs=dict(ntemps=ntemps),
+            nbranches=len(branch_names),
+            branch_names=branch_names,
+            nleaves_max=nleaves_max,
+            nleaves_min=nleaves_min,
+            moves=moves,
+            rj_moves="iterate_branches",  # basic generation of new leaves from the prior
+            backend=None,
+        )
+        del tmp
+
         ensemble = EnsembleSampler(
             nwalkers,
             ndims,
@@ -425,7 +443,7 @@ class ErynTest(unittest.TestCase):
             nleaves_max=nleaves_max,
             nleaves_min=nleaves_min,
             moves=moves,
-            rj_moves=True,  # basic generation of new leaves from the prior
+            rj_moves="separate_branches",  # basic generation of new leaves from the prior
             backend=fp,
         )
 

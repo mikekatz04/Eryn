@@ -126,12 +126,19 @@ class EnsembleSampler(object):
             move from this list (optionally with weights) for each proposal.
             If ``None``, the default will be :class:`StretchMove`.
             (default: ``None``)
-        rj_moves (list or object, optional): If ``None`` or ``False``, reversible jump will not be included in the run.
+        rj_moves (list or object or bool or str, optional): If ``None`` or ``False``, reversible jump will not be included in the run.
             This can be a single move object, a list of moves,
             or a "weighted" list of the form ``[(eryn.moves.DistributionGenerateRJ(),
             0.1), ...]``. When running, the sampler will randomly select a
             move from this list (optionally with weights) for each proposal.
-            If ``True``, it defaults to :class:`DistributionGenerateRJ`.
+            If ``True``, it defaults to :class:`DistributionGenerateRJ`. When running just the :class:`DistributionGenerateRJ`
+            with multiple branches, it will propose changes to all branhces simultaneously.
+            When running with more than one branch, useful options for ``rj_moves`` are ``"iterate_branches"``,
+            ``"separate_branches"``, or ``"together"``. If ``rj_moves == "iterate_branches"``, sample one branch by one branch in order of
+            the branch names. This occurs within one RJ proposal, for each RJ proposal. If ``rj_moves == "separate_branches"``,
+            there will be one RJ move per branch. During each individual RJ move, one of these proposals is chosen at random with
+            equal propability. This is generally recommended when using multiple branches.
+            If ``rj_moves == "together"``, this is equivalent to ``rj_moves == True``.
             (default: ``None``)
         dr_moves (bool, optional): If ``None`` ot ``False``, delayed rejection when proposing "birth"
             of new components/models will be switched off for this run. Requires ``rj_moves`` set to ``True``.
@@ -372,8 +379,8 @@ class EnsembleSampler(object):
         # parse the reversible jump move schedule
         if rj_moves is None:
             self.has_reversible_jump = False
-        elif isinstance(rj_moves, bool):
-            self.has_reversible_jump = rj_moves
+        elif (isinstance(rj_moves, bool) and rj_moves) or isinstance(rj_moves, str):
+            self.has_reversible_jump = True
 
             if self.has_reversible_jump:
                 if nleaves_min is None:
@@ -402,18 +409,75 @@ class EnsembleSampler(object):
 
                 self.nleaves_min = nleaves_min
 
-                # default to DistributionGenerateRJ
-                rj_move = DistributionGenerateRJ(
-                    self.priors,
-                    nleaves_max=self.nleaves_max,
-                    nleaves_min=self.nleaves_min,
-                    dr=dr_moves,
-                    dr_max_iter=dr_max_iter,
-                    tune=False,
-                    temperature_control=self.temperature_control,
-                )
-                self.rj_moves = [rj_move]
-                self.rj_weights = [1.0]
+                if (isinstance(rj_moves, bool) and rj_moves) or (
+                    isinstance(rj_moves, str) and rj_moves == "together"
+                ):
+                    # default to DistributionGenerateRJ
+
+                    # gibbs sampling setup here means run all of them together
+                    gibbs_sampling_setup = None
+
+                    rj_move = DistributionGenerateRJ(
+                        self.priors,
+                        nleaves_max=self.nleaves_max,
+                        nleaves_min=self.nleaves_min,
+                        dr=dr_moves,
+                        dr_max_iter=dr_max_iter,
+                        tune=False,
+                        temperature_control=self.temperature_control,
+                        gibbs_sampling_setup=gibbs_sampling_setup,
+                    )
+                    self.rj_moves = [rj_move]
+                    self.rj_weights = [1.0]
+
+                elif isinstance(rj_moves, str) and rj_moves == "iterate_branches":
+                    # will iterate through all branches within one RJ proposal
+                    gibbs_sampling_setup = deepcopy(branch_names)
+
+                    # default to DistributionGenerateRJ
+                    rj_move = DistributionGenerateRJ(
+                        self.priors,
+                        nleaves_max=self.nleaves_max,
+                        nleaves_min=self.nleaves_min,
+                        dr=dr_moves,
+                        dr_max_iter=dr_max_iter,
+                        tune=False,
+                        temperature_control=self.temperature_control,
+                        gibbs_sampling_setup=gibbs_sampling_setup,
+                    )
+                    self.rj_moves = [rj_move]
+                    self.rj_weights = [1.0]
+
+                elif isinstance(rj_moves, str) and rj_moves == "separate_branches":
+                    # will iterate through all branches within one RJ proposal
+                    rj_moves = []
+                    rj_weights = []
+                    for branch_name in branch_names:
+
+                        # only do one branch per move
+                        gibbs_sampling_setup = [branch_name]
+
+                        # default to DistributionGenerateRJ
+                        rj_move_tmp = DistributionGenerateRJ(
+                            self.priors,
+                            nleaves_max=self.nleaves_max,
+                            nleaves_min=self.nleaves_min,
+                            dr=dr_moves,
+                            dr_max_iter=dr_max_iter,
+                            tune=False,
+                            temperature_control=self.temperature_control,
+                            gibbs_sampling_setup=gibbs_sampling_setup,
+                        )
+                        rj_moves.append(rj_move_tmp)
+                        # will renormalize after
+                        rj_weights.append(1.0)
+                    self.rj_moves = rj_moves
+                    self.rj_weights = rj_weights
+
+                elif isinstance(rj_moves, str):
+                    raise ValueError(
+                        f"When providing a str for rj_moves, must be 'together', 'iterate_branches', or 'separate_branches'. Input is {rj_moves}"
+                    )
 
         # same as above for moves
         elif isinstance(rj_moves, Iterable):
