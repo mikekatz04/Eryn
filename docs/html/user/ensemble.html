@@ -220,12 +220,19 @@ or a “weighted” list of the form <code class="docutils literal notranslate">
 move from this list (optionally with weights) for each proposal.
 If <code class="docutils literal notranslate"><span class="pre">None</span></code>, the default will be <code class="xref py py-class docutils literal notranslate"><span class="pre">StretchMove</span></code>.
 (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
-<li><p><strong>rj_moves</strong> (<em>list</em><em> or </em><em>object</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">None</span></code> or <code class="docutils literal notranslate"><span class="pre">False</span></code>, reversible jump will not be included in the run.
+<li><p><strong>rj_moves</strong> (<em>list</em><em> or </em><em>object</em><em> or </em><em>bool</em><em> or </em><em>str</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">None</span></code> or <code class="docutils literal notranslate"><span class="pre">False</span></code>, reversible jump will not be included in the run.
 This can be a single move object, a list of moves,
 or a “weighted” list of the form <code class="docutils literal notranslate"><span class="pre">[(eryn.moves.DistributionGenerateRJ(),</span>
 <span class="pre">0.1),</span> <span class="pre">...]</span></code>. When running, the sampler will randomly select a
 move from this list (optionally with weights) for each proposal.
-If <code class="docutils literal notranslate"><span class="pre">True</span></code>, it defaults to <code class="xref py py-class docutils literal notranslate"><span class="pre">DistributionGenerateRJ</span></code>.
+If <code class="docutils literal notranslate"><span class="pre">True</span></code>, it defaults to <code class="xref py py-class docutils literal notranslate"><span class="pre">DistributionGenerateRJ</span></code>. When running just the <code class="xref py py-class docutils literal notranslate"><span class="pre">DistributionGenerateRJ</span></code>
+with multiple branches, it will propose changes to all branhces simultaneously.
+When running with more than one branch, useful options for <code class="docutils literal notranslate"><span class="pre">rj_moves</span></code> are <code class="docutils literal notranslate"><span class="pre">&quot;iterate_branches&quot;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&quot;separate_branches&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;together&quot;</span></code>. If <code class="docutils literal notranslate"><span class="pre">rj_moves</span> <span class="pre">==</span> <span class="pre">&quot;iterate_branches&quot;</span></code>, sample one branch by one branch in order of
+the branch names. This occurs within one RJ proposal, for each RJ proposal. If <code class="docutils literal notranslate"><span class="pre">rj_moves</span> <span class="pre">==</span> <span class="pre">&quot;separate_branches&quot;</span></code>,
+there will be one RJ move per branch. During each individual RJ move, one of these proposals is chosen at random with
+equal propability. This is generally recommended when using multiple branches.
+If <code class="docutils literal notranslate"><span class="pre">rj_moves</span> <span class="pre">==</span> <span class="pre">&quot;together&quot;</span></code>, this is equivalent to <code class="docutils literal notranslate"><span class="pre">rj_moves</span> <span class="pre">==</span> <span class="pre">True</span></code>.
 (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 <li><p><strong>dr_moves</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">None</span></code> ot <code class="docutils literal notranslate"><span class="pre">False</span></code>, delayed rejection when proposing “birth”
 of new components/models will be switched off for this run. Requires <code class="docutils literal notranslate"><span class="pre">rj_moves</span></code> set to <code class="docutils literal notranslate"><span class="pre">True</span></code>.
