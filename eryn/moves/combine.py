@@ -45,7 +45,7 @@ class CombineMove(Move):
         # set the accepted arrays for all moves
         assert isinstance(accepted, np.ndarray)
         for move in self.moves:
-            move.accepted = accepted
+            move.accepted = accepted.copy()
 
     @property
     def acceptance_fraction(self):
