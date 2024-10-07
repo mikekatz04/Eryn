@@ -78,9 +78,11 @@
 <li class="toctree-l2"><a class="reference internal" href="#Moves">Moves</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Example-diagonal-covariance-move">Example diagonal covariance move</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Gibbs-Sampling">Gibbs Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Example:-GroupStretchMove">Example: <code class="docutils literal notranslate"><span class="pre">GroupStretchMove</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#Utilities">Utilities</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Branch-Supplimental">Branch Supplimental</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Transform-Container">Transform Container</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Multivariate-Prior-Distributions">Multivariate Prior Distributions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Periodic-Container">Periodic Container</a></li>
@@ -343,8 +345,8 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|████████████████████████████████████████| 100/100 [00:00&lt;00:00, 277.20it/s]
-100%|██████████████████████████████████████| 2500/2500 [00:08&lt;00:00, 293.00it/s]
+100%|████████████████████████████████████████| 100/100 [00:00&lt;00:00, 247.07it/s]
+100%|██████████████████████████████████████| 2500/2500 [00:09&lt;00:00, 261.19it/s]
 </pre></div></div>
 </div>
 <p>Similar to <code class="docutils literal notranslate"><span class="pre">emcee</span></code>, all of the sampler information is stored in a backend object. In the default case, this backend is <code class="docutils literal notranslate"><span class="pre">`eryn.backends.Backend</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/build/html/user/backend.html#eryn.backends.Backend">https://mikekatz04.github.io/Eryn/build/html/user/backend.html#eryn.backends.Backend</a>&gt;`__. To retrieve the samples from the backend, you call the <code class="docutils literal notranslate"><span class="pre">get_chain</span></code> method. This will return a dictionary with keys at the omdel names and a 5-dimensional array per model, which can be intimidating. We will cover that array just below. For now, just focus on
@@ -632,7 +634,7 @@ branch objects can be accessed as <code class="docutils literal notranslate"><sp
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-{&#39;model_0&#39;: &lt;eryn.state.Branch at 0x14bf49370&gt;}
+{&#39;model_0&#39;: &lt;eryn.state.Branch at 0x134b34800&gt;}
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -1014,8 +1016,8 @@ Likelihoods just like discussed above.</p>
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|███████████████████████████████████████| 1000/1000 [00:13&lt;00:00, 75.99it/s]
-100%|███████████████████████████████████████| 2500/2500 [00:34&lt;00:00, 71.76it/s]
+100%|███████████████████████████████████████| 1000/1000 [00:15&lt;00:00, 66.39it/s]
+100%|███████████████████████████████████████| 2500/2500 [00:37&lt;00:00, 66.02it/s]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1024,7 +1026,7 @@ Likelihoods just like discussed above.</p>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;eryn.state.State at 0x14b68efc0&gt;
+&lt;eryn.state.State at 0x134c6b350&gt;
 </pre></div></div>
 </div>
 <p>We can plot our samples at different temperatures and see the differences in action.</p>
@@ -1239,7 +1241,7 @@ Likelihoods just like discussed above.</p>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x150d9b0e0&gt;
+&lt;matplotlib.legend.Legend at 0x138502ab0&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1322,7 +1324,7 @@ Likelihoods just like discussed above.</p>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x150babcb0&gt;
+&lt;matplotlib.legend.Legend at 0x136e66450&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1519,8 +1521,8 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|███████████████████████████████████████| 1000/1000 [00:32&lt;00:00, 30.41it/s]
-100%|███████████████████████████████████████| 2000/2000 [01:04&lt;00:00, 31.25it/s]
+100%|███████████████████████████████████████| 1000/1000 [00:36&lt;00:00, 27.08it/s]
+100%|███████████████████████████████████████| 2000/2000 [01:13&lt;00:00, 27.27it/s]
 </pre></div></div>
 </div>
 <p>Let’s look at the last sample in terms of the <code class="docutils literal notranslate"><span class="pre">nleaves</span></code> array.</p>
@@ -1698,7 +1700,7 @@ max ll: -261.2302411532098
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x14c6faf00&gt;
+&lt;matplotlib.legend.Legend at 0x135c54e60&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1910,8 +1912,8 @@ max ll: -261.2302411532098
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-{&#39;gauss&#39;: &lt;eryn.state.Branch at 0x150160080&gt;,
- &#39;sine&#39;: &lt;eryn.state.Branch at 0x14f481d30&gt;}
+{&#39;gauss&#39;: &lt;eryn.state.Branch at 0x135c56d20&gt;,
+ &#39;sine&#39;: &lt;eryn.state.Branch at 0x135c576b0&gt;}
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -1928,8 +1930,8 @@ max ll: -261.2302411532098
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|███████████████████████████████████████| 1000/1000 [00:50&lt;00:00, 19.83it/s]
-100%|███████████████████████████████████████| 5000/5000 [03:58&lt;00:00, 20.94it/s]
+100%|███████████████████████████████████████| 1000/1000 [00:55&lt;00:00, 18.07it/s]
+100%|███████████████████████████████████████| 5000/5000 [04:22&lt;00:00, 19.08it/s]
 </pre></div></div>
 </div>
 <p>Let’s look at the last sample in terms of the <code class="docutils literal notranslate"><span class="pre">nleaves</span></code> array for both branches in the cold chain.</p>
@@ -2004,7 +2006,7 @@ max ll: -218.81128464457333
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x14c8938c0&gt;
+&lt;matplotlib.legend.Legend at 0x138ba86b0&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -2062,7 +2064,7 @@ max ll: -218.81128464457333
 </ul>
 <section id="Example-diagonal-covariance-move">
 <h3>Example diagonal covariance move<a class="headerlink" href="#Example-diagonal-covariance-move" title="Link to this heading"></a></h3>
-<p>When implemented a move at the Proposal Class layer, you only <strong>need</strong> to implement the <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> method. Look at the call signature from the chosen Move Guide. You can obviously implemente more than that.</p>
+<p>When implemented a move at the Proposal Class layer, you only <strong>need</strong> to implement the <code class="docutils literal notranslate"><span class="pre">get_proposal</span></code> method. Look at the call signature from the chosen Move Guide. You can obviously implement more than that.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[42]:
 </pre></div>
@@ -2354,21 +2356,493 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|█████████████████████████████████████████| 100/100 [00:28&lt;00:00,  3.56it/s]
-100%|█████████████████████████████████████████| 500/500 [02:14&lt;00:00,  3.71it/s]
+100%|█████████████████████████████████████████| 100/100 [00:31&lt;00:00,  3.21it/s]
+100%|█████████████████████████████████████████| 500/500 [02:41&lt;00:00,  3.10it/s]
 </pre></div></div>
+</div>
+</section>
+<section id="Example:-GroupStretchMove">
+<h3>Example: <code class="docutils literal notranslate"><span class="pre">GroupStretchMove</span></code><a class="headerlink" href="#Example:-GroupStretchMove" title="Link to this heading"></a></h3>
+<p>The “group stretch move” is a new kind of MCMC proposal that is based on the affine-invariant or “stretch” proposal (<a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a>). It was first proposed in <a class="reference external" href="https://arxiv.org/abs/2303.02164">arXiv:2303.02164</a>. The purpose of the group stretch proposal is to apply the advantages of the stretch proposal to a more diverse array of situations, e.g. in reversible jump settings where the dimensionality differences render the base stretch proposal unusable.
+The stretch proposal proposes a new location, <span class="math notranslate nohighlight">\(Y_k\)</span>, for a current point in the ensemble, <span class="math notranslate nohighlight">\(X_k\)</span>, based on:</p>
+<div class="math notranslate nohighlight">
+\[X_k = X_j + z\left(X_k - X_j\right),\]</div>
+<p>where <span class="math notranslate nohighlight">\(X_j\)</span> is drawn from the remaining ensemble after <span class="math notranslate nohighlight">\(X_k\)</span> is removed (<span class="math notranslate nohighlight">\(X_j\in X_{\{k\}}\)</span>) and z is a random variable drawn from a particular set of possible distributions.</p>
+<p>The key part of the <em>base stretch</em> proposal is that <span class="math notranslate nohighlight">\(X_j\)</span> is drawn from the current ensemble of points (excluding <span class="math notranslate nohighlight">\(X_k\)</span>). As the dimensionality changes, this setup becomes ill-defined.</p>
+<p>The <em>group stretch</em> proposal changes how we determine <span class="math notranslate nohighlight">\(X_j\)</span> so that it can fit into a more general RJMCMC setup. Rather than drawing it from the current ensemble, a <em>stationary</em> set of “friends” are chosen and stored; these friends “simulate” the posterior distribution taking the place of the remaining ensemble in the <em>base stretch</em> move. The key here is this group stays fixed over many, many proposals.</p>
+<p>This setup allows the user to adapt to a given posterior setup. We will repeat our Gaussian pulse example from above to see why the group stretch move is useful. Above, when running RJMCMC examples, we use the <code class="docutils literal notranslate"><span class="pre">GaussianMove</span></code> in a simplified manner. In many numerical applications, this type of move involving a covariance matrix requires tuning. In the case of nested models, like here with Gaussian pulses, the posterior will contain a different mode for each model instance (and potentially for
+falsely detected model instances). In this case, it can be hard to tune each covariance matrix in an efficient manner.</p>
+<p>Here is how the group stretch will work as a substitute for the <code class="docutils literal notranslate"><span class="pre">GaussianMove</span></code>:</p>
+<p>Main idea: we will group leaves (representing 1 pulse each) according to their mean value. Grouping one sample of the ensemble like this will effectively simulate one instance of a posterior draw.</p>
+<p>Limiting cases:</p>
+<ul class="simple">
+<li><p>When there is no confusion between the two pulses and/or how many pulses their are, the group stretch proposal will be very efficient. It will set <span class="math notranslate nohighlight">\(X_j\)</span> properly for each posterior mode so <span class="math notranslate nohighlight">\(X_j\)</span> and <span class="math notranslate nohighlight">\(X_k\)</span> are always found on the same posterior mode (this is the goal).</p></li>
+<li><p>When there is a massive amount of confusion, and it is very hard to separate posterior modes, the group stretch will be effectively random. Its usual inherent knowledge of the scales of the posterior modes will be entirely lost.</p></li>
+</ul>
+<p>During setup:</p>
+<ol class="arabic simple">
+<li><p>Determine number of friends. Usually set to <span class="math notranslate nohighlight">\(\sim\)</span>number of walkers.</p></li>
+<li><p>Setup a <code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> object to house indexes of each leaf to its closest friends.</p></li>
+</ol>
+<p>Before first proposal and after a large number of proposals (<code class="docutils literal notranslate"><span class="pre">setup_friends</span></code>):</p>
+<ol class="arabic simple">
+<li><p>Take all current leaves in the cold-chain. Flatten this array and sort by the mean parameter. This becomes our stationary distribution of friends.</p></li>
+<li><p>For all current leaves at all temperatures, locate which friends are closest to their mean value. With <code class="docutils literal notranslate"><span class="pre">nfriends</span></code><span class="math notranslate nohighlight">\(\sim\)</span><code class="docutils literal notranslate"><span class="pre">nwalkers</span></code>, the stored points will effectively be one current ensemble instance of the posterior distribution.</p></li>
+<li><p>Store indexes of these friends in the <code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> objects discussed below.</p></li>
+</ol>
+<p>Before each proposal (<code class="docutils literal notranslate"><span class="pre">fix_friends</span></code>):</p>
+<ol class="arabic simple">
+<li><p>Fill friend information for any newly activated leaves from RJMCMC that do not have an indicator of its friends yet.</p></li>
+</ol>
+<p>Drawing the friends at proposal time (<code class="docutils literal notranslate"><span class="pre">find_friends</span></code>):</p>
+<ol class="arabic simple">
+<li><p>From <code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code>, get friend indexes for all current leaves being proposed (<code class="docutils literal notranslate"><span class="pre">s_inds==True</span></code>).</p></li>
+<li><p>Randomly choose one of the friends. Set this to <span class="math notranslate nohighlight">\(X_j\)</span>.</p></li>
+</ol>
+<p>First we will start with setting up the data.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="c1"># define time stream</span>
+<span class="n">num</span> <span class="o">=</span> <span class="mi">500</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">num</span><span class="p">)</span>
+
+<span class="n">gauss_inj_params</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span><span class="mf">3.3</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+    <span class="p">[</span><span class="mf">4.2</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">]</span>
+<span class="p">]</span>
+
+<span class="c1"># combine gaussians</span>
+<span class="n">injection</span> <span class="o">=</span> <span class="n">combine_gaussians</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">gauss_inj_params</span><span class="p">)</span>
+
+<span class="c1"># set noise level</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="mf">2.0</span>
+
+<span class="c1"># produce full data</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">injection</span> <span class="o">+</span> <span class="n">sigma</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">injection</span><span class="p">))</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;lightskyblue&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">injection</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;injection&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;crimson&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x137cd8260&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_106_1.png" src="../_images/tutorial_Eryn_tutorial_106_1.png" />
+</div>
+</div>
+<p>Now, we will build our <code class="docutils literal notranslate"><span class="pre">GroupStretchMove</span></code> that is based on the mean value of each Gaussian pulse.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">eryn.moves</span> <span class="kn">import</span> <span class="n">GroupStretchMove</span>
+
+<span class="k">class</span> <span class="nc">MeanGaussianGroupMove</span><span class="p">(</span><span class="n">GroupStretchMove</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># make sure kwargs get sent into group stretch parent class</span>
+        <span class="n">GroupStretchMove</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">setup_friends</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">branches</span><span class="p">):</span>
+
+        <span class="c1"># store cold-chain information</span>
+        <span class="n">friends</span> <span class="o">=</span> <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="n">means</span> <span class="o">=</span> <span class="n">friends</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  <span class="c1"># need the copy</span>
+
+        <span class="c1"># take unique to avoid errors at the start of sampling</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">,</span> <span class="n">uni_inds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">means</span><span class="p">,</span> <span class="n">return_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">friends</span> <span class="o">=</span> <span class="n">friends</span><span class="p">[</span><span class="n">uni_inds</span><span class="p">]</span>
+
+        <span class="c1"># sort</span>
+        <span class="n">inds_sort</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">friends</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">friends</span><span class="p">[</span><span class="n">inds_sort</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="n">inds_sort</span><span class="p">]</span>
+
+        <span class="c1"># get all current means from all temperatures</span>
+        <span class="n">current_means</span> <span class="o">=</span> <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># calculate their distances to each stored friend</span>
+        <span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">current_means</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span>
+
+        <span class="c1"># get closest friends</span>
+        <span class="n">inds_closest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)[:,</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">nfriends</span><span class="p">]</span>
+
+        <span class="c1"># store in branch supplimental</span>
+        <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplimental</span><span class="p">[</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;inds_closest&quot;</span><span class="p">:</span> <span class="n">inds_closest</span>
+        <span class="p">}</span>
+
+        <span class="c1"># make sure to &quot;turn off&quot; leaves that are deactivated by setting their</span>
+        <span class="c1"># index to -1.</span>
+        <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplimental</span><span class="p">[</span><span class="o">~</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;inds_closest&quot;</span><span class="p">:</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nfriends</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span>
+            <span class="p">)[</span><span class="o">~</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span><span class="p">]</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">fix_friends</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">branches</span><span class="p">):</span>
+        <span class="c1"># when RJMCMC activates a new leaf, when it gets to this proposal, its inds_closest</span>
+        <span class="c1"># will need to be updated</span>
+
+        <span class="c1"># activated &amp; does not have an assigned index</span>
+        <span class="n">fix</span> <span class="o">=</span> <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span> <span class="o">&amp;</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
+                <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplimental</span><span class="p">[:][</span><span class="s2">&quot;inds_closest&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">fix</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="c1"># same process as above, only for fix</span>
+        <span class="n">current_means</span> <span class="o">=</span> <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">fix</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">current_means</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span>
+        <span class="n">inds_closest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)[:,</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">nfriends</span><span class="p">]</span>
+
+        <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplimental</span><span class="p">[</span><span class="n">fix</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;inds_closest&quot;</span><span class="p">:</span> <span class="n">inds_closest</span>
+        <span class="p">}</span>
+
+        <span class="c1"># verify everything worked</span>
+        <span class="n">fix_check</span> <span class="o">=</span> <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span> <span class="o">&amp;</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
+                <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplimental</span><span class="p">[:][</span><span class="s2">&quot;inds_closest&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">fix_check</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">find_friends</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">s_inds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">branch_supps</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="c1"># prepare buffer array</span>
+        <span class="n">friends</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+
+        <span class="c1"># determine the closest friends for s_inds == True</span>
+        <span class="n">inds_closest_here</span> <span class="o">=</span> <span class="n">branch_supps</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">s_inds</span><span class="p">][</span><span class="s2">&quot;inds_closest&quot;</span><span class="p">]</span>
+
+        <span class="c1"># take one at random</span>
+        <span class="n">random_inds</span> <span class="o">=</span> <span class="n">inds_closest_here</span><span class="p">[</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">inds_closest_here</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nfriends</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">inds_closest_here</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],)</span>
+            <span class="p">),</span>
+        <span class="p">]</span>
+
+        <span class="c1"># store in buffer array</span>
+        <span class="n">friends</span><span class="p">[</span><span class="n">s_inds</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">friends</span><span class="p">[</span><span class="n">random_inds</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">friends</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[46]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="c1"># set random seed</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="n">nwalkers</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">ntemps</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">ndim</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">nleaves_max</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">nleaves_min</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="n">branch_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span>
+
+<span class="c1"># initialize</span>
+<span class="n">nfriends</span> <span class="o">=</span> <span class="n">nwalkers</span>
+<span class="n">moves</span> <span class="o">=</span> <span class="n">MeanGaussianGroupMove</span><span class="p">(</span><span class="n">nfriends</span><span class="o">=</span><span class="n">nfriends</span><span class="p">,</span> <span class="n">n_iters_update</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+
+<span class="n">coords</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">,</span> <span class="n">ndim</span><span class="p">))}</span>
+
+<span class="c1"># this is the sigma for the multivariate Gaussian that sets starting points</span>
+<span class="c1"># We need it to be very small to assume we are passed the search phase</span>
+<span class="c1"># we will verify this is with likelihood calculations</span>
+<span class="n">sig1</span> <span class="o">=</span> <span class="mf">0.0001</span>
+
+<span class="c1"># describes priors for all leaves independently</span>
+<span class="n">priors</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">ProbDistContainer</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="mi">0</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">),</span>  <span class="c1"># amplitude</span>
+            <span class="mi">1</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">t</span><span class="o">.</span><span class="n">max</span><span class="p">()),</span>  <span class="c1"># mean</span>
+            <span class="mi">2</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.21</span><span class="p">),</span>  <span class="c1"># sigma</span>
+        <span class="p">}</span>
+    <span class="p">),</span>
+<span class="p">}</span>
+
+<span class="c1"># setup initial walkers as one starting guess</span>
+<span class="n">coords</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">))</span>
+
+<span class="n">inds</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)}</span>
+<span class="n">inds</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="c1"># setup starting state</span>
+<span class="kn">from</span> <span class="nn">eryn.state</span> <span class="kn">import</span> <span class="n">BranchSupplimental</span>
+
+<span class="c1">### KEY PART OF SETUP</span>
+<span class="c1"># build branch supplimental to properly track information</span>
+<span class="c1"># see below description of Branch Supplimental objects.</span>
+<span class="n">branch_supps</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">BranchSupplimental</span><span class="p">(</span>
+        <span class="p">{</span><span class="s2">&quot;inds_closest&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">,</span> <span class="n">nfriends</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)},</span>
+        <span class="n">base_shape</span><span class="o">=</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">),</span>
+    <span class="p">)</span>
+<span class="p">}</span>
+<span class="n">state</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
+    <span class="n">coords</span><span class="p">,</span>
+    <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">,</span>
+    <span class="n">branch_supplimental</span><span class="o">=</span><span class="n">branch_supps</span><span class="p">,</span>
+<span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[47]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="n">ensemble</span> <span class="o">=</span> <span class="n">EnsembleSampler</span><span class="p">(</span>
+    <span class="n">nwalkers</span><span class="p">,</span>
+    <span class="n">ndim</span><span class="p">,</span>
+    <span class="n">log_like_fn_gauss_pulse</span><span class="p">,</span>
+    <span class="n">priors</span><span class="p">,</span>
+    <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sigma</span><span class="p">],</span>
+    <span class="n">tempering_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">ntemps</span><span class="o">=</span><span class="n">ntemps</span><span class="p">),</span>
+    <span class="n">nbranches</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">branch_names</span><span class="p">),</span>
+    <span class="n">branch_names</span><span class="o">=</span><span class="n">branch_names</span><span class="p">,</span>
+    <span class="n">nleaves_max</span><span class="o">=</span><span class="n">nleaves_max</span><span class="p">,</span>
+    <span class="n">nleaves_min</span><span class="o">=</span><span class="n">nleaves_min</span><span class="p">,</span>
+    <span class="n">moves</span><span class="o">=</span><span class="n">moves</span><span class="p">,</span>
+    <span class="n">rj_moves</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># basic generation of new leaves from the prior</span>
+<span class="p">)</span>
+
+<span class="n">log_prior</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">compute_log_prior</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">)</span>
+<span class="n">log_like</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">compute_log_like</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">,</span> <span class="n">logp</span><span class="o">=</span><span class="n">log_prior</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="n">state</span><span class="o">.</span><span class="n">log_prior</span> <span class="o">=</span> <span class="n">log_prior</span>
+<span class="n">state</span><span class="o">.</span><span class="n">log_like</span> <span class="o">=</span> <span class="n">log_like</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[48]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><br/><span></span><span class="n">nsteps</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">last_sample</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span>
+    <span class="n">state</span><span class="p">,</span> <span class="n">nsteps</span><span class="p">,</span> <span class="n">burn</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="mi">10</span>
+<span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+100%|█████████████████████████████████████████| 100/100 [00:02&lt;00:00, 36.66it/s]
+100%|███████████████████████████████████████| 1000/1000 [00:30&lt;00:00, 32.88it/s]
+</pre></div></div>
+</div>
+<p>Plot result. You may need to run this much longer to get a reasonable looking plot.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[49]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">corner</span><span class="o">.</span><span class="n">corner</span><span class="p">(</span>
+    <span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s2">&quot;gauss&quot;</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">][</span><span class="n">ensemble</span><span class="o">.</span><span class="n">get_inds</span><span class="p">()[</span><span class="s2">&quot;gauss&quot;</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]],</span>
+    <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C1&quot;</span><span class="p">,</span>
+    <span class="n">hist_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="n">smooth</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_Eryn_tutorial_113_0.png" src="../_images/tutorial_Eryn_tutorial_113_0.png" />
+</div>
 </div>
 </section>
 </section>
 <section id="Utilities">
 <h2>Utilities<a class="headerlink" href="#Utilities" title="Link to this heading"></a></h2>
 <p>Eryn provides many different utilities for sampling. We will show a bit of their usages here, but refer to the <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/utils.html#periodic-container">Utility documentation</a> for more direct information.</p>
+<section id="Branch-Supplimental">
+<h3>Branch Supplimental<a class="headerlink" href="#Branch-Supplimental" title="Link to this heading"></a></h3>
+<p>While the <code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> object is considered a utility, it is documented and stored within the section on the <code class="docutils literal notranslate"><span class="pre">State</span></code> objects (see <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/state.html#state">here</a>).</p>
+<p>Sometimes, in sampling, we want to pass information through the sampler that is particular to each walker or leaf in our ensemble. Storing a different covariance matrix for each walker would be an example of this.</p>
+<p>A <code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> object is designed to do this. In our example above on the <code class="docutils literal notranslate"><span class="pre">GroupStretchMove</span></code>, we used <code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> objects to hold and pass friend information through the sampler.</p>
+<p>A <strong>major</strong> benefit of the branch supplimental is its indexing capabilities. As sampling proceeds, temperature swaps and accept/reject actions will change the current state coordinates and locations of each walker/leaf. The branch supplimental allows the sampling to track and move all of this extra information properly. For example, during a temperature swap, walker 0 in temperature 0 is swapped with walker 1 in temperature 1. This requires all information associated with (t,w)=(0, 0) to swap
+with walker information in (1,1). Eryn already does this directly for coordinates, inds, log like, log prior, etc. The branch supplimental ensures this swapping occurs properly for any <em>other</em> information you want to add that needs to track with each walker/leaf in the sampler.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[50]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">eryn.state</span> <span class="kn">import</span> <span class="n">BranchSupplimental</span>
+</pre></div>
+</div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> objects are initialized with a dictionary with keys as names of the information and values as the array objects. These arrays can be <code class="docutils literal notranslate"><span class="pre">dtype=object</span></code> as well. This is discussed below. The <code class="docutils literal notranslate"><span class="pre">base_shape</span></code> gives the sampler shape of interest. Usually this is <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max)</span></code> or <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers)</span></code>. The indexing of the <code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> object will occur along this <code class="docutils literal notranslate"><span class="pre">base_shape</span></code>. It will return any dimensions beyond this base shape.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[51]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ntemps</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">nwalkers</span> <span class="o">=</span> <span class="mi">30</span>
+<span class="n">nleaves_max</span> <span class="o">=</span> <span class="mi">12</span>
+<span class="n">n_info</span> <span class="o">=</span> <span class="mi">5</span>
+
+<span class="n">important_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">,</span> <span class="n">n_info</span><span class="p">))</span>
+<span class="n">branch_supp</span> <span class="o">=</span> <span class="n">BranchSupplimental</span><span class="p">(</span>
+    <span class="p">{</span><span class="s2">&quot;important_value&quot;</span><span class="p">:</span> <span class="n">important_value</span><span class="p">},</span>
+    <span class="n">base_shape</span><span class="o">=</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">),</span>
+    <span class="n">copy</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>You can index and set the supplimental values in a simple way.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[52]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># index the object. It will return a dictionary.</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;BEFORE:&quot;</span><span class="p">,</span> <span class="n">branch_supp</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">branch_supp</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+
+<span class="c1"># set the object with a dictionary</span>
+<span class="n">branch_supp</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;important_value&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">])}</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;AFTER:&quot;</span><span class="p">,</span> <span class="n">branch_supp</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">branch_supp</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+
+<span class="c1"># set the object with another value (which is a dictionary)</span>
+<span class="n">branch_supp</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">branch_supp</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;AFTER2:&quot;</span><span class="p">,</span> <span class="n">branch_supp</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">branch_supp</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+BEFORE: {&#39;important_value&#39;: array([ 52, 403, 967, 444, 130])} {&#39;important_value&#39;: array([513, 587, 735, 702, 764])}
+AFTER: {&#39;important_value&#39;: array([1, 2, 3, 4, 5])} {&#39;important_value&#39;: array([513, 587, 735, 702, 764])}
+AFTER2: {&#39;important_value&#39;: array([513, 587, 735, 702, 764])} {&#39;important_value&#39;: array([513, 587, 735, 702, 764])}
+</pre></div></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> objects are quietly powerful. You do not <em>need</em> to store numpy arrays as the supplimental. It can really be any object. Even, e.g., specialized class objects. In this case, you can store each class instance in a numpy array with <code class="docutils literal notranslate"><span class="pre">dtype=object</span></code> with <code class="docutils literal notranslate"><span class="pre">base_shape=(ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max)</span></code>. Then, when indexing or adjusting, the branch supplimental will index as usual at the <code class="docutils literal notranslate"><span class="pre">base_shape</span></code> level.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[53]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">CarryAnything</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indicator</span><span class="p">,</span> <span class="n">multiplier</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">indicator</span> <span class="o">=</span> <span class="n">indicator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">multiplier</span> <span class="o">=</span> <span class="n">multiplier</span>
+
+    <span class="k">def</span> <span class="nf">get_value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">indicator</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiplier</span>
+
+<span class="n">carry_any</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ntemps</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">):</span>
+            <span class="n">carry_any</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">CarryAnything</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="n">w</span><span class="p">,</span> <span class="n">l</span><span class="p">))</span>
+
+<span class="n">carry_any</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">carry_any</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">carry_any</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">carry_any</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(10, 30, 12)
+[&lt;__main__.CarryAnything object at 0x137cf54f0&gt;
+ &lt;__main__.CarryAnything object at 0x1368f4b30&gt;]
+</pre></div></div>
+</div>
+<p>The branch supplimental is now built simply with two key-value pairs in the input dictionary. Even though they have different overall shapes, the two inputs have the same <code class="docutils literal notranslate"><span class="pre">base_shape</span></code> and can be indexed together properly.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[54]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">branch_supp_inputs</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;important_value&quot;</span><span class="p">:</span> <span class="n">important_value</span><span class="p">,</span>
+    <span class="s2">&quot;carry_any&quot;</span><span class="p">:</span> <span class="n">carry_any</span>
+<span class="p">}</span>
+
+<span class="n">branch_supp</span> <span class="o">=</span> <span class="n">BranchSupplimental</span><span class="p">(</span>
+    <span class="n">branch_supp_inputs</span><span class="p">,</span>
+    <span class="n">base_shape</span><span class="o">=</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">),</span>
+    <span class="n">copy</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[55]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">branch_supp</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">branch_supp</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">][</span><span class="s2">&quot;carry_any&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get_value</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;important_value&#39;: array([ 52, 403, 967, 444, 130]), &#39;carry_any&#39;: &lt;__main__.CarryAnything object at 0x135204dd0&gt;}
+10
+</pre></div></div>
+</div>
+<p>For direct access to the holder arrays, you can access the <code class="docutils literal notranslate"><span class="pre">holder</span></code> attribute.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[56]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">branch_supp</span><span class="o">.</span><span class="n">holder</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[56]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+dict_keys([&#39;important_value&#39;, &#39;carry_any&#39;])
+</pre></div></div>
+</div>
+</section>
 <section id="Transform-Container">
 <h3>Transform Container<a class="headerlink" href="#Transform-Container" title="Link to this heading"></a></h3>
 <p>Transform containers are primary used in likelihood functions to transform the arrays incoming from the sampler to the proper setup for likelihood computation. It can transform parameters based on transform functions and fill values into a final array for any value that is fixed during sampling.</p>
 <p>It can be passed to the likeihood function as an <code class="docutils literal notranslate"><span class="pre">arg</span></code> or <code class="docutils literal notranslate"><span class="pre">kwarg</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[57]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># can be done with lambda or regular function</span>
@@ -2400,51 +2874,51 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[[ 3.08632139e+00  5.60690240e+00  3.63677136e+00]
- [ 2.58243638e-02  1.80742172e+00  2.48770106e-01]
- [ 1.02414318e-01  2.89070565e+00  3.86317944e-01]
- [ 5.01564690e+00  3.49361582e+00  3.56981225e+00]
- [ 4.94908920e+00  7.00253015e+00  5.23719336e+00]
- [ 7.87255692e-01  1.37599338e+01  8.58987515e-01]
- [-9.79614705e-01  1.08905403e+01 -3.22267309e+00]
- [ 1.51960831e+01  1.23844069e+01  1.12780791e+01]
- [ 4.37857796e+00  1.84607425e+00  3.84959593e+00]
- [ 2.08592238e-01  1.16380935e+01  1.08854514e+00]
- [ 4.30413168e+00  5.31256326e+00  3.34037374e+00]
- [ 7.05454840e+00  8.62439129e+00  9.84600597e+00]
- [ 5.24216204e+00  1.06322747e+01  2.75257330e+00]
- [ 4.74410851e+00  1.45103260e+01  4.66617563e+00]
- [-3.48807142e-03  2.56103307e-01 -1.11942710e-01]
- [-1.44459923e+01  1.25724889e+01 -1.33740431e+01]
- [ 1.17776377e+01  2.82212428e-02  1.49504813e+01]
- [ 2.95427799e+00  2.14969458e+00  2.49931778e+00]
- [ 2.89265702e-02  5.07244991e+00  2.59844209e-02]
- [ 5.26106580e+00  1.55348884e+00  3.11968757e+00]
- [ 1.68043826e+01  2.77305089e-02  9.66041776e+00]
- [ 9.76826266e-03  1.13514357e+01  4.38412535e-02]
- [ 3.42595049e+00  5.56575620e+00  2.41786990e+00]
- [ 3.45874529e+00  1.59544048e+01  2.07643756e+00]
- [-2.52261347e+00  6.85639886e-01 -1.39958883e+00]
- [ 1.60259798e+00  5.66728050e+00  2.24611324e+00]
- [ 7.58938201e+00  3.44091817e+00  3.96698636e+00]
- [-9.20763907e+00  1.94697741e+00 -1.86247016e+01]
- [ 6.62115825e+00  1.27619947e+01  2.09242661e+01]
- [ 1.93964027e+00  6.24119921e+00  6.74513725e+00]
- [ 3.10515031e+00  3.64960010e-02  4.52019359e+00]
- [-1.12740824e+01  6.01697213e-01 -6.75147057e+00]
- [ 1.09947418e+01  1.47948976e+00  1.69171203e+01]
- [ 6.29903074e+00  3.53327624e-01  2.35885257e+01]
- [ 6.32717307e-01  8.35665810e-01  1.34783920e+00]
- [ 3.33242669e+00  2.70990891e-01  2.79490240e+00]
- [ 2.79389285e+00  1.26540813e-01  3.54783570e+00]
- [ 4.47058272e+00  3.28099189e+00  1.01873553e+01]
- [ 5.12558722e+00  7.83776685e+00  3.91206004e+00]
- [ 5.97988870e+00  8.17266233e+00  1.35938756e+01]]
+[[ 2.26227781e+00  7.71172976e+00  1.27548736e+00]
+ [ 2.56370157e+00  1.34990453e-01  2.05917997e+00]
+ [-1.48759469e+00  9.74032231e+00 -5.81326542e+01]
+ [ 6.50447002e-02  1.63975125e+00  1.46380376e+00]
+ [ 9.53877519e+00  7.79897194e-02  2.09789713e+01]
+ [ 4.06410029e+00  1.26998074e+01  3.49285015e+00]
+ [ 1.54376007e+01  1.38051140e+01  8.84060841e+00]
+ [ 1.38300414e+01  2.53601577e+00  1.75672789e+01]
+ [ 1.73703931e+00  9.27046560e+00  2.46312421e+01]
+ [ 4.78771247e-01  3.75305760e+00  1.06581635e+00]
+ [ 1.88147701e-02  2.34955242e-02  3.94187130e-02]
+ [ 1.71883744e+01  2.54740727e-02  8.97001618e+00]
+ [ 5.98474438e+00  3.00342614e+00  5.88277683e+00]
+ [ 6.32764883e+00  2.34138626e-01  4.35158910e+00]
+ [ 3.83219365e+00  1.24534275e+01  1.02614546e+01]
+ [ 1.97048601e-01  1.66615073e+00  4.51228417e+00]
+ [ 9.76220395e+00  1.16789539e+01  1.26683150e+01]
+ [ 4.82678472e+00  3.07381945e+00  8.61128946e+00]
+ [ 1.69598253e+00  1.18751365e+01  2.01722672e+01]
+ [ 1.07081046e+00  1.53621702e+01  1.11803061e+00]
+ [ 3.16326742e+00  4.02708000e+00  4.10980080e+00]
+ [ 4.45485130e+00  3.87056124e+00  3.05496019e+00]
+ [-5.96313442e-01  1.35690268e+01 -1.54661617e+00]
+ [ 3.11288581e+00  6.68544747e-01  2.69885225e+00]
+ [ 4.11935523e+00  6.96904238e+00  7.91590796e+00]
+ [ 3.06494985e+00  2.75972186e-01  3.14017465e+01]
+ [ 1.87475913e+01  3.91251640e-01  1.16695627e+01]
+ [ 2.66873057e-01  7.02594142e+00  1.45960933e-01]
+ [ 5.33294936e+00  6.11129950e+00  3.22032393e+00]
+ [-1.02392877e+00  3.86543400e-01 -4.37596988e+00]
+ [ 3.18067491e+00  8.25836145e-01  1.33798856e+01]
+ [ 5.62668854e+00  9.78027707e+00  3.52857318e+00]
+ [-5.99820781e-02  4.79023757e+00 -3.70779337e-01]
+ [ 3.62128048e+00  8.37144246e+00  1.07501880e+01]
+ [ 3.95266270e-01  7.04161418e-01  2.02500595e+00]
+ [ 1.34621385e+01  7.98391055e-01  9.13549746e+00]
+ [-1.34151067e+01  8.40039254e+00 -3.57508963e+00]
+ [ 8.54177631e+00  9.17191891e+00  6.84911323e+00]
+ [-2.07751004e+01  6.12957529e+00 -6.70874225e+00]
+ [ 8.48004061e+00  1.06033804e+01  5.51752276e+00]]
 </pre></div></div>
 </div>
 <p>If you have mutliple branches in your sampler, you can add more than one <code class="docutils literal notranslate"><span class="pre">Transform</span> <span class="pre">Container</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[58]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">lnprob</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">group1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">group2</span><span class="p">,</span> <span class="n">transform_containers</span><span class="p">):</span>
@@ -2499,165 +2973,125 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[array([[ 4.02075611e-01,  2.02727006e+00,  0.00000000e+00,
-         1.00000000e+00,  3.13876888e+00, -1.00000000e+00],
-       [-2.21750379e+00,  2.63032269e+00,  0.00000000e+00,
-         1.00000000e+00,  2.41364936e+00, -1.00000000e+00],
-       [ 9.82839215e-01,  2.82998951e+00,  0.00000000e+00,
-         1.00000000e+00,  3.53754004e+00, -1.00000000e+00],
-       [ 3.41882314e-01,  1.59755871e+00,  0.00000000e+00,
-         1.00000000e+00,  1.92949537e+00, -1.00000000e+00],
-       [ 1.08356812e+00,  1.08432157e+00,  0.00000000e+00,
-         1.00000000e+00,  3.46321356e+00, -1.00000000e+00],
-       [ 3.31341683e-01,  4.40498524e-01,  0.00000000e+00,
-         1.00000000e+00,  2.76316883e+00, -1.00000000e+00],
-       [ 1.33995872e+00,  2.86607916e-01,  0.00000000e+00,
-         1.00000000e+00,  3.57888534e+00, -1.00000000e+00],
-       [ 1.25180693e+00,  3.62038136e+00,  0.00000000e+00,
-         1.00000000e+00,  2.84363621e+00, -1.00000000e+00],
-       [-8.09868405e-02,  3.22000724e+00,  0.00000000e+00,
-         1.00000000e+00,  2.87755596e+00, -1.00000000e+00],
-       [ 7.80796598e-01,  1.63922890e+00,  0.00000000e+00,
-         1.00000000e+00,  1.51618456e+00, -1.00000000e+00],
-       [ 6.98930985e-01,  3.67700223e+00,  0.00000000e+00,
-         1.00000000e+00,  2.52682127e+00, -1.00000000e+00],
-       [-8.08536016e-02,  2.31094294e+00,  0.00000000e+00,
-         1.00000000e+00,  9.49908409e-01, -1.00000000e+00],
-       [ 9.51746200e-01,  3.67337853e+00,  0.00000000e+00,
-         1.00000000e+00,  1.39781914e+00, -1.00000000e+00],
-       [ 1.36167947e+00,  1.65103017e-01,  0.00000000e+00,
-         1.00000000e+00,  9.06673412e-01, -1.00000000e+00],
-       [ 1.27410329e+00,  5.36771859e-01,  0.00000000e+00,
-         1.00000000e+00,  3.11948520e+00, -1.00000000e+00],
-       [-1.96697065e+00,  3.87492837e+00,  0.00000000e+00,
-         1.00000000e+00,  3.15992865e+00, -1.00000000e+00],
-       [ 1.06106851e+00,  3.71165012e+00,  0.00000000e+00,
-         1.00000000e+00,  2.31258185e+00, -1.00000000e+00],
-       [ 1.27268892e+00,  1.22800190e+00,  0.00000000e+00,
-         1.00000000e+00,  1.36001607e+00, -1.00000000e+00],
-       [ 9.44901909e-01,  2.99355743e+00,  0.00000000e+00,
-         1.00000000e+00,  9.75798659e-01, -1.00000000e+00],
-       [ 1.12911347e+00,  2.25605562e-01,  0.00000000e+00,
-         1.00000000e+00,  1.52691391e+00, -1.00000000e+00],
-       [ 8.70568429e-01,  1.14485121e+00,  0.00000000e+00,
-         1.00000000e+00,  3.27961647e+00, -1.00000000e+00],
-       [ 1.23105790e+00,  5.96911344e-01,  0.00000000e+00,
-         1.00000000e+00,  3.91366683e+00, -1.00000000e+00],
-       [-1.20239492e-03,  2.89449059e+00,  0.00000000e+00,
-         1.00000000e+00,  1.55766542e+00, -1.00000000e+00],
-       [-7.35588882e-01,  3.56631090e+00,  0.00000000e+00,
-         1.00000000e+00,  2.53459398e+00, -1.00000000e+00],
-       [ 1.01526637e+00,  3.47101948e+00,  0.00000000e+00,
-         1.00000000e+00,  3.60993882e+00, -1.00000000e+00],
-       [ 1.32430001e+00,  3.15162482e+00,  0.00000000e+00,
-         1.00000000e+00,  1.48120893e+00, -1.00000000e+00],
-       [ 1.01301454e+00,  1.56145377e+00,  0.00000000e+00,
-         1.00000000e+00,  3.80942539e+00, -1.00000000e+00],
-       [ 7.10765086e-01,  3.55909099e+00,  0.00000000e+00,
-         1.00000000e+00,  1.57522429e+00, -1.00000000e+00],
-       [ 1.04203362e+00,  1.08070163e-01,  0.00000000e+00,
-         1.00000000e+00,  3.98213105e-01, -1.00000000e+00],
-       [ 4.39454748e-01,  2.19214547e+00,  0.00000000e+00,
-         1.00000000e+00,  8.40650911e-01, -1.00000000e+00],
-       [-5.16413152e-01,  3.35632698e+00,  0.00000000e+00,
-         1.00000000e+00,  2.63025658e+00, -1.00000000e+00],
-       [-5.37687786e-01,  8.02628232e-01,  0.00000000e+00,
-         1.00000000e+00,  3.51501868e-01, -1.00000000e+00],
-       [ 2.72271287e-01,  2.82068959e+00,  0.00000000e+00,
-         1.00000000e+00,  2.21476682e+00, -1.00000000e+00],
-       [ 1.24122456e+00,  1.18553959e+00,  0.00000000e+00,
-         1.00000000e+00,  2.01434754e+00, -1.00000000e+00],
-       [ 5.38874332e-01,  1.64379851e+00,  0.00000000e+00,
-         1.00000000e+00,  3.11499059e+00, -1.00000000e+00],
-       [ 1.37829927e+00,  2.00684311e+00,  0.00000000e+00,
-         1.00000000e+00,  7.81023241e-01, -1.00000000e+00],
-       [-2.46053035e-01,  1.42042825e+00,  0.00000000e+00,
-         1.00000000e+00,  2.75255769e+00, -1.00000000e+00],
-       [ 1.06469854e+00,  2.69261136e+00,  0.00000000e+00,
-         1.00000000e+00,  1.30689283e+00, -1.00000000e+00],
-       [ 4.81367142e-01,  2.63242623e+00,  0.00000000e+00,
-         1.00000000e+00,  1.93730454e+00, -1.00000000e+00],
-       [-7.03084230e-02,  1.07013775e+00,  0.00000000e+00,
-         1.00000000e+00,  2.13635829e+00, -1.00000000e+00]]), array([[ 3.21678060e+00, -1.00000000e+00,  1.00032214e-02,
-         5.89371770e+00,  3.59844069e+00],
-       [ 3.39985157e+00, -1.00000000e+00,  2.95887822e-01,
-         1.02129869e+01,  1.22223650e+00],
-       [ 2.92677176e+00, -1.00000000e+00,  1.99364556e-01,
-         1.88707487e+00,  3.22902035e+00],
-       [ 3.52464049e+00, -1.00000000e+00,  1.49669920e+01,
-         7.50811847e+00,  3.22855575e+00],
-       [ 3.78545112e+00, -1.00000000e+00,  1.01431916e+01,
-         1.06786939e+01,  1.21074325e+00],
-       [ 2.02628236e+00, -1.00000000e+00,  3.21973235e+00,
-         3.43413861e+00,  3.44449384e+00],
-       [ 1.71803485e-01, -1.00000000e+00,  3.51851733e+00,
-         3.46613915e-01,  2.62531485e+00],
-       [ 5.77474391e-01, -1.00000000e+00,  1.27060011e+01,
-         1.06155817e+00,  3.66806329e+00],
-       [ 2.91302812e+00, -1.00000000e+00,  3.62315982e+00,
-         1.57017190e+01,  7.90671062e-01],
-       [ 3.76540850e+00, -1.00000000e+00,  2.73521470e-02,
-         1.03881446e-01,  1.80200744e+00],
-       [ 4.01449722e-01, -1.00000000e+00,  2.88268694e+00,
-         1.14821162e+01,  1.35715060e+00],
-       [ 3.34472211e-01, -1.00000000e+00,  1.59493525e+01,
-         1.35923672e+01,  2.72485827e+00],
-       [ 7.81193853e-01, -1.00000000e+00,  6.66683516e+00,
-         4.22249706e-01,  3.81045587e+00],
-       [ 1.83590629e+00, -1.00000000e+00,  6.80074269e-01,
-         2.30521327e-01,  3.50867019e+00],
-       [ 2.85469474e+00, -1.00000000e+00,  9.31847040e+00,
-         3.05376264e+00,  3.87792366e+00],
-       [ 6.94922165e-01, -1.00000000e+00,  1.09566965e+00,
-         1.19092082e+01,  3.34696638e+00],
-       [ 3.08195111e+00, -1.00000000e+00,  8.41405587e-02,
-         6.99578765e+00,  1.91657567e+00],
-       [ 2.25636709e+00, -1.00000000e+00,  4.83607342e-01,
-         9.33607709e+00,  3.18750844e+00],
-       [ 1.60778216e+00, -1.00000000e+00,  2.73751571e+00,
-         9.08492502e+00,  1.80209792e+00],
-       [ 2.66468666e+00, -1.00000000e+00,  2.11461587e+00,
-         7.54591363e+00,  3.42276044e+00],
-       [ 8.15088121e-01, -1.00000000e+00,  9.63183959e+00,
-         1.17278909e+00,  3.66244840e+00],
-       [ 1.34436394e+00, -1.00000000e+00,  2.87594207e+00,
-         9.85351652e-01,  3.07228765e+00],
-       [ 1.38321860e+00, -1.00000000e+00,  1.24509662e+00,
-         5.30999341e-01,  1.01378376e-01],
-       [ 1.28474753e+00, -1.00000000e+00,  6.76497701e+00,
-         1.46788632e+01,  8.93483431e-01],
-       [ 2.72443113e+00, -1.00000000e+00,  8.94829755e+00,
-         1.90424481e-01,  6.26806506e-01],
-       [ 2.30778859e+00, -1.00000000e+00,  1.39320004e+00,
-         5.17337329e+00,  3.16975520e+00],
-       [ 2.71584940e+00, -1.00000000e+00,  1.13700788e+00,
-         1.14224688e+01,  1.44053671e+00],
-       [ 9.57785197e-01, -1.00000000e+00,  1.44352584e+01,
-         5.08684450e+00,  2.69255661e+00],
-       [ 7.21332377e-01, -1.00000000e+00,  4.06559176e-01,
-         3.67692851e-02,  2.91841518e-01],
-       [ 7.62891052e-01, -1.00000000e+00,  2.90707385e+00,
-         9.85404272e+00,  3.11760201e+00],
-       [ 1.52200640e-01, -1.00000000e+00,  1.49409538e+01,
-         1.37689084e+01,  1.27441272e+00],
-       [ 2.44706362e+00, -1.00000000e+00,  8.92012298e-01,
-         5.78031465e+00,  3.60929867e+00],
-       [ 2.39059657e+00, -1.00000000e+00,  2.20317506e+00,
-         7.77252523e+00,  1.83156146e+00],
-       [ 2.84346745e+00, -1.00000000e+00,  1.43270561e+01,
-         4.31445281e+00,  2.49834221e+00],
-       [ 4.50797949e-01, -1.00000000e+00,  1.48447339e+01,
-         6.16676244e-02,  1.82139808e+00],
-       [ 2.26300647e+00, -1.00000000e+00,  3.21061236e+00,
-         1.00085086e+01,  2.34126062e+00],
-       [ 7.23811796e-01, -1.00000000e+00,  9.82912989e+00,
-         9.08120073e+00,  3.01083356e+00],
-       [ 1.74011782e+00, -1.00000000e+00,  1.46993361e+01,
-         1.01741438e+01,  3.64481168e+00],
-       [ 3.53678102e+00, -1.00000000e+00,  4.68002040e+00,
-         1.47414565e+00,  2.97502336e+00],
-       [ 1.33866045e+00, -1.00000000e+00,  1.67242783e+00,
-         3.86238145e+00,  1.30605397e+00]])]
+[array([[ 1.36408262,  0.15052344,  0.        ,  1.        ,  3.48800761,
+        -1.        ],
+       [ 1.29897891,  3.01041913,  0.        ,  1.        ,  2.97851441,
+        -1.        ],
+       [ 1.3653482 ,  1.21394415,  0.        ,  1.        ,  3.25311149,
+        -1.        ],
+       [ 1.16750397,  2.64909661,  0.        ,  1.        ,  1.45690912,
+        -1.        ],
+       [ 1.1861526 ,  0.93322534,  0.        ,  1.        ,  3.58088928,
+        -1.        ],
+       [ 0.08555872,  0.13786158,  0.        ,  1.        ,  3.43834971,
+        -1.        ],
+       [-0.02352741,  1.71808764,  0.        ,  1.        ,  3.63735008,
+        -1.        ],
+       [ 1.07232766,  1.39277427,  0.        ,  1.        ,  0.63799694,
+        -1.        ],
+       [ 1.21732595,  3.14024127,  0.        ,  1.        ,  0.69714093,
+        -1.        ],
+       [ 0.26845662,  2.84958172,  0.        ,  1.        ,  1.44775212,
+        -1.        ],
+       [ 0.55606073,  3.12060581,  0.        ,  1.        ,  3.68667253,
+        -1.        ],
+       [ 0.97680555,  3.65644994,  0.        ,  1.        ,  3.39990504,
+        -1.        ],
+       [ 0.63347517,  2.07772332,  0.        ,  1.        ,  3.32185317,
+        -1.        ],
+       [ 0.54807996,  1.63004179,  0.        ,  1.        ,  3.63537474,
+        -1.        ],
+       [ 0.78315515,  1.74865946,  0.        ,  1.        ,  2.72034487,
+        -1.        ],
+       [ 0.62543905,  3.89346839,  0.        ,  1.        ,  3.81664149,
+        -1.        ],
+       [ 0.25188632,  2.9573227 ,  0.        ,  1.        ,  1.29585671,
+        -1.        ],
+       [-0.07794654,  0.24376449,  0.        ,  1.        ,  2.28643517,
+        -1.        ],
+       [ 1.05373448,  1.80619337,  0.        ,  1.        ,  0.49407366,
+        -1.        ],
+       [ 0.61174823,  0.25112653,  0.        ,  1.        ,  1.49639733,
+        -1.        ],
+       [ 1.14970147,  2.03962511,  0.        ,  1.        ,  1.01071637,
+        -1.        ],
+       [ 1.17866892,  3.44375584,  0.        ,  1.        ,  2.89257887,
+        -1.        ],
+       [ 1.25003678,  3.97263296,  0.        ,  1.        ,  2.28063182,
+        -1.        ],
+       [ 1.28028481,  2.67240503,  0.        ,  1.        ,  1.88979263,
+        -1.        ],
+       [ 0.93052516,  0.98698515,  0.        ,  1.        ,  1.49915708,
+        -1.        ],
+       [ 1.28665103,  0.94348679,  0.        ,  1.        ,  2.8971265 ,
+        -1.        ],
+       [ 0.80048835,  0.22247766,  0.        ,  1.        ,  2.58255823,
+        -1.        ],
+       [ 0.68911496,  3.48062074,  0.        ,  1.        ,  1.04180256,
+        -1.        ],
+       [ 1.04477123,  2.76761527,  0.        ,  1.        ,  1.8895895 ,
+        -1.        ],
+       [ 1.11761682,  3.51274366,  0.        ,  1.        ,  1.03211138,
+        -1.        ],
+       [ 1.35853643,  0.74031876,  0.        ,  1.        ,  3.07061094,
+        -1.        ],
+       [ 1.25215733,  3.22604585,  0.        ,  1.        ,  2.32227826,
+        -1.        ],
+       [-1.65465746,  2.10116328,  0.        ,  1.        ,  3.74740296,
+        -1.        ],
+       [ 1.13880739,  2.16460269,  0.        ,  1.        ,  1.08915955,
+        -1.        ],
+       [ 1.28951076,  1.33559827,  0.        ,  1.        ,  1.35421215,
+        -1.        ],
+       [-0.42504646,  3.91291818,  0.        ,  1.        ,  1.41934187,
+        -1.        ],
+       [-0.98377096,  0.81228842,  0.        ,  1.        ,  2.83893009,
+        -1.        ],
+       [ 0.94390451,  0.31438458,  0.        ,  1.        ,  3.08240101,
+        -1.        ],
+       [ 1.07355977,  3.06460086,  0.        ,  1.        ,  1.02755997,
+        -1.        ],
+       [ 0.73020403,  2.47933908,  0.        ,  1.        ,  0.73662634,
+        -1.        ]]), array([[ 1.12687226, -1.        ,  4.00248679,  2.53636448,  3.8903226 ],
+       [ 3.85913129, -1.        ,  0.34563185,  1.14920481,  3.36494113],
+       [ 0.96183002, -1.        ,  8.16346346,  7.04960439,  3.69095477],
+       [ 1.70945362, -1.        ,  0.35545822,  0.03237407,  1.46548275],
+       [ 2.26824275, -1.        ,  8.97436765,  4.87113036,  2.22131114],
+       [ 1.35178665, -1.        ,  7.83610769,  5.20127569,  0.10671333],
+       [ 2.87588294, -1.        , 14.34902369,  0.24361026,  3.46439266],
+       [ 0.93154318, -1.        ,  4.12893585,  4.46943857,  0.60840224],
+       [ 1.24729566, -1.        ,  0.1734498 ,  4.79654616,  3.91285921],
+       [ 2.51556969, -1.        , 14.3047392 ,  0.6397266 ,  2.44207147],
+       [ 3.20962925, -1.        ,  2.60030366,  0.19040972,  3.1133263 ],
+       [ 2.08560979, -1.        ,  0.62009154,  0.05022364,  2.40225947],
+       [ 0.33199571, -1.        ,  0.03074056,  5.71869472,  2.15882122],
+       [ 1.47946504, -1.        ,  1.87289675,  0.90151358,  0.24074501],
+       [ 2.9770715 , -1.        ,  4.79907015, 12.43276481,  1.65995714],
+       [ 3.74138046, -1.        ,  4.22514186,  2.34456864,  2.56201691],
+       [ 1.78500232, -1.        ,  1.31720371,  6.57318376,  2.34359725],
+       [ 2.00965002, -1.        ,  0.14123776, 11.47295327,  2.03166857],
+       [ 3.33775044, -1.        ,  0.16989541,  4.13695376,  2.89669478],
+       [ 1.09487498, -1.        , 13.55598354,  2.22904415,  1.51427016],
+       [ 0.70048696, -1.        ,  1.23266067, 11.64083866,  2.08934512],
+       [ 1.35181021, -1.        ,  9.42599021,  7.28069835,  1.97750598],
+       [ 0.3435387 , -1.        , 15.7217224 ,  0.68781272,  1.99812126],
+       [ 2.98962262, -1.        ,  4.42467445,  9.79329395,  2.63975936],
+       [ 2.49725691, -1.        , 11.14015574, 11.38180071,  0.4340989 ],
+       [ 0.9915848 , -1.        ,  9.50677174, 15.1801135 ,  2.0664768 ],
+       [ 3.05431651, -1.        ,  3.60922715, 12.52595309,  2.06785213],
+       [ 1.0526226 , -1.        ,  9.74426111,  2.43847953,  0.37556454],
+       [ 0.55103816, -1.        , 11.7703627 , 11.19127215,  1.61686159],
+       [ 3.83934958, -1.        ,  3.69902273, 11.75327062,  3.54293484],
+       [ 2.31728036, -1.        ,  0.27001597,  2.77863309,  2.83587134],
+       [ 0.23100948, -1.        ,  2.44550709,  3.61791316,  2.31107967],
+       [ 3.38838798, -1.        ,  1.60084254,  0.62853765,  3.54487269],
+       [ 2.74178253, -1.        ,  1.76503062,  0.75122448,  3.05916718],
+       [ 2.90819838, -1.        , 12.59782578,  9.7869203 ,  3.82881016],
+       [ 3.52381286, -1.        ,  1.63105348, 10.28011431,  2.25903713],
+       [ 3.89240716, -1.        ,  2.75460847,  2.91276999,  0.68357577],
+       [ 3.49780335, -1.        ,  1.47979089, 15.00484949,  2.3351851 ],
+       [ 2.18227792, -1.        ,  7.10108032,  0.59811628,  0.10842801],
+       [ 1.46135392, -1.        ,  6.58120056,  0.42250042,  2.99398862]])]
 </pre></div></div>
 </div>
 </section>
@@ -2665,7 +3099,7 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 <h3>Multivariate Prior Distributions<a class="headerlink" href="#Multivariate-Prior-Distributions" title="Link to this heading"></a></h3>
 <p>Eryn also allows for multivariate prior distributions. To pass these, rather than a single index as the dictionary key like before (e.g.<code class="docutils literal notranslate"><span class="pre">1:</span> <span class="pre">dist()</span></code>), it is not a tuple of inds: <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">1):</span> <span class="pre">dist()</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[46]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[59]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">multivariate_normal</span>
@@ -2694,7 +3128,7 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 <p>The periodic container accounts for periodic parameters by accounting for periodic boundary conditions in terms of distance and parameter wrapping. The input to periodic containers are dictionaries with the parameter index as the key and the period associated with it as the item. Any parameters that are not periodic do not need to be included.</p>
 <p>For example, with a sine model that includes an amplitude (index 0), frequency (index 1), and phase offset (index 2), the phase offset will be periodic.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[47]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[60]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">eryn.utils</span> <span class="kn">import</span> <span class="n">PeriodicContainer</span>
@@ -2723,8 +3157,8 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-3.1405977954259794
-6.282539820143316
+3.1396228175679486
+6.281999449819018
 </pre></div></div>
 </div>
 </section>
@@ -2735,7 +3169,7 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 <p>Stopping functions are effectively convergence functions, allowing the sampler to stop running when it reaches a user-defined criterion. For more information, see the <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/utils.html#stopping-functions">stopping documentation</a>.</p>
 <p>Here, we will just look at a quick example of using the implemented stopping function for Likelihood convergence.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[48]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[61]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">eryn.utils</span> <span class="kn">import</span> <span class="n">SearchConvergeStopping</span>
@@ -2743,7 +3177,7 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[49]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[62]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Gaussian likelihood</span>
@@ -2809,31 +3243,31 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[-3766.31678229 -2278.39604335 -4059.02192642 -2144.19798244
-  -998.28824411 -1428.11763617 -1849.86261277  -395.82800654
- -3538.16264136 -2386.93883948 -2649.90937541 -1946.19356638
- -2282.89975813 -1547.48615372 -1204.51547451  -649.74890771
- -3215.08254415 -1425.56101932 -2921.47148738 -1583.96524582
- -1384.47935102 -1485.917688   -1522.66935955 -1244.37480478
- -1501.36183826 -2138.88955728  -713.31326984 -1724.38252192
-  -967.74170929  -616.752707   -1944.30173589 -1440.93342643
- -1298.02439483 -1686.88049192 -1388.22694244   -89.51421123
- -1286.28705614 -1377.81556495 -1310.65173531 -2833.47977965
- -3491.52561205  -641.48222829 -1573.34755124 -1381.71501128
- -2655.19429871 -1335.47251394 -3695.80574539 -1375.33229211
- -2972.09945822 -1740.7113659  -1313.41740737  -545.05618362
- -1271.52780167 -3677.68425215 -1458.42786266  -621.36007203
- -1384.94778516  -862.26458892 -3376.97052939 -2738.30382482
- -2396.04714838 -3847.0369564  -2467.72846803 -2601.9956732
- -2930.49147807 -2987.61151173 -3122.68430004 -2749.51246169
-  -723.57849073 -1469.36411184 -1917.57389757 -1197.33797897
- -1442.27625541 -2245.68914219 -1338.98687076 -1862.77573979
- -2189.02815502 -1591.92946993 -1359.46554231 -3003.49085676
- -1796.38296258 -2975.3466723  -3485.79013489 -2857.09434732
- -2081.60939944 -2558.43513486 -2254.20797938 -3483.18026064
- -3652.11045454 -3119.6491669  -2595.00784266  -854.86242004
- -2141.24458421 -1239.27101919 -2207.80400398 -1115.71944662
- -1845.7570246  -3039.2483924   -875.96968329 -1025.23204354]
+[-1640.49679761 -2135.49803152 -1902.77160243 -2518.77462291
+ -2051.94825594 -2318.71684266 -1845.07485743 -1575.80578615
+  -913.80921413 -1108.9449725  -1780.20151453  -979.04011531
+ -1885.25829617  -772.78021174 -4961.74355071  -651.92498531
+ -4058.42587146 -2222.75261641 -2587.35271764 -2888.26717103
+ -2385.10797455 -1067.19887104 -4170.31900754 -3081.79590684
+ -1711.62977293 -1921.02255461 -1647.87020108 -1350.79724116
+ -1635.07917685 -2978.59460227 -3025.81761755 -2465.65385449
+ -1584.44439791  -705.24033014 -2265.53587807 -1800.29764511
+ -2211.43468005 -2932.15312204 -2036.16814252 -3251.00408331
+ -2218.88843675 -1989.9393407  -1387.18420155 -1249.69733655
+ -3231.91216326 -2128.41154584 -1266.54584638 -1738.55937653
+ -1474.89128224 -1208.04481689 -2817.42974363 -2230.42847214
+ -1881.77767607 -3321.4775246  -1310.57188017 -1404.39592594
+ -2688.28462417 -1035.47864803 -1691.88082256 -2441.60925324
+ -2263.23620765 -1706.78581038 -1752.00845384 -2282.29407206
+ -1137.81695955 -3564.67451667 -2363.60233296 -2000.43831628
+ -2028.68778873 -1129.81047553 -2766.82574299  -417.17183832
+ -1917.548434   -1166.39969534 -2138.33358483 -1225.25105585
+ -1110.89568937  -940.52124789 -1155.42212252 -1835.39263386
+ -3442.64290351 -2734.30955334 -1944.82023546 -2678.47097937
+ -1191.16174763 -2395.23521606 -2151.11201375 -2164.7197384
+ -3467.95403029 -1675.31598053 -3367.0266415  -1295.71312178
+ -2383.21420848 -3324.94357378 -2177.44460386 -1041.76021323
+  -886.82478613 -1698.56702022 -2270.08719732 -2844.77627149]
 [-23.02585093 -23.02585093 -23.02585093 -23.02585093 -23.02585093
  -23.02585093 -23.02585093 -23.02585093 -23.02585093 -23.02585093
  -23.02585093 -23.02585093 -23.02585093 -23.02585093 -23.02585093
@@ -2861,8 +3295,8 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|████████████████████████████████████████| 100/100 [00:00&lt;00:00, 286.24it/s]
-  2%|▉                                       | 59/2500 [00:00&lt;00:08, 291.52it/s]
+100%|████████████████████████████████████████| 100/100 [00:00&lt;00:00, 291.24it/s]
+  3%|█                                       | 63/2500 [00:00&lt;00:07, 314.42it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -2871,13 +3305,13 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 
-ITERS CONSECUTIVE: 0 Previous best LL: -0.06567225433396463 Current best LL: -0.06567225433396463
+ITERS CONSECUTIVE: 0 Previous best LL: -0.09111836076165353 Current best LL: -0.09111836076165353
 
 
-ITERS CONSECUTIVE: 1 Previous best LL: -0.06567225433396463 Current best LL: -0.06567225433396463
+ITERS CONSECUTIVE: 1 Previous best LL: -0.09111836076165353 Current best LL: -0.09111836076165353
 
 
-ITERS CONSECUTIVE: 2 Previous best LL: -0.06567225433396463 Current best LL: -0.06567225433396463
+ITERS CONSECUTIVE: 2 Previous best LL: -0.09111836076165353 Current best LL: -0.09111836076165353
 
 </pre></div></div>
 </div>
@@ -2886,7 +3320,7 @@ ITERS CONSECUTIVE: 2 Previous best LL: -0.06567225433396463 Current best LL: -0.
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-  6%|██▎                                    | 150/2500 [00:00&lt;00:08, 288.78it/s]
+  6%|██▍                                    | 157/2500 [00:00&lt;00:07, 296.77it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -2895,13 +3329,79 @@ ITERS CONSECUTIVE: 2 Previous best LL: -0.06567225433396463 Current best LL: -0.
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 
-ITERS CONSECUTIVE: 3 Previous best LL: -0.06567225433396463 Current best LL: -0.06567225433396463
+ITERS CONSECUTIVE: 0 Previous best LL: -0.0742244529294836 Current best LL: -0.0742244529294836
 
 
-ITERS CONSECUTIVE: 4 Previous best LL: -0.06567225433396463 Current best LL: -0.06567225433396463
+ITERS CONSECUTIVE: 1 Previous best LL: -0.0742244529294836 Current best LL: -0.0742244529294836
 
 
-ITERS CONSECUTIVE: 5 Previous best LL: -0.06567225433396463 Current best LL: -0.06567225433396463
+ITERS CONSECUTIVE: 2 Previous best LL: -0.0742244529294836 Current best LL: -0.0742244529294836
+
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+  9%|███▍                                   | 217/2500 [00:00&lt;00:07, 286.14it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ITERS CONSECUTIVE: 3 Previous best LL: -0.0742244529294836 Current best LL: -0.07399422624832219
+
+
+ITERS CONSECUTIVE: 0 Previous best LL: -0.04450561782490035 Current best LL: -0.04450561782490035
+
+
+ITERS CONSECUTIVE: 1 Previous best LL: -0.04450561782490035 Current best LL: -0.04450561782490035
+
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+ 12%|████▊                                  | 305/2500 [00:01&lt;00:07, 286.26it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ITERS CONSECUTIVE: 2 Previous best LL: -0.04450561782490035 Current best LL: -0.04450561782490035
+
+
+ITERS CONSECUTIVE: 3 Previous best LL: -0.04450561782490035 Current best LL: -0.04450561782490035
+
+
+ITERS CONSECUTIVE: 4 Previous best LL: -0.04450561782490035 Current best LL: -0.04450561782490035
+
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+ 13%|█████                                  | 325/2500 [00:01&lt;00:07, 287.83it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ITERS CONSECUTIVE: 5 Previous best LL: -0.04450561782490035 Current best LL: -0.04450561782490035
 
 </pre></div></div>
 </div>

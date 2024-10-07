@@ -8,7 +8,13 @@ from eryn.ensemble import EnsembleSampler
 from eryn.state import State
 from eryn.prior import ProbDistContainer, uniform_dist
 from eryn.utils import TransformContainer
-from eryn.moves import GaussianMove, StretchMove, CombineMove, DistributionGenerateRJ
+from eryn.moves import (
+    GaussianMove,
+    StretchMove,
+    CombineMove,
+    DistributionGenerateRJ,
+    GroupStretchMove,
+)
 from eryn.utils.utility import groups_from_inds
 from eryn.backends import HDFBackend
 
@@ -788,27 +794,103 @@ class ErynTest(unittest.TestCase):
         )
 
     def test_group_stretch(self):
+
         from eryn.moves import GroupStretchMove
 
         class MeanGaussianGroupMove(GroupStretchMove):
             def __init__(self, **kwargs):
+                # make sure kwargs get sent into group stretch parent class
                 GroupStretchMove.__init__(self, **kwargs)
 
             def setup_friends(self, branches):
-                self.friends = branches["gauss"].coords[branches["gauss"].inds]
-                self.means = self.friends[:, 1]
 
-            def find_friends(self, name, s, s_inds=None):
-                friends = np.zeros_like(s)
-                means_here = s[s_inds][:, 1]
-                dist = np.abs(means_here[:, None] - self.means[None, :])
-                dist_inds_sort = np.argsort(dist, axis=-1)
-                inds_choice = np.random.randint(
-                    0, self.nfriends, size=means_here.shape[0]
+                # store cold-chain information
+                friends = branches["gauss"].coords[0, branches["gauss"].inds[0]]
+                means = friends[:, 1].copy()  # need the copy
+
+                # take unique to avoid errors at the start of sampling
+                self.means, uni_inds = np.unique(means, return_index=True)
+                self.friends = friends[uni_inds]
+
+                # sort
+                inds_sort = np.argsort(self.means)
+                self.friends[:] = self.friends[inds_sort]
+                self.means[:] = self.means[inds_sort]
+
+                # get all current means from all temperatures
+                current_means = branches["gauss"].coords[branches["gauss"].inds, 1]
+
+                # calculate their distances to each stored friend
+                dist = np.abs(current_means[:, None] - self.means[None, :])
+
+                # get closest friends
+                inds_closest = np.argsort(dist, axis=1)[:, : self.nfriends]
+
+                # store in branch supplimental
+                branches["gauss"].branch_supplimental[branches["gauss"].inds] = {
+                    "inds_closest": inds_closest
+                }
+
+                # make sure to "turn off" leaves that are deactivated by setting their
+                # index to -1.
+                branches["gauss"].branch_supplimental[~branches["gauss"].inds] = {
+                    "inds_closest": -np.ones(
+                        (ntemps, nwalkers, nleaves_max, self.nfriends), dtype=int
+                    )[~branches["gauss"].inds]
+                }
+
+            def fix_friends(self, branches):
+                # when RJMCMC activates a new leaf, when it gets to this proposal, its inds_closest
+                # will need to be updated
+
+                # activated & does not have an assigned index
+                fix = branches["gauss"].inds & (
+                    np.all(
+                        branches["gauss"].branch_supplimental[:]["inds_closest"] == -1,
+                        axis=-1,
+                    )
                 )
-                keep = dist_inds_sort[(np.arange(inds_choice.shape[0]), inds_choice)]
 
-                friends[s_inds] = self.friends[keep]
+                if not np.any(fix):
+                    return
+
+                # same process as above, only for fix
+                current_means = branches["gauss"].coords[fix, 1]
+
+                dist = np.abs(current_means[:, None] - self.means[None, :])
+                inds_closest = np.argsort(dist, axis=1)[:, : self.nfriends]
+
+                branches["gauss"].branch_supplimental[fix] = {
+                    "inds_closest": inds_closest
+                }
+
+                # verify everything worked
+                fix_check = branches["gauss"].inds & (
+                    np.all(
+                        branches["gauss"].branch_supplimental[:]["inds_closest"] == -1,
+                        axis=-1,
+                    )
+                )
+                assert not np.any(fix_check)
+
+            def find_friends(self, name, s, s_inds=None, branch_supps=None):
+
+                # prepare buffer array
+                friends = np.zeros_like(s)
+
+                # determine the closest friends for s_inds == True
+                inds_closest_here = branch_supps[name][s_inds]["inds_closest"]
+
+                # take one at random
+                random_inds = inds_closest_here[
+                    np.arange(inds_closest_here.shape[0]),
+                    np.random.randint(
+                        self.nfriends, size=(inds_closest_here.shape[0],)
+                    ),
+                ]
+
+                # store in buffer array
+                friends[s_inds] = self.friends[random_inds]
                 return friends
 
         # set random seed
@@ -897,8 +979,8 @@ class ErynTest(unittest.TestCase):
         # cov = {"gauss": np.diag(np.ones(ndim)) * factor}
 
         # moves = GaussianMove(cov)
-
-        moves = MeanGaussianGroupMove(nfriends=nwalkers)
+        nfriends = nwalkers
+        moves = MeanGaussianGroupMove(nfriends=nfriends)
 
         ensemble = EnsembleSampler(
             nwalkers,
@@ -922,9 +1004,27 @@ class ErynTest(unittest.TestCase):
         # will not be zero due to noise
 
         # setup starting state
-        state = State(coords, log_like=log_like, log_prior=log_prior, inds=inds)
+        from eryn.state import BranchSupplimental
 
-        nsteps = 20
+        branch_supps = {
+            "gauss": BranchSupplimental(
+                {
+                    "inds_closest": np.zeros(
+                        inds["gauss"].shape + (nfriends,), dtype=int
+                    )
+                },
+                base_shape=(ntemps, nwalkers, nleaves_max),
+            )
+        }
+        state = State(
+            coords,
+            log_like=log_like,
+            log_prior=log_prior,
+            inds=inds,
+            branch_supplimental=branch_supps,
+        )
+
+        nsteps = 2000
         last_sample = ensemble.run_mcmc(
             state, nsteps, burn=10, progress=False, thin_by=1
         )

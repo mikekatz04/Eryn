@@ -489,7 +489,12 @@ class EnsembleSampler(object):
                 self.rj_moves = rj_moves
                 self.rj_weights = np.ones(len(rj_moves))
 
-        else:
+        elif isinstance(rj_moves, bool) and not rj_moves:
+            self.has_reversible_jump = False
+            self.rj_moves = None
+            self.rj_weights = None
+
+        elif not isinstance(rj_moves, bool):
             self.has_reversible_jump = True
 
             self.rj_moves = [rj_moves]

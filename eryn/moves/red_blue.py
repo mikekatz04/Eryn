@@ -109,7 +109,8 @@ class RedBlueMove(Move, ABC):
             raise RuntimeError(
                 "It is unadvisable to use a red-blue move "
                 "with fewer walkers than twice the number of "
-                "dimensions."
+                "dimensions. If you would like to do this, please set live_dangerously"
+                "to True."
             )
 
         # Run any move-specific setup.
@@ -256,7 +257,7 @@ class RedBlueMove(Move, ABC):
                 # Compute prior of the proposed position
                 # new_inds_prior is adjusted if product-space is used
                 logp = model.compute_log_prior_fn(
-                    q, 
+                    q,
                     inds=new_inds,
                     supps=new_supps,
                     branch_supps=new_branch_supps,

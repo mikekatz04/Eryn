@@ -17,12 +17,12 @@ class GroupStretchMove(GroupMove, StretchMove):
 
     This move uses the stretch proposal method and math, but the compliment
     of walkers used to propose a new point is chosen from a stationary group
-    rather than the current walkers in the ensemble. 
+    rather than the current walkers in the ensemble.
 
     This move allows for "stretch"-like proposal to be used in Reversible Jump MCMC.
 
     Args:
-        **kwargs (dict, optional): Keyword arguments passed to :class:`GroupMove` and 
+        **kwargs (dict, optional): Keyword arguments passed to :class:`GroupMove` and
             :class:`StretchMove`.
 
     """
@@ -31,7 +31,15 @@ class GroupStretchMove(GroupMove, StretchMove):
         GroupMove.__init__(self, **kwargs)
         StretchMove.__init__(self, **kwargs)
 
-    def get_proposal(self, s_all, random, gibbs_ndim=None, s_inds_all=None, **kwargs):
+    def get_proposal(
+        self,
+        s_all,
+        random,
+        gibbs_ndim=None,
+        s_inds_all=None,
+        branch_supps=None,
+        **kwargs
+    ):
         """Generate group stretch proposal coordinates
 
         Args:
@@ -42,8 +50,12 @@ class GroupStretchMove(GroupMove, StretchMove):
                 the true dimension. If given as an array, must have shape ``(ntemps, nwalkers)``.
                 See the tutorial for more information.
                 (default: ``None``)
-            s_inds_all (dict, optional): Keys are ``branch_names`` and values are 
+            s_inds_all (dict, optional): Keys are ``branch_names`` and values are
                 ``inds`` arrays indicating which leaves are currently used. (default: ``None``)
+            branch_supps (dict, optional): Keys are ``branch_names`` and values are
+                :class:`BranchSupplimental` objects. For the group stretch,
+                ``branch_supps`` are the best device for passing and tracking useful
+                information. (default: ``None``)
 
         Returns:
             tuple: First entry is new positions. Second entry is detailed balance factors.
@@ -84,11 +96,12 @@ class GroupStretchMove(GroupMove, StretchMove):
                 if Ns_check != Ns:
                     raise ValueError("Different number of walkers across models.")
 
-
             Ns = nwalkers
 
             # get actual compliment values
-            c_temp = self.choose_c_vals(name, s, s_inds=s_inds)
+            c_temp = self.choose_c_vals(
+                name, s, s_inds=s_inds, branch_supps=branch_supps
+            )
 
             # use stretch to get new proposals
             newpos[name] = self.get_new_points(
@@ -105,4 +118,3 @@ class GroupStretchMove(GroupMove, StretchMove):
             self.adjust_factors(factors, ndim, gibbs_ndim)
 
         return newpos, factors
-

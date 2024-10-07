@@ -47,7 +47,7 @@ class GroupMove(Move, ABC):
 
         self.iter = 0
 
-    def find_friends(self, name, s, s_inds=None):
+    def find_friends(self, name, s, s_inds=None, branch_supps=None):
         """Function for finding friends.
 
         Args:
@@ -55,6 +55,10 @@ class GroupMove(Move, ABC):
             s (np.ndarray): Coordinates array for the points to be moved.
             s_inds (np.ndarray, optional): ``inds`` arrays that represent which leaves are present.
                 (default: ``None``)
+            branch_supps (dict, optional): Keys are ``branch_names`` and values are
+                :class:`BranchSupplimental` objects. For group proposals,
+                ``branch_supps`` are the best device for passing and tracking useful
+                information. (default: ``None``)
 
         Return:
             np.ndarray: Complimentary values.
@@ -62,9 +66,9 @@ class GroupMove(Move, ABC):
         """
         raise NotImplementedError
 
-    def choose_c_vals(self, name, s, s_inds=None):
+    def choose_c_vals(self, name, s, s_inds=None, branch_supps=None):
         """Get the complimentary values."""
-        return self.find_friends(name, s, s_inds=s_inds)
+        return self.find_friends(name, s, s_inds=s_inds, branch_supps=branch_supps)
 
     def setup(self, branches):
         """Any setup necessary for the proposal"""
@@ -78,6 +82,17 @@ class GroupMove(Move, ABC):
 
         """
         raise NotImplementedError
+
+    def fix_friends(self, branches):
+        """Fix any friends that were born through RJ.
+
+        This function is not required. If not implemented, it will just return immediately.
+
+        Args:
+            branches (dict): Dictionary with all the current branches in the sampler.
+
+        """
+        return
 
     @classmethod
     def get_proposal(self, s_all, random, gibbs_ndim=None, s_inds_all=None, **kwargs):
@@ -137,6 +152,10 @@ class GroupMove(Move, ABC):
             # store old values to maintain detailed balance when updating
             old_branches = deepcopy(state.branches)
 
+        # fix any friends that may have come through rj
+        if self.iter != 0 and self.iter % self.n_iter_update != 0:
+            self.fix_friends(state.branches)
+
         # Split the ensemble in half and iterate over these two halves.
         accepted = np.zeros((ntemps, nwalkers), dtype=bool)
 
@@ -189,6 +208,7 @@ class GroupMove(Move, ABC):
                 model.random,
                 gibbs_ndim=gibbs_ndim,
                 s_inds_all=inds_going_for_proposal,
+                branch_supps=new_branch_supps,
             )
 
             # account for gibbs sampling

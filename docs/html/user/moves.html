@@ -2101,7 +2101,7 @@ stationary distribution. (default: 100).</p></li>
 <p><code class="docutils literal notranslate"><span class="pre">kwargs</span></code> are passed to <a class="reference internal" href="#eryn.moves.Move" title="eryn.moves.Move"><code class="xref py py-class docutils literal notranslate"><span class="pre">Move</span></code></a> class.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.GroupMove.find_friends">
-<span class="sig-name descname"><span class="pre">find_friends</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupMove.find_friends" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">find_friends</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupMove.find_friends" title="Link to this definition"></a></dt>
 <dd><p>Function for finding friends.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -2110,6 +2110,10 @@ stationary distribution. (default: 100).</p></li>
 <li><p><strong>s</strong> (<em>np.ndarray</em>) – Coordinates array for the points to be moved.</p></li>
 <li><p><strong>s_inds</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays that represent which leaves are present.
 (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>branch_supps</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are
+<code class="xref py py-class docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> objects. For group proposals,
+<code class="docutils literal notranslate"><span class="pre">branch_supps</span></code> are the best device for passing and tracking useful
+information. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2123,7 +2127,7 @@ stationary distribution. (default: 100).</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.GroupMove.choose_c_vals">
-<span class="sig-name descname"><span class="pre">choose_c_vals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupMove.choose_c_vals" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">choose_c_vals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupMove.choose_c_vals" title="Link to this definition"></a></dt>
 <dd><p>Get the complimentary values.</p>
 </dd></dl>
 
@@ -2137,6 +2141,18 @@ stationary distribution. (default: 100).</p></li>
 <dt class="sig sig-object py" id="eryn.moves.GroupMove.setup_friends">
 <span class="sig-name descname"><span class="pre">setup_friends</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branches</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupMove.setup_friends" title="Link to this definition"></a></dt>
 <dd><p>Setup anything for finding friends.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>branches</strong> (<em>dict</em>) – Dictionary with all the current branches in the sampler.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.GroupMove.fix_friends">
+<span class="sig-name descname"><span class="pre">fix_friends</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branches</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupMove.fix_friends" title="Link to this definition"></a></dt>
+<dd><p>Fix any friends that were born through RJ.</p>
+<p>This function is not required. If not implemented, it will just return immediately.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>branches</strong> (<em>dict</em>) – Dictionary with all the current branches in the sampler.</p>
@@ -2423,7 +2439,7 @@ rather than the current walkers in the ensemble.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.GroupStretchMove.get_proposal">
-<span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gibbs_ndim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_inds_all</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupStretchMove.get_proposal" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_proposal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gibbs_ndim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_inds_all</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupStretchMove.get_proposal" title="Link to this definition"></a></dt>
 <dd><p>Generate group stretch proposal coordinates</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -2437,6 +2453,10 @@ See the tutorial for more information.
 (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 <li><p><strong>s_inds_all</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are
 <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays indicating which leaves are currently used. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>branch_supps</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are
+<code class="xref py py-class docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> objects. For the group stretch,
+<code class="docutils literal notranslate"><span class="pre">branch_supps</span></code> are the best device for passing and tracking useful
+information. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2483,7 +2503,7 @@ must be broadcastable with <code class="docutils literal notranslate"><span clas
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.GroupStretchMove.choose_c_vals">
-<span class="sig-name descname"><span class="pre">choose_c_vals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupStretchMove.choose_c_vals" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">choose_c_vals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupStretchMove.choose_c_vals" title="Link to this definition"></a></dt>
 <dd><p>Get the complimentary values.</p>
 </dd></dl>
 
@@ -2553,7 +2573,7 @@ must be broadcastable with <code class="docutils literal notranslate"><span clas
 
 <dl class="py method">
 <dt class="sig sig-object py" id="eryn.moves.GroupStretchMove.find_friends">
-<span class="sig-name descname"><span class="pre">find_friends</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupStretchMove.find_friends" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">find_friends</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch_supps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupStretchMove.find_friends" title="Link to this definition"></a></dt>
 <dd><p>Function for finding friends.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -2562,6 +2582,10 @@ must be broadcastable with <code class="docutils literal notranslate"><span clas
 <li><p><strong>s</strong> (<em>np.ndarray</em>) – Coordinates array for the points to be moved.</p></li>
 <li><p><strong>s_inds</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – <code class="docutils literal notranslate"><span class="pre">inds</span></code> arrays that represent which leaves are present.
 (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>branch_supps</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keys are <code class="docutils literal notranslate"><span class="pre">branch_names</span></code> and values are
+<code class="xref py py-class docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> objects. For group proposals,
+<code class="docutils literal notranslate"><span class="pre">branch_supps</span></code> are the best device for passing and tracking useful
+information. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2569,6 +2593,18 @@ must be broadcastable with <code class="docutils literal notranslate"><span clas
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eryn.moves.GroupStretchMove.fix_friends">
+<span class="sig-name descname"><span class="pre">fix_friends</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branches</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eryn.moves.GroupStretchMove.fix_friends" title="Link to this definition"></a></dt>
+<dd><p>Fix any friends that were born through RJ.</p>
+<p>This function is not required. If not implemented, it will just return immediately.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>branches</strong> (<em>dict</em>) – Dictionary with all the current branches in the sampler.</p>
 </dd>
 </dl>
 </dd></dl>

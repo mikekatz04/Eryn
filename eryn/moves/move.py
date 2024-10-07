@@ -603,7 +603,7 @@ class Move(object):
 
                     temp_change_branch_supplimental[name] = BranchSupplimental(
                         tmp,
-                        obj_contained_shape=new_state.branches_supplimental[name].shape,
+                        base_shape=new_state.branches_supplimental[name].base_shape,
                         copy=True,
                     )
 
