@@ -177,7 +177,7 @@ class ReversibleJumpMove(Move):
                 key: state.branches_inds[key] for key in branch_names_run
             }
             branches_supp_propose_in = {
-                key: state.branches_supplimental[key] for key in branch_names_run
+                key: state.branches_supplemental[key] for key in branch_names_run
             }
 
             if len(list(coords_propose_in.keys())) == 0:
@@ -199,7 +199,7 @@ class ReversibleJumpMove(Move):
                 nleaves_max_all,
                 model.random,
                 branch_supps=branches_supp_propose_in,
-                supps=state.supplimental,
+                supps=state.supplemental,
             )
 
             branches_supps_new = {
@@ -218,7 +218,7 @@ class ReversibleJumpMove(Move):
                     new_inds[name] = state.branches[name].inds[:].copy()
 
                 if name not in branches_supps_new:
-                    branches_supps_new[name] = state.branches_supplimental[name]
+                    branches_supps_new[name] = state.branches_supplemental[name]
 
             # fix any ordering issues
             q, new_inds, branches_supps_new = self.ensure_ordering(
@@ -270,11 +270,11 @@ class ReversibleJumpMove(Move):
 
             factors += edge_factors
 
-            # setup supplimental information
+            # setup supplemental information
 
-            if state.supplimental is not None:
+            if state.supplemental is not None:
                 # TODO: should there be a copy?
-                new_supps = deepcopy(state.supplimental)
+                new_supps = deepcopy(state.supplemental)
 
             else:
                 new_supps = None
@@ -338,8 +338,8 @@ class ReversibleJumpMove(Move):
                 log_prior=logp,
                 blobs=None,
                 inds=new_inds,
-                supplimental=new_supps,
-                branch_supplimental=branches_supps_new,
+                supplemental=new_supps,
+                branch_supplemental=branches_supps_new,
             )
             state = self.update(state, new_state, accepted)
 

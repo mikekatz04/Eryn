@@ -44,8 +44,8 @@ class MHMove(Move):
         raise NotImplementedError("The proposal must be implemented by " "subclasses")
 
     def setup(self, branches_coords):
-        """Any setup for the proposal. 
-        
+        """Any setup for the proposal.
+
         Args:
             branches_coords (dict): Keys are ``branch_names``. Values are
                 np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent
@@ -74,19 +74,19 @@ class MHMove(Move):
         ntemps, nwalkers, _, _ = state.branches[all_branch_names[0]].shape
 
         # iterate through gibbs setup
-        for (branch_names_run, inds_run) in self.gibbs_sampling_setup_iterator(
+        for branch_names_run, inds_run in self.gibbs_sampling_setup_iterator(
             all_branch_names
         ):
-            # setup supplimental information
+            # setup supplemental information
             if not np.all(
-                np.asarray(list(state.branches_supplimental.values())) == None
+                np.asarray(list(state.branches_supplemental.values())) == None
             ):
-                new_branch_supps = deepcopy(state.branches_supplimental)
+                new_branch_supps = deepcopy(state.branches_supplemental)
             else:
                 new_branch_supps = None
 
-            if state.supplimental is not None:
-                new_supps = deepcopy(state.supplimental)
+            if state.supplemental is not None:
+                new_supps = deepcopy(state.supplemental)
             else:
                 new_supps = None
 
@@ -135,7 +135,7 @@ class MHMove(Move):
                 )
 
                 # Compute the lnprobs of the proposed position.
-                # Can adjust supplimentals in place
+                # Can adjust supplementals in place
                 logl, new_blobs = model.compute_log_like_fn(
                     q,
                     inds=state.branches_inds,
@@ -174,8 +174,8 @@ class MHMove(Move):
                 log_prior=logp,
                 blobs=new_blobs,
                 inds=state.branches_inds,
-                supplimental=new_supps,
-                branch_supplimental=new_branch_supps,
+                supplemental=new_supps,
+                branch_supplemental=new_branch_supps,
             )
             state = self.update(state, new_state, accepted)
 

@@ -16,7 +16,7 @@ def make_ladder(ndim, ntemps=None, Tmax=None):
     <http://arxiv.org/abs/1501.05823>`_, choosing ``Tmax = inf`` is a safe bet, so long as
     ``ntemps`` is also specified.
 
-    This function is originally from ``ptemcee`` `github.com/willvousden/ptemcee <https://github.com/willvousden/ptemcee>`_. 
+    This function is originally from ``ptemcee`` `github.com/willvousden/ptemcee <https://github.com/willvousden/ptemcee>`_.
 
     Temperatures are chosen according to the following algorithm:
     * If neither ``ntemps`` nor ``Tmax`` is specified, raise an exception (insufficient
@@ -36,11 +36,11 @@ def make_ladder(ndim, ntemps=None, Tmax=None):
         Tmax (float, optional): If set, the maximum temperature for the ladder.
 
     Returns:
-        np.ndarray[ntemps]: Output inverse temperature (beta) array. 
+        np.ndarray[ntemps]: Output inverse temperature (beta) array.
 
     Raises:
         ValueError: Improper inputs.
-        
+
     """
 
     # make sure all inputs are okay
@@ -200,42 +200,42 @@ def make_ladder(ndim, ntemps=None, Tmax=None):
 class TemperatureControl(object):
     """Controls the temperature ladder and operations in the sampler.
 
-    All of the tempering features within Eryn are controlled from this class. 
-    This includes the evaluation of the tempered posterior, swapping between temperatures, and 
-    the adaptation of the temperatures over time. The adaptive tempering model can be 
-    found in the Eryn paper as well as the paper for `ptemcee`, which acted 
-    as a basis for the code below. 
+    All of the tempering features within Eryn are controlled from this class.
+    This includes the evaluation of the tempered posterior, swapping between temperatures, and
+    the adaptation of the temperatures over time. The adaptive tempering model can be
+    found in the Eryn paper as well as the paper for `ptemcee`, which acted
+    as a basis for the code below.
 
     Args:
         effective_ndim (int): Effective dimension used to determine temperatures if betas not given.
         nwalkers (int): Number of walkers in the sampler. Must maintain proper order of branches.
-        ntemps (int, optional): Number of temperatures. If this is provided rather than ``betas``, 
+        ntemps (int, optional): Number of temperatures. If this is provided rather than ``betas``,
             :func:`make_ladder` will be used to generate the temperature ladder. (default: 1)
-        betas (np.ndarray[ntemps], optional): If provided, will use as the array of inverse temperatures. 
+        betas (np.ndarray[ntemps], optional): If provided, will use as the array of inverse temperatures.
             (default: ``None``).
-        Tmax (float, optional): If provided and ``betas`` is not provided, this will be included with 
-            ``ntemps`` when determing the temperature ladder with :func:`make_ladder`. 
+        Tmax (float, optional): If provided and ``betas`` is not provided, this will be included with
+            ``ntemps`` when determing the temperature ladder with :func:`make_ladder`.
             See that functions docs for more information. (default: ``None``)
         adaptive (bool, optional): If ``True``, adapt the temperature ladder during sampling.
             (default: ``True``).
-        adaptation_lag (int, optional): lag parameter from 
+        adaptation_lag (int, optional): lag parameter from
             `arXiv:1501.05823 <http://arxiv.org/abs/1501.05823>`_. ``adaptation_lag`` must be
             much greater than ``adapation_time``. (default: 10000)
         adaptation_time (int, optional): initial amplitude of adjustments from
             `arXiv:1501.05823 <http://arxiv.org/abs/1501.05823>`_. ``adaptation_lag`` must be
             much greater than ``adapation_time``. (default: 100)
-        stop_adaptation (int, optional): If ``stop_adaptation > 0``, the adapating will stop after 
-            ``stop_adaption`` steps. The number of steps is counted as the number times adaptation 
-            has happened which is generally once per sampler iteration. For example, 
-            if you only want to adapt temperatures during burn-in, you set ``stop_adaption = burn``. 
-            This can become complicated when using the repeating proposal options, so the 
+        stop_adaptation (int, optional): If ``stop_adaptation > 0``, the adapating will stop after
+            ``stop_adaption`` steps. The number of steps is counted as the number times adaptation
+            has happened which is generally once per sampler iteration. For example,
+            if you only want to adapt temperatures during burn-in, you set ``stop_adaption = burn``.
+            This can become complicated when using the repeating proposal options, so the
             user must be careful and verify constant temperatures in the backend.
             (default: -1)
-        permute (bool, optional): If ``True``, permute the walkers in each temperature during 
+        permute (bool, optional): If ``True``, permute the walkers in each temperature during
             swaps. (default: ``True``)
-        skip_swap_supp_names (list, optional): List of strings that indicate supplimental keys that are not to be swapped.
+        skip_swap_supp_names (list, optional): List of strings that indicate supplemental keys that are not to be swapped.
             (default: ``[]``)
-    
+
 
     """
 
@@ -253,7 +253,7 @@ class TemperatureControl(object):
         permute=True,
         skip_swap_supp_names=[],
     ):
-        
+
         if betas is None:
             if ntemps == 1:
                 betas = np.array([1.0])
@@ -283,14 +283,14 @@ class TemperatureControl(object):
 
     def compute_log_posterior_tempered(self, logl, logp, betas=None):
         """Compute the log of the tempered posterior
-        
+
         Args:
             logl (np.ndarray): Log of the Likelihood. Can be 1D or 2D array. If 2D,
                 must have shape ``(ntemps, nwalkers)``. If 1D, ``betas`` must be provided
-                with the same shape. 
+                with the same shape.
             logp (np.ndarray): Log of the Prior. Can be 1D or 2D array. If 2D,
                 must have shape ``(ntemps, nwalkers)``. If 1D, ``betas`` must be provided
-                with the same shape. 
+                with the same shape.
             betas (np.ndarray[ntemps]): If provided, inverse temperatures as 1D array.
                 If not provided, it will use ``self.betas``. (default: ``None``)
 
@@ -310,14 +310,14 @@ class TemperatureControl(object):
 
         From `ptemcee`: "This is usually a mundane multiplication, except for the special case where
         beta == 0 *and* we're outside the likelihood support.
-        Here, we find a singularity that demands more careful attention; we allow the 
-        likelihood to dominate the temperature, since wandering outside the 
+        Here, we find a singularity that demands more careful attention; we allow the
+        likelihood to dominate the temperature, since wandering outside the
         likelihood support causes a discontinuity."
-        
+
         Args:
             logl (np.ndarray): Log of the Likelihood. Can be 1D or 2D array. If 2D,
                 must have shape ``(ntemps, nwalkers)``. If 1D, ``betas`` must be provided
-                with the same shape. 
+                with the same shape.
             betas (np.ndarray[ntemps]): If provided, inverse temperatures as 1D array.
                 If not provided, it will use ``self.betas``. (default: ``None``)
 
@@ -348,7 +348,21 @@ class TemperatureControl(object):
 
         return loglT
 
-    def do_swaps_indexing(self,  i, iperm_sel, i1perm_sel, dbeta, x, logP, logl, logp, inds=None, blobs=None, supps=None, branch_supps=None):
+    def do_swaps_indexing(
+        self,
+        i,
+        iperm_sel,
+        i1perm_sel,
+        dbeta,
+        x,
+        logP,
+        logl,
+        logp,
+        inds=None,
+        blobs=None,
+        supps=None,
+        branch_supps=None,
+    ):
 
         # for x and inds, just do full copy
         x_temp = {name: np.copy(x[name]) for name in x}
@@ -379,9 +393,7 @@ class TemperatureControl(object):
             # do something special for branch_supps in case in contains a large amount of data
             # that is heavy to copy
             if branch_supps[name] is not None:
-                tmp = branch_supps[name][
-                    i - 1, i1perm_sel, :
-                ]
+                tmp = branch_supps[name][i - 1, i1perm_sel, :]
 
                 for key in self.skip_swap_supp_names:
                     tmp.pop(key)
@@ -407,7 +419,7 @@ class TemperatureControl(object):
                 leaf_inds_i1 = inds_i1[1]
                 temp_inds_i1 = np.full_like(leaf_inds_i1, i - 1)
 
-                # go through the values within each branch supplimental holder
+                # go through the values within each branch supplemental holder
                 # do direct movement of things that need to change
                 # rather than copying the whole thing
                 for name2 in branch_supps[name].holder:
@@ -433,9 +445,7 @@ class TemperatureControl(object):
         # switch everythin else from i1 to i
         logl[i, iperm_sel] = logl[i - 1, i1perm_sel]
         logp[i, iperm_sel] = logp[i - 1, i1perm_sel]
-        logP[i, iperm_sel] = (
-            logP[i - 1, i1perm_sel] - dbeta * logl[i - 1, i1perm_sel]
-        )
+        logP[i, iperm_sel] = logP[i - 1, i1perm_sel] - dbeta * logl[i - 1, i1perm_sel]
         if blobs is not None:
             blobs[i, iperm_sel] = blobs[i - 1, i1perm_sel]
         if supps is not None:
@@ -448,13 +458,9 @@ class TemperatureControl(object):
         for name in x:
             x[name][i - 1, i1perm_sel, :, :] = x_temp[name][i, iperm_sel, :, :]
             if inds is not None:
-                inds[name][i - 1, i1perm_sel, :] = inds_temp[name][
-                    i, iperm_sel, :
-                ]
+                inds[name][i - 1, i1perm_sel, :] = inds_temp[name][i, iperm_sel, :]
             if branch_supps[name] is not None:
-                tmp = branch_supps_temp[name][
-                    i, iperm_sel, :
-                ]
+                tmp = branch_supps_temp[name][i, iperm_sel, :]
 
                 for key in self.skip_swap_supp_names:
                     tmp.pop(key)
@@ -475,14 +481,13 @@ class TemperatureControl(object):
 
         return (x, logP, logl, logp, inds, blobs, supps, branch_supps)
 
-
     def temperature_swaps(
         self, x, logP, logl, logp, inds=None, blobs=None, supps=None, branch_supps=None
     ):
         """Perform parallel-tempering temperature swaps
 
-        This function performs the swapping between neighboring temperatures. It cascades from 
-        high temperature down to low temperature. 
+        This function performs the swapping between neighboring temperatures. It cascades from
+        high temperature down to low temperature.
 
         Args:
             x (dict): Dictionary with keys as branch names and values as coordinate arrays.
@@ -492,9 +497,9 @@ class TemperatureControl(object):
             inds (dict, optional): Dictionary with keys as branch names and values as the index arrays
                 indicating which leaves are used. (default: ``None``)
             blobs (object, optional): Blobs associated with each walker. (default: ``None``)
-            supps (object, optional): :class:`eryn.state.BranchSupplimental` object. (default: ``None``)
-            branch_supps (dict, optional): Dictionary with keys as branch names and values as 
-                :class:`eryn.state.BranchSupplimental` objects for each branch (can be ``None`` for some branches). (default: ``None``)
+            supps (object, optional): :class:`eryn.state.BranchSupplemental` object. (default: ``None``)
+            branch_supps (dict, optional): Dictionary with keys as branch names and values as
+                :class:`eryn.state.BranchSupplemental` objects for each branch (can be ``None`` for some branches). (default: ``None``)
 
         Returns:
             tuple: All of the information that was input now swapped (output in the same order as input).
@@ -536,7 +541,22 @@ class TemperatureControl(object):
             sel = paccept > raccept
             self.swaps_accepted[i - 1] = np.sum(sel)
 
-            (x, logP, logl, logp, inds, blobs, supps, branch_supps) = self.do_swaps_indexing(i, iperm[sel], i1perm[sel], dbeta, x, logP, logl, logp, inds=inds, blobs=blobs, supps=supps, branch_supps=branch_supps)
+            (x, logP, logl, logp, inds, blobs, supps, branch_supps) = (
+                self.do_swaps_indexing(
+                    i,
+                    iperm[sel],
+                    i1perm[sel],
+                    dbeta,
+                    x,
+                    logP,
+                    logl,
+                    logp,
+                    inds=inds,
+                    blobs=blobs,
+                    supps=supps,
+                    branch_supps=branch_supps,
+                )
+            )
 
         return (x, logP, logl, logp, inds, blobs, supps, branch_supps)
 
@@ -563,7 +583,7 @@ class TemperatureControl(object):
         return betas - betas0
 
     def adapt_temps(self):
-                # determine ratios of swaps accepted to swaps proposed (the ladder is fixed)
+        # determine ratios of swaps accepted to swaps proposed (the ladder is fixed)
         ratios = self.swaps_accepted / self.swaps_proposed
 
         # adapt if desired
@@ -575,21 +595,20 @@ class TemperatureControl(object):
             # only increase time if it is adaptive.
             self.time += 1
 
-
     def temper_comps(self, state, adapt=True):
         """Perfrom temperature-related operations on a state.
-        
+
         This includes making swaps and then adapting the temperatures for the next round.
-        
+
         Args:
             state (object): Filled ``State`` object.
             adapt (bool, optional): If True, swaps are to be performed, but no
-                adaptation is made. In this case, ``self.time`` does not increase by 1. 
+                adaptation is made. In this case, ``self.time`` does not increase by 1.
                 (default: ``True``)
 
         Returns:
-            :class:`eryn.state.State`: State object after swaps. 
-        
+            :class:`eryn.state.State`: State object after swaps.
+
         """
         # get initial values
         logl = state.log_like
@@ -606,8 +625,8 @@ class TemperatureControl(object):
             logp.copy(),
             inds=state.branches_inds,
             blobs=state.blobs,
-            supps=state.supplimental,
-            branch_supps=state.branches_supplimental,
+            supps=state.supplemental,
+            branch_supps=state.branches_supplemental,
         )
 
         if adapt and self.adaptive and self.ntemps > 1:
@@ -622,8 +641,8 @@ class TemperatureControl(object):
             blobs=blobs,
             inds=inds,
             betas=self.betas,
-            supplimental=supps,
-            branch_supplimental=branch_supps,
+            supplemental=supps,
+            branch_supplemental=branch_supps,
             random_state=state.random_state,
         )
 

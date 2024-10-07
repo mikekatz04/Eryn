@@ -82,7 +82,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#Utilities">Utilities</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#Branch-Supplimental">Branch Supplimental</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Branch-Supplemental">Branch Supplemental</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Transform-Container">Transform Container</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Multivariate-Prior-Distributions">Multivariate Prior Distributions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Periodic-Container">Periodic Container</a></li>
@@ -512,7 +512,7 @@ model or leaf.</p>
 <section id="State-Objects">
 <h2>State Objects<a class="headerlink" href="#State-Objects" title="Link to this heading"></a></h2>
 <p>Now, we are going to look at <code class="docutils literal notranslate"><span class="pre">`State</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/build/html/user/state.html#eryn.state.State">https://mikekatz04.github.io/Eryn/build/html/user/state.html#eryn.state.State</a>&gt;`__ objects. They carry the current information throughout the sampler about the current state of the sampler. In our simple example, we can examine the current coordinates, likelihood, and prior values.</p>
-<p>Output from the sampler above is the last state of the sampler <code class="docutils literal notranslate"><span class="pre">out</span></code>. This will include any additional objects passed through the sampler like <code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> objects that we will explain below.</p>
+<p>Output from the sampler above is the last state of the sampler <code class="docutils literal notranslate"><span class="pre">out</span></code>. This will include any additional objects passed through the sampler like <code class="docutils literal notranslate"><span class="pre">BranchSupplemental</span></code> objects that we will explain below.</p>
 <p>Another way to retrieve the last state is from the backend. That is what we will do here. However, please note, that supplimental information (discussed below) is not stored in the backend, so the state that is returned from the backend will have information that is stored in the backend, but not supplimental information that was passed through the sampler at runtime.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
@@ -2382,13 +2382,13 @@ falsely detected model instances). In this case, it can be hard to tune each cov
 <p>During setup:</p>
 <ol class="arabic simple">
 <li><p>Determine number of friends. Usually set to <span class="math notranslate nohighlight">\(\sim\)</span>number of walkers.</p></li>
-<li><p>Setup a <code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> object to house indexes of each leaf to its closest friends.</p></li>
+<li><p>Setup a <code class="docutils literal notranslate"><span class="pre">BranchSupplemental</span></code> object to house indexes of each leaf to its closest friends.</p></li>
 </ol>
 <p>Before first proposal and after a large number of proposals (<code class="docutils literal notranslate"><span class="pre">setup_friends</span></code>):</p>
 <ol class="arabic simple">
 <li><p>Take all current leaves in the cold-chain. Flatten this array and sort by the mean parameter. This becomes our stationary distribution of friends.</p></li>
 <li><p>For all current leaves at all temperatures, locate which friends are closest to their mean value. With <code class="docutils literal notranslate"><span class="pre">nfriends</span></code><span class="math notranslate nohighlight">\(\sim\)</span><code class="docutils literal notranslate"><span class="pre">nwalkers</span></code>, the stored points will effectively be one current ensemble instance of the posterior distribution.</p></li>
-<li><p>Store indexes of these friends in the <code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> objects discussed below.</p></li>
+<li><p>Store indexes of these friends in the <code class="docutils literal notranslate"><span class="pre">BranchSupplemental</span></code> objects discussed below.</p></li>
 </ol>
 <p>Before each proposal (<code class="docutils literal notranslate"><span class="pre">fix_friends</span></code>):</p>
 <ol class="arabic simple">
@@ -2396,7 +2396,7 @@ falsely detected model instances). In this case, it can be hard to tune each cov
 </ol>
 <p>Drawing the friends at proposal time (<code class="docutils literal notranslate"><span class="pre">find_friends</span></code>):</p>
 <ol class="arabic simple">
-<li><p>From <code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code>, get friend indexes for all current leaves being proposed (<code class="docutils literal notranslate"><span class="pre">s_inds==True</span></code>).</p></li>
+<li><p>From <code class="docutils literal notranslate"><span class="pre">BranchSupplemental</span></code>, get friend indexes for all current leaves being proposed (<code class="docutils literal notranslate"><span class="pre">s_inds==True</span></code>).</p></li>
 <li><p>Randomly choose one of the friends. Set this to <span class="math notranslate nohighlight">\(X_j\)</span>.</p></li>
 </ol>
 <p>First we will start with setting up the data.</p>
@@ -2593,13 +2593,13 @@ falsely detected model instances). In this case, it can be hard to tune each cov
 <span class="n">inds</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
 <span class="c1"># setup starting state</span>
-<span class="kn">from</span> <span class="nn">eryn.state</span> <span class="kn">import</span> <span class="n">BranchSupplimental</span>
+<span class="kn">from</span> <span class="nn">eryn.state</span> <span class="kn">import</span> <span class="n">BranchSupplemental</span>
 
 <span class="c1">### KEY PART OF SETUP</span>
 <span class="c1"># build branch supplimental to properly track information</span>
-<span class="c1"># see below description of Branch Supplimental objects.</span>
+<span class="c1"># see below description of Branch Supplemental objects.</span>
 <span class="n">branch_supps</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">BranchSupplimental</span><span class="p">(</span>
+    <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">BranchSupplemental</span><span class="p">(</span>
         <span class="p">{</span><span class="s2">&quot;inds_closest&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">,</span> <span class="n">nfriends</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)},</span>
         <span class="n">base_shape</span><span class="o">=</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">),</span>
     <span class="p">)</span>
@@ -2685,22 +2685,22 @@ falsely detected model instances). In this case, it can be hard to tune each cov
 <section id="Utilities">
 <h2>Utilities<a class="headerlink" href="#Utilities" title="Link to this heading"></a></h2>
 <p>Eryn provides many different utilities for sampling. We will show a bit of their usages here, but refer to the <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/utils.html#periodic-container">Utility documentation</a> for more direct information.</p>
-<section id="Branch-Supplimental">
-<h3>Branch Supplimental<a class="headerlink" href="#Branch-Supplimental" title="Link to this heading"></a></h3>
-<p>While the <code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> object is considered a utility, it is documented and stored within the section on the <code class="docutils literal notranslate"><span class="pre">State</span></code> objects (see <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/state.html#state">here</a>).</p>
+<section id="Branch-Supplemental">
+<h3>Branch Supplemental<a class="headerlink" href="#Branch-Supplemental" title="Link to this heading"></a></h3>
+<p>While the <code class="docutils literal notranslate"><span class="pre">BranchSupplemental</span></code> object is considered a utility, it is documented and stored within the section on the <code class="docutils literal notranslate"><span class="pre">State</span></code> objects (see <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/state.html#state">here</a>).</p>
 <p>Sometimes, in sampling, we want to pass information through the sampler that is particular to each walker or leaf in our ensemble. Storing a different covariance matrix for each walker would be an example of this.</p>
-<p>A <code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> object is designed to do this. In our example above on the <code class="docutils literal notranslate"><span class="pre">GroupStretchMove</span></code>, we used <code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> objects to hold and pass friend information through the sampler.</p>
+<p>A <code class="docutils literal notranslate"><span class="pre">BranchSupplemental</span></code> object is designed to do this. In our example above on the <code class="docutils literal notranslate"><span class="pre">GroupStretchMove</span></code>, we used <code class="docutils literal notranslate"><span class="pre">BranchSupplemental</span></code> objects to hold and pass friend information through the sampler.</p>
 <p>A <strong>major</strong> benefit of the branch supplimental is its indexing capabilities. As sampling proceeds, temperature swaps and accept/reject actions will change the current state coordinates and locations of each walker/leaf. The branch supplimental allows the sampling to track and move all of this extra information properly. For example, during a temperature swap, walker 0 in temperature 0 is swapped with walker 1 in temperature 1. This requires all information associated with (t,w)=(0, 0) to swap
 with walker information in (1,1). Eryn already does this directly for coordinates, inds, log like, log prior, etc. The branch supplimental ensures this swapping occurs properly for any <em>other</em> information you want to add that needs to track with each walker/leaf in the sampler.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[50]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">eryn.state</span> <span class="kn">import</span> <span class="n">BranchSupplimental</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">eryn.state</span> <span class="kn">import</span> <span class="n">BranchSupplemental</span>
 </pre></div>
 </div>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> objects are initialized with a dictionary with keys as names of the information and values as the array objects. These arrays can be <code class="docutils literal notranslate"><span class="pre">dtype=object</span></code> as well. This is discussed below. The <code class="docutils literal notranslate"><span class="pre">base_shape</span></code> gives the sampler shape of interest. Usually this is <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max)</span></code> or <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers)</span></code>. The indexing of the <code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> object will occur along this <code class="docutils literal notranslate"><span class="pre">base_shape</span></code>. It will return any dimensions beyond this base shape.</p>
+<p><code class="docutils literal notranslate"><span class="pre">BranchSupplemental</span></code> objects are initialized with a dictionary with keys as names of the information and values as the array objects. These arrays can be <code class="docutils literal notranslate"><span class="pre">dtype=object</span></code> as well. This is discussed below. The <code class="docutils literal notranslate"><span class="pre">base_shape</span></code> gives the sampler shape of interest. Usually this is <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max)</span></code> or <code class="docutils literal notranslate"><span class="pre">(ntemps,</span> <span class="pre">nwalkers)</span></code>. The indexing of the <code class="docutils literal notranslate"><span class="pre">BranchSupplemental</span></code> object will occur along this <code class="docutils literal notranslate"><span class="pre">base_shape</span></code>. It will return any dimensions beyond this base shape.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[51]:
 </pre></div>
@@ -2711,7 +2711,7 @@ with walker information in (1,1). Eryn already does this directly for coordinate
 <span class="n">n_info</span> <span class="o">=</span> <span class="mi">5</span>
 
 <span class="n">important_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">,</span> <span class="n">n_info</span><span class="p">))</span>
-<span class="n">branch_supp</span> <span class="o">=</span> <span class="n">BranchSupplimental</span><span class="p">(</span>
+<span class="n">branch_supp</span> <span class="o">=</span> <span class="n">BranchSupplemental</span><span class="p">(</span>
     <span class="p">{</span><span class="s2">&quot;important_value&quot;</span><span class="p">:</span> <span class="n">important_value</span><span class="p">},</span>
     <span class="n">base_shape</span><span class="o">=</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">),</span>
     <span class="n">copy</span><span class="o">=</span><span class="kc">True</span>
@@ -2747,7 +2747,7 @@ AFTER: {&#39;important_value&#39;: array([1, 2, 3, 4, 5])} {&#39;important_value
 AFTER2: {&#39;important_value&#39;: array([513, 587, 735, 702, 764])} {&#39;important_value&#39;: array([513, 587, 735, 702, 764])}
 </pre></div></div>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">BranchSupplimental</span></code> objects are quietly powerful. You do not <em>need</em> to store numpy arrays as the supplimental. It can really be any object. Even, e.g., specialized class objects. In this case, you can store each class instance in a numpy array with <code class="docutils literal notranslate"><span class="pre">dtype=object</span></code> with <code class="docutils literal notranslate"><span class="pre">base_shape=(ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max)</span></code>. Then, when indexing or adjusting, the branch supplimental will index as usual at the <code class="docutils literal notranslate"><span class="pre">base_shape</span></code> level.</p>
+<p><code class="docutils literal notranslate"><span class="pre">BranchSupplemental</span></code> objects are quietly powerful. You do not <em>need</em> to store numpy arrays as the supplimental. It can really be any object. Even, e.g., specialized class objects. In this case, you can store each class instance in a numpy array with <code class="docutils literal notranslate"><span class="pre">dtype=object</span></code> with <code class="docutils literal notranslate"><span class="pre">base_shape=(ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max)</span></code>. Then, when indexing or adjusting, the branch supplimental will index as usual at the <code class="docutils literal notranslate"><span class="pre">base_shape</span></code> level.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[53]:
 </pre></div>
@@ -2792,7 +2792,7 @@ AFTER2: {&#39;important_value&#39;: array([513, 587, 735, 702, 764])} {&#39;impo
     <span class="s2">&quot;carry_any&quot;</span><span class="p">:</span> <span class="n">carry_any</span>
 <span class="p">}</span>
 
-<span class="n">branch_supp</span> <span class="o">=</span> <span class="n">BranchSupplimental</span><span class="p">(</span>
+<span class="n">branch_supp</span> <span class="o">=</span> <span class="n">BranchSupplemental</span><span class="p">(</span>
     <span class="n">branch_supp_inputs</span><span class="p">,</span>
     <span class="n">base_shape</span><span class="o">=</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">),</span>
     <span class="n">copy</span><span class="o">=</span><span class="kc">True</span>

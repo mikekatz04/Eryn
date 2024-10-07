@@ -13,10 +13,10 @@ import numpy as np
 __all__ = ["State"]
 
 
-class BranchSupplimental(object):
+class BranchSupplemental(object):
     """Special object to carry information through sampler.
 
-    The :class:`BranchSupplimental` object is a holder of information that is
+    The :class:`BranchSupplemental` object is a holder of information that is
     passed through the sampler. It can also be indexed similar to other quantities
     carried throughout the sampler.
 
@@ -40,13 +40,13 @@ class BranchSupplimental(object):
             and values are arrays. These arrays should have a base shape that is equivalent to
             ``base_shape``, meaning ``array.shape[:len(base_shape)] == self.base_shape``.
             The dimensions beyond the base shape can be anything.
-        base_shape (tuple): Base shape for indexing. Objects stored in the supplimental object
+        base_shape (tuple): Base shape for indexing. Objects stored in the supplemental object
             will have a shape that at minimum is equivalent to ``base_shape``.
         copy (bool, optional): If ``True``, copy whatever information is given in before it is stored.
             if ``False``, store directly the input information. (default: ``False``)
 
     Attributes:
-        holder (dict): All of the objects stored for this supplimental object.
+        holder (dict): All of the objects stored for this supplemental object.
 
 
     """
@@ -343,14 +343,14 @@ class Branch(object):
             are output to the backend, the backend saves a special number (default: ``np.nan``) for all coords
             related to unused leaves at that step. If None, inds will fill with all True values.
             (default: ``None``)
-        branch_supplimental (object): :class:`BranchSupplimental` object specific to this branch. (default: ``None``)
+        branch_supplemental (object): :class:`BranchSupplemental` object specific to this branch. (default: ``None``)
 
     Raises:
         ValueError: ``inds`` has wrong shape or number of leaves is less than zero.
 
     """
 
-    def __init__(self, coords, inds=None, branch_supplimental=None):
+    def __init__(self, coords, inds=None, branch_supplemental=None):
         # store branch info
         self.coords = coords
         self.ntemps, self.ntrees, self.nleaves_max, self.ndim = coords.shape
@@ -366,15 +366,15 @@ class Branch(object):
         else:
             self.inds = inds
 
-        if branch_supplimental is not None:
-            # make sure branch_supplimental shape matches
-            if branch_supplimental.base_shape != self.inds.shape:
+        if branch_supplemental is not None:
+            # make sure branch_supplemental shape matches
+            if branch_supplemental.base_shape != self.inds.shape:
                 raise ValueError(
-                    f"branch_supplimental shape ( {branch_supplimental.base_shape} ) does not match inds shape ( {self.inds.shape} )."
+                    f"branch_supplemental shape ( {branch_supplemental.base_shape} ) does not match inds shape ( {self.inds.shape} )."
                 )
 
         # store
-        self.branch_supplimental = branch_supplimental
+        self.branch_supplemental = branch_supplemental
 
     @property
     def nleaves(self):
@@ -428,7 +428,7 @@ class State(object):
     #    "log_prior",
     #    "blobs",
     #    "betas",
-    #    "supplimental",
+    #    "supplemental",
     #    "random_state",
     # )
 
@@ -436,8 +436,8 @@ class State(object):
         self,
         coords,
         inds=None,
-        branch_supplimental=None,
-        supplimental=None,
+        branch_supplemental=None,
+        supplemental=None,
         log_like=None,
         log_prior=None,
         betas=None,
@@ -455,7 +455,7 @@ class State(object):
             self.log_prior = dc(coords.log_prior)
             self.blobs = dc(coords.blobs)
             self.betas = dc(coords.betas)
-            self.supplimental = dc(coords.supplimental)
+            self.supplemental = dc(coords.supplemental)
             self.random_state = dc(coords.random_state)
             return
 
@@ -488,17 +488,17 @@ class State(object):
         elif not isinstance(inds, dict):
             raise ValueError("inds must be None or dict.")
 
-        if branch_supplimental is None:
-            branch_supplimental = {key: None for key in coords}
-        elif not isinstance(branch_supplimental, dict):
-            raise ValueError("branch_supplimental must be None or dict.")
+        if branch_supplemental is None:
+            branch_supplemental = {key: None for key in coords}
+        elif not isinstance(branch_supplemental, dict):
+            raise ValueError("branch_supplemental must be None or dict.")
 
         # setup all information for storage
         self.branches = {
             key: Branch(
                 dc(temp_coords),
                 inds=inds[key],
-                branch_supplimental=branch_supplimental[key],
+                branch_supplemental=branch_supplemental[key],
             )
             for key, temp_coords in coords.items()
         }
@@ -506,7 +506,7 @@ class State(object):
         self.log_prior = dc(np.atleast_2d(log_prior)) if log_prior is not None else None
         self.blobs = dc(np.atleast_3d(blobs)) if blobs is not None else None
         self.betas = dc(np.atleast_1d(betas)) if betas is not None else None
-        self.supplimental = dc(supplimental)
+        self.supplemental = dc(supplemental)
         self.random_state = dc(random_state)
 
     @property
@@ -520,10 +520,10 @@ class State(object):
         return {name: branch.coords for name, branch in self.branches.items()}
 
     @property
-    def branches_supplimental(self):
-        """Get the ``branch.supplimental`` from all branch objects returned as a dictionary with ``branch_names`` as keys."""
+    def branches_supplemental(self):
+        """Get the ``branch.supplemental`` from all branch objects returned as a dictionary with ``branch_names`` as keys."""
         return {
-            name: branch.branch_supplimental for name, branch in self.branches.items()
+            name: branch.branch_supplemental for name, branch in self.branches.items()
         }
 
     @property
@@ -622,7 +622,7 @@ class ParaState(object):
     #    "log_prior",
     #    "blobs",
     #    "betas",
-    #    "supplimental",
+    #    "supplemental",
     #    "random_state",
     # )
 
@@ -630,8 +630,8 @@ class ParaState(object):
         self,
         coords,
         groups_running=None,
-        branch_supplimental=None,
-        supplimental=None,
+        branch_supplemental=None,
+        supplemental=None,
         log_like=None,
         log_prior=None,
         betas=None,
@@ -650,7 +650,7 @@ class ParaState(object):
             self.log_prior = dc(coords.log_prior)
             self.blobs = dc(coords.blobs)
             self.betas = dc(coords.betas)
-            self.supplimental = dc(coords.supplimental)
+            self.supplemental = dc(coords.supplemental)
             # self.random_state = dc(coords.random_state)
             # TODO: check this
             self.random_state = coords.random_state
@@ -679,17 +679,17 @@ class ParaState(object):
                     )
                 )
 
-        if branch_supplimental is None:
-            branch_supplimental = {key: None for key in coords}
-        elif not isinstance(branch_supplimental, dict):
-            raise ValueError("branch_supplimental must be None or dict.")
+        if branch_supplemental is None:
+            branch_supplemental = {key: None for key in coords}
+        elif not isinstance(branch_supplemental, dict):
+            raise ValueError("branch_supplemental must be None or dict.")
 
         # setup all information for storage
         self.branches = {
             key: Branch(
                 dc(temp_coords),
                 inds=None,
-                branch_supplimental=branch_supplimental[key],
+                branch_supplemental=branch_supplemental[key],
             )
             for key, temp_coords in coords.items()
         }
@@ -701,7 +701,7 @@ class ParaState(object):
         self.log_prior = dc(np.atleast_2d(log_prior)) if log_prior is not None else None
         self.blobs = dc(np.atleast_3d(blobs)) if blobs is not None else None
         self.betas = dc(np.atleast_1d(betas)) if betas is not None else None
-        self.supplimental = dc(supplimental)
+        self.supplemental = dc(supplemental)
         self.random_state = dc(random_state)
 
     @property
@@ -710,10 +710,10 @@ class ParaState(object):
         return {name: branch.coords for name, branch in self.branches.items()}
 
     @property
-    def branches_supplimental(self):
-        """Get the ``branch.supplimental`` from all branch objects returned as a dictionary with ``branch_names`` as keys."""
+    def branches_supplemental(self):
+        """Get the ``branch.supplemental`` from all branch objects returned as a dictionary with ``branch_names`` as keys."""
         return {
-            name: branch.branch_supplimental for name, branch in self.branches.items()
+            name: branch.branch_supplemental for name, branch in self.branches.items()
         }
 
     @property

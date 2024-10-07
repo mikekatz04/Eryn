@@ -97,9 +97,9 @@ class EnsembleSampler(object):
             prior value with shape ``(ntemps, nwalkers)``.
         provide_groups (bool, optional): If ``True``, provide groups as described in ``log_like_fn`` above.
             A group parameter is added for each branch. (default: ``False``)
-        provide_supplimental (bool, optional): If ``True``, it will provide keyword arguments to
+        provide_supplemental (bool, optional): If ``True``, it will provide keyword arguments to
             the Likelihood function: ``supps`` and ``branch_supps``. Please see the `Tutorial <https://mikekatz04.github.io/Eryn/html/tutorial/Eryn_tutorial.html#>`_
-            and :class:`eryn.state.BranchSupplimental` for more information.
+            and :class:`eryn.state.BranchSupplemental` for more information.
         tempering_kwargs (dict, optional): Keyword arguments for initialization of the
             tempering class: :class:`eryn.moves.tempering.TemperatureControl`.  (default: ``{}``)
         branch_names (list, optional): List of branch names. If ``None``, models will be assigned
@@ -214,7 +214,7 @@ class EnsembleSampler(object):
         log_like_fn,
         priors,
         provide_groups=False,
-        provide_supplimental=False,
+        provide_supplemental=False,
         tempering_kwargs={},
         branch_names=None,
         nbranches=1,
@@ -249,7 +249,7 @@ class EnsembleSampler(object):
 
         # store some kwargs
         self.provide_groups = provide_groups
-        self.provide_supplimental = provide_supplimental
+        self.provide_supplemental = provide_supplemental
         self.fill_zero_leaves_val = fill_zero_leaves_val
         self.num_repeats_in_model = num_repeats_in_model
         self.num_repeats_rj = num_repeats_rj
@@ -904,8 +904,8 @@ class EnsembleSampler(object):
                 coords,
                 inds=inds,
                 logp=state.log_prior,
-                supps=state.supplimental,  # only used if self.provide_supplimental is True
-                branch_supps=state.branches_supplimental,  # only used if self.provide_supplimental is True
+                supps=state.supplemental,  # only used if self.provide_supplemental is True
+                branch_supps=state.branches_supplemental,  # only used if self.provide_supplemental is True
             )
 
         # get betas out of state object if they are there
@@ -1287,11 +1287,11 @@ class EnsembleSampler(object):
 
         # take information out of dict and spread to x1..xn
         x_in = {}
-        if self.provide_supplimental:
+        if self.provide_supplemental:
             if supps is None and branch_supps is None:
                 raise ValueError(
-                    """supps and branch_supps are both None. If self.provide_supplimental
-                       is True, must provide some supplimental information."""
+                    """supps and branch_supps are both None. If self.provide_supplemental
+                       is True, must provide some supplemental information."""
                 )
             if branch_supps is not None:
                 branch_supps_in = {}
@@ -1327,21 +1327,21 @@ class EnsembleSampler(object):
             # fill x_values properly into dictionary
             x_in[name] = coords_i[inds_copy[name]]
 
-            # prepare branch supplimentals for each branch
-            if self.provide_supplimental:
+            # prepare branch supplementals for each branch
+            if self.provide_supplemental:
                 if branch_supps is not None:  #  and
                     if branch_supps[name] is not None:
                         # index the branch supps
                         # it will carry in a dictionary of information
                         branch_supps_in[name] = branch_supps[name][inds_copy[name]]
                     else:
-                        # fill with None if this branch does not have a supplimental
+                        # fill with None if this branch does not have a supplemental
                         branch_supps_in[name] = None
 
-        # deal with overall supplimental not specific to the branches
-        if self.provide_supplimental:
+        # deal with overall supplemental not specific to the branches
+        if self.provide_supplemental:
             if supps is not None:
-                # get the flattened supplimental
+                # get the flattened supplemental
                 # this will produce the shape (ntemps * nwalkers,...)
                 temp = supps.flat
 
@@ -1377,9 +1377,9 @@ class EnsembleSampler(object):
             if self.provide_groups:
                 args_in.append(groups_in)
 
-            # prepare supplimentals as kwargs to the Likelihood
+            # prepare supplementals as kwargs to the Likelihood
             kwargs_in = {}
-            if self.provide_supplimental:
+            if self.provide_supplemental:
                 if supps is not None:
                     kwargs_in["supps"] = supps_in
                 if branch_supps is not None:
@@ -1435,7 +1435,7 @@ class EnsembleSampler(object):
 
                         # add them to the specific args for this Likelihood
                         arg_i[branch_i] = params
-                        if self.provide_supplimental:
+                        if self.provide_supplemental:
                             if supps is not None:
                                 # supps are specific to each group
                                 kwarg_i["supps"] = {
@@ -1446,7 +1446,7 @@ class EnsembleSampler(object):
                                 if "branch_supps" not in kwarg_i:
                                     kwarg_i["branch_supps"] = {}
 
-                                # fill these branch supplimentals for the specific group
+                                # fill these branch supplementals for the specific group
                                 if branch_supps_in[branch_name_i] is not None:
                                     # get list of branch_supps values
                                     kwarg_i["branch_supps"][branch_name_i] = (
@@ -1507,7 +1507,7 @@ class EnsembleSampler(object):
 
             blobs_out = None
 
-        if False:  # self.provide_supplimental:
+        if False:  # self.provide_supplemental:
             # TODO: need to think about how to return information, we may need to add a function to do that
             if branch_supps is not None:
                 for name_i, name in enumerate(branch_supps):

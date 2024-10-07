@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from ..state import BranchSupplimental
+from ..state import BranchSupplemental
 from . import Move
 import numpy as np
 import tqdm
@@ -17,9 +17,9 @@ class CombineMove(Move):
             they will be ignored.
         *args (tuple, optional): args to be passed to :class:`Move`.
         verbose (bool, optional): If ``True``, use ``tqdm`` to show progress throught steps.
-            This can be very helpful when debugging. 
+            This can be very helpful when debugging.
         **kwargs (dict, optional): kwargs to be passed to :class:`Move`.
-        
+
 
     """
 

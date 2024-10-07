@@ -5,7 +5,7 @@ from copy import deepcopy
 
 from ..state import State
 from .move import Move
-from ..state import BranchSupplimental
+from ..state import BranchSupplemental
 
 __all__ = ["MHMove"]
 
@@ -31,12 +31,12 @@ class DelayedRejectionContainer:
 class DelayedRejection(Move):
     r"""
     Delayed Rejection scheme assuming symmetric and non-adaptive proposal distribution.
-    We apply the DR algorithm only on the cases where we have rejected a +1 proposal for 
-    a given Reversible Jump proposal and branch. 
+    We apply the DR algorithm only on the cases where we have rejected a +1 proposal for
+    a given Reversible Jump proposal and branch.
 
     Refernces:
 
-    Tierney L and Mira A, Stat. Med. 18 2507 (1999)  
+    Tierney L and Mira A, Stat. Med. 18 2507 (1999)
     Haario et al, Stat. Comput. 16:339-354 (2006)
     Mira A, Metron - International Journal of Statistics, vol. LIX, issue 3-4, 231-241 (2001)
     M. Trias, et al, https://arxiv.org/abs/0904.2207
@@ -61,11 +61,11 @@ class DelayedRejection(Move):
         inds=None,
         dr_iter=0,
     ):
-        """Calcuate the delayed rejection acceptace ratio. 
+        """Calcuate the delayed rejection acceptace ratio.
 
-        Args: 
+        Args:
             stateslist (:class:`State`): a python list containing the proposed states
-        
+
         Returns:
             logalpha: a numpy array containing the acceptance ratios per temperature and walker.
         """
@@ -105,12 +105,12 @@ class DelayedRejection(Move):
         dr_alpha = np.exp(
             lndiff
             + np.log(1.0 - alpha_1)
-            - np.log(1.0 - old_new_state.supplimental[:]["past_alpha"])
+            - np.log(1.0 - old_new_state.supplemental[:]["past_alpha"])
         )
         dr_alpha[dr_alpha > 1.0] = 1.0  # np.min((1., dr_alpha ))
         dr_alpha = np.nan_to_num(dr_alpha)  # Automatically reject NaNs
 
-        new_state.supplimental[:] = {"alpha": dr_alpha}  # Replace current dr alpha
+        new_state.supplemental[:] = {"alpha": dr_alpha}  # Replace current dr alpha
 
         new_accepted = np.logical_or(
             dr_alpha >= 1.0, randU < dr_alpha
@@ -122,8 +122,7 @@ class DelayedRejection(Move):
         return state, new_accepted, new_state
 
     def get_new_state(self, model, state, keep):
-        """ A utility function to propose new points
-        """
+        """A utility function to propose new points"""
         qn, factors = self.proposal.get_proposal(
             state.branches_coords, state.branches_inds, model.random
         )
@@ -144,7 +143,7 @@ class DelayedRejection(Move):
             log_prior=logp,
             blobs=new_blobs,
             inds=state.branches_inds,
-            supplimental=state.supplimental,
+            supplemental=state.supplemental,
         )  # I create a new initial state that all are accepted
         return new_state, factors
 
@@ -167,7 +166,7 @@ class DelayedRejection(Move):
             state (:class:`State`): Current state of the sampler.
             rj_inds (): Dictionary containing the indices where the Reversible Jump
             move proposed "birth" of a model. Will we operate a Delayed Rejection type
-            of move only on those cases. The keys of the dictionary are the names of the 
+            of move only on those cases. The keys of the dictionary are the names of the
             models.
 
         Returns:
@@ -180,7 +179,7 @@ class DelayedRejection(Move):
 
         alpha_0 = np.exp(log_diff_0)
         alpha_0[alpha_0 > 1.0] = 1.0  # np.min((1.0, alpha_0))
-        new_state.supplimental = BranchSupplimental(
+        new_state.supplemental = BranchSupplemental(
             {"past_alpha": alpha_0}, base_shape=(ntemps, nwalkers)
         )
 

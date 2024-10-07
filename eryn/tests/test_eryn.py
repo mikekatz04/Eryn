@@ -826,14 +826,14 @@ class ErynTest(unittest.TestCase):
                 # get closest friends
                 inds_closest = np.argsort(dist, axis=1)[:, : self.nfriends]
 
-                # store in branch supplimental
-                branches["gauss"].branch_supplimental[branches["gauss"].inds] = {
+                # store in branch supplemental
+                branches["gauss"].branch_supplemental[branches["gauss"].inds] = {
                     "inds_closest": inds_closest
                 }
 
                 # make sure to "turn off" leaves that are deactivated by setting their
                 # index to -1.
-                branches["gauss"].branch_supplimental[~branches["gauss"].inds] = {
+                branches["gauss"].branch_supplemental[~branches["gauss"].inds] = {
                     "inds_closest": -np.ones(
                         (ntemps, nwalkers, nleaves_max, self.nfriends), dtype=int
                     )[~branches["gauss"].inds]
@@ -846,7 +846,7 @@ class ErynTest(unittest.TestCase):
                 # activated & does not have an assigned index
                 fix = branches["gauss"].inds & (
                     np.all(
-                        branches["gauss"].branch_supplimental[:]["inds_closest"] == -1,
+                        branches["gauss"].branch_supplemental[:]["inds_closest"] == -1,
                         axis=-1,
                     )
                 )
@@ -860,14 +860,14 @@ class ErynTest(unittest.TestCase):
                 dist = np.abs(current_means[:, None] - self.means[None, :])
                 inds_closest = np.argsort(dist, axis=1)[:, : self.nfriends]
 
-                branches["gauss"].branch_supplimental[fix] = {
+                branches["gauss"].branch_supplemental[fix] = {
                     "inds_closest": inds_closest
                 }
 
                 # verify everything worked
                 fix_check = branches["gauss"].inds & (
                     np.all(
-                        branches["gauss"].branch_supplimental[:]["inds_closest"] == -1,
+                        branches["gauss"].branch_supplemental[:]["inds_closest"] == -1,
                         axis=-1,
                     )
                 )
@@ -1004,10 +1004,10 @@ class ErynTest(unittest.TestCase):
         # will not be zero due to noise
 
         # setup starting state
-        from eryn.state import BranchSupplimental
+        from eryn.state import BranchSupplemental
 
         branch_supps = {
-            "gauss": BranchSupplimental(
+            "gauss": BranchSupplemental(
                 {
                     "inds_closest": np.zeros(
                         inds["gauss"].shape + (nfriends,), dtype=int
@@ -1021,7 +1021,7 @@ class ErynTest(unittest.TestCase):
             log_like=log_like,
             log_prior=log_prior,
             inds=inds,
-            branch_supplimental=branch_supps,
+            branch_supplemental=branch_supps,
         )
 
         nsteps = 2000

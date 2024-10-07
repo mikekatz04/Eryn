@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from ..state import BranchSupplimental
+from ..state import BranchSupplemental
 import numpy as np
 
 from copy import deepcopy
@@ -43,9 +43,9 @@ class Move(object):
             the order in which all of these splits are run. (default: ``None``)
         prevent_swaps (bool, optional): If ``True``, do not perform temperature swaps in this move.
         skip_supp_names_update (list, optional): List of names (`str`), that can be in any
-            :class:`eryn.state.BranchSupplimental`,
+            :class:`eryn.state.BranchSupplemental`,
             to skip when updating states (:func:`Move.update`). This is useful if a
-            large amount of memory is stored in the branch supplimentals.
+            large amount of memory is stored in the branch supplementals.
         is_rj (bool, optional): If using RJ, this should be ``True``. (default: ``False``)
         use_gpu (bool, optional): If ``True``, use ``CuPy`` for computations.
             Use ``NumPy`` if ``use_gpu == False``. (default: ``False``)
@@ -303,7 +303,7 @@ class Move(object):
         new_inds=None,
         branches_inds=None,
         new_branch_supps=None,
-        branches_supplimental=None,
+        branches_supplemental=None,
     ):
         """Set all not Gibbs-sampled parameters back
 
@@ -314,8 +314,8 @@ class Move(object):
             branches_coords (dict): Dictionary of old coordinate arrays for all branches.
             new_inds (dict, optional): Dictionary of new inds arrays for all proposal branches.
             branches_inds (dict, optional): Dictionary of old inds arrays for all branches.
-            new_branch_supps (dict, optional): Dictionary of new branches supplimental for all proposal branches.
-            branches_supplimental (dict, optional): Dictionary of old branches supplimental for all branches.
+            new_branch_supps (dict, optional): Dictionary of new branches supplemental for all proposal branches.
+            branches_supplemental (dict, optional): Dictionary of old branches supplemental for all branches.
 
         """
         # add back any parameters that are fixed for this round
@@ -332,8 +332,8 @@ class Move(object):
                 new_inds[key] = branches_inds[key].copy()
 
             if new_branch_supps is not None and key not in new_branch_supps:
-                assert branches_supplimental is not None
-                new_branch_supps[key] = branches_supplimental[key].copy()
+                assert branches_supplemental is not None
+                new_branch_supps[key] = branches_supplemental[key].copy()
 
     def ensure_ordering(self, correct_key_order, q, new_inds, new_branch_supps):
         """Ensure proper order of key in dictionaries.
@@ -342,7 +342,7 @@ class Move(object):
             correct_key_order (list): Keys in correct order.
             q (dict): Dictionary of new coordinate arrays for all branches.
             new_inds (dict): Dictionary of new inds arrays for all branches.
-            new_branch_supps (dict or None): Dictionary of new branches supplimental for all proposal branches.
+            new_branch_supps (dict or None): Dictionary of new branches supplemental for all proposal branches.
 
         Returns:
             Tuple: (q, new_inds, new_branch_supps) in correct key order.
@@ -549,39 +549,39 @@ class Move(object):
             for name in new_inds
         ]
 
-        # check for branches_supplimental
-        run_branches_supplimental = False
-        for name, value in old_state.branches_supplimental.items():
+        # check for branches_supplemental
+        run_branches_supplemental = False
+        for name, value in old_state.branches_supplemental.items():
             if value is not None:
-                run_branches_supplimental = True
+                run_branches_supplemental = True
 
-        if run_branches_supplimental:
-            # branch_supplimental
-            temp_change_branch_supplimental = {}
+        if run_branches_supplemental:
+            # branch_supplemental
+            temp_change_branch_supplemental = {}
             for name in old_state.branches:
-                if old_state.branches[name].branch_supplimental is not None:
-                    old_branch_supplimental = old_state.branches[
+                if old_state.branches[name].branch_supplemental is not None:
+                    old_branch_supplemental = old_state.branches[
                         name
-                    ].branch_supplimental.take_along_axis(
+                    ].branch_supplemental.take_along_axis(
                         subset[:, :, None],
                         axis=1,
                         skip_names=self.skip_supp_names_update,
                     )
-                    new_branch_supplimental = new_state.branches[
+                    new_branch_supplemental = new_state.branches[
                         name
-                    ].branch_supplimental[:]
+                    ].branch_supplemental[:]
 
                     tmp = {}
-                    for key in old_branch_supplimental:
+                    for key in old_branch_supplemental:
                         # need to check to see if we should skip anything
                         if key in self.skip_supp_names_update:
                             continue
                         accepted_temp_here = accepted_temp.copy()
 
                         # have adjust if it is an object array or a regular array
-                        if new_branch_supplimental[key].dtype.name != "object":
+                        if new_branch_supplemental[key].dtype.name != "object":
                             for _ in range(
-                                new_branch_supplimental[key].ndim
+                                new_branch_supplemental[key].ndim
                                 - accepted_temp_here.ndim
                             ):
                                 accepted_temp_here = np.expand_dims(
@@ -590,40 +590,40 @@ class Move(object):
 
                         # adjust for GPUs
                         try:
-                            tmp[key] = new_branch_supplimental[key] * (
+                            tmp[key] = new_branch_supplemental[key] * (
                                 accepted_temp_here
-                            ) + old_branch_supplimental[key] * (~accepted_temp_here)
+                            ) + old_branch_supplemental[key] * (~accepted_temp_here)
                         except TypeError:
                             # for gpus
-                            tmp[key] = new_branch_supplimental[key] * (
+                            tmp[key] = new_branch_supplemental[key] * (
                                 xp.asarray(accepted_temp_here)
-                            ) + old_branch_supplimental[key] * (
+                            ) + old_branch_supplemental[key] * (
                                 xp.asarray(~accepted_temp_here)
                             )
 
-                    temp_change_branch_supplimental[name] = BranchSupplimental(
+                    temp_change_branch_supplemental[name] = BranchSupplemental(
                         tmp,
-                        base_shape=new_state.branches_supplimental[name].base_shape,
+                        base_shape=new_state.branches_supplemental[name].base_shape,
                         copy=True,
                     )
 
                 else:
-                    temp_change_branch_supplimental[name] = None
+                    temp_change_branch_supplemental[name] = None
 
             [
-                old_state.branches[name].branch_supplimental.put_along_axis(
+                old_state.branches[name].branch_supplemental.put_along_axis(
                     subset[:, :, None],
-                    temp_change_branch_supplimental[name][:],
+                    temp_change_branch_supplemental[name][:],
                     axis=1,
                 )
                 for name in new_inds
-                if temp_change_branch_supplimental[name] is not None
+                if temp_change_branch_supplemental[name] is not None
             ]
 
-        # sampler level supplimental
-        if old_state.supplimental is not None:
-            old_suppliment = old_state.supplimental.take_along_axis(subset, axis=1)
-            new_suppliment = new_state.supplimental[:]
+        # sampler level supplemental
+        if old_state.supplemental is not None:
+            old_suppliment = old_state.supplemental.take_along_axis(subset, axis=1)
+            new_suppliment = new_state.supplemental[:]
 
             accepted_temp_here = accepted_temp.copy()
 
@@ -645,7 +645,7 @@ class Move(object):
                     temp_change_suppliment[name] = new_suppliment[name] * (
                         xp.asarray(accepted_temp_here)
                     ) + old_suppliment[name] * (xp.asarray(~accepted_temp_here))
-            old_state.supplimental.put_along_axis(
+            old_state.supplemental.put_along_axis(
                 subset, temp_change_suppliment, axis=1
             )
 

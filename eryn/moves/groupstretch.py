@@ -53,7 +53,7 @@ class GroupStretchMove(GroupMove, StretchMove):
             s_inds_all (dict, optional): Keys are ``branch_names`` and values are
                 ``inds`` arrays indicating which leaves are currently used. (default: ``None``)
             branch_supps (dict, optional): Keys are ``branch_names`` and values are
-                :class:`BranchSupplimental` objects. For the group stretch,
+                :class:`BranchSupplemental` objects. For the group stretch,
                 ``branch_supps`` are the best device for passing and tracking useful
                 information. (default: ``None``)
 

@@ -4,7 +4,7 @@ from copy import deepcopy
 import numpy as np
 import warnings
 
-from ..state import BranchSupplimental, State
+from ..state import BranchSupplemental, State
 from .move import Move
 
 
@@ -56,7 +56,7 @@ class GroupMove(Move, ABC):
             s_inds (np.ndarray, optional): ``inds`` arrays that represent which leaves are present.
                 (default: ``None``)
             branch_supps (dict, optional): Keys are ``branch_names`` and values are
-                :class:`BranchSupplimental` objects. For group proposals,
+                :class:`BranchSupplemental` objects. For group proposals,
                 ``branch_supps`` are the best device for passing and tracking useful
                 information. (default: ``None``)
 
@@ -167,14 +167,14 @@ class GroupMove(Move, ABC):
         ):
 
             if not np.all(
-                np.asarray(list(state.branches_supplimental.values())) == None
+                np.asarray(list(state.branches_supplemental.values())) == None
             ):
-                new_branch_supps = deepcopy(state.branches_supplimental)
+                new_branch_supps = deepcopy(state.branches_supplemental)
             else:
                 new_branch_supps = None
 
-            if state.supplimental is not None:
-                new_supps = deepcopy(state.supplimental)
+            if state.supplemental is not None:
+                new_supps = deepcopy(state.supplemental)
             else:
                 new_supps = None
 
@@ -222,7 +222,7 @@ class GroupMove(Move, ABC):
 
             self.fix_logp_gibbs(branch_names_run, inds_run, logp, state.branches_inds)
 
-            # Can adjust supplimentals in place
+            # Can adjust supplementals in place
             logl, new_blobs = model.compute_log_like_fn(
                 q,
                 inds=state.branches_inds,
@@ -255,8 +255,8 @@ class GroupMove(Move, ABC):
                 log_prior=logp,
                 blobs=new_blobs,
                 inds=state.branches_inds,
-                supplimental=new_supps,
-                branch_supplimental=new_branch_supps,
+                supplemental=new_supps,
+                branch_supplemental=new_branch_supps,
             )
             state = self.update(state, new_state, accepted)
 
