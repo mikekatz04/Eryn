@@ -234,7 +234,7 @@ class RedBlueMove(Move, ABC):
                         name: state.branches[name].branch_supplemental.take_along_axis(
                             all_inds_shaped[:, :, None], axis=1
                         )
-                        for name in state.branches
+                        for name in state.branches if state.branches[name].branch_supplemental is not None
                     }
 
                     new_branch_supps = {

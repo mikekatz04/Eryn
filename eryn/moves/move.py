@@ -358,7 +358,10 @@ class Move(object):
             new_branch_supps is not None
             and list(new_branch_supps.keys()) != correct_key_order
         ):
-            new_branch_supps = {key: new_branch_supps[key] for key in correct_key_order}
+            temp = {key: None for key in correct_key_order}
+            for key in new_branch_supps:
+                temp[key] = new_branch_supps[key]
+            new_branch_supps = deepcopy(temp)
 
         return q, new_inds, new_branch_supps
 
