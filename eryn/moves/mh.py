@@ -73,6 +73,9 @@ class MHMove(Move):
         # get initial shape information
         ntemps, nwalkers, _, _ = state.branches[all_branch_names[0]].shape
 
+        # in case there are no leaves yet
+        accepted = np.zeros((ntemps, nwalkers), dtype=bool)
+
         # iterate through gibbs setup
         for branch_names_run, inds_run in self.gibbs_sampling_setup_iterator(
             all_branch_names

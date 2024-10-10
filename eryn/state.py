@@ -490,7 +490,9 @@ class State(object):
 
         if branch_supplemental is None:
             branch_supplemental = {key: None for key in coords}
-        elif isinstance(branch_supplemental, dict): # case where not all branches have supp 
+        elif isinstance(
+            branch_supplemental, dict
+        ):  # case where not all branches have supp
             for key in coords.keys() - branch_supplemental.keys():
                 branch_supplemental[key] = None
         elif not isinstance(branch_supplemental, dict):
