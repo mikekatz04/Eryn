@@ -469,7 +469,7 @@ class HDFBackend(Backend):
         with self.open() as f:
             return f[self.name].attrs["has_blobs"]
 
-    def get_value(self, name, thin=1, discard=0, slice_vals=None):
+    def get_value(self, name, thin=1, discard=0, slice_vals=None, temp_index=None):
         """Returns a requested value to user.
 
         This function helps to streamline the backend for both
@@ -486,6 +486,8 @@ class HDFBackend(Backend):
                 ignored if slice_vals is not ``None``. This is particularly useful if files are
                 very large and the user only wants a small subset of the overall array.
                 (default: ``None``)
+            temp_index (int, optional): Integer for the desired temperature index.
+                If ``None``, will return all temperatures. (default: ``None``)
 
         Returns:
             dict or np.ndarray: Values requested.
@@ -520,16 +522,21 @@ class HDFBackend(Backend):
             if name == "blobs" and not g.attrs["has_blobs"]:
                 return None
 
+            if temp_index is None:
+                temp_index = np.arange(self.ntemps)
+            else:
+                assert isinstance(temp_index, int)
+
             if name == "chain":
-                v_all = {key: g["chain"][key][slice_vals] for key in g["chain"]}
+                v_all = {key: g["chain"][key][slice_vals, temp_index] for key in g["chain"]}
                 return v_all
 
             if name == "inds":
-                v_all = {key: g["inds"][key][slice_vals] for key in g["inds"]}
+                v_all = {key: g["inds"][key][slice_vals, temp_index] for key in g["inds"]}
 
                 return v_all
 
-            v = g[name][slice_vals]
+            v = g[name][slice_vals, temp_index]
 
             return v
 

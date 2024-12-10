@@ -180,6 +180,7 @@ class ErynTest(unittest.TestCase):
             )
         )
 
+        backend_test_file = "_hdf_backend_test_file.h5"
         # initialize sampler
         ensemble_pt = EnsembleSampler(
             nwalkers,
@@ -187,6 +188,7 @@ class ErynTest(unittest.TestCase):
             log_like_fn,
             priors,
             args=[means, cov],
+            backend=backend_test_file,
             tempering_kwargs=tempering_kwargs,
         )
 
@@ -201,6 +203,10 @@ class ErynTest(unittest.TestCase):
             samples = ensemble_pt.get_chain()["model_0"][:, temp].reshape(-1, ndim)
 
         ll = ensemble_pt.backend.get_log_like()
+
+        # check temperature index
+        cold_chain = ensemble_pt.backend.get_chain(discard=10, thin=2, temp_index=0)
+        os.remove(backend_test_file)
 
     def test_rj(self):
         nwalkers = 20
@@ -321,13 +327,16 @@ class ErynTest(unittest.TestCase):
         # same as ensemble.get_chain()['gauss'][ensemble.get_inds()['gauss']]
         samples = samples[~np.isnan(samples[:, 0])]
 
+        # check temperature index
+        cold_chain = ensemble.backend.get_chain(discard=10, thin=2, temp_index=1)
+
         #means = np.asarray(gauss_inj_params)[:, 1]
-        fig, (ax1, ax2) = plt.subplots(1, 2)
-        ax1.hist(nleaves[:, 0].flatten(), np.arange(0, 3) - 0.5)
-        ax2.plot(t, y)
-        ax2.plot(t, injection)
-        plt.show()
-        breakpoint()
+        # fig, (ax1, ax2) = plt.subplots(1, 2)
+        # ax1.hist(nleaves[:, 0].flatten(), np.arange(0, 3) - 0.5)
+        # ax2.plot(t, y)
+        # ax2.plot(t, injection)
+        # plt.show()
+        # breakpoint()
 
     def test_rj_multiple_branches(self):
         nwalkers = 20
