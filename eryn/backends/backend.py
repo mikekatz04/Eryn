@@ -327,6 +327,8 @@ class Backend(object):
                 ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``.
                 This is particularly useful if files are very large and the user only wants a
                 small subset of the overall array. (default: ``None``)
+            temp_index (int, optional): Integer for the desired temperature index.
+                If ``None``, will return all temperatures. (default: ``None``)
 
         Returns:
             dict: MCMC samples
@@ -381,6 +383,8 @@ class Backend(object):
                 ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``.
                 This is particularly useful if files are very large and the user only wants a
                 small subset of the overall array. (default: ``None``)
+            temp_index (int, optional): Integer for the desired temperature index.
+                If ``None``, will return all temperatures. (default: ``None``)
 
         Returns:
             dict: The ``inds`` associated with the MCMC samples.
@@ -403,6 +407,8 @@ class Backend(object):
                 ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``.
                 This is particularly useful if files are very large and the user only wants a
                 small subset of the overall array. (default: ``None``)
+            temp_index (int, optional): Integer for the desired temperature index.
+                If ``None``, will return all temperatures. (default: ``None``)
 
         Returns:
             dict: nleaves on each branch.
@@ -427,6 +433,8 @@ class Backend(object):
                 ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``.
                 This is particularly useful if files are very large and the user only wants a
                 small subset of the overall array. (default: ``None``)
+            temp_index (int, optional): Integer for the desired temperature index.
+                If ``None``, will return all temperatures. (default: ``None``)
 
         Returns:
             double np.ndarray[nsteps, ntemps, nwalkers, nblobs]: The chain of blobs.
@@ -447,6 +455,8 @@ class Backend(object):
                 ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``.
                 This is particularly useful if files are very large and the user only wants a
                 small subset of the overall array. (default: ``None``)
+            temp_index (int, optional): Integer for the desired temperature index.
+                If ``None``, will return all temperatures. (default: ``None``)
 
         Returns:
             double np.ndarray[nsteps, ntemps, nwalkers]: The chain of log likelihood values.
@@ -467,6 +477,8 @@ class Backend(object):
                 ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``.
                 This is particularly useful if files are very large and the user only wants a
                 small subset of the overall array. (default: ``None``)
+            temp_index (int, optional): Integer for the desired temperature index.
+                If ``None``, will return all temperatures. (default: ``None``)
 
         Returns:
             double np.ndarray[nsteps, ntemps, nwalkers]: The chain of log prior values.
@@ -489,6 +501,8 @@ class Backend(object):
                 ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``.
                 This is particularly useful if files are very large and the user only wants a
                 small subset of the overall array. (default: ``None``)
+            temp_index (int, optional): Integer for the desired temperature index.
+                If ``None``, will return all temperatures. (default: ``None``)
 
         Returns:
             double np.ndarray[nsteps, ntemps, nwalkers]: The chain of log prior values.
@@ -518,6 +532,8 @@ class Backend(object):
                 ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``.
                 This is particularly useful if files are very large and the user only wants a
                 small subset of the overall array. (default: ``None``)
+            temp_index (int, optional): Integer for the desired temperature index.
+                If ``None``, will return all temperatures. (default: ``None``)
 
         Returns:
             double np.ndarray[nsteps, ntemps]: The chain of temperatures.
