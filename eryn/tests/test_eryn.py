@@ -206,7 +206,7 @@ class ErynTest(unittest.TestCase):
         nwalkers = 20
         ntemps = 8
         ndim = 3
-        nleaves_max = {"gauss": 8}
+        nleaves_max = {"gauss": 1}
         nleaves_min = {"gauss": 0}
 
         branch_names = ["gauss"]
@@ -216,17 +216,17 @@ class ErynTest(unittest.TestCase):
         t = np.linspace(-1, 1, num)
 
         gauss_inj_params = [
-            [3.3, -0.2, 0.1],
-            [2.6, -0.1, 0.1],
-            [3.4, 0.0, 0.1],
-            [2.9, 0.3, 0.1],
+            # [3.3, -0.2, 0.1],
+            # [2.6, -0.1, 0.1],
+            # [3.4, 0.0, 0.1],
+            # [2.9, 0.3, 0.1],
         ]
 
         # combine gaussians
         injection = combine_gaussians(t, np.asarray(gauss_inj_params))
 
         # set noise level
-        sigma = 2.0
+        sigma = 0.00001
 
         # produce full data
         y = injection + sigma * np.random.randn(len(injection))
@@ -239,22 +239,22 @@ class ErynTest(unittest.TestCase):
         sig1 = 0.0001
 
         # setup initial walkers to be the correct count (it will spread out)
-        for nn in range(nleaves_max["gauss"]):
-            if nn >= len(gauss_inj_params):
-                # not going to add parameters for these unused leaves
-                continue
+        # for nn in range(nleaves_max["gauss"]):
+        #     if nn >= len(gauss_inj_params):
+        #         # not going to add parameters for these unused leaves
+        #         continue
 
-            coords["gauss"][:, :, nn] = np.random.multivariate_normal(
-                gauss_inj_params[nn],
-                np.diag(np.ones(3) * sig1),
-                size=(ntemps, nwalkers),
-            )
+        #     coords["gauss"][:, :, nn] = np.random.multivariate_normal(
+        #         gauss_inj_params[nn],
+        #         np.diag(np.ones(3) * sig1),
+        #         size=(ntemps, nwalkers),
+        #     )
 
         # make sure to start near the proper setup
         inds = {"gauss": np.zeros((ntemps, nwalkers, nleaves_max["gauss"]), dtype=bool)}
 
         # turn False -> True for any binary in the sampler
-        inds["gauss"][:, :, : len(gauss_inj_params)] = True
+        # inds["gauss"][:, :, : len(gauss_inj_params)] = True
 
         # describes priors for all leaves independently
         priors = {
@@ -280,6 +280,8 @@ class ErynTest(unittest.TestCase):
             ),
         ]
 
+        base_like = log_like_fn_gauss_pulse(np.asarray([]), t, y, sigma)
+        
         ensemble = EnsembleSampler(
             nwalkers,
             ndim,
@@ -292,6 +294,7 @@ class ErynTest(unittest.TestCase):
             nleaves_max=nleaves_max,
             nleaves_min=nleaves_min,
             moves=moves,
+            fill_zero_leaves_val=base_like,
             rj_moves=rj_moves,  # basic generation of new leaves from the prior
         )
 
@@ -301,9 +304,9 @@ class ErynTest(unittest.TestCase):
         # setup starting state
         state = State(coords, log_like=log_like, log_prior=log_prior, inds=inds)
 
-        nsteps = 20
+        nsteps = 1000
         last_sample = ensemble.run_mcmc(
-            state, nsteps, burn=10, progress=False, thin_by=1
+            state, nsteps, burn=1000, progress=True, thin_by=1
         )
 
         last_sample.branches["gauss"].nleaves
@@ -318,7 +321,13 @@ class ErynTest(unittest.TestCase):
         # same as ensemble.get_chain()['gauss'][ensemble.get_inds()['gauss']]
         samples = samples[~np.isnan(samples[:, 0])]
 
-        means = np.asarray(gauss_inj_params)[:, 1]
+        #means = np.asarray(gauss_inj_params)[:, 1]
+        fig, (ax1, ax2) = plt.subplots(1, 2)
+        ax1.hist(nleaves[:, 0].flatten(), np.arange(0, 3) - 0.5)
+        ax2.plot(t, y)
+        ax2.plot(t, injection)
+        plt.show()
+        breakpoint()
 
     def test_rj_multiple_branches(self):
         nwalkers = 20
@@ -350,7 +359,7 @@ class ErynTest(unittest.TestCase):
         injection += combine_sine(t, np.asarray(sine_inj_params))
 
         # set noise level
-        sigma = 2.0
+        sigma = 200.0
 
         # produce full data
         y = injection + sigma * np.random.randn(len(injection))
