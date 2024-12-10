@@ -89,7 +89,7 @@ class UniformDistribution(object):
         return deepcopy(self)
 
 
-def uniform_dist(min, max, use_cupy=False):
+def uniform_dist(min, max, use_cupy=False, return_gpu=False):
     """Generate uniform distribution between ``min`` and ``max``
 
     Args:
@@ -103,7 +103,7 @@ def uniform_dist(min, max, use_cupy=False):
 
 
     """
-    dist = UniformDistribution(min, max, use_cupy=use_cupy)
+    dist = UniformDistribution(min, max, use_cupy=use_cupy, return_gpu=return_gpu)
 
     return dist
 
@@ -153,13 +153,13 @@ class MappedUniformDistribution:
 
     """
 
-    def __init__(self, min, max, use_cupy=False):
+    def __init__(self, min, max, use_cupy=False, return_gpu=False):
         self.min, self.max = min, max
         self.diff = self.max - self.min
         if self.min > self.max:
             raise ValueError("min must be less than max.")
 
-        self.dist = uniform_dist(0.0, 1.0, use_cupy=use_cupy)
+        self.dist = uniform_dist(0.0, 1.0, use_cupy=use_cupy, return_gpu=return_gpu)
 
     @property
     def xp(self):
@@ -233,7 +233,7 @@ class ProbDistContainer:
 
     """
 
-    def __init__(self, priors_in, use_cupy=False):
+    def __init__(self, priors_in, use_cupy=False, return_gpu=False):
         # copy to have
         self.priors_in = priors_in.copy()
 
@@ -269,11 +269,11 @@ class ProbDistContainer:
         self.ndim = uni_inds.max() + 1
 
         self.use_cupy = use_cupy
-
+        self.return_gpu = return_gpu
         for key, item in self.priors_in.items():
             item.use_cupy = use_cupy
             # need this because the prob dist container will conglomerate
-            item.return_gpu = False
+            item.return_gpu = True
             
     @property
     def xp(self):
