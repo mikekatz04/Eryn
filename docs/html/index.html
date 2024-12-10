@@ -1,24 +1,24 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Welcome to Eryn’s documentation! &mdash; Eryn 0.0.1 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="_static/jquery.js?v=5d32c60e"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=d45e8c67"></script>
-        <script src="_static/doctools.js?v=888ff710"></script>
-        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -162,7 +162,7 @@ code of conduct, and the process for submitting pull requests to us.</p>
 <p>We use <a class="reference external" href="http://semver.org/">SemVer</a> for versioning. For the versions
 available, see the <a class="reference external" href="https://github.com/BlackHolePerturbationToolkit/FastEMRIWaveforms/tags">tags on this
 repository</a>.</p>
-<p>Current Version: 1.1.12</p>
+<p>Current Version: 1.1.13</p>
 </section>
 <section id="citation">
 <h2>Citation<a class="headerlink" href="#citation" title="Link to this heading"></a></h2>
@@ -499,6 +499,8 @@ N. Cornish for their useful comments and very fruitful discussions.</p></li>
 <li class="toctree-l4"><a class="reference internal" href="user/prior.html#eryn.prior.ProbDistContainer.priors"><code class="docutils literal notranslate"><span class="pre">ProbDistContainer.priors</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="user/prior.html#eryn.prior.ProbDistContainer.ndim"><code class="docutils literal notranslate"><span class="pre">ProbDistContainer.ndim</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="user/prior.html#eryn.prior.ProbDistContainer.use_cupy"><code class="docutils literal notranslate"><span class="pre">ProbDistContainer.use_cupy</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/prior.html#eryn.prior.ProbDistContainer.return_gpu"><code class="docutils literal notranslate"><span class="pre">ProbDistContainer.return_gpu</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="user/prior.html#eryn.prior.ProbDistContainer.xp"><code class="docutils literal notranslate"><span class="pre">ProbDistContainer.xp</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="user/prior.html#eryn.prior.ProbDistContainer.logpdf"><code class="docutils literal notranslate"><span class="pre">ProbDistContainer.logpdf()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="user/prior.html#eryn.prior.ProbDistContainer.ppf"><code class="docutils literal notranslate"><span class="pre">ProbDistContainer.ppf()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="user/prior.html#eryn.prior.ProbDistContainer.rvs"><code class="docutils literal notranslate"><span class="pre">ProbDistContainer.rvs()</span></code></a></li>
@@ -510,6 +512,7 @@ N. Cornish for their useful comments and very fruitful discussions.</p></li>
 <li class="toctree-l3"><a class="reference internal" href="user/prior.html#eryn.prior.uniform_dist"><code class="docutils literal notranslate"><span class="pre">uniform_dist()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="user/prior.html#eryn.prior.log_uniform"><code class="docutils literal notranslate"><span class="pre">log_uniform()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="user/prior.html#eryn.prior.MappedUniformDistribution"><code class="docutils literal notranslate"><span class="pre">MappedUniformDistribution</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user/prior.html#eryn.prior.MappedUniformDistribution.xp"><code class="docutils literal notranslate"><span class="pre">MappedUniformDistribution.xp</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="user/prior.html#eryn.prior.MappedUniformDistribution.logpdf"><code class="docutils literal notranslate"><span class="pre">MappedUniformDistribution.logpdf()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="user/prior.html#eryn.prior.MappedUniformDistribution.rvs"><code class="docutils literal notranslate"><span class="pre">MappedUniformDistribution.rvs()</span></code></a></li>
 </ul>

@@ -17,6 +17,8 @@ class UniformDistribution(object):
         max_val (double): Maximum in the uniform distribution
         use_cupy (bool, optional): If ``True``, use CuPy. If ``False`` use Numpy.
             (default: ``False``)
+        return_gpu (bool, optional): If ``True``, return CuPy array. If ``False``,
+            return Numpy array. (default: ``False``)
 
     Raises:
         ValueError: Issue with inputs.
@@ -97,6 +99,8 @@ def uniform_dist(min, max, use_cupy=False, return_gpu=False):
         max (double): Maximum in the uniform distribution
         use_cupy (bool, optional): If ``True``, use CuPy. If ``False`` use Numpy.
             (default: ``False``)
+        return_gpu (bool, optional): If ``True``, return CuPy array. If ``False``,
+            return Numpy array. (default: ``False``)
 
     Returns:
         :class:`UniformDistribution`: Uniform distribution.
@@ -146,6 +150,8 @@ class MappedUniformDistribution:
         max (double): Maximum in the uniform distribution
         use_cupy (bool, optional): If ``True``, use CuPy. If ``False`` use Numpy.
             (default: ``False``)
+        return_gpu (bool, optional): If ``True``, return CuPy array. If ``False``,
+            return Numpy array. (default: ``False``)
 
     Raises:
         ValueError: If ``min`` is greater than ``max``.
@@ -227,6 +233,8 @@ class ProbDistContainer:
         ndim (int): Full dimensionality.
         use_cupy (bool, optional): If ``True``, use CuPy. If ``False`` use Numpy.
             (default: ``False``)
+        return_gpu (bool, optional): If ``True``, return CuPy array. If ``False``,
+            return Numpy array. (default: ``False``)
 
     Raises:
         ValueError: Missing parameters or incorrect index keys.
