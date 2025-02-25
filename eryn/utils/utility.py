@@ -237,10 +237,9 @@ def stepping_stone_log_evidence(betas, logls, block_len=50, repeats=100):
 
     def calculate_stepping_stone(betas, logls):
         n = logls.shape[0]
-        n_T = betas.shape[0]
         delta_betas = betas[1:] - betas[:-1]
         throwaways = np.any(~np.isfinite(logls), axis=1) # a safeguard against non-finite entries
-        log_ratio = logsumexp(delta_betas * logls[~throwaways, :-1], axis=0) - (n_T - 1.0)*np.log(n - np.sum(throwaways))
+        log_ratio = logsumexp(delta_betas * logls[~throwaways, :-1], axis=0) - np.log(n - np.sum(throwaways))
         return np.sum(log_ratio), log_ratio
 
     # make sure they are the same length
