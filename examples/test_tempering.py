@@ -37,12 +37,11 @@ if __name__ == '__main__':
     priors = ProbDistContainer(priors_in)
 
     # setup sampler
-    nwalkers = 100
+    nwalkers = 50
     ntemps = 10
     Tmax = np.inf
 
     #fill kwargs dictionary
-    betas = np.array([0.0])
     tempering_kwargs=dict(
                             #betas=betas,
                             Tmax=Tmax,
@@ -52,9 +51,11 @@ if __name__ == '__main__':
     # randomize throughout prior
     coords = priors.rvs(size=(ntemps, nwalkers,))
 
-    cov_all = {'model_0': np.eye(ndim) * 1e4}
+    cov_all = {'model_0': np.eye(ndim) * 1e-1}
+    prevent_swaps = True
 
-    proposal = GaussianMove(cov_all)
+    #proposal = GaussianMove(cov_all, prevent_swaps=prevent_swaps)
+    proposal = StretchMove(prevent_swaps=prevent_swaps)
 
     # initialize sampler
     ensemble_pt = EnsembleSampler(
@@ -67,7 +68,7 @@ if __name__ == '__main__':
         tempering_kwargs=tempering_kwargs
     )
 
-    nsteps = 3000
+    nsteps = 1000
     # burn for 1000 steps
     burn = 1000
     # thin by 5
@@ -80,6 +81,8 @@ if __name__ == '__main__':
     os.makedirs('tmp', exist_ok=True)
 
     for temp in range(ntemps):
+        print(f'Temperature: {temp}')
+        # plot corner plot
         samples = ensemble_pt.get_chain(discard=discard, thin=thin)['model_0'][:, temp].reshape(-1, ndim)
 
         fig = corner.corner(samples, truths=np.full(ndim, 0.0), weights=np.ones(samples.shape[0])/samples.shape[0])
@@ -89,14 +92,14 @@ if __name__ == '__main__':
         plt.savefig('tmp/corner_temp_{}.png'.format(temp))
         plt.close(fig)
 
-    # plot traces
-    fig, axes = plt.subplots(ndim, 1, figsize=(10, 10), sharex=True)
-    for i in range(ndim):
-        for temp in range(ntemps):
-            axes[i].plot(ensemble_pt.get_chain(discard=discard, thin=thin)['model_0'][:, temp, :, :, i].reshape(-1))
-        axes[i].set_ylabel('x{}'.format(i))
-    plt.savefig('tmp/traces.png')
-    plt.close(fig)
+        # plot traces
+        fig, axes = plt.subplots(ndim, 1, figsize=(10, 10), sharex=True)
+        for i in range(ndim):
+            for walker in range(nwalkers):
+                axes[i].plot(ensemble_pt.get_chain(discard=discard, thin=thin)['model_0'][:, temp, walker, :, i].reshape(-1), alpha=0.7)
+            axes[i].set_ylabel('x{}'.format(i))
+        plt.savefig('tmp/traces_temp_{}.png'.format(temp))
+        plt.close(fig)
 
     breakpoint()
     
