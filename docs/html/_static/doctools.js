@@ -4,7 +4,11 @@
  *
  * Base JavaScript utilities for all Sphinx HTML documentation.
  *
+<<<<<<< HEAD
  * :copyright: Copyright 2007-2024 by the Sphinx team, see AUTHORS.
+=======
+ * :copyright: Copyright 2007-2023 by the Sphinx team, see AUTHORS.
+>>>>>>> c377795 (fixed stretch in ndim=1)
  * :license: BSD, see LICENSE for details.
  *
  */

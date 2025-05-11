@@ -34,24 +34,12 @@ class StretchMove(RedBlueMove):
 
     """
 
-    def __init__(
-        self, a=2.0, return_gpu=False, random_seed=None, **kwargs
-    ):
+    def __init__(self, a=2.0, return_gpu=False, random_seed=None, **kwargs):
         # store scale factor
         self.a = a
 
         # pass kwargs up
         RedBlueMove.__init__(self, **kwargs)
-
-        # change array library based on GPU usage
-
-        # set the random seet of the library if desired
-        if random_seed is not None:
-            self.xp.random.seed(random_seed)
-
-        self.return_gpu = return_gpu
-
-        
 
         # change array library based on GPU usage
 
@@ -134,6 +122,10 @@ class StretchMove(RedBlueMove):
 
 
         """
+<<<<<<< HEAD
+=======
+
+>>>>>>> c377795 (fixed stretch in ndim=1)
         ntemps, nwalkers, nleaves_max, ndim_here = branch_shape
 
         # only for the first branch do we draw for zz
