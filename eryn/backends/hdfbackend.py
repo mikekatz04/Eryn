@@ -533,7 +533,7 @@ class HDFBackend(Backend):
                         v_all = {key: g["inds"][key][slice_vals, temp_index] for key in g["inds"]}
                    
                     else:
-                        v_all = g[name][slice_vals]
+                        v_all = g[name][slice_vals, temp_index]
 
                     successful = True
             
