@@ -230,22 +230,18 @@ class RedBlueMove(Move, ABC):
                 if not np.all(
                     np.asarray(list(state.branches_supplemental.values())) == None
                 ):
-                    new_branch_supps_tmp = {
-                        name: state.branches[name].branch_supplemental.take_along_axis(
-                            all_inds_shaped[:, :, None], axis=1
-                        )
-                        for name in state.branches
-                        if state.branches[name].branch_supplemental is not None
-                    }
-
-                    new_branch_supps = {
-                        name: BranchSupplemental(
-                            new_branch_supps_tmp[name],
-                            base_shape=new_inds[name].shape,
-                            copy=False,
-                        )
-                        for name in new_branch_supps_tmp
-                    }
+                    new_branch_supps = {}
+                    for name in state.branches:
+                        if state.branches[name].branch_supplimental is not None:
+                            new_branch_supps[name] = BranchSupplimental(
+                                state.branches[name].branch_supplimental.take_along_axis(
+                                    all_inds_shaped[:, :, None], axis=1
+                                ),
+                                base_shape=new_inds[name].shape,
+                                copy=False,
+                            )
+                        else:
+                            new_branch_supps[name] = None
 
                 else:
                     new_branch_supps = None

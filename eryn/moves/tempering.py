@@ -252,6 +252,7 @@ class TemperatureControl(object):
         stop_adaptation=-1,
         permute=True,
         skip_swap_supp_names=[],
+        skip_swap_branches=[]
     ):
 
         if betas is None:
@@ -270,6 +271,8 @@ class TemperatureControl(object):
         self.ntemps = ntemps = len(betas)
         self.permute = permute
         self.skip_swap_supp_names = skip_swap_supp_names
+        self.skip_swap_branches = skip_swap_branches
+
 
         # number of times adapted
         self.time = 0
@@ -383,6 +386,8 @@ class TemperatureControl(object):
 
         # swap from i1 to i
         for name in x:
+            if name in self.skip_swap_branches:
+                continue
             # coords first
             x[name][i, iperm_sel, :, :] = x[name][i - 1, i1perm_sel, :, :]
 
@@ -395,8 +400,9 @@ class TemperatureControl(object):
             if branch_supps[name] is not None:
                 tmp = branch_supps[name][i - 1, i1perm_sel, :]
 
-                for key in self.skip_swap_supp_names:
-                    tmp.pop(key)
+                for key in (self.skip_swap_supp_names):
+                    if key in tmp:
+                        tmp.pop(key)
 
                 branch_supps[name][i, iperm_sel, :] = tmp
                 """# where the inds are alive in the current permutation
@@ -450,20 +456,24 @@ class TemperatureControl(object):
             blobs[i, iperm_sel] = blobs[i - 1, i1perm_sel]
         if supps is not None:
             tmp_supps = supps[i - 1, i1perm_sel]
-            for key in self.skip_swap_supp_names:
-                tmp_supps.pop(key)
+            for key in (self.skip_swap_supp_names):
+                if key in tmp_supps:
+                    tmp_supps.pop(key)
             supps[i, iperm_sel] = tmp_supps
 
         # switch x from i to i1
         for name in x:
+            if name in self.skip_swap_branches:
+                continue
             x[name][i - 1, i1perm_sel, :, :] = x_temp[name][i, iperm_sel, :, :]
             if inds is not None:
                 inds[name][i - 1, i1perm_sel, :] = inds_temp[name][i, iperm_sel, :]
             if branch_supps[name] is not None:
                 tmp = branch_supps_temp[name][i, iperm_sel, :]
 
-                for key in self.skip_swap_supp_names:
-                    tmp.pop(key)
+                for key in (self.skip_swap_supp_names):
+                    if key in tmp:
+                        tmp.pop(key)
                 branch_supps[name][i - 1, i1perm_sel, :] = tmp
 
         # switch the rest from i to i1
@@ -475,8 +485,9 @@ class TemperatureControl(object):
             blobs[i - 1, i1perm_sel] = blobs_temp
         if supps is not None:
             tmp_supps = supps_temp
-            for key in self.skip_swap_supp_names:
-                tmp_supps.pop(key)
+            for key in (self.skip_swap_supp_names):
+                if key in tmp_supps:
+                    tmp_supps.pop(key)
             supps[i - 1, i1perm_sel] = tmp_supps
 
         return (x, logP, logl, logp, inds, blobs, supps, branch_supps)

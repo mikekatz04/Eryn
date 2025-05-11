@@ -58,20 +58,15 @@ class PeriodicContainer:
         # prepare output
         out_diff = {}
         for key in names:
-
+           
             # get basic distance
             diff = p2[key] - p1[key]
 
-            # no periodic parameters for this key
-            if key not in self.periods:
-                out_diff[key] = diff
-                continue
+            if  key in self.periods and len(self.periods[key]) > 0:
+                 # get period info
+                periods = xp.asarray(self.periods[key])
+                inds_periodic = xp.asarray(self.inds_periodic[key])
 
-            # get period info
-            periods = xp.asarray(self.periods[key])
-            inds_periodic = xp.asarray(self.inds_periodic[key])
-
-            if len(self.periods[key]) > 0:
                 # get specific periodic parameterss
                 diff_periodic = diff[:, :, inds_periodic]
 
@@ -119,7 +114,7 @@ class PeriodicContainer:
         for key in names:
             pos = p[key]
 
-            if len(self.periods[key]) > 0:
+            if  key in self.periods and len(self.periods[key]) > 0:
                 # get periodic information
                 periods = xp.asarray(self.periods[key])
                 inds_periodic = xp.asarray(self.inds_periodic[key])
