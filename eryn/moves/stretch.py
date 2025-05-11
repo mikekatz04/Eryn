@@ -122,10 +122,6 @@ class StretchMove(RedBlueMove):
 
 
         """
-<<<<<<< HEAD
-=======
-
->>>>>>> c377795 (fixed stretch in ndim=1)
         ntemps, nwalkers, nleaves_max, ndim_here = branch_shape
 
         # only for the first branch do we draw for zz
