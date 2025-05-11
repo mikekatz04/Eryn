@@ -736,29 +736,55 @@ class ParaBackend(object):
             swaps_accepted=swaps_accepted,
         )
 
-        # save the coordinates and groups_running
-        self.groups_running[self.branch_name][self.iteration] = state.groups_running
-        # use self.store_missing_leaves to set value for missing leaves
-        # state retains old coordinates
-        coords_in = (
-            state.branches[self.branch_name].coords
-            * state.groups_running[:, None, None, None]
-        )
+        try:
+            # save the coordinates and groups_running
+            self.groups_running[self.branch_name][self.iteration] = state.groups_running.get()
+            # use self.store_missing_leaves to set value for missing leaves
+            # state retains old coordinates
+            coords_in = (
+                state.branches[self.branch_name].coords
+                * state.groups_running[:, None, None, None]
+            ).get()
 
-        coords_in[~state.groups_running] = self.store_missing_leaves
-        self.chain[self.branch_name][self.iteration] = coords_in
+            coords_in[~state.groups_running.get()] = self.store_missing_leaves
+            self.chain[self.branch_name][self.iteration] = coords_in
 
-        # save higher level quantities
-        self.log_like[self.iteration, :, :] = state.log_like
-        self.log_prior[self.iteration, :, :] = state.log_prior
+            # save higher level quantities
+            self.log_like[self.iteration, :, :] = state.log_like.get()
+            self.log_prior[self.iteration, :, :] = state.log_prior.get()
 
-        if state.betas is not None:
-            self.betas[self.iteration, :] = state.betas
+            if state.betas is not None:
+                self.betas[self.iteration, :] = state.betas.get()
 
-        self.accepted += accepted
+            self.accepted += accepted.get()
 
-        if swaps_accepted is not None:
-            self.swaps_accepted += swaps_accepted
+            if swaps_accepted is not None:
+                self.swaps_accepted += swaps_accepted.get()
+
+        except AttributeError:
+            # save the coordinates and groups_running
+            self.groups_running[self.branch_name][self.iteration] = state.groups_running
+            # use self.store_missing_leaves to set value for missing leaves
+            # state retains old coordinates
+            coords_in = (
+                state.branches[self.branch_name].coords
+                * state.groups_running[:, None, None, None]
+            )
+
+            coords_in[~state.groups_running] = self.store_missing_leaves
+            self.chain[self.branch_name][self.iteration] = coords_in
+
+            # save higher level quantities
+            self.log_like[self.iteration, :, :] = state.log_like
+            self.log_prior[self.iteration, :, :] = state.log_prior
+
+            if state.betas is not None:
+                self.betas[self.iteration, :] = state.betas
+
+            self.accepted += accepted
+
+            if swaps_accepted is not None:
+                self.swaps_accepted += swaps_accepted
 
         self.random_state = state.random_state
         self.iteration += 1

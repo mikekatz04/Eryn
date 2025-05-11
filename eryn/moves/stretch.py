@@ -34,20 +34,24 @@ class StretchMove(RedBlueMove):
 
     """
 
-    def __init__(self, a=2.0, return_gpu=False, random_seed=None, **kwargs):
+    def __init__(
+        self, a=2.0, return_gpu=False, random_seed=None, **kwargs
+    ):
         # store scale factor
         self.a = a
+
+        # pass kwargs up
+        RedBlueMove.__init__(self, **kwargs)
 
         # change array library based on GPU usage
 
         # set the random seet of the library if desired
         if random_seed is not None:
-            xp.random.seed(random_seed)
+            self.xp.random.seed(random_seed)
 
         self.return_gpu = return_gpu
 
-        # pass kwargs up
-        RedBlueMove.__init__(self, **kwargs)
+        
 
         # change array library based on GPU usage
 
@@ -130,7 +134,6 @@ class StretchMove(RedBlueMove):
 
 
         """
-
         ntemps, nwalkers, nleaves_max, ndim_here = branch_shape
 
         # only for the first branch do we draw for zz
@@ -145,7 +148,7 @@ class StretchMove(RedBlueMove):
             diff = self.periodic.distance(
                 {name: s.reshape(ntemps * nwalkers, nleaves_max, ndim_here)},
                 {name: c_temp.reshape(ntemps * nwalkers, nleaves_max, ndim_here)},
-                xp=xp,
+                xp=self.xp,
             )[name].reshape(ntemps, nwalkers, nleaves_max, ndim_here)
         else:
             diff = c_temp - s
@@ -157,7 +160,7 @@ class StretchMove(RedBlueMove):
         if self.periodic is not None:
             temp = self.periodic.wrap(
                 {name: temp.reshape(ntemps * nwalkers, nleaves_max, ndim_here)},
-                xp=xp,
+                xp=self.xp,
             )[name].reshape(ntemps, nwalkers, nleaves_max, ndim_here)
 
         # get from gpu or not
@@ -189,22 +192,22 @@ class StretchMove(RedBlueMove):
 
         # needs to be set before we reach the end
         self.zz = None
-        random_number_generator = random if not self.use_gpu else xp.random
+        random_number_generator = random if not self.use_gpu else self.xp.random
         newpos = {}
 
         # iterate over branches
         for i, name in enumerate(s_all):
             # get points to move
-            s = xp.asarray(s_all[name])
+            s = self.xp.asarray(s_all[name])
 
             if not isinstance(c_all[name], list):
                 raise ValueError("c_all for each branch needs to be a list.")
 
             # get compliment possibilities
-            c = [xp.asarray(c_tmp) for c_tmp in c_all[name]]
+            c = [self.xp.asarray(c_tmp) for c_tmp in c_all[name]]
 
             ntemps, nwalkers, nleaves_max, ndim_here = s.shape
-            c = xp.concatenate(c, axis=1)
+            c = self.xp.concatenate(c, axis=1)
 
             Ns, Nc = s.shape[1], c.shape[1]
             # gets rid of any values of exactly zero
@@ -228,7 +231,7 @@ class StretchMove(RedBlueMove):
                 name, s, c_temp, Ns, s.shape, i, random_number_generator
             )
         # proper factors
-        factors = (ndim - 1.0) * xp.log(self.zz)
+        factors = (ndim - 1.0) * self.xp.log(self.zz)
         if self.use_gpu and not self.return_gpu:
             factors = factors.get()
 

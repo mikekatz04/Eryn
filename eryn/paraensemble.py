@@ -15,7 +15,7 @@ try:
 except (ModuleNotFoundError, ImportError) as e:
     import numpy as cp
 
-from typing import Union
+from typing import Union, Callable
 
 
 def shuffle_along_axis(a, axis):
@@ -37,11 +37,13 @@ class ParaEnsembleSampler(EnsembleSampler):
         gpu: int = None,
         periodic: Union[dict, None] = None,
         backend: Union[ParaBackend] = None,  # add ParaHDFBackend
-        update_fn=None,
+        update_fn: Callable = None,
         update_iterations=-1,
-        stopping_fn=None,
-        stopping_iterations=-1,
+        stopping_fn: Callable = None,
+        stopping_iterations: int=-1,
+        prior_transform_fn=None,
         name="model_0",
+        provide_supplimental=False,
     ):
         self.ndim = ndim
         self.nwalkers = nwalkers
@@ -57,6 +59,8 @@ class ParaEnsembleSampler(EnsembleSampler):
         self.stopping_fn = stopping_fn
         self.stopping_iterations = stopping_iterations
         self.name = name
+        self.prior_transform_fn = prior_transform_fn
+        self.provide_supplimental = provide_supplimental
 
         if tempering_kwargs is None:
             self.ntemps = 1
@@ -260,16 +264,21 @@ class ParaEnsembleSampler(EnsembleSampler):
 
         # get log prior and likelihood if not provided in the initial state
         if state.log_prior is None:
-            coords = state.branches_coords
-            state.log_prior = self.compute_log_prior(coords)
+            coords = {name: value[state.groups_running] for name, value in state.branches_coords.items()}
+            state.log_prior = self.xp.full((self.ngroups, self.ntemps, self.nwalkers), -np.inf)
+            state.log_prior[state.groups_running] = self.compute_log_prior(coords, groups_running=self.xp.arange(self.ngroups)[state.groups_running])
 
         if state.log_like is None:
-            coords = state.branches_coords
-            state.log_like = self.compute_log_like(
+            state.log_like = self.xp.full((self.ngroups, self.ntemps, self.nwalkers), -1e300)
+            coords = {name: value[state.groups_running] for name, value in state.branches_coords.items()}
+            supps_in = None if state.supplimental is None else state.supplimental[state.groups_running]
+            branch_supps_in = {name: None if tmp is None else tmp[state.groups_running] for name, tmp in state.branches_supplimental.items()}
+
+            state.log_like[state.groups_running] = self.compute_log_like(
                 coords,
-                logp=state.log_prior,
-                supps=state.supplimental,  # only used if self.provide_supplimental is True
-                branch_supps=state.branches_supplimental,  # only used if self.provide_supplimental is True
+                logp=state.log_prior[state.groups_running],
+                supps=supps_in,  # only used if self.provide_supplimental is True
+                branch_supps=branch_supps_in,  # only used if self.provide_supplimental is True
             )
 
         # get betas out of state object if they are there
@@ -295,16 +304,16 @@ class ParaEnsembleSampler(EnsembleSampler):
 
         # Check to make sure that the probability function didn't return
         # ``self.xp.nan``.
-        if self.xp.any(self.xp.isnan(state.log_like)):
+        if self.xp.any(self.xp.isnan(state.log_like[state.groups_running])):
             raise ValueError("The initial log_like was NaN")
 
-        if self.xp.any(self.xp.isinf(state.log_like)):
+        if self.xp.any(self.xp.isinf(state.log_like[state.groups_running])):
             raise ValueError("The initial log_like was +/- infinite")
 
-        if self.xp.any(self.xp.isnan(state.log_prior)):
+        if self.xp.any(self.xp.isnan(state.log_prior[state.groups_running])):
             raise ValueError("The initial log_prior was NaN")
 
-        if self.xp.any(self.xp.isinf(state.log_prior)):
+        if self.xp.any(self.xp.isinf(state.log_prior[state.groups_running])):
             raise ValueError("The initial log_prior was +/- infinite")
 
         # Check that the thin keyword is reasonable.
@@ -367,27 +376,36 @@ class ParaEnsembleSampler(EnsembleSampler):
         supps=None,  # only used if self.provide_supplimental is True
         branch_supps=None,
     ):
-        if supps is not None:
-            raise NotImplementedError
+        # if supps is not None:
+        #     raise NotImplementedError
 
-        if branch_supps is not None:
-            if branch_supps[self.name] is not None:
-                raise NotImplementedError
+        # if branch_supps is not None:
+        #     if branch_supps[self.name] is not None:
+        #         raise NotImplementedError
 
-        if groups_running is None:
-            groups_running = self.xp.ones(self.ngroups, dtype=bool)
+        if groups_running is not None:
+            assert coords[self.name].shape[0] == len(groups_running)
 
         if logp is None:
             logp = self.compute_log_prior(coords, groups_running=groups_running)
 
         keep_logp = ~self.xp.isinf(logp)
 
-        coords_arr = coords[self.name][groups_running][keep_logp]
+        coords_arr = coords[self.name][keep_logp]
 
         logl = self.xp.full_like(logp, -1e300)
 
+        if branch_supps is not None:
+            branch_supps = {self.name: {key: branch_supps[self.name][key][keep_logp] for key in branch_supps[self.name]}}
+
+        if self.provide_supplimental:
+            kwargs = {**self.logl_kwargs, "branch_supps": branch_supps, "supps": supps}
+
+        else:
+            kwargs = self.logl_kwargs
+
         logl[keep_logp] = self.log_like_fn(
-            coords_arr, *self.logl_args, **self.logl_kwargs
+            coords_arr, *self.logl_args, **kwargs
         )
 
         # fix any nans that may come up
@@ -399,15 +417,22 @@ class ParaEnsembleSampler(EnsembleSampler):
         return logl
 
     def compute_log_prior(self, coords, groups_running=None):
-        if groups_running is None:
-            groups_running = self.xp.ones(self.ngroups, dtype=bool)
 
-        shape_in = coords[self.name][groups_running].shape[:-1]
-        coords_arr = coords[self.name][groups_running].reshape(-1, self.ndim)
+        if groups_running is not None:
+            assert coords[self.name].shape[0] == len(groups_running)
 
-        logp = self.priors[self.name].logpdf(coords_arr)
+        shape_in = coords[self.name].shape[:-1]
 
-        return logp.reshape(shape_in)
+        coords_logp_buffer = coords[self.name].copy()
+
+        self.prior_transform_fn.transform_to_prior_basis(coords_logp_buffer, groups_running)
+        coords_logp_in = coords_logp_buffer.reshape(-1, self.ndim)
+        
+        logp = self.priors[self.name].logpdf(coords_logp_in).reshape(shape_in)
+
+        self.prior_transform_fn.adjust_logp(logp, groups_running)
+
+        return logp
 
     def run_mcmc(
         self, initial_state, nsteps, burn=None, post_burn_update=False, **kwargs
@@ -543,11 +568,15 @@ class ParaEnsembleSampler(EnsembleSampler):
                     num_groups_running, self.ntemps, int(self.nwalkers / 2), -1
                 )
             }
-            logp = self.compute_log_prior(new_points, groups_running=groups_running)
-            factors = factors.reshape(logp.shape)
 
+            logp = self.compute_log_prior(new_points, groups_running=self.xp.arange(self.ngroups)[groups_running])
+            factors = factors.reshape(logp.shape)
+            
+            supps_in = None  # new_state.supplimental[]
+
+            branch_supps_in = {self.name: {key: tmp[groups_running] for key, tmp in new_state.branches_supplimental[self.name][:, :, inds_here].items()}}
             logl = self.compute_log_like(
-                new_points, groups_running=groups_running, logp=logp
+                new_points, groups_running=self.xp.arange(self.ngroups)[groups_running], logp=logp, supps=supps_in, branch_supps=branch_supps_in
             )
 
             prev_logl_here = new_state.log_like[:, :, inds_here][groups_running]
@@ -586,9 +615,14 @@ class ParaEnsembleSampler(EnsembleSampler):
 
         # prepare information on how many swaps are accepted this time
         self.swaps_accepted = self.xp.zeros(
-            (num_groups_running, self.ntemps - 1), dtype=int
+            (self.ngroups, self.ntemps - 1), dtype=int
         )
         self.swaps_proposed = self.xp.full_like(self.swaps_accepted, self.nwalkers)
+
+        swaps_accepted_tmp = self.xp.zeros(
+            (num_groups_running, self.ntemps - 1), dtype=int
+        )
+        swaps_proposed_tmp = self.xp.full_like(swaps_accepted_tmp, self.nwalkers)
 
         # iterate from highest to lowest temperatures
         for i in range(self.ntemps - 1, 0, -1):
@@ -633,7 +667,7 @@ class ParaEnsembleSampler(EnsembleSampler):
 
             # How many swaps were accepted
             sel = paccept > raccept
-            self.swaps_accepted[:, i - 1] = self.xp.sum(sel, axis=-1)
+            swaps_accepted_tmp[:, i - 1] = self.xp.sum(sel, axis=-1)
 
             temp_swap_i_keep = temp_swap_i[sel.flatten()]
             walker_swap_i_keep = walker_swap_i[sel.flatten()]
@@ -658,36 +692,39 @@ class ParaEnsembleSampler(EnsembleSampler):
             state.branches[self.name].coords[keep_i1_tuple] = coords_tmp_i
             state.log_like[keep_i1_tuple] = logl_tmp_i
             state.log_prior[keep_i1_tuple] = logp_tmp_i
+
+        self.swaps_accepted[groups_running] = swaps_accepted_tmp
+
         # print(prev_logl.max(axis=(1, 2)))
+        if self.base_temperature_control.adaptive:
+            # print(time.perf_counter() - st)
+            ratios = swaps_accepted_tmp / swaps_proposed_tmp
 
-        # print(time.perf_counter() - st)
-        ratios = self.swaps_accepted / self.swaps_proposed
+            # adjust temps
+            betas0 = self.betas[groups_running].copy()
+            betas1 = self.betas[groups_running].copy()
 
-        # adjust temps
-        betas0 = self.betas[groups_running].copy()
-        betas1 = self.betas[groups_running].copy()
+            if not hasattr(self, "time_temp"):
+                self.time_temp = 0
 
-        if not hasattr(self, "time_temp"):
-            self.time_temp = 0
+            # Modulate temperature adjustments with a hyperbolic decay.
+            decay = self.base_temperature_control.adaptation_lag / (
+                self.time_temp + self.base_temperature_control.adaptation_lag
+            )
+            kappa = decay / self.base_temperature_control.adaptation_time
 
-        # Modulate temperature adjustments with a hyperbolic decay.
-        decay = self.base_temperature_control.adaptation_lag / (
-            self.time_temp + self.base_temperature_control.adaptation_lag
-        )
-        kappa = decay / self.base_temperature_control.adaptation_time
+            self.time_temp += 1
 
-        self.time_temp += 1
+            # Construct temperature adjustments.
+            dSs = kappa * (ratios[:, :-1] - ratios[:, 1:])
 
-        # Construct temperature adjustments.
-        dSs = kappa * (ratios[:, :-1] - ratios[:, 1:])
+            # Compute new ladder (hottest and coldest chains don't move).
+            deltaTs = self.xp.diff(1 / betas1[:, :-1], axis=-1)
+            deltaTs *= self.xp.exp(dSs)
+            betas1[:, 1:-1] = 1 / (np.cumsum(deltaTs, axis=-1) + 1 / betas1[:, 0][:, None])
 
-        # Compute new ladder (hottest and coldest chains don't move).
-        deltaTs = self.xp.diff(1 / betas1[:, :-1], axis=-1)
-        deltaTs *= self.xp.exp(dSs)
-        betas1[:, 1:-1] = 1 / (np.cumsum(deltaTs, axis=-1) + 1 / betas1[:, 0][:, None])
-
-        dbetas = betas1 - betas0
-        state.betas[groups_running] += dbetas
+            dbetas = betas1 - betas0
+            state.betas[groups_running] += dbetas
 
 
 """

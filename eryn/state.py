@@ -3,10 +3,10 @@
 from copy import deepcopy
 
 try:
-    import cupy as cp
+    import cupy as xp
 
 except (ModuleNotFoundError, ImportError) as e:
-    import numpy as cp
+    import numpy as xp
 
 import numpy as np
 
@@ -472,7 +472,7 @@ class State(object):
             return
 
         # protect against simplifying settings
-        if isinstance(coords, np.ndarray) or isinstance(coords, cp.ndarray):
+        if isinstance(coords, np.ndarray) or isinstance(coords, xp.ndarray):
             coords = {"model_0": coords}
         elif not isinstance(coords, dict):
             raise ValueError(
@@ -867,7 +867,7 @@ class ParaState(object):
             return
 
         # protect against simplifying settings
-        if isinstance(coords, np.ndarray) or isinstance(coords, cp.ndarray):
+        if isinstance(coords, np.ndarray) or isinstance(coords, xp.ndarray):
             coords = {"model_0": coords}
         elif not isinstance(coords, dict):
             raise ValueError(
