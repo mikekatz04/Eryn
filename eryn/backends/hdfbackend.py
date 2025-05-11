@@ -138,7 +138,7 @@ class HDFBackend(Backend):
             try:
                 f = h5py.File(self.filename, mode)
                 file_opened = True
-
+                
             except BlockingIOError:
                 try_num += 1
                 if try_num >= max_tries:
@@ -782,7 +782,7 @@ class HDFBackend(Backend):
                     raise BlockingIOError("Max tries exceeded trying to open h5 file.")
                 print("Failed to open h5 file. Trying again.")
                 time.sleep(10.0)
-
+                
 
 class TempHDFBackend(object):
     """Check if HDF5 is working and available."""

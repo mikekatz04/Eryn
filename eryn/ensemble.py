@@ -1115,7 +1115,7 @@ class EnsembleSampler(object):
                     break
 
             i += 1
-
+            
         # Store so that the ``initial_state=None`` case will work
         self._previous_state = results
 
