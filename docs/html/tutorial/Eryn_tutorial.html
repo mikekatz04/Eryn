@@ -2499,13 +2499,13 @@ falsely detected model instances). In this case, it can be hard to tune each cov
         <span class="n">inds_closest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)[:,</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">nfriends</span><span class="p">]</span>
 
         <span class="c1"># store in branch supplimental</span>
-        <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplimental</span><span class="p">[</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplemental</span><span class="p">[</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;inds_closest&quot;</span><span class="p">:</span> <span class="n">inds_closest</span>
         <span class="p">}</span>
 
         <span class="c1"># make sure to &quot;turn off&quot; leaves that are deactivated by setting their</span>
         <span class="c1"># index to -1.</span>
-        <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplimental</span><span class="p">[</span><span class="o">~</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplemental</span><span class="p">[</span><span class="o">~</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;inds_closest&quot;</span><span class="p">:</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
                 <span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nfriends</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span>
             <span class="p">)[</span><span class="o">~</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span><span class="p">]</span>
@@ -2518,7 +2518,7 @@ falsely detected model instances). In this case, it can be hard to tune each cov
         <span class="c1"># activated &amp; does not have an assigned index</span>
         <span class="n">fix</span> <span class="o">=</span> <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span> <span class="o">&amp;</span> <span class="p">(</span>
             <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
-                <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplimental</span><span class="p">[:][</span><span class="s2">&quot;inds_closest&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplemental</span><span class="p">[:][</span><span class="s2">&quot;inds_closest&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
                 <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="p">)</span>
@@ -2532,14 +2532,14 @@ falsely detected model instances). In this case, it can be hard to tune each cov
         <span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">current_means</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span>
         <span class="n">inds_closest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)[:,</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">nfriends</span><span class="p">]</span>
 
-        <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplimental</span><span class="p">[</span><span class="n">fix</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplemental</span><span class="p">[</span><span class="n">fix</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;inds_closest&quot;</span><span class="p">:</span> <span class="n">inds_closest</span>
         <span class="p">}</span>
 
         <span class="c1"># verify everything worked</span>
         <span class="n">fix_check</span> <span class="o">=</span> <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span> <span class="o">&amp;</span> <span class="p">(</span>
             <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
-                <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplimental</span><span class="p">[:][</span><span class="s2">&quot;inds_closest&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplemental</span><span class="p">[:][</span><span class="s2">&quot;inds_closest&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
                 <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="p">)</span>
@@ -2625,7 +2625,7 @@ falsely detected model instances). In this case, it can be hard to tune each cov
 <span class="n">state</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
     <span class="n">coords</span><span class="p">,</span>
     <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">,</span>
-    <span class="n">branch_supplimental</span><span class="o">=</span><span class="n">branch_supps</span><span class="p">,</span>
+    <span class="n">branch_supplemental</span><span class="o">=</span><span class="n">branch_supps</span><span class="p">,</span>
 <span class="p">)</span>
 <br/></pre></div>
 </div>

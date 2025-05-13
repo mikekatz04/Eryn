@@ -517,9 +517,6 @@ class HDFBackend(Backend):
                             "results"
                         )
 
-                    if name == "blobs" and not g.attrs["has_blobs"]:
-                        v_all = None
-
                     if temp_index is None:
                         temp_index = np.arange(self.ntemps)
                     else:
@@ -527,11 +524,13 @@ class HDFBackend(Backend):
 
                     if name == "chain":
                         v_all = {key: g["chain"][key][slice_vals, temp_index] for key in g["chain"]}
-                        return v_all
 
-                    if name == "inds":
+                    elif name == "inds":
                         v_all = {key: g["inds"][key][slice_vals, temp_index] for key in g["inds"]}
                    
+                    elif name == "blobs" and not g.attrs["has_blobs"]:
+                        v_all = None
+                        
                     else:
                         v_all = g[name][slice_vals, temp_index]
 
