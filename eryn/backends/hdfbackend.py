@@ -469,7 +469,7 @@ class HDFBackend(Backend):
         with self.open() as f:
             return f[self.name].attrs["has_blobs"]
 
-    def get_value(self, name, thin=1, discard=0, slice_vals=None, temp_index=None):
+    def get_value(self, name, thin=1, discard=0, slice_vals=None, temp_index=None, branch_names=None):
         """Returns a requested value to user.
 
         This function helps to streamline the backend for both
@@ -488,7 +488,8 @@ class HDFBackend(Backend):
                 (default: ``None``)
             temp_index (int, optional): Integer for the desired temperature index.
                 If ``None``, will return all temperatures. (default: ``None``)
-
+            branch_names (str or list, optional): Specific branch names requested. (default: ``None``)
+            
         Returns:
             dict or np.ndarray: Values requested.
 
@@ -506,6 +507,13 @@ class HDFBackend(Backend):
 
         if slice_vals is None:
             slice_vals = slice(discard + thin - 1, self.iteration, thin)
+
+        # make sure branch_names input is a list
+        if branch_names is not None:
+            if isinstance(branch_names, str):
+                branches_names = [branch_names]
+
+        branch_names_in = self.branch_names if branch_names is None else branch_names
 
         # open the file wrapped in a "with" statement
         with self.open() as f:
@@ -528,11 +536,11 @@ class HDFBackend(Backend):
                 assert isinstance(temp_index, int)
 
             if name == "chain":
-                v_all = {key: g["chain"][key][slice_vals, temp_index] for key in g["chain"]}
+                v_all = {key: g["chain"][key][slice_vals, temp_index] for key in branch_names_in}
                 return v_all
 
             if name == "inds":
-                v_all = {key: g["inds"][key][slice_vals, temp_index] for key in g["inds"]}
+                v_all = {key: g["inds"][key][slice_vals, temp_index] for key in branch_names_in}
 
                 return v_all
 
