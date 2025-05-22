@@ -187,7 +187,7 @@ class MHMove(Move):
             self.num_proposals += 1
 
         # temperature swaps
-        if self.temperature_control is not None:
+        if self.temperature_control is not None and not self.prevent_swaps:
             state = self.temperature_control.temper_comps(state)
 
         return state, accepted

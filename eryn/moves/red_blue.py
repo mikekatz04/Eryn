@@ -327,7 +327,7 @@ class RedBlueMove(Move, ABC):
             self.num_proposals += 1
 
         # temp swaps
-        if self.temperature_control is not None:
+        if self.temperature_control is not None and not self.prevent_swaps:
             state = self.temperature_control.temper_comps(state)
 
         return state, accepted
