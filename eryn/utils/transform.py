@@ -31,53 +31,70 @@ class TransformContainer:
 
     """
 
-    def __init__(self, parameter_transforms=None, fill_dict=None):
+    def __init__(self, input_basis, output_basis, parameter_transforms=None, fill_dict=None, key_map={}):
 
+        
         # store originals
         self.original_parameter_transforms = parameter_transforms
+        self.ndim_full = len(output_basis)
+        self.ndim = len(input_basis)
+
+        self.input_basis, self.output_basis = input_basis, output_basis
+
+        test_inds = []
+        for key in input_basis:
+            if key not in output_basis and key not in key_map:
+                raise ValueError("All keys in input_basis must be present in output basis, or you must provide a key_map")
+            key_in = key if key not in key_map else key_map[key]
+            test_inds.append(output_basis.index(key_in))
+
+        self.test_inds = test_inds = np.asarray(test_inds)
         if parameter_transforms is not None:
             # differentiate between single and multi parameter transformations
             self.base_transforms = {"single_param": {}, "mult_param": {}}
 
             # iterate through transforms and setup single and multiparameter transforms
             for key, item in parameter_transforms.items():
-                if isinstance(key, int):
-                    self.base_transforms["single_param"][key] = item
+                if isinstance(key, str):
+                    if key not in output_basis:
+                        assert key in key_map
+                        key = key_map[key]
+                    key_in = output_basis.index(key)
+                    self.base_transforms["single_param"][key_in] = item
                 elif isinstance(key, tuple):
-                    self.base_transforms["mult_param"][key] = item
+                    _tmp = []
+                    for i in range(len(key)):
+                        key_tmp = key[i]
+                        if  key_tmp not in output_basis:
+                            assert key_tmp in key_map
+                            key_tmp = key_map[key_tmp]
+                        _tmp.append(output_basis.index(key_tmp))
+                    self.base_transforms["mult_param"][tuple(_tmp)] = item
                 else:
                     raise ValueError(
-                        "Parameter transform keys must be int or tuple of ints. {} is neither.".format(
+                        "Parameter transform keys must be str (or int) or tuple of strs (or ints). {} is neither.".format(
                             key
                         )
                     )
         else:
             self.base_transforms = None
 
+        self.original_fill_dict = fill_dict
         if fill_dict is not None:
             if not isinstance(fill_dict, dict):
                 raise ValueError("fill_dict must be a dictionary.")
 
-            self.fill_dict = fill_dict
-            fill_dict_keys = list(self.fill_dict.keys())
-            for key in ["ndim_full", "fill_inds", "fill_values"]:
-                # check to make sure it has all necessary pieces
-                if key not in fill_dict_keys:
-                    raise ValueError(
-                        f"If providing fill_inds, dictionary must have {key} as a key."
-                    )
-            # check all the inputs
-            if not isinstance(fill_dict["ndim_full"], int):
-                raise ValueError("fill_dict['ndim_full'] must be an int.")
-            if not isinstance(fill_dict["fill_inds"], np.ndarray):
-                raise ValueError("fill_dict['fill_inds'] must be an np.ndarray.")
-            if not isinstance(fill_dict["fill_values"], np.ndarray):
-                raise ValueError("fill_dict['fill_values'] must be an np.ndarray.")
+            self.fill_dict = {}
+            self.fill_dict["fill_inds"] = []
+            self.fill_dict["fill_values"] = []
+            for key in fill_dict.keys():
+                self.fill_dict["fill_inds"].append(output_basis.index(key))
+                self.fill_dict["fill_values"].append(fill_dict[key])
 
             # set up test_inds accordingly
-            self.fill_dict["test_inds"] = np.delete(
-                np.arange(self.fill_dict["ndim_full"]), self.fill_dict["fill_inds"]
-            )
+            self.fill_dict["test_inds"] = test_inds
+            self.fill_dict["fill_inds"] = np.asarray(self.fill_dict["fill_inds"])
+            self.fill_dict["fill_values"] = np.asarray(self.fill_dict["fill_values"])
 
         else:
             self.fill_dict = None
@@ -134,6 +151,8 @@ class TransformContainer:
     def fill_values(self, params, xp=None):
         """fill fixed parameters
 
+        This also adjusts parameter order as needed between the two bases. 
+
         Args:
             params (np.ndarray[..., ndim]): Array with coordinates. This array is
                 filled with values according to the ``self.fill_dict`` dictionary.
@@ -152,7 +171,7 @@ class TransformContainer:
             shape = params.shape
 
             # setup new array to fill
-            params_filled = xp.zeros(shape[:-1] + (self.fill_dict["ndim_full"],))
+            params_filled = xp.zeros(shape[:-1] + (self.ndim_full,))
             test_inds = xp.asarray(self.fill_dict["test_inds"])
             # special indexing to properly fill array with params
             indexing_test_inds = tuple([slice(0, temp) for temp in shape[:-1]]) + (
@@ -179,7 +198,7 @@ class TransformContainer:
             return params
 
     def both_transforms(
-        self, params, copy=True, return_transpose=False, reverse=False, xp=None
+        self, params, copy=True, return_transpose=False, xp=None
     ):
         """Transform the parameters and fill fixed parameters
 
@@ -197,9 +216,6 @@ class TransformContainer:
                 (default: ``True``)
             return_transpose (bool, optional): If ``True``, return the transpose of the
                 array. (default: ``False``)
-            reverse (bool, optional): If ``True`` perform the filling after the transforms. This makes
-                indexing easier, but removes the ability of fixed parameters to affect transforms. 
-                (default: ``False``)
             xp (object, optional): ``numpy`` or ``cupy``. If ``None``, use ``numpy``.
                 (default: ``None``) 
 
@@ -212,15 +228,8 @@ class TransformContainer:
             xp = np
 
         # run transforms first
-        if reverse:
-            temp = self.transform_base_parameters(
-                params, copy=copy, return_transpose=return_transpose, xp=xp
-            )
-            temp = self.fill_values(temp, xp=xp)
-
-        else:
-            temp = self.fill_values(params, xp=xp)
-            temp = self.transform_base_parameters(
-                temp, copy=copy, return_transpose=return_transpose, xp=xp
-            )
+        temp = self.fill_values(params, xp=xp)
+        temp = self.transform_base_parameters(
+            temp, copy=copy, return_transpose=return_transpose, xp=xp
+        )
         return temp

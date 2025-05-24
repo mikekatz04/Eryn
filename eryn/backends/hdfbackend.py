@@ -176,6 +176,7 @@ class HDFBackend(Backend):
         nbranches=1,
         rj=False,
         moves=None,
+        key_order=None
         **info,
     ):
         """Clear the state of the chain and empty the backend
@@ -343,6 +344,7 @@ class HDFBackend(Backend):
 
             chain = g.create_group("chain")
             inds = g.create_group("inds")
+            k_o_g = g.create_group("key_order")
 
             for name in branch_names:
                 nleaves = self.nleaves_max[name]
@@ -364,6 +366,9 @@ class HDFBackend(Backend):
                     compression=self.compression,
                     compression_opts=self.compression_opts,
                 )
+
+                if key_order is not None:
+                    k_o_g.attrs[name] = key_order[name] 
 
             # store move specific information
             if moves is not None:
@@ -387,6 +392,12 @@ class HDFBackend(Backend):
                 self.move_info = None
 
             self.blobs = None
+
+    @property
+    def key_order(self):
+        """Key order of parameters for each model."""
+        with self.open() as f:
+            return {key: value for key, value in f[self.name]["key_order"].attrs.items()}
 
     @property
     def nwalkers(self):
@@ -456,6 +467,7 @@ class HDFBackend(Backend):
             branch_names=self.branch_names,
             rj=self.rj,
             moves=self.moves,
+            key_order=self.key_order,
         )
 
     @property
