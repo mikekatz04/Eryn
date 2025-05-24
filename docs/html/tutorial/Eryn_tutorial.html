@@ -142,7 +142,7 @@
 <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
 
 <span class="kn">import</span> <span class="nn">corner</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
 <section id="Eryn-Basic-Tutorial">
@@ -189,7 +189,7 @@ for as the number of “leafs” on each branch. So, if 1 walker has 3 Gaussians
 <span class="k">def</span> <span class="nf">log_like_fn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">invcov</span><span class="p">):</span>
     <span class="n">diff</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">mu</span>
     <span class="k">return</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">diff</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">invcov</span><span class="p">,</span> <span class="n">diff</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
 <p>Add the initial settings: number of dimensions and number of walkers. Then, generate a covariance matrix for the given dimensionality for the likelihood and a set of means for each component of the Gaussian.</p>
@@ -227,7 +227,7 @@ like this:</p>
 <span class="n">lims</span> <span class="o">=</span> <span class="mf">5.0</span>
 <span class="n">priors_in</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="o">-</span><span class="n">lims</span> <span class="o">+</span> <span class="n">means</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">lims</span> <span class="o">+</span> <span class="n">means</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ndim</span><span class="p">)}</span>
 <span class="n">priors</span> <span class="o">=</span> <span class="n">ProbDistContainer</span><span class="p">(</span><span class="n">priors_in</span><span class="p">)</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
 <p>In this case, we are not going to use really any of Eryn’s special capabilities. This will allow us to focus on how to navigate the sampler and deal with its output. Then we can add the fun stuff!</p>
@@ -260,14 +260,14 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
 <span class="n">log_like</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span>
     <span class="n">log_like_fn</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">means</span><span class="p">,</span> <span class="n">invcov</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">)])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">log_like</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Log-likelihood:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">log_like</span><span class="p">)</span>
 
 <span class="c1"># check log_prior</span>
 <span class="n">log_prior</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span>
     <span class="n">priors</span><span class="o">.</span><span class="n">logpdf</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">)])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">log_prior</span><span class="p">)</span>
-<br/></pre></div>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Log-prior:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">log_prior</span><span class="p">)</span>
+</pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -275,7 +275,8 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[-30.69858605 -27.88613553 -10.22294092 -14.70569247 -18.96300942
+Log-likelihood:
+ [-30.69858605 -27.88613553 -10.22294092 -14.70569247 -18.96300942
  -40.24777582 -18.73441074 -24.83741982 -29.01040764 -27.8427905
  -15.6395355  -37.63324244 -37.32945619 -23.65755241 -14.71578138
  -17.41587351 -10.60372232 -14.78508305 -16.44610878 -14.65807937
@@ -295,7 +296,9 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
  -26.22668818 -20.43301692  -8.79050623 -23.10278803 -16.10581548
  -38.66327643 -21.96839538 -19.91765459 -10.73450427 -13.25399003
  -11.51642261 -12.99636574 -21.3527218  -33.90758502 -35.26045709]
-[-11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+
+Log-prior:
+ [-11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
@@ -343,8 +346,8 @@ arguments to the <code class="docutils literal notranslate"><span class="pre">En
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|████████████████████████████████████████| 100/100 [00:00&lt;00:00, 247.07it/s]
-100%|██████████████████████████████████████| 2500/2500 [00:09&lt;00:00, 261.19it/s]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 100/100 [00:00&lt;00:00, 1191.19it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████| 2500/2500 [00:02&lt;00:00, 1244.03it/s]
 </pre></div></div>
 </div>
 <p>Similar to <code class="docutils literal notranslate"><span class="pre">emcee</span></code>, all of the sampler information is stored in a backend object. In the default case, this backend is <code class="docutils literal notranslate"><span class="pre">`eryn.backends.Backend</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/build/html/user/backend.html#eryn.backends.Backend">https://mikekatz04.github.io/Eryn/build/html/user/backend.html#eryn.backends.Backend</a>&gt;`__. To retrieve the samples from the backend, you call the <code class="docutils literal notranslate"><span class="pre">get_chain</span></code> method. This will return a dictionary with keys at the omdel names and a 5-dimensional array per model, which can be intimidating. We will cover that array just below. For now, just focus on
@@ -355,23 +358,15 @@ the output of the sampler.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;model_0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ndim</span><span class="p">)</span>
-<span class="n">corner</span><span class="o">.</span><span class="n">corner</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">truths</span><span class="o">=</span><span class="n">means</span><span class="p">)</span>
+<span class="n">corner</span><span class="o">.</span><span class="n">corner</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">truths</span><span class="o">=</span><span class="n">means</span><span class="p">);</span>
 </pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_22_0.png" src="../_images/tutorial_Eryn_tutorial_22_0.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_22_1.png" src="../_images/tutorial_Eryn_tutorial_22_1.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_22_0.png" src="../_images/tutorial_Eryn_tutorial_22_0.png" />
 </div>
 </div>
 <p>Now we will plot the chains.</p>
@@ -380,11 +375,11 @@ the output of the sampler.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#### Chains</span>
-<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ndim</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ndim</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ndim</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">walk</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">):</span>
-        <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;model_0&#39;</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">walk</span><span class="p">,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">])</span>
+        <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ensemble</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;model_0&#39;</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">walk</span><span class="p">,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -410,7 +405,7 @@ for each sample. * <code class="docutils literal notranslate"><span class="pre">
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ll</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">get_log_like</span><span class="p">()</span>
 <span class="n">lp</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">get_log_prior</span><span class="p">()</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of iterations </span><span class="si">{</span><span class="n">ensemble</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">iteration</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of iterations </span><span class="si">{</span><span class="n">ensemble</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">iteration</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="c1"># equivalent to ensemble.get_log_like() and ensemble.get_log_prior()</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">ll</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">ll</span><span class="p">,</span> <span class="n">lp</span><span class="p">)</span>
 </pre></div>
@@ -422,6 +417,7 @@ for each sample. * <code class="docutils literal notranslate"><span class="pre">
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 Number of iterations 500
+
 (500, 1, 100) [[[-1.05297225 -2.81695595 -0.80839791 ... -1.30449907 -2.65001331
    -1.72492908]]
 
@@ -511,7 +507,7 @@ model or leaf.</p>
 <h2>State Objects<a class="headerlink" href="#State-Objects" title="Link to this heading"></a></h2>
 <p>Now, we are going to look at <code class="docutils literal notranslate"><span class="pre">`State</span></code> &lt;<a class="reference external" href="https://mikekatz04.github.io/Eryn/build/html/user/state.html#eryn.state.State">https://mikekatz04.github.io/Eryn/build/html/user/state.html#eryn.state.State</a>&gt;`__ objects. They carry the current information throughout the sampler about the current state of the sampler. In our simple example, we can examine the current coordinates, likelihood, and prior values.</p>
 <p>Output from the sampler above is the last state of the sampler <code class="docutils literal notranslate"><span class="pre">out</span></code>. This will include any additional objects passed through the sampler like <code class="docutils literal notranslate"><span class="pre">BranchSupplemental</span></code> objects that we will explain below.</p>
-<p>Another way to retrieve the last state is from the backend. That is what we will do here. However, please note, that supplimental information (discussed below) is not stored in the backend, so the state that is returned from the backend will have information that is stored in the backend, but not supplimental information that was passed through the sampler at runtime.</p>
+<p>Another way to retrieve the last state is from the backend. That is what we will do here. However, please note, that supplemental information (discussed below) is not stored in the backend, so the state that is returned from the backend will have information that is stored in the backend, but not supplemental information that was passed through the sampler at runtime.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
@@ -534,7 +530,10 @@ model or leaf.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">log_like</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">log_like</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">log_prior</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">get_log_posterior</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">log_like</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">log_like</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">log_prior</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">get_log_posterior</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
@@ -543,7 +542,8 @@ model or leaf.</p>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(1, 100) [[-0.6654815  -2.28154314 -2.00102494 -4.41852808 -1.87391204 -3.05035603
+(1, 100)
+[[-0.6654815  -2.28154314 -2.00102494 -4.41852808 -1.87391204 -3.05035603
   -1.47197889 -3.04722716 -3.8519063  -2.53028792 -1.47895075 -0.91435392
   -4.67615627 -6.59494035 -3.09579563 -2.31956089 -3.61486196 -1.12447462
   -2.1692713  -4.54813706 -5.47761491 -1.81600973 -2.57141612 -3.18369399
@@ -559,7 +559,8 @@ model or leaf.</p>
   -1.80055637 -1.59197714 -3.34129599 -1.36805722 -2.01708067 -3.58699943
   -2.32689704 -2.58811303 -2.7197202  -2.05348442 -1.2112424  -1.3357544
   -1.65449106 -1.68322549 -1.04792421 -1.13391508 -2.31811812 -2.46163754
-  -5.10129065 -1.6139005  -1.08899932 -2.1398411 ]] [[-11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
+  -5.10129065 -1.6139005  -1.08899932 -2.1398411 ]]
+[[-11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
   -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
   -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
   -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
@@ -578,7 +579,8 @@ model or leaf.</p>
   -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
   -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
   -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546
-  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546]] [[-12.178406967597018 -13.794468601537229 -13.51395040804473
+  -11.51292546 -11.51292546 -11.51292546 -11.51292546 -11.51292546]]
+[[-12.178406967597018 -13.794468601537229 -13.51395040804473
   -15.931453545910662 -13.386837504796224 -14.563281497846829
   -12.984904356428126 -14.560152628566094 -15.364831763416989
   -14.043213387296886 -12.991876210506318 -12.427279383435607
@@ -632,7 +634,7 @@ branch objects can be accessed as <code class="docutils literal notranslate"><sp
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-{&#39;model_0&#39;: &lt;eryn.state.Branch at 0x134b34800&gt;}
+{&#39;model_0&#39;: &lt;eryn.state.Branch at 0x1196d39a0&gt;}
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -979,7 +981,7 @@ Likelihoods just like discussed above.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="c1"># set up problem</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># set up problem</span>
 <span class="n">ndim</span> <span class="o">=</span> <span class="mi">5</span>
 <span class="n">nwalkers</span> <span class="o">=</span> <span class="mi">100</span>
 <span class="n">ntemps</span> <span class="o">=</span> <span class="mi">10</span>
@@ -1006,7 +1008,7 @@ Likelihoods just like discussed above.</p>
 <span class="c1"># thin by 5</span>
 <span class="n">thin_by</span> <span class="o">=</span> <span class="mi">5</span>
 <span class="n">ensemble_pt</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">nsteps</span><span class="p">,</span> <span class="n">burn</span><span class="o">=</span><span class="n">burn</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="n">thin_by</span><span class="p">)</span>
-<br/><br/></pre></div>
+</pre></div>
 </div>
 </div>
 <div class="nboutput docutils container">
@@ -1014,8 +1016,8 @@ Likelihoods just like discussed above.</p>
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|███████████████████████████████████████| 1000/1000 [00:15&lt;00:00, 66.39it/s]
-100%|███████████████████████████████████████| 2500/2500 [00:37&lt;00:00, 66.02it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1000/1000 [00:03&lt;00:00, 290.23it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 2500/2500 [00:08&lt;00:00, 286.28it/s]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1024,7 +1026,7 @@ Likelihoods just like discussed above.</p>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;eryn.state.State at 0x134c6b350&gt;
+&lt;eryn.state.State at 0x1195890f0&gt;
 </pre></div></div>
 </div>
 <p>We can plot our samples at different temperatures and see the differences in action.</p>
@@ -1132,11 +1134,13 @@ Likelihoods just like discussed above.</p>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#### Chains</span>
 <span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ntemps</span><span class="p">):</span>
-    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ndim</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ndim</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ndim</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Temperature </span><span class="si">{</span><span class="n">temp</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">walk</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">):</span>
-            <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ensemble_pt</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;model_0&#39;</span><span class="p">][:,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">walk</span><span class="p">,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">])</span>
+            <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ensemble_pt</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()[</span><span class="s1">&#39;model_0&#39;</span><span class="p">][:,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">walk</span><span class="p">,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.03</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1221,7 +1225,7 @@ Likelihoods just like discussed above.</p>
 <span class="c1"># cold chain and highest temperature chain</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ll</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;cold&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ll</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;warm&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">();</span>
 </pre></div>
 </div>
 </div>
@@ -1233,20 +1237,11 @@ Likelihoods just like discussed above.</p>
 (500, 10, 100)
 </pre></div></div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x138502ab0&gt;
-</pre></div></div>
-</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_51_2.png" src="../_images/tutorial_Eryn_tutorial_51_2.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_51_1.png" src="../_images/tutorial_Eryn_tutorial_51_1.png" />
 </div>
 </div>
 </section>
@@ -1312,24 +1307,15 @@ Likelihoods just like discussed above.</p>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;lightskyblue&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">injection</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;injection&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;crimson&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">();</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x136e66450&gt;
-</pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_55_1.png" src="../_images/tutorial_Eryn_tutorial_55_1.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_55_0.png" src="../_images/tutorial_Eryn_tutorial_55_0.png" />
 </div>
 </div>
 <p><strong>Setup our reversible-jump run</strong></p>
@@ -1371,9 +1357,9 @@ Likelihoods just like discussed above.</p>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># describes priors for all leaves independently</span>
 <span class="n">priors</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="mi">0</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">),</span>  <span class="c1"># amplitude</span>
+        <span class="mi">0</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">),</span>          <span class="c1"># amplitude</span>
         <span class="mi">1</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">t</span><span class="o">.</span><span class="n">max</span><span class="p">()),</span>  <span class="c1"># mean</span>
-        <span class="mi">2</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.21</span><span class="p">),</span>  <span class="c1"># sigma</span>
+        <span class="mi">2</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.21</span><span class="p">),</span>        <span class="c1"># sigma</span>
     <span class="p">},</span>
 <span class="p">}</span>
 </pre></div>
@@ -1392,7 +1378,7 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 <span class="n">cov</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">ndim</span><span class="p">))</span> <span class="o">*</span> <span class="n">factor</span><span class="p">}</span>
 
 <span class="n">moves</span> <span class="o">=</span> <span class="n">GaussianMove</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
 <p>We will now initialize the sampler by adding the branch, tempering, leaf, and move information.</p>
@@ -1414,7 +1400,7 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
     <span class="n">moves</span><span class="o">=</span><span class="n">moves</span><span class="p">,</span>
     <span class="n">rj_moves</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># basic generation of new leaves from the prior</span>
 <span class="p">)</span>
-<br/><br/></pre></div>
+</pre></div>
 </div>
 </div>
 <p>Now we will setup a <code class="docutils literal notranslate"><span class="pre">State</span></code> object and will use the Likelihood (<code class="docutils literal notranslate"><span class="pre">compute_log_like</span></code>) and prior functions (<code class="docutils literal notranslate"><span class="pre">compute_log_prior</span></code>) that are built into the sampler. The Likelihood function in the sampler will check the prior and only run walkers that exist entirely within the prior distribution. We can avoid redoing this computation by passing the prior as the <code class="docutils literal notranslate"><span class="pre">logp</span></code> kwarg to <code class="docutils literal notranslate"><span class="pre">compute_log_like</span></code>. The <code class="docutils literal notranslate"><span class="pre">[0]</span></code> at the end of the line is to grab the log Likelihood and leave behind any blobs.</p>
@@ -1422,16 +1408,17 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="n">log_prior</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">compute_log_prior</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">log_prior</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">compute_log_prior</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">)</span>
 <span class="n">log_like</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">compute_log_like</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">,</span> <span class="n">logp</span><span class="o">=</span><span class="n">log_prior</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
 <span class="c1"># make sure it is reasonably close to the maximum which this is</span>
 <span class="c1"># will not be zero due to noise</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">log_like</span><span class="p">,</span> <span class="n">log_prior</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Log-likelihood:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">log_like</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Log-prior:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">log_prior</span><span class="p">)</span>
 
 <span class="c1"># setup starting state</span>
 <span class="n">state</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">log_like</span><span class="o">=</span><span class="n">log_like</span><span class="p">,</span> <span class="n">log_prior</span><span class="o">=</span><span class="n">log_prior</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">)</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1439,7 +1426,8 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[[-267.48857258 -273.13358068 -272.04356318 -273.41959181 -269.65159976
+Log-likelihood:
+ [[-267.48857258 -273.13358068 -272.04356318 -273.41959181 -269.65159976
   -273.45581292 -269.0534354  -269.21480317 -270.17335397 -268.79114293
   -267.97593006 -269.76118281 -268.97477874 -268.96915067 -267.44497304
   -268.55232307 -268.69079155 -269.13611008 -266.317588   -268.19035794]
@@ -1470,7 +1458,10 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
  [-267.67914435 -266.02251242 -266.32624169 -269.16921554 -268.73743926
   -274.21583965 -269.74454528 -269.21673563 -268.68519371 -266.60927311
   -270.20377505 -267.99209023 -269.13139001 -268.27709924 -265.67000643
-  -274.6973296  -269.6495672  -269.3549933  -269.01571009 -267.5950623 ]] [[3.66516293 3.66516293 3.66516293 3.66516293 3.66516293 3.66516293
+  -274.6973296  -269.6495672  -269.3549933  -269.01571009 -267.5950623 ]]
+
+Log-prior:
+ [[3.66516293 3.66516293 3.66516293 3.66516293 3.66516293 3.66516293
   3.66516293 3.66516293 3.66516293 3.66516293 3.66516293 3.66516293
   3.66516293 3.66516293 3.66516293 3.66516293 3.66516293 3.66516293
   3.66516293 3.66516293]
@@ -1511,7 +1502,7 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">nsteps</span> <span class="o">=</span> <span class="mi">2000</span>
 <span class="n">last_sample</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">nsteps</span><span class="p">,</span> <span class="n">burn</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1519,8 +1510,8 @@ covariance matrix that will be used in a multivariate Gaussian to propose new po
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|███████████████████████████████████████| 1000/1000 [00:36&lt;00:00, 27.08it/s]
-100%|███████████████████████████████████████| 2000/2000 [01:13&lt;00:00, 27.27it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1000/1000 [00:07&lt;00:00, 128.43it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 2000/2000 [00:15&lt;00:00, 132.22it/s]
 </pre></div></div>
 </div>
 <p>Let’s look at the last sample in terms of the <code class="docutils literal notranslate"><span class="pre">nleaves</span></code> array.</p>
@@ -1555,14 +1546,18 @@ array([[4, 4, 3, 4, 4, 3, 4, 4, 4, 4, 3, 4, 4, 4, 4, 3, 4, 3, 5, 3],
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;max ll: </span><span class="si">{</span><span class="n">ensemble</span><span class="o">.</span><span class="n">get_log_like</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
 <span class="n">nleaves</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_nleaves</span><span class="p">()[</span><span class="s1">&#39;gauss&#39;</span><span class="p">]</span>
-<span class="n">bns</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">nleaves_max</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span>
-<span class="p">)</span>  <span class="c1"># Just to make it pretty and center the bins</span>
+
+<span class="n">bns</span> <span class="o">=</span> <span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nleaves_min</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="o">+</span><span class="mf">1.5</span><span class="p">)</span> <span class="p">)</span>  <span class="c1"># Just to make it pretty and center the bins</span>
 
 <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Number of Models&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nleaves_min</span><span class="p">,</span><span class="n">nleaves_max</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+
 <span class="k">for</span> <span class="n">temp</span><span class="p">,</span> <span class="n">ax_t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ax</span><span class="p">):</span>
     <span class="n">ax_t</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">nleaves</span><span class="p">[:,</span> <span class="n">temp</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="n">bns</span><span class="p">)</span>
+    <span class="n">ax_t</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">1.02</span><span class="p">,</span> <span class="mf">0.45</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;Temperature </span><span class="si">{</span><span class="n">temp</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">horizontalalignment</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">ax_t</span><span class="o">.</span><span class="n">transAxes</span><span class="p">)</span>
+    <span class="n">ax_t</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gauss_inj_params</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1698,7 +1693,7 @@ max ll: -261.2302411532098
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x135c54e60&gt;
+&lt;matplotlib.legend.Legend at 0x119650910&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1746,7 +1741,7 @@ max ll: -261.2302411532098
         <span class="k">continue</span>
     <span class="n">coords</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="n">nn</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">sine_inj_params</span><span class="p">[</span><span class="n">nn</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">sig1</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">))</span>
     <span class="n">inds</span><span class="p">[</span><span class="s2">&quot;sine&quot;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="n">nn</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
 <p>Priors are defined per model for a single model. It will take into account multiple models by summing the prior probability over the leaves.</p>
@@ -1757,14 +1752,14 @@ max ll: -261.2302411532098
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># describes priors for all leaves independently</span>
 <span class="n">priors</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="mi">0</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">),</span>  <span class="c1"># amplitude</span>
+        <span class="mi">0</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">),</span>          <span class="c1"># amplitude</span>
         <span class="mi">1</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">t</span><span class="o">.</span><span class="n">max</span><span class="p">()),</span>  <span class="c1"># mean</span>
-        <span class="mi">2</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.21</span><span class="p">),</span>  <span class="c1"># sigma</span>
+        <span class="mi">2</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.21</span><span class="p">),</span>        <span class="c1"># sigma</span>
     <span class="p">},</span>
     <span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="mi">0</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">),</span>  <span class="c1"># amplitude</span>
-        <span class="mi">1</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">20.</span><span class="p">),</span>  <span class="c1"># mean</span>
-        <span class="mi">2</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">),</span>  <span class="c1"># sigma</span>
+        <span class="mi">0</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">),</span>          <span class="c1"># amplitude</span>
+        <span class="mi">1</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">20.</span><span class="p">),</span>           <span class="c1"># mean</span>
+        <span class="mi">2</span><span class="p">:</span> <span class="n">uniform_dist</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">),</span>    <span class="c1"># sigma</span>
     <span class="p">},</span>
 <span class="p">}</span>
 </pre></div>
@@ -1783,7 +1778,7 @@ max ll: -261.2302411532098
 <span class="p">}</span>
 
 <span class="n">moves</span> <span class="o">=</span> <span class="n">GaussianMove</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
 <p>We will now initialize the sampler by adding the branch, tempering, leaf, and move information.</p>
@@ -1805,7 +1800,7 @@ max ll: -261.2302411532098
     <span class="n">moves</span><span class="o">=</span><span class="n">moves</span><span class="p">,</span>
     <span class="n">rj_moves</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># basic generation of new leaves from the prior</span>
 <span class="p">)</span>
-<br/><br/></pre></div>
+</pre></div>
 </div>
 </div>
 <p>Prior, Likelihood, and initial state.</p>
@@ -1813,16 +1808,17 @@ max ll: -261.2302411532098
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="n">log_prior</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">compute_log_prior</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">log_prior</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">compute_log_prior</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">)</span>
 <span class="n">log_like</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">compute_log_like</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">,</span> <span class="n">logp</span><span class="o">=</span><span class="n">log_prior</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
 <span class="c1"># make sure it is reasonably close to the maximum which this is</span>
 <span class="c1"># will not be zero due to noise</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">log_like</span><span class="p">,</span> <span class="n">log_prior</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Log-likelihood:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">log_like</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Log-prior:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">log_prior</span><span class="p">)</span>
 
 <span class="c1"># setup starting state</span>
 <span class="n">state</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">log_like</span><span class="o">=</span><span class="n">log_like</span><span class="p">,</span> <span class="n">log_prior</span><span class="o">=</span><span class="n">log_prior</span><span class="p">,</span> <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">)</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1830,7 +1826,8 @@ max ll: -261.2302411532098
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[[-229.18441391 -233.51872418 -231.94801463 -235.4050852  -226.670966
+Log-likelihood:
+ [[-229.18441391 -233.51872418 -231.94801463 -235.4050852  -226.670966
   -232.71483467 -229.99148863 -232.40535129 -229.22825659 -230.16495346
   -228.29127145 -228.74374649 -226.49117628 -231.25563257 -228.862688
   -227.44352935 -234.67849744 -231.49859258 -230.65579296 -231.81069992]
@@ -1861,7 +1858,10 @@ max ll: -261.2302411532098
  [-231.90934207 -234.26628503 -229.59759858 -226.18117692 -228.3581854
   -227.89490619 -232.35931607 -227.58448115 -237.42531875 -233.79614919
   -229.43853536 -232.59733154 -228.00377491 -228.39675954 -233.79924613
-  -226.68628461 -228.18445055 -229.21994604 -229.56782994 -230.51977065]] [[-5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916
+  -226.68628461 -228.18445055 -229.21994604 -229.56782994 -230.51977065]]
+
+Log-prior:
+ [[-5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916
   -5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916
   -5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916 -5.89946916
   -5.89946916 -5.89946916]
@@ -1910,8 +1910,8 @@ max ll: -261.2302411532098
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-{&#39;gauss&#39;: &lt;eryn.state.Branch at 0x135c56d20&gt;,
- &#39;sine&#39;: &lt;eryn.state.Branch at 0x135c576b0&gt;}
+{&#39;gauss&#39;: &lt;eryn.state.Branch at 0x168858700&gt;,
+ &#39;sine&#39;: &lt;eryn.state.Branch at 0x168858310&gt;}
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -1920,7 +1920,7 @@ max ll: -261.2302411532098
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">nsteps</span> <span class="o">=</span> <span class="mi">5000</span>
 <span class="n">last_sample</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">nsteps</span><span class="p">,</span> <span class="n">burn</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1928,8 +1928,8 @@ max ll: -261.2302411532098
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|███████████████████████████████████████| 1000/1000 [00:55&lt;00:00, 18.07it/s]
-100%|███████████████████████████████████████| 5000/5000 [04:22&lt;00:00, 19.08it/s]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1000/1000 [00:11&lt;00:00, 83.42it/s]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 5000/5000 [00:57&lt;00:00, 86.74it/s]
 </pre></div></div>
 </div>
 <p>Let’s look at the last sample in terms of the <code class="docutils literal notranslate"><span class="pre">nleaves</span></code> array for both branches in the cold chain.</p>
@@ -1977,16 +1977,22 @@ array([[4, 2],
 
 <span class="n">nleaves_gauss</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_nleaves</span><span class="p">()[</span><span class="s1">&#39;gauss&#39;</span><span class="p">]</span>
 <span class="n">nleaves_sine</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">get_nleaves</span><span class="p">()[</span><span class="s1">&#39;sine&#39;</span><span class="p">]</span>
-<span class="n">bns</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span>
-<span class="p">)</span>  <span class="c1"># Just to make it pretty and center the bins</span>
+
+<span class="n">bns</span> <span class="o">=</span> <span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">nleaves_min</span><span class="p">[</span><span class="s1">&#39;gauss&#39;</span><span class="p">],</span> <span class="n">nleaves_min</span><span class="p">[</span><span class="s1">&#39;sine&#39;</span><span class="p">])</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="s1">&#39;gauss&#39;</span><span class="p">],</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="s1">&#39;sine&#39;</span><span class="p">])</span><span class="o">+</span><span class="mf">1.5</span><span class="p">)</span> <span class="p">)</span>  <span class="c1"># Just to make it pretty and center the bins</span>
 
 <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Number of Models&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">nleaves_min</span><span class="p">[</span><span class="s1">&#39;gauss&#39;</span><span class="p">],</span> <span class="n">nleaves_min</span><span class="p">[</span><span class="s1">&#39;sine&#39;</span><span class="p">]),</span><span class="nb">max</span><span class="p">(</span><span class="n">nleaves_max</span><span class="p">[</span><span class="s1">&#39;gauss&#39;</span><span class="p">],</span> <span class="n">nleaves_max</span><span class="p">[</span><span class="s1">&#39;sine&#39;</span><span class="p">])</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+
 <span class="k">for</span> <span class="n">temp</span><span class="p">,</span> <span class="n">ax_t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ax</span><span class="p">):</span>
     <span class="n">ax_t</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">nleaves_gauss</span><span class="p">[:,</span> <span class="n">temp</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="n">bns</span><span class="p">,</span> <span class="n">histtype</span><span class="o">=</span><span class="s2">&quot;step&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;gauss&quot;</span><span class="p">)</span>
     <span class="n">ax_t</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">nleaves_sine</span><span class="p">[:,</span> <span class="n">temp</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="n">bns</span><span class="p">,</span> <span class="n">histtype</span><span class="o">=</span><span class="s2">&quot;step&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;sine&quot;</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="n">ax_t</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">1.02</span><span class="p">,</span> <span class="mf">0.45</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;Temperature </span><span class="si">{</span><span class="n">temp</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">horizontalalignment</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">ax_t</span><span class="o">.</span><span class="n">transAxes</span><span class="p">)</span>
+    <span class="n">ax_t</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gauss_inj_params</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">)</span>
+    <span class="n">ax_t</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sine_inj_params</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C1&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">();</span>
 </pre></div>
 </div>
 </div>
@@ -1995,23 +2001,14 @@ array([[4, 2],
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-max ll: -218.81128464457333
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x138ba86b0&gt;
+max ll: -218.8112846445734
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_92_2.png" src="../_images/tutorial_Eryn_tutorial_92_2.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_92_1.png" src="../_images/tutorial_Eryn_tutorial_92_1.png" />
 </div>
 </div>
 <p>To get the samples, we need remove any sources that were not used. We can combine <code class="docutils literal notranslate"><span class="pre">coords</span></code> and <code class="docutils literal notranslate"><span class="pre">inds</span></code> or we can remove anywhere where the backend returns <code class="docutils literal notranslate"><span class="pre">Nan</span></code>. Backends store <code class="docutils literal notranslate"><span class="pre">Nan</span></code> for the coordinates that belong to binaries that are not currently used (<code class="docutils literal notranslate"><span class="pre">inds</span> <span class="pre">==</span> <span class="pre">False</span></code>).</p>
@@ -2277,7 +2274,7 @@ be okay.</p>
 
 <span class="n">nsteps</span> <span class="o">=</span> <span class="mi">500</span>
 <span class="n">last_sample</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">nsteps</span><span class="p">,</span> <span class="n">burn</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
 <div class="nboutput docutils container">
@@ -2354,8 +2351,8 @@ sine gibbs setup: [(&#39;sine&#39;, array([[ True,  True, False],
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|█████████████████████████████████████████| 100/100 [00:31&lt;00:00,  3.21it/s]
-100%|█████████████████████████████████████████| 500/500 [02:41&lt;00:00,  3.10it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 100/100 [00:05&lt;00:00, 19.35it/s]
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 500/500 [00:24&lt;00:00, 20.71it/s]
 </pre></div></div>
 </div>
 </section>
@@ -2402,7 +2399,7 @@ falsely detected model instances). In this case, it can be hard to tune each cov
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="c1"># define time stream</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># define time stream</span>
 <span class="n">num</span> <span class="o">=</span> <span class="mi">500</span>
 <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">num</span><span class="p">)</span>
 
@@ -2422,24 +2419,15 @@ falsely detected model instances). In this case, it can be hard to tune each cov
 
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;lightskyblue&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">injection</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;injection&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;crimson&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">();</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x137cd8260&gt;
-</pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_Eryn_tutorial_106_1.png" src="../_images/tutorial_Eryn_tutorial_106_1.png" />
+<img alt="../_images/tutorial_Eryn_tutorial_106_0.png" src="../_images/tutorial_Eryn_tutorial_106_0.png" />
 </div>
 </div>
 <p>Now, we will build our <code class="docutils literal notranslate"><span class="pre">GroupStretchMove</span></code> that is based on the mean value of each Gaussian pulse.</p>
@@ -2449,6 +2437,8 @@ falsely detected model instances). In this case, it can be hard to tune each cov
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">eryn.moves</span> <span class="kn">import</span> <span class="n">GroupStretchMove</span>
 
+<span class="c1"># Let create our user-define Group Move class &quot;MeanGaussianGroupMove&quot;</span>
+<span class="c1"># --&gt; &quot;Gaussian&quot; here is just referencing how this specific problem is considering &quot;Gaussian pulses.&quot;</span>
 <span class="k">class</span> <span class="nc">MeanGaussianGroupMove</span><span class="p">(</span><span class="n">GroupStretchMove</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="c1"># make sure kwargs get sent into group stretch parent class</span>
@@ -2478,14 +2468,14 @@ falsely detected model instances). In this case, it can be hard to tune each cov
         <span class="c1"># get closest friends</span>
         <span class="n">inds_closest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)[:,</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">nfriends</span><span class="p">]</span>
 
-        <span class="c1"># store in branch supplimental</span>
-        <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplimental</span><span class="p">[</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="c1"># store in branch supplemental</span>
+        <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplemental</span><span class="p">[</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;inds_closest&quot;</span><span class="p">:</span> <span class="n">inds_closest</span>
         <span class="p">}</span>
 
         <span class="c1"># make sure to &quot;turn off&quot; leaves that are deactivated by setting their</span>
         <span class="c1"># index to -1.</span>
-        <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplimental</span><span class="p">[</span><span class="o">~</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplemental</span><span class="p">[</span><span class="o">~</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;inds_closest&quot;</span><span class="p">:</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
                 <span class="p">(</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nfriends</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span>
             <span class="p">)[</span><span class="o">~</span><span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span><span class="p">]</span>
@@ -2498,7 +2488,7 @@ falsely detected model instances). In this case, it can be hard to tune each cov
         <span class="c1"># activated &amp; does not have an assigned index</span>
         <span class="n">fix</span> <span class="o">=</span> <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span> <span class="o">&amp;</span> <span class="p">(</span>
             <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
-                <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplimental</span><span class="p">[:][</span><span class="s2">&quot;inds_closest&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplemental</span><span class="p">[:][</span><span class="s2">&quot;inds_closest&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
                 <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="p">)</span>
@@ -2512,14 +2502,14 @@ falsely detected model instances). In this case, it can be hard to tune each cov
         <span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">current_means</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span>
         <span class="n">inds_closest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)[:,</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">nfriends</span><span class="p">]</span>
 
-        <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplimental</span><span class="p">[</span><span class="n">fix</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplemental</span><span class="p">[</span><span class="n">fix</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;inds_closest&quot;</span><span class="p">:</span> <span class="n">inds_closest</span>
         <span class="p">}</span>
 
         <span class="c1"># verify everything worked</span>
         <span class="n">fix_check</span> <span class="o">=</span> <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">inds</span> <span class="o">&amp;</span> <span class="p">(</span>
             <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
-                <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplimental</span><span class="p">[:][</span><span class="s2">&quot;inds_closest&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">branches</span><span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">branch_supplemental</span><span class="p">[:][</span><span class="s2">&quot;inds_closest&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
                 <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="p">)</span>
@@ -2544,14 +2534,14 @@ falsely detected model instances). In this case, it can be hard to tune each cov
         <span class="c1"># store in buffer array</span>
         <span class="n">friends</span><span class="p">[</span><span class="n">s_inds</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">friends</span><span class="p">[</span><span class="n">random_inds</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">friends</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[46]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="c1"># set random seed</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># set random seed</span>
 <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
 
 <span class="n">nwalkers</span> <span class="o">=</span> <span class="mi">20</span>
@@ -2594,7 +2584,7 @@ falsely detected model instances). In this case, it can be hard to tune each cov
 <span class="kn">from</span> <span class="nn">eryn.state</span> <span class="kn">import</span> <span class="n">BranchSupplemental</span>
 
 <span class="c1">### KEY PART OF SETUP</span>
-<span class="c1"># build branch supplimental to properly track information</span>
+<span class="c1"># build branch supplemental to properly track information</span>
 <span class="c1"># see below description of Branch Supplemental objects.</span>
 <span class="n">branch_supps</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="n">BranchSupplemental</span><span class="p">(</span>
@@ -2605,16 +2595,16 @@ falsely detected model instances). In this case, it can be hard to tune each cov
 <span class="n">state</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
     <span class="n">coords</span><span class="p">,</span>
     <span class="n">inds</span><span class="o">=</span><span class="n">inds</span><span class="p">,</span>
-    <span class="n">branch_supplimental</span><span class="o">=</span><span class="n">branch_supps</span><span class="p">,</span>
+    <span class="n">branch_supplemental</span><span class="o">=</span><span class="n">branch_supps</span><span class="p">,</span>
 <span class="p">)</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[47]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="n">ensemble</span> <span class="o">=</span> <span class="n">EnsembleSampler</span><span class="p">(</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ensemble</span> <span class="o">=</span> <span class="n">EnsembleSampler</span><span class="p">(</span>
     <span class="n">nwalkers</span><span class="p">,</span>
     <span class="n">ndim</span><span class="p">,</span>
     <span class="n">log_like_fn_gauss_pulse</span><span class="p">,</span>
@@ -2641,11 +2631,11 @@ falsely detected model instances). In this case, it can be hard to tune each cov
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[48]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><br/><span></span><span class="n">nsteps</span> <span class="o">=</span> <span class="mi">100</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">nsteps</span> <span class="o">=</span> <span class="mi">100</span>
 <span class="n">last_sample</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span>
     <span class="n">state</span><span class="p">,</span> <span class="n">nsteps</span><span class="p">,</span> <span class="n">burn</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="mi">10</span>
 <span class="p">)</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -2653,8 +2643,8 @@ falsely detected model instances). In this case, it can be hard to tune each cov
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|█████████████████████████████████████████| 100/100 [00:02&lt;00:00, 36.66it/s]
-100%|███████████████████████████████████████| 1000/1000 [00:30&lt;00:00, 32.88it/s]
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 100/100 [00:00&lt;00:00, 171.85it/s]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1000/1000 [00:06&lt;00:00, 161.66it/s]
 </pre></div></div>
 </div>
 <p>Plot result. You may need to run this much longer to get a reasonable looking plot.</p>
@@ -2688,8 +2678,8 @@ falsely detected model instances). In this case, it can be hard to tune each cov
 <p>While the <code class="docutils literal notranslate"><span class="pre">BranchSupplemental</span></code> object is considered a utility, it is documented and stored within the section on the <code class="docutils literal notranslate"><span class="pre">State</span></code> objects (see <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/state.html#state">here</a>).</p>
 <p>Sometimes, in sampling, we want to pass information through the sampler that is particular to each walker or leaf in our ensemble. Storing a different covariance matrix for each walker would be an example of this.</p>
 <p>A <code class="docutils literal notranslate"><span class="pre">BranchSupplemental</span></code> object is designed to do this. In our example above on the <code class="docutils literal notranslate"><span class="pre">GroupStretchMove</span></code>, we used <code class="docutils literal notranslate"><span class="pre">BranchSupplemental</span></code> objects to hold and pass friend information through the sampler.</p>
-<p>A <strong>major</strong> benefit of the branch supplimental is its indexing capabilities. As sampling proceeds, temperature swaps and accept/reject actions will change the current state coordinates and locations of each walker/leaf. The branch supplimental allows the sampling to track and move all of this extra information properly. For example, during a temperature swap, walker 0 in temperature 0 is swapped with walker 1 in temperature 1. This requires all information associated with (t,w)=(0, 0) to swap
-with walker information in (1,1). Eryn already does this directly for coordinates, inds, log like, log prior, etc. The branch supplimental ensures this swapping occurs properly for any <em>other</em> information you want to add that needs to track with each walker/leaf in the sampler.</p>
+<p>A <strong>major</strong> benefit of the branch supplemental is its indexing capabilities. As sampling proceeds, temperature swaps and accept/reject actions will change the current state coordinates and locations of each walker/leaf. The branch supplemental allows the sampling to track and move all of this extra information properly. For example, during a temperature swap, walker 0 in temperature 0 is swapped with walker 1 in temperature 1. This requires all information associated with (t,w)=(0, 0) to swap
+with walker information in (1,1). Eryn already does this directly for coordinates, inds, log like, log prior, etc. The branch supplemental ensures this swapping occurs properly for any <em>other</em> information you want to add that needs to track with each walker/leaf in the sampler.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[50]:
 </pre></div>
@@ -2717,7 +2707,7 @@ with walker information in (1,1). Eryn already does this directly for coordinate
 </pre></div>
 </div>
 </div>
-<p>You can index and set the supplimental values in a simple way.</p>
+<p>You can index and set the supplemental values in a simple way.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[52]:
 </pre></div>
@@ -2745,7 +2735,7 @@ AFTER: {&#39;important_value&#39;: array([1, 2, 3, 4, 5])} {&#39;important_value
 AFTER2: {&#39;important_value&#39;: array([513, 587, 735, 702, 764])} {&#39;important_value&#39;: array([513, 587, 735, 702, 764])}
 </pre></div></div>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">BranchSupplemental</span></code> objects are quietly powerful. You do not <em>need</em> to store numpy arrays as the supplimental. It can really be any object. Even, e.g., specialized class objects. In this case, you can store each class instance in a numpy array with <code class="docutils literal notranslate"><span class="pre">dtype=object</span></code> with <code class="docutils literal notranslate"><span class="pre">base_shape=(ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max)</span></code>. Then, when indexing or adjusting, the branch supplimental will index as usual at the <code class="docutils literal notranslate"><span class="pre">base_shape</span></code> level.</p>
+<p><code class="docutils literal notranslate"><span class="pre">BranchSupplemental</span></code> objects are quietly powerful. You do not <em>need</em> to store numpy arrays as the supplemental. It can really be any object. Even, e.g., specialized class objects. In this case, you can store each class instance in a numpy array with <code class="docutils literal notranslate"><span class="pre">dtype=object</span></code> with <code class="docutils literal notranslate"><span class="pre">base_shape=(ntemps,</span> <span class="pre">nwalkers,</span> <span class="pre">nleaves_max)</span></code>. Then, when indexing or adjusting, the branch supplemental will index as usual at the <code class="docutils literal notranslate"><span class="pre">base_shape</span></code> level.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[53]:
 </pre></div>
@@ -2776,11 +2766,11 @@ AFTER2: {&#39;important_value&#39;: array([513, 587, 735, 702, 764])} {&#39;impo
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 (10, 30, 12)
-[&lt;__main__.CarryAnything object at 0x137cf54f0&gt;
- &lt;__main__.CarryAnything object at 0x1368f4b30&gt;]
+[&lt;__main__.CarryAnything object at 0x12ec087c0&gt;
+ &lt;__main__.CarryAnything object at 0x12efa1540&gt;]
 </pre></div></div>
 </div>
-<p>The branch supplimental is now built simply with two key-value pairs in the input dictionary. Even though they have different overall shapes, the two inputs have the same <code class="docutils literal notranslate"><span class="pre">base_shape</span></code> and can be indexed together properly.</p>
+<p>The branch supplemental is now built simply with two key-value pairs in the input dictionary. Even though they have different overall shapes, the two inputs have the same <code class="docutils literal notranslate"><span class="pre">base_shape</span></code> and can be indexed together properly.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[54]:
 </pre></div>
@@ -2812,7 +2802,7 @@ AFTER2: {&#39;important_value&#39;: array([513, 587, 735, 702, 764])} {&#39;impo
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-{&#39;important_value&#39;: array([ 52, 403, 967, 444, 130]), &#39;carry_any&#39;: &lt;__main__.CarryAnything object at 0x135204dd0&gt;}
+{&#39;important_value&#39;: array([ 52, 403, 967, 444, 130]), &#39;carry_any&#39;: &lt;__main__.CarryAnything object at 0x12ec0bd00&gt;}
 10
 </pre></div></div>
 </div>
@@ -2963,7 +2953,7 @@ dict_keys([&#39;important_value&#39;, &#39;carry_any&#39;])
 
 <span class="c1"># it can be added via args or kwargs in the ensemble sampler</span>
 <span class="n">lnprob</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">group1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">group2</span><span class="p">,</span> <span class="n">tcs</span><span class="p">)</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -3096,12 +3086,19 @@ dict_keys([&#39;important_value&#39;, &#39;carry_any&#39;])
 <section id="Multivariate-Prior-Distributions">
 <h3>Multivariate Prior Distributions<a class="headerlink" href="#Multivariate-Prior-Distributions" title="Link to this heading"></a></h3>
 <p>Eryn also allows for multivariate prior distributions. To pass these, rather than a single index as the dictionary key like before (e.g.<code class="docutils literal notranslate"><span class="pre">1:</span> <span class="pre">dist()</span></code>), it is not a tuple of inds: <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">1):</span> <span class="pre">dist()</span></code>.</p>
-<div class="nbinput docutils container">
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[59]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">multivariate_normal</span>
-<span class="n">cov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.8</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">]])</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[60]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.8</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">]])</span>
 
 <span class="n">priors_in</span> <span class="o">=</span> <span class="p">{</span>
     <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span> <span class="n">multivariate_normal</span><span class="p">(</span><span class="n">cov</span><span class="o">=</span><span class="n">cov</span><span class="p">)</span>
@@ -3125,14 +3122,19 @@ dict_keys([&#39;important_value&#39;, &#39;carry_any&#39;])
 <h3>Periodic Container<a class="headerlink" href="#Periodic-Container" title="Link to this heading"></a></h3>
 <p>The periodic container accounts for periodic parameters by accounting for periodic boundary conditions in terms of distance and parameter wrapping. The input to periodic containers are dictionaries with the parameter index as the key and the period associated with it as the item. Any parameters that are not periodic do not need to be included.</p>
 <p>For example, with a sine model that includes an amplitude (index 0), frequency (index 1), and phase offset (index 2), the phase offset will be periodic.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[60]:
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[61]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">eryn.utils</span> <span class="kn">import</span> <span class="n">PeriodicContainer</span>
-
-
-<span class="n">periodic</span> <span class="o">=</span> <span class="n">PeriodicContainer</span><span class="p">({</span><span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="p">{</span><span class="mi">2</span><span class="p">:</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">}})</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[62]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">periodic</span> <span class="o">=</span> <span class="n">PeriodicContainer</span><span class="p">({</span><span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="p">{</span><span class="mi">2</span><span class="p">:</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">}})</span>
 <span class="n">ntemps</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">,</span> <span class="n">ndim</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
 
 <span class="n">params_before_1</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;sine&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">ntemps</span> <span class="o">*</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nleaves_max</span><span class="p">,</span> <span class="n">ndim</span><span class="p">))}</span>
@@ -3167,7 +3169,7 @@ dict_keys([&#39;important_value&#39;, &#39;carry_any&#39;])
 <p>Stopping functions are effectively convergence functions, allowing the sampler to stop running when it reaches a user-defined criterion. For more information, see the <a class="reference external" href="https://mikekatz04.github.io/Eryn/html/user/utils.html#stopping-functions">stopping documentation</a>.</p>
 <p>Here, we will just look at a quick example of using the implemented stopping function for Likelihood convergence.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[61]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[63]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">eryn.utils</span> <span class="kn">import</span> <span class="n">SearchConvergeStopping</span>
@@ -3175,7 +3177,7 @@ dict_keys([&#39;important_value&#39;, &#39;carry_any&#39;])
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[62]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[64]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Gaussian likelihood</span>
@@ -3293,8 +3295,8 @@ dict_keys([&#39;important_value&#39;, &#39;carry_any&#39;])
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|████████████████████████████████████████| 100/100 [00:00&lt;00:00, 291.24it/s]
-  3%|█                                       | 63/2500 [00:00&lt;00:07, 314.42it/s]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 100/100 [00:00&lt;00:00, 1258.70it/s]
+  0%|                                                                                                                            | 0/2500 [00:00&lt;?, ?it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -3311,29 +3313,26 @@ ITERS CONSECUTIVE: 1 Previous best LL: -0.09111836076165353 Current best LL: -0.
 
 ITERS CONSECUTIVE: 2 Previous best LL: -0.09111836076165353 Current best LL: -0.09111836076165353
 
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-  6%|██▍                                    | 157/2500 [00:00&lt;00:07, 296.77it/s]
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
 
 ITERS CONSECUTIVE: 0 Previous best LL: -0.0742244529294836 Current best LL: -0.0742244529294836
 
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+  5%|█████▌                                                                                                          | 124/2500 [00:00&lt;00:01, 1236.11it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
 
 ITERS CONSECUTIVE: 1 Previous best LL: -0.0742244529294836 Current best LL: -0.0742244529294836
-
-
-ITERS CONSECUTIVE: 2 Previous best LL: -0.0742244529294836 Current best LL: -0.0742244529294836
 
 </pre></div></div>
 </div>
@@ -3342,7 +3341,7 @@ ITERS CONSECUTIVE: 2 Previous best LL: -0.0742244529294836 Current best LL: -0.0
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-  9%|███▍                                   | 217/2500 [00:00&lt;00:07, 286.14it/s]
+ 10%|███████████▏                                                                                                    | 249/2500 [00:00&lt;00:01, 1243.96it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -3350,6 +3349,9 @@ ITERS CONSECUTIVE: 2 Previous best LL: -0.0742244529294836 Current best LL: -0.0
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
+
+ITERS CONSECUTIVE: 2 Previous best LL: -0.0742244529294836 Current best LL: -0.0742244529294836
+
 
 ITERS CONSECUTIVE: 3 Previous best LL: -0.0742244529294836 Current best LL: -0.07399422624832219
 
@@ -3359,21 +3361,6 @@ ITERS CONSECUTIVE: 0 Previous best LL: -0.04450561782490035 Current best LL: -0.
 
 ITERS CONSECUTIVE: 1 Previous best LL: -0.04450561782490035 Current best LL: -0.04450561782490035
 
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
- 12%|████▊                                  | 305/2500 [00:01&lt;00:07, 286.26it/s]
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
 
 ITERS CONSECUTIVE: 2 Previous best LL: -0.04450561782490035 Current best LL: -0.04450561782490035
 
@@ -3383,21 +3370,6 @@ ITERS CONSECUTIVE: 3 Previous best LL: -0.04450561782490035 Current best LL: -0.
 
 ITERS CONSECUTIVE: 4 Previous best LL: -0.04450561782490035 Current best LL: -0.04450561782490035
 
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
- 13%|█████                                  | 325/2500 [00:01&lt;00:07, 287.83it/s]
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
 
 ITERS CONSECUTIVE: 5 Previous best LL: -0.04450561782490035 Current best LL: -0.04450561782490035
 
@@ -3408,8 +3380,16 @@ ITERS CONSECUTIVE: 5 Previous best LL: -0.04450561782490035 Current best LL: -0.
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-
+ 13%|██████████████▌                                                                                                 | 325/2500 [00:00&lt;00:01, 1241.31it/s]
 </pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
 </div>
 </section>
 </section>
