@@ -204,8 +204,8 @@ class ErynTest(unittest.TestCase):
 
         ll = ensemble_pt.backend.get_log_like()
 
-        # check temperature index
-        cold_chain = ensemble_pt.backend.get_chain(discard=10, thin=2, temp_index=0)
+        # check temperature index and branch_names
+        cold_chain = ensemble_pt.backend.get_chain(discard=10, thin=2, temp_index=0, branch_names=["model_0"])
         os.remove(backend_test_file)
 
     def test_rj(self):
@@ -327,9 +327,9 @@ class ErynTest(unittest.TestCase):
         # same as ensemble.get_chain()['gauss'][ensemble.get_inds()['gauss']]
         samples = samples[~np.isnan(samples[:, 0])]
 
-        # check temperature index
-        cold_chain = ensemble.backend.get_chain(discard=10, thin=2, temp_index=1)
-
+        # check temperature index and branch_names
+        cold_chain = ensemble.backend.get_chain(discard=10, thin=2, temp_index=1, branch_names=["gauss"])
+        
         #means = np.asarray(gauss_inj_params)[:, 1]
         # fig, (ax1, ax2) = plt.subplots(1, 2)
         # ax1.hist(nleaves[:, 0].flatten(), np.arange(0, 3) - 0.5)

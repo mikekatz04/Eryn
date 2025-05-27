@@ -463,7 +463,7 @@ class HDFBackend(Backend):
         with self.open() as f:
             return f[self.name].attrs["has_blobs"]
 
-    def get_value(self, name, thin=1, discard=0, slice_vals=None, temp_index=None):
+    def get_value(self, name, thin=1, discard=0, slice_vals=None, temp_index=None, branch_names=None):
         """Returns a requested value to user.
 
         This function helps to streamline the backend for both
@@ -482,7 +482,8 @@ class HDFBackend(Backend):
                 (default: ``None``)
             temp_index (int, optional): Integer for the desired temperature index.
                 If ``None``, will return all temperatures. (default: ``None``)
-
+            branch_names (str or list, optional): Specific branch names requested. (default: ``None``)
+            
         Returns:
             dict or np.ndarray: Values requested.
 
@@ -500,6 +501,13 @@ class HDFBackend(Backend):
 
         if slice_vals is None:
             slice_vals = slice(discard + thin - 1, self.iteration, thin)
+
+        # make sure branch_names input is a list
+        if branch_names is not None:
+            if isinstance(branch_names, str):
+                branches_names = [branch_names]
+
+        branch_names_in = self.branch_names if branch_names is None else branch_names
 
         successful = False
         num_try = 0
@@ -523,11 +531,11 @@ class HDFBackend(Backend):
                         assert isinstance(temp_index, int)
 
                     if name == "chain":
-                        v_all = {key: g["chain"][key][slice_vals, temp_index] for key in g["chain"]}
+                        v_all = {key: g["chain"][key][slice_vals, temp_index] for key in branch_names_in}
 
-                    elif name == "inds":
-                        v_all = {key: g["inds"][key][slice_vals, temp_index] for key in g["inds"]}
-                   
+                    if name == "inds":
+                        v_all = {key: g["inds"][key][slice_vals, temp_index] for key in branch_names_in}
+                    
                     elif name == "blobs" and not g.attrs["has_blobs"]:
                         v_all = None
                         
@@ -540,6 +548,7 @@ class HDFBackend(Backend):
                 num_try += 1
                 print(f"Unable to read h5 file {num_try} times.")
                 time.sleep(20.0)
+            
 
         if not successful:
             raise OSError("Attempted to open file max try number of times. Likely cannot read data.")

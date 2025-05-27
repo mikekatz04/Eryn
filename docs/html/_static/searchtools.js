@@ -4,11 +4,7 @@
  *
  * Sphinx JavaScript utilities for the full-text search.
  *
-<<<<<<< HEAD
  * :copyright: Copyright 2007-2024 by the Sphinx team, see AUTHORS.
-=======
- * :copyright: Copyright 2007-2023 by the Sphinx team, see AUTHORS.
->>>>>>> c377795 (fixed stretch in ndim=1)
  * :license: BSD, see LICENSE for details.
  *
  */
@@ -103,11 +99,7 @@ const _displayItem = (item, searchTerms, highlightTerms) => {
       .then((data) => {
         if (data)
           listItem.appendChild(
-<<<<<<< HEAD
             Search.makeSearchSummary(data, searchTerms, anchor)
-=======
-            Search.makeSearchSummary(data, searchTerms)
->>>>>>> c377795 (fixed stretch in ndim=1)
           );
         // highlight search terms in the summary
         if (SPHINX_HIGHLIGHT_ENABLED)  // set in sphinx_highlight.js
@@ -184,7 +176,6 @@ const Search = {
   _queued_query: null,
   _pulse_status: -1,
 
-<<<<<<< HEAD
   htmlToText: (htmlString, anchor) => {
     const htmlElement = new DOMParser().parseFromString(htmlString, 'text/html');
     for (const removalQuery of [".headerlinks", "script", "style"]) {
@@ -200,11 +191,6 @@ const Search = {
     }
 
     // if anchor not specified or not found, fall back to main content
-=======
-  htmlToText: (htmlString) => {
-    const htmlElement = new DOMParser().parseFromString(htmlString, 'text/html');
-    htmlElement.querySelectorAll(".headerlink").forEach((el) => { el.remove() });
->>>>>>> c377795 (fixed stretch in ndim=1)
     const docContent = htmlElement.querySelector('[role="main"]');
     if (docContent) return docContent.textContent;
 
@@ -282,20 +268,7 @@ const Search = {
     else Search.deferQuery(query);
   },
 
-<<<<<<< HEAD
   _parseQuery: (query) => {
-=======
-  /**
-   * execute search (requires search index to be loaded)
-   */
-  query: (query) => {
-    const filenames = Search._index.filenames;
-    const docNames = Search._index.docnames;
-    const titles = Search._index.titles;
-    const allTitles = Search._index.alltitles;
-    const indexEntries = Search._index.indexentries;
-
->>>>>>> c377795 (fixed stretch in ndim=1)
     // stem the search terms and add them to the correct list
     const stemmer = new Stemmer();
     const searchTerms = new Set();
@@ -351,21 +324,12 @@ const Search = {
 
     _removeChildren(document.getElementById("search-progress"));
 
-<<<<<<< HEAD
     const queryLower = query.toLowerCase().trim();
     for (const [title, foundTitles] of Object.entries(allTitles)) {
       if (title.toLowerCase().trim().includes(queryLower) && (queryLower.length >= title.length/2)) {
         for (const [file, id] of foundTitles) {
           let score = Math.round(100 * queryLower.length / title.length)
           normalResults.push([
-=======
-    const queryLower = query.toLowerCase();
-    for (const [title, foundTitles] of Object.entries(allTitles)) {
-      if (title.toLowerCase().includes(queryLower) && (queryLower.length >= title.length/2)) {
-        for (const [file, id] of foundTitles) {
-          let score = Math.round(100 * queryLower.length / title.length)
-          results.push([
->>>>>>> c377795 (fixed stretch in ndim=1)
             docNames[file],
             titles[file] !== title ? `${titles[file]} > ${title}` : title,
             id !== null ? "#" + id : "",
@@ -380,31 +344,21 @@ const Search = {
     // search for explicit entries in index directives
     for (const [entry, foundEntries] of Object.entries(indexEntries)) {
       if (entry.includes(queryLower) && (queryLower.length >= entry.length/2)) {
-<<<<<<< HEAD
         for (const [file, id, isMain] of foundEntries) {
           const score = Math.round(100 * queryLower.length / entry.length);
           const result = [
-=======
-        for (const [file, id] of foundEntries) {
-          let score = Math.round(100 * queryLower.length / entry.length)
-          results.push([
->>>>>>> c377795 (fixed stretch in ndim=1)
             docNames[file],
             titles[file],
             id ? "#" + id : "",
             null,
             score,
             filenames[file],
-<<<<<<< HEAD
           ];
           if (isMain) {
             normalResults.push(result);
           } else {
             nonMainIndexResults.push(result);
           }
-=======
-          ]);
->>>>>>> c377795 (fixed stretch in ndim=1)
         }
       }
     }
@@ -640,13 +594,8 @@ const Search = {
    * search summary for a given text. keywords is a list
    * of stemmed words.
    */
-<<<<<<< HEAD
   makeSearchSummary: (htmlText, keywords, anchor) => {
     const text = Search.htmlToText(htmlText, anchor);
-=======
-  makeSearchSummary: (htmlText, keywords) => {
-    const text = Search.htmlToText(htmlText);
->>>>>>> c377795 (fixed stretch in ndim=1)
     if (text === "") return null;
 
     const textLower = text.toLowerCase();

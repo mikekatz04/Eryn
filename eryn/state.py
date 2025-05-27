@@ -397,6 +397,8 @@ class State(object):
             was used in this step. If dict, need to use ``branch_names`` for the keys.
             Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
             (default: ``None``)
+        branch_supplemental (object): :class:`BranchSupplemental` object specific to this branch.
+            (default: ``None``)
         log_like (ndarray[ntemps, nwalkers], optional): Log likelihoods
             for the  walkers at positions given by ``coords``.
             Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.

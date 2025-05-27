@@ -254,7 +254,7 @@ class Backend(object):
         """Returns ``True`` if the model includes blobs"""
         return self.blobs is not None
 
-    def get_value(self, name, thin=1, discard=0, slice_vals=None, temp_index=None):
+    def get_value(self, name, thin=1, discard=0, slice_vals=None, temp_index=None, branch_names=None):
         """Returns a requested value to user.
 
         This function helps to streamline the backend for both
@@ -269,7 +269,8 @@ class Backend(object):
             slice_vals (indexing np.ndarray or slice, optional): Ignored for non-HDFBackend.
             temp_index (int, optional): Integer for the desired temperature index.
                 If ``None``, will return all temperatures. (default: ``None``)
-
+            branch_names (str or list, optional): Specific branch names requested. (default: ``None``)
+            
         Returns:
             dict or np.ndarray: Values requested.
 
@@ -292,12 +293,18 @@ class Backend(object):
             temp_index = np.arange(self.ntemps)
         else:
             assert isinstance(temp_index, int)
-            
+        
+        # make sure branch_names input is a list
+        if branch_names is not None:
+            if isinstance(branch_names, str):
+                branches_names = [branch_names]
+
+        branch_names_in = self.branch_names if branch_names is None else branch_names
         # prepare chain for output
         if name == "chain":
             v_all = {
                 key: self.chain[key][discard + thin - 1 : self.iteration : thin, temp_index]
-                for key in self.branch_names
+                for key in branch_names_in
             }
             return v_all
 
@@ -305,7 +312,7 @@ class Backend(object):
         if name == "inds":
             v_all = {
                 key: self.inds[key][discard + thin - 1 : self.iteration : thin, temp_index]
-                for key in self.branch_names
+                for key in branch_names_in
             }
             return v_all
 
