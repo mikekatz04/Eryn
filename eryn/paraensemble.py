@@ -44,6 +44,7 @@ class ParaEnsembleSampler(EnsembleSampler):
         prior_transform_fn=None,
         name="model_0",
         provide_supplemental=False,
+        gibbs_sampling_setup=None,
     ):
         self.ndim = ndim
         self.nwalkers = nwalkers
@@ -61,6 +62,13 @@ class ParaEnsembleSampler(EnsembleSampler):
         self.name = name
         self.prior_transform_fn = prior_transform_fn
         self.provide_supplemental = provide_supplemental
+        self.gibbs_sampling_setup = gibbs_sampling_setup
+
+        if self.gibbs_sampling_setup is not None:
+            assert isinstance(self.gibbs_sampling_setup, np.ndarray)
+            self.gibbs_sampling_setup = self.xp.asarray(self.gibbs_sampling_setup)
+            assert len(self.gibbs_sampling_setup) == self.ndim
+            assert self.gibbs_sampling_setup.dtype == bool
 
         if tempering_kwargs is None:
             self.ntemps = 1
@@ -291,7 +299,7 @@ class ParaEnsembleSampler(EnsembleSampler):
                     "Input state has inverse temperatures (betas), but not the correct number of temperatures according to sampler inputs."
                 )
 
-            self.betas = self.betas.copy()
+            self.betas = state.betas.copy()
 
         else:
             if self.betas is not None:
@@ -336,6 +344,7 @@ class ParaEnsembleSampler(EnsembleSampler):
                     accepted = self.xp.zeros((self.ngroups, self.ntemps, self.nwalkers))
                     # Propose (in model)
                     state, accepted_out = self.propose(state)
+                    
                     accepted += accepted_out
 
                     if self.ntemps > 1:
@@ -395,7 +404,7 @@ class ParaEnsembleSampler(EnsembleSampler):
 
         logl = self.xp.full_like(logp, -1e300)
 
-        if branch_supps is not None:
+        if branch_supps is not None and branch_supps != {} and branch_supps[self.name] is not None:
             branch_supps = {self.name: {key: branch_supps[self.name][key][keep_logp] for key in branch_supps[self.name]}}
 
         if self.provide_supplemental:
@@ -538,11 +547,13 @@ class ParaEnsembleSampler(EnsembleSampler):
             inds_here = self.xp.asarray(inds_here)
             inds_not_here = self.xp.asarray(inds_not_here)
 
+            s_in = np.zeros((self.ntemps * num_groups_running, int(self.nwalkers / 2), 1, self.ndim))
+            
             s_in = (
                 new_state.branches[self.name]
                 .coords[:, :, inds_here][groups_running]
                 .reshape(
-                    (self.ntemps * num_groups_running, int(self.nwalkers / 2), 1, -1)
+                    (self.ntemps * num_groups_running, int(self.nwalkers / 2), 1, self.ndim)
                 )
             )
             c_in = [
@@ -560,8 +571,13 @@ class ParaEnsembleSampler(EnsembleSampler):
             if not hasattr(new_state, "random_state") or new_state.random_state is None:
                 new_state.random_state = self.random_state
 
+            if self.gibbs_sampling_setup is not None:
+                gibbs_ndim = self.gibbs_sampling_setup.sum()
+            else:
+                gibbs_ndim = self.ndim
+
             new_points_dict, factors = self.move_proposal.get_proposal(
-                {self.name: s_in}, {self.name: c_in}, new_state.random_state
+                {self.name: s_in}, {self.name: c_in}, new_state.random_state, gibbs_ndim=gibbs_ndim
             )
             new_points = {
                 self.name: new_points_dict[self.name].reshape(
@@ -569,12 +585,24 @@ class ParaEnsembleSampler(EnsembleSampler):
                 )
             }
 
+            if self.gibbs_sampling_setup is not None:
+                new_points[self.name][:, :, :, ~self.gibbs_sampling_setup] = (
+                    new_state.branches[self.name]
+                    .coords[:, :, inds_not_here][groups_running]
+                    .reshape(
+                        (num_groups_running, self.ntemps, int(self.nwalkers / 2), self.ndim)
+                    )[:, :, :, ~self.gibbs_sampling_setup]
+                )
+
             logp = self.compute_log_prior(new_points, groups_running=self.xp.arange(self.ngroups)[groups_running])
             factors = factors.reshape(logp.shape)
             
             supps_in = None  # new_state.supplemental[]
 
-            branch_supps_in = {self.name: {key: tmp[groups_running] for key, tmp in new_state.branches_supplemental[self.name][:, :, inds_here].items()}}
+            branch_supps_in = {}
+            if new_state.branches_supplemental[self.name] is not None:
+                branch_supps_in[self.name] = {key: tmp[groups_running] for key, tmp in new_state.branches_supplemental[self.name][:, :, inds_here].items()}
+            
             logl = self.compute_log_like(
                 new_points, groups_running=self.xp.arange(self.ngroups)[groups_running], logp=logp, supps=supps_in, branch_supps=branch_supps_in
             )
@@ -583,10 +611,10 @@ class ParaEnsembleSampler(EnsembleSampler):
             prev_logp_here = new_state.log_prior[:, :, inds_here][groups_running]
 
             prev_logP_here = (
-                self.betas[groups_running][:, :, None] * prev_logl_here + prev_logp_here
+                state.betas[groups_running][:, :, None] * prev_logl_here + prev_logp_here
             )
 
-            logP = self.betas[groups_running][:, :, None] * logl + logp
+            logP = state.betas[groups_running][:, :, None] * logl + logp
 
             lnpdiff = factors + logP - prev_logP_here
             keep = lnpdiff > self.xp.asarray(
@@ -594,7 +622,6 @@ class ParaEnsembleSampler(EnsembleSampler):
             )
 
             keep_tuple = (groups_here[keep], temps_here[keep], walkers_here[keep])
-
             accepted[keep_tuple] = 1
             new_state.log_prior[keep_tuple] = logp[keep]
             new_state.log_like[keep_tuple] = logl[keep]
@@ -701,8 +728,8 @@ class ParaEnsembleSampler(EnsembleSampler):
             ratios = swaps_accepted_tmp / swaps_proposed_tmp
 
             # adjust temps
-            betas0 = self.betas[groups_running].copy()
-            betas1 = self.betas[groups_running].copy()
+            betas0 = state.betas[groups_running].copy()
+            betas1 = state.betas[groups_running].copy()
 
             if not hasattr(self, "time_temp"):
                 self.time_temp = 0
