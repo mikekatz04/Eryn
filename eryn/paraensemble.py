@@ -405,7 +405,7 @@ class ParaEnsembleSampler(EnsembleSampler):
         logl = self.xp.full_like(logp, -1e300)
 
         if branch_supps is not None and branch_supps != {} and branch_supps[self.name] is not None:
-            branch_supps = {self.name: {key: branch_supps[self.name][key][keep_logp] for key in branch_supps[self.name]}}
+            branch_supps = {self.name: branch_supps[self.name][keep_logp]}
 
         if self.provide_supplemental:
             kwargs = {**self.logl_kwargs, "branch_supps": branch_supps, "supps": supps}
