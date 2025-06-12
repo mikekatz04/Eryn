@@ -533,7 +533,7 @@ class HDFBackend(Backend):
                     if name == "chain":
                         v_all = {key: g["chain"][key][slice_vals, temp_index] for key in branch_names_in}
 
-                    if name == "inds":
+                    elif name == "inds":
                         v_all = {key: g["inds"][key][slice_vals, temp_index] for key in branch_names_in}
                     
                     elif name == "blobs" and not g.attrs["has_blobs"]:
