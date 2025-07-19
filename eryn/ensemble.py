@@ -534,6 +534,9 @@ class EnsembleSampler(object):
                     if move.periodic is None:
                         move.periodic = periodic
 
+        # store
+        self.periodic = periodic
+
         # prepare the per proposal accepted values that are held as attributes in the specific classes
         for move in self.moves:
             move.accepted = np.zeros((self.ntemps, self.nwalkers))
@@ -947,8 +950,10 @@ class EnsembleSampler(object):
         if thin_by <= 0:
             raise ValueError("Invalid thinning argument")
 
-        yield_step = thin_by
-        checkpoint_step = thin_by
+        if hasattr(self, "override_thin_by"):
+            thin_by = self.override_thin_by
+        self.yield_step = thin_by
+        self.checkpoint_step = thin_by
         if store:
             self.backend.grow(iterations, state.blobs)
 
@@ -956,11 +961,11 @@ class EnsembleSampler(object):
         model = self.get_model()
 
         # Inject the progress bar
-        total = None if iterations is None else iterations * yield_step
+        total = None if iterations is None else iterations * self.yield_step
         with get_progress_bar(progress, total) as pbar:
             i = 0
             for _ in count() if iterations is None else range(iterations):
-                for _ in range(yield_step):
+                for _ in range(self.yield_step):
                     # in model moves
                     accepted = np.zeros((self.ntemps, self.nwalkers))
                     for repeat in range(self.num_repeats_in_model):
@@ -971,7 +976,10 @@ class EnsembleSampler(object):
                         state, accepted_out = move.propose(model, state)
                         accepted += accepted_out
                         if self.ntemps > 1:
-                            in_model_swaps = move.temperature_control.swaps_accepted
+                            try:
+                                in_model_swaps = move.temperature_control.swaps_accepted
+                            except AttributeError:
+                                in_model_swaps = None
                         else:
                             in_model_swaps = None
 
@@ -1007,7 +1015,7 @@ class EnsembleSampler(object):
                         rj_swaps = None
 
                     # Save the new step
-                    if store and (i + 1) % checkpoint_step == 0:
+                    if store and (i + 1) % self.checkpoint_step == 0:
                         if self.track_moves:
                             moves_accepted_fraction = {
                                 key: move_tmp.acceptance_fraction
