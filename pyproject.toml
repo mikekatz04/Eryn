@@ -61,10 +61,12 @@ optional-dependencies.doc = [
   "sphinx",
   "sphinx-rtd-theme",
   "sphinx-tippy",
+  "corner"
 ]
 
 optional-dependencies.testing = [
   "matplotlib",
+  "corner",
 ]
 
 [tool.pyproject-fmt]
