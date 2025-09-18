@@ -67,6 +67,7 @@ optional-dependencies.doc = [
 optional-dependencies.testing = [
   "matplotlib",
   "corner",
+  "chainconsumer",
 ]
 
 [tool.pyproject-fmt]
