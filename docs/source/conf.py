@@ -19,7 +19,6 @@ author = "Michael Katz and Nikos Karnesis"
 # The full version, including alpha/beta/rc tags
 release = "0.0.1"
 
-
 dir_path = os.path.dirname(os.path.realpath(__file__)) + "/../../"
 
 import shutil
