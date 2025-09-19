@@ -1,21 +1,16 @@
+# -*- coding: utf-8 -*-
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
-
 # -- Path setup --------------------------------------------------------------
-
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
-
-
-# -- Project information -----------------------------------------------------
+import os
+import sys
 
 project = "Eryn"
 copyright = "2021, Michael Katz and Nikos Karnesis"
@@ -24,40 +19,38 @@ author = "Michael Katz and Nikos Karnesis"
 # The full version, including alpha/beta/rc tags
 release = "0.0.1"
 
-import pypandoc
-
-output = pypandoc.convert_file("../../README.md", "rst")
-with open("README.rst", "w") as fp:
-    fp.write(output)
-
-import sys, os
-import shutil
 
 dir_path = os.path.dirname(os.path.realpath(__file__)) + "/../../"
 
+import shutil
+
 shutil.copy(
     dir_path + "examples/Eryn_tutorial.ipynb",
-    dir_path + "docs/source/tutorial/Eryn_tutorial.ipynb",
+    dir_path + "docs/source/Eryn_tutorial.ipynb",
 )
 
-shutil.copy(
-    dir_path + "examples/more_tutorials.ipynb",
-    dir_path + "docs/source/tutorial/more_tutorials.ipynb",
-)
+sys.path.insert(0, os.path.abspath("../../"))
+
+here = os.path.abspath(os.path.dirname(__file__))
+
 
 # -- General configuration ---------------------------------------------------
-
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 html_theme = "sphinx_rtd_theme"
 extensions = [
+    "myst_parser",
     "sphinx.ext.autodoc",
+    "sphinx.ext.doctest",
+    "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "sphinx.ext.autosummary",
     "sphinx_rtd_theme",
+    "sphinx_tippy",
     "nbsphinx",
     "sphinx.ext.mathjax",
+    "IPython.sphinxext.ipython_console_highlighting",
 ]
 
 source_suffix = [".rst"]
@@ -106,3 +99,4 @@ html_theme_options = {
     "sticky_navigation": True,
     "navigation_depth": 4,
 }
+

@@ -1,0 +1,93 @@
+name: Build and publish wheels
+on:
+  push:
+permissions:
+  contents: read
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.select.outputs.build }}
+      publish: ${{ steps.select.outputs.publish }}
+    steps:
+      - name: initialize
+        run: |
+          echo "ERYNWHL_BUILD=false" >> "$GITHUB_ENV"
+          echo "ERYNWHL_PUBLISH=false" >> "$GITHUB_ENV"
+      - name: build on commit message
+        if: contains(github.event.head_commit.message, '[ci:build-wheels]')
+        run: |
+          echo "ERYNWHL_BUILD=true" >> "$GITHUB_ENV"
+      - name: publish on commit message
+        if: contains(github.event.head_commit.message, '[ci:publish-wheels]')
+        run: |
+          echo "ERYNWHL_BUILD=true" >> "$GITHUB_ENV"
+          echo "ERYNWHL_PUBLISH=true" >> "$GITHUB_ENV"
+      - name: build and publish on tag 'v*'
+        if: startsWith(github.event.ref, 'refs/tags/v')
+        run: |
+          echo "ERYNWHL_BUILD=true" >> "$GITHUB_ENV"
+          echo "ERYNWHL_PUBLISH=true" >> "$GITHUB_ENV"
+      - name: output results
+        id: select
+        run: |
+          echo "build=$ERYNWHL_BUILD" >> $GITHUB_OUTPUT
+          echo "publish=$ERYNWHL_PUBLISH" >> $GITHUB_OUTPUT
+  build:
+    needs:
+      - select
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    if: needs.select.outputs.build == 'true'
+    steps:
+      # =========================
+      # = I - Retrieve sources  =
+      # =========================
+      - uses: actions/checkout@v4
+      # ===================
+      # = II - Install UV =
+      # ===================
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+
+      - name: Build wheel
+        run: uv build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels
+          path: ./dist/*
+
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypiconf
+    defaults:
+      run:
+        shell: bash
+    needs:
+      - build
+      - select
+    if: needs.select.outputs.publish == 'true'
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
+    steps:
+      - name: Retrieve release distributions
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+          merge-multiple: true
+      - name: List wheels
+        run: |
+          ls -al dist/*
+      - name: Install twine from PyPI
+        uses: install-pinned/twine@c7ca21f7f66fc895b73cba784dc1d0e302e3b4a3 # 6.1.0
+      - name: Publish release distributions to registry
+        env:
+          TWINE_NON_INTERACTIVE: "yes"
+          TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+          TWINE_REPOSITORY: ${{ vars.TWINE_REPOSITORY }}
+          TWINE_USERNAME: ${{ vars.TWINE_USERNAME }}
+        run: |
+          twine upload dist/*
