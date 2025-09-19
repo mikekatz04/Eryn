@@ -30,8 +30,8 @@ Welcome to Eryn's documentation!
   :maxdepth: 4
   :caption: Tutorial:
 
-  tutorial/Eryn_tutorial
-  tutorial/more_tutorials
+  Eryn_tutorial
+..   more_tutorials
 
 .. toctree::
   :maxdepth: 4
