@@ -79,7 +79,7 @@ def get_acf(x, axis=0, fast=False):
 def get_integrated_act(x, axis=0, window=50, fast=False, average=True):
     """
     Estimate the integrated autocorrelation time of a time series.
-    See `Sokal's notes <http://www.stat.unc.edu/faculty/cji/Sokal.pdf>`_ on
+    See `Sokal's notes on
     MCMC and sample estimators for autocorrelation times.
     :param x:
         The time series. If multidimensional, set the time axis using the

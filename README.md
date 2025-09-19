@@ -42,7 +42,7 @@ python -m unittest discover
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+Please read [CONTRIBUTING.md](CONTRIBUTING) for details on our code of conduct, and the process for submitting pull requests to us.
 
 ## Versioning
 
@@ -111,7 +111,7 @@ Depending on which proposals are used, you may be required to cite more sources.
 
 ## License
 
-This project is licensed under the GNU License - see the [LICENSE.md](LICENSE.md) file for details.
+This project is licensed under the GNU License - see the [LICENSE.md](LICENSE) file for details.
 
 ## Acknowledgments
 
