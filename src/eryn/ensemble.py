@@ -35,7 +35,7 @@ class EnsembleSampler(object):
     everything from a basic non-tempered MCMC to a parallel-tempered,
     global fit containing multiple branches (models) and a variable
     number of leaves (sources) per branch.
-    See `here <https://mikekatz04.github.io/Eryn/html/tutorial/Eryn_tutorial.html#The-Tree-Metaphor>`_
+    See `here <https://mikekatz04.github.io/Eryn/Eryn_tutorial.html#The-Tree-Metaphor>`_
     for a basic explainer.
 
     Parameters related to parallelization can be controlled via the ``pool`` argument.
@@ -75,7 +75,7 @@ class EnsembleSampler(object):
                 ``args`` and ``kwargs`` below.
 
                 Please see the
-                `tutorial <https://mikekatz04.github.io/Eryn/html/tutorial/Eryn_tutorial.html#>`_
+                `tutorial <https://mikekatz04.github.io/Eryn/Eryn_tutorial.html#>`_
                 for more information.
 
         priors (dict): The prior dictionary can take four forms.
@@ -98,7 +98,7 @@ class EnsembleSampler(object):
         provide_groups (bool, optional): If ``True``, provide groups as described in ``log_like_fn`` above.
             A group parameter is added for each branch. (default: ``False``)
         provide_supplemental (bool, optional): If ``True``, it will provide keyword arguments to
-            the Likelihood function: ``supps`` and ``branch_supps``. Please see the `Tutorial <https://mikekatz04.github.io/Eryn/html/tutorial/Eryn_tutorial.html#>`_
+            the Likelihood function: ``supps`` and ``branch_supps``. Please see the `Tutorial <https://mikekatz04.github.io/Eryn/Eryn_tutorial.html#>`_
             and :class:`eryn.state.BranchSupplemental` for more information.
         tempering_kwargs (dict, optional): Keyword arguments for initialization of the
             tempering class: :class:`eryn.moves.tempering.TemperatureControl`.  (default: ``{}``)
