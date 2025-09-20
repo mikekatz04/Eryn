@@ -8,7 +8,7 @@ requires = [
 [project]
 name = "eryn" #@NAMESUFFIX@
 
-version = "1.2.1"
+version = "1.2.2"
 
 description = "Eryn: an omni-MCMC sampling package."
 
