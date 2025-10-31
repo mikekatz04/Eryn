@@ -3,6 +3,7 @@
 import numpy as np
 from ..state import State
 from copy import deepcopy
+from ..state import BranchSupplemental
 
 __all__ = ["TemperatureControl"]
 
@@ -493,7 +494,7 @@ class TemperatureControl(object):
         return (x, logP, logl, logp, inds, blobs, supps, branch_supps)
 
     def temperature_swaps(
-        self, x, logP, logl, logp, inds=None, blobs=None, supps=None, branch_supps=None
+        self, x, logP, logl, logp, inds=None, blobs=None, supps=None, branch_supps=None, compute_log_like=None, compute_log_prior=None, fancy_swap=False, permute_here=None
     ):
         """Perform parallel-tempering temperature swaps
 
@@ -516,6 +517,10 @@ class TemperatureControl(object):
             tuple: All of the information that was input now swapped (output in the same order as input).
 
         """
+        if permute_here is None:
+            permute_here = self.permute
+        else:
+            assert isinstance(permute_here, bool)
 
         ntemps, nwalkers = self.ntemps, self.nwalkers
 
@@ -533,7 +538,7 @@ class TemperatureControl(object):
             dbeta = bi1 - bi
 
             # permute the indices for the walkers in each temperature to randomize swap positions
-            if self.permute:
+            if permute_here:
                 iperm = np.random.permutation(nwalkers)
                 i1perm = np.random.permutation(nwalkers)
 
@@ -546,7 +551,13 @@ class TemperatureControl(object):
             raccept = np.log(np.random.uniform(size=nwalkers))
 
             # log of the detailed balance fraction
-            paccept = dbeta * (logl[i, iperm] - logl[i - 1, i1perm])
+            if not fancy_swap:
+                paccept = dbeta * (logl[i, iperm] - logl[i - 1, i1perm])
+            else:
+                paccept = self.perform_fancy_swap_acceptance_fraction(
+                    dbeta, i, iperm, i1perm,
+                    x, logl, inds=inds, blobs=blobs, supps=supps, branch_supps=branch_supps, compute_log_like=compute_log_like
+                )
 
             # How many swaps were accepted
             sel = paccept > raccept
@@ -569,7 +580,84 @@ class TemperatureControl(object):
                 )
             )
 
+            if fancy_swap:
+                # need to recalculate likelihood and priors just in case
+                if compute_log_prior is not None:
+                    logp = compute_log_prior(x, inds=inds, supps=supps, branch_supps=branch_supps)
+
+                assert compute_log_like is not None
+                logl = compute_log_like(x, inds=inds, supps=supps, branch_supps=branch_supps, logp=logp)[0]
+                
+                logP = self.compute_log_posterior_tempered(logl, logp)
+
         return (x, logP, logl, logp, inds, blobs, supps, branch_supps)
+
+    def perform_fancy_swap_acceptance_fraction(self, dbeta, i, iperm, i1perm, x, logl, inds=None, blobs=None, supps=None, branch_supps=None, compute_log_like=None):
+        
+        old_like = logl[i-1 :i + 1]
+        if inds is not None:
+            raise NotImplementedError("Not Implemented for RJ.")
+        
+        if branch_supps is not None:
+            branch_supps_temp = {}
+            branch_supps_here = {}
+            for name in branch_supps:
+                if branch_supps[name] is not None:
+                    branch_supps_temp[name] = deepcopy(branch_supps[name][i-1:i + 1])
+                    branch_supps_here[name] = deepcopy(branch_supps[name][i-1:i + 1])
+                else:
+                    branch_supps_temp[name] = None
+                    branch_supps_here[name] = None
+
+        supps_here = None
+        if supps is not None:
+            supps_here = BranchSupplemental(supps[i-1:i + 1], base_shape=logl.shape)
+
+        assert compute_log_like is not None
+        x_here = {name: np.copy(x[name][i-1:i + 1]) for name in x}
+        x_temp = {name: np.copy(x[name][i-1:i + 1]) for name in x}
+        
+        # swap from i1 to i
+        for name in x_here:
+            if name in self.skip_swap_branches:
+                continue
+            # coords first
+            x_here[name][1, iperm, :, :] = x_here[name][0, i1perm, :, :]
+
+            # do something special for branch_supps in case in contains a large amount of data
+            # that is heavy to copy
+            if branch_supps_here[name] is not None:
+                tmp = branch_supps_here[name][0, i1perm, :]
+
+                for key in (self.skip_swap_supp_names):
+                    if key in tmp:
+                        tmp.pop(key)
+
+                branch_supps_here[name][1, iperm, :] = tmp
+
+        for name in x_here:
+            if name in self.skip_swap_branches:
+                continue
+            x_here[name][0, i1perm, :, :] = x_temp[name][1, iperm, :, :]
+            
+            if branch_supps_here[name] is not None:
+                tmp = branch_supps_temp[name][1, iperm, :]
+
+                for key in (self.skip_swap_supp_names):
+                    if key in tmp:
+                        tmp.pop(key)
+                branch_supps_here[name][0, i1perm, :] = tmp
+
+        new_like = compute_log_like(x_here, inds=inds, supps=supps_here, branch_supps=branch_supps_here)[0]
+        # check_like = compute_log_like(x_temp, inds=inds, supps=supps, branch_supps=branch_supps_temp)
+
+        # TODO: check this!
+        # fancy paccept calculation
+        beta_i = self.betas[i]
+        beta_i1 = self.betas[i - 1]
+        paccept = beta_i * (new_like[1] - old_like[1]) + beta_i1 * (new_like[0] - old_like[0])
+
+        return paccept
 
     def _get_ladder_adjustment(self, time, betas0, ratios):
         """
