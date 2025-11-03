@@ -16,6 +16,8 @@ class CombineMove(Move):
             to :class:`eryn.ensemble.EnsembleSampler`. If weights are provided,
             they will be ignored.
         *args (tuple, optional): args to be passed to :class:`Move`.
+        share_temperature_control (bool, optional): If ``True``, share the ``temperature_control`` of the 
+            combined move with its underlying constituent moves. Default is ``True``. 
         verbose (bool, optional): If ``True``, use ``tqdm`` to show progress throught steps.
             This can be very helpful when debugging.
         **kwargs (dict, optional): kwargs to be passed to :class:`Move`.
@@ -23,10 +25,11 @@ class CombineMove(Move):
 
     """
 
-    def __init__(self, moves, *args, verbose=False, **kwargs):
+    def __init__(self, moves, *args, verbose=False, share_temperature_control=True, **kwargs):
         # store moves
         self.moves = moves
         self.verbose = verbose
+        self.share_temperature_control = share_temperature_control
         Move.__init__(self, *args, **kwargs)
 
     @property
@@ -75,7 +78,8 @@ class CombineMove(Move):
             if isinstance(move, tuple):
                 move = move[0]
             # set temperature control for each move
-            move.temperature_control = temperature_control
+            if temperature_control is not None and self.share_temperature_control:
+                move.temperature_control = temperature_control
 
         # main temperature control here for reference
         self._temperature_control = temperature_control
