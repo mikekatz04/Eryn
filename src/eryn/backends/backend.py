@@ -703,8 +703,11 @@ class Backend(object):
             "thermo",
             "ti",
         ]:
-            logls = np.mean(logls_all, axis=(0, -1))
-            logZ, dlogZ = thermodynamic_integration_log_evidence(betas, logls)
+            logls = logls_all.copy()
+            logls[~np.isfinite(logls)] = np.nan
+            meanlogls = np.nanmean(logls, axis=(0, -1))
+            logZ, dlogZ = thermodynamic_integration_log_evidence(betas, meanlogls)
+            
         elif method.lower() in [
             "stepping stone",
             "ss",
