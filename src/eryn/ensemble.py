@@ -1493,8 +1493,9 @@ class EnsembleSampler(object):
             ll[inds_fix_zeros] = self.fill_zero_leaves_val
 
             # deal with blobs
-            blobs_out = np.zeros((nwalkers_all, results.shape[1] - 1))
-            blobs_out[unique_groups] = results[:, 1:]
+            _blobs_out = np.zeros((nwalkers_all, results.shape[1] - 1))
+            _blobs_out[unique_groups] = results[:, 1:]
+            blobs_out = _blobs_out.reshape(ntemps, nwalkers)
 
         elif results.dtype == "object":
             # TODO: check blobs and add this capability
