@@ -137,7 +137,12 @@ class _isotropic_proposal(object):
     def __init__(self, scale, factor, mode):
         self.index = 0
         self.scale = scale
-        self.invscale = np.linalg.inv(np.linalg.cholesky(scale))
+        
+        if isinstance(scale, float):
+            self.invscale = 1. / scale
+        else:
+            self.invscale = np.linalg.inv(np.linalg.cholesky(scale))
+
         if factor is None:
             self._log_factor = None
         else:
