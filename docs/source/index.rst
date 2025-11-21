@@ -11,7 +11,8 @@ Welcome to Eryn's documentation!
   :alt: Alternative text
   :align: center
 
-.. include:: README.rst
+.. include:: readme.md
+   :parser: myst_parser.sphinx_
 
 .. toctree::
    :maxdepth: 4
@@ -29,8 +30,8 @@ Welcome to Eryn's documentation!
   :maxdepth: 4
   :caption: Tutorial:
 
-  tutorial/Eryn_tutorial
-  tutorial/more_tutorials
+  Eryn_tutorial
+..   more_tutorials
 
 .. toctree::
   :maxdepth: 4
