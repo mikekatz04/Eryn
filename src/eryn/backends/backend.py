@@ -107,6 +107,9 @@ class Backend(object):
                 (default: ``False``)
             moves (list, optional): List of all of the move classes input into the sampler.
                 (default: ``None``)
+            key_order (dict, optional): Keys are ``branch_names`` and values are lists of key ordering for each
+                branch. For example, ``{"model_0": ["x1", "x2", "x3"]}``. 
+                (default: ``None``)
             **info (dict, optional): Any other key-value pairs to be added
                 as attributes to the backend.
 
@@ -187,7 +190,7 @@ class Backend(object):
         self.ndims = ndims
         self.nleaves_max = nleaves_max
         self.key_order = key_order 
-        
+
         self.iteration = 0
 
         # setup all the holder arrays

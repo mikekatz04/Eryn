@@ -107,7 +107,6 @@ class ErynTest(unittest.TestCase):
         priors_in = {
             f"x{i}": uniform_dist(-lims + means[i], lims + means[i]) for i in range(ndim)
         }
-        key_order = {"model_0": list(priors_in.keys())}
         priors = ProbDistContainer(priors_in)
 
         ensemble = EnsembleSampler(
@@ -115,7 +114,6 @@ class ErynTest(unittest.TestCase):
             ndim,
             log_like_fn,
             priors,
-            key_order=key_order,
             args=[means, invcov],
         )
 
@@ -192,7 +190,6 @@ class ErynTest(unittest.TestCase):
             args=[means, cov],
             backend=backend_test_file,
             tempering_kwargs=tempering_kwargs,
-            key_order={'model_0': list(priors_in.keys())}
         )
 
         nsteps = 50
@@ -304,7 +301,6 @@ class ErynTest(unittest.TestCase):
             nleaves_min=nleaves_min,
             moves=moves,
             fill_zero_leaves_val=base_like,
-            key_order={"gauss": list(priors_gen["gauss"].priors_in.keys())},
             rj_moves=rj_moves,  # basic generation of new leaves from the prior
         )
 
@@ -441,11 +437,6 @@ class ErynTest(unittest.TestCase):
 
         fp = "_test_backend.h5"
 
-        key_order = {
-            "gauss": [0, 1, 2],
-            "sine": [0, 1, 2]
-        }
-
         # just to test iterate_branches
         tmp = EnsembleSampler(
             nwalkers,
@@ -459,7 +450,6 @@ class ErynTest(unittest.TestCase):
             nleaves_max=nleaves_max,
             nleaves_min=nleaves_min,
             moves=moves,
-            key_order=key_order,
             rj_moves="iterate_branches",  # basic generation of new leaves from the prior
             backend=None,
         )
@@ -650,7 +640,6 @@ class ErynTest(unittest.TestCase):
             nleaves_max=nleaves_max,
             nleaves_min=nleaves_min,
             moves=move,
-            key_order={"gauss": [0, 1, 2]},
             rj_moves=True,  # basic generation of new leaves from the prior
         )
 
@@ -742,7 +731,7 @@ class ErynTest(unittest.TestCase):
 
         from eryn.utils import PeriodicContainer
 
-        periodic = PeriodicContainer({"sine": {2: 2 * np.pi}})
+        periodic = PeriodicContainer({"sine": {"phi0": 2 * np.pi}}, key_order={"sine": ["amp", "f", "phi0"]})
         ntemps, nwalkers, nleaves_max, ndim = (10, 100, 2, 3)
 
         params_before_1 = {

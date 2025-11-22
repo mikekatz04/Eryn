@@ -11,6 +11,10 @@ class TransformContainer:
     """Container for helpful transformations
 
     Args:
+        input_basis (list): List of integers or strings representing each 
+            basis element from the input basis.
+        output_basis (list): List of integers or strings representing each 
+            basis element for the output basis.
         parameter_transforms (dict, optional): Keys are ``int`` or ``tuple``
             of ``int`` that contain the indexes into the parameters
             that correspond to the transformation added as the Values to the
@@ -31,7 +35,7 @@ class TransformContainer:
 
     """
 
-    def __init__(self, input_basis, output_basis, parameter_transforms=None, fill_dict=None, key_map={}):
+    def __init__(self, input_basis=None, output_basis=None, parameter_transforms=None, fill_dict=None, key_map={}):
 
         
         # store originals
