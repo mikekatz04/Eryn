@@ -218,7 +218,7 @@ def stepping_stone_log_evidence(betas, logls, block_len=50, repeats=100):
 
     Based on
     a. https://arxiv.org/abs/1810.04488 and
-    b. https://pubmed.ncbi.nlm.nih.gov/21187451/.
+    b. doi: 10.1093/sysbio/syq085
 
     Args:
         betas (np.ndarray[ntemps]): The inverse temperatures to use for the quadrature.
