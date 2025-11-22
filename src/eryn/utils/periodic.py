@@ -18,15 +18,31 @@ class PeriodicContainer:
 
     """
 
-    def __init__(self, periodic):
+    def __init__(self, periodic, key_order=None):
 
         # store all the information
         self.periodic = periodic
+        inds_periodic = {}
+        periods = {}
+        for key in periodic:
+            if periodic[key] is None:
+                continue
+            inds_periodic[key] = []
+            periods[key] = []
+            for var, period in periodic[key].items():
+                if isinstance(var, str):
+                    if key_order is None:
+                        raise ValueError(f"If providing str values for the variable names, must provide key_order argument.")
+
+                    index = key_order[key].index(var)
+                    inds_periodic[key].append(index)
+                    periods[key].append(period)
+
         self.inds_periodic = {
-            key: np.asarray([i for i in periodic[key].keys()]) for key in periodic
+            key: np.asarray(tmp) for key, tmp in inds_periodic.items()
         }
         self.periods = {
-            key: np.asarray([i for i in periodic[key].values()]) for key in periodic
+            key: np.asarray(tmp) for key, tmp in periods.items()
         }
 
     def distance(self, p1, p2, xp=None):

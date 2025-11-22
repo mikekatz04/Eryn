@@ -105,7 +105,7 @@ class ErynTest(unittest.TestCase):
 
         lims = 5.0
         priors_in = {
-            i: uniform_dist(-lims + means[i], lims + means[i]) for i in range(ndim)
+            f"x{i}": uniform_dist(-lims + means[i], lims + means[i]) for i in range(ndim)
         }
         priors = ProbDistContainer(priors_in)
 
@@ -165,7 +165,7 @@ class ErynTest(unittest.TestCase):
 
         lims = 5.0
         priors_in = {
-            i: uniform_dist(-lims + means[i], lims + means[i]) for i in range(ndim)
+             f"x{i}": uniform_dist(-lims + means[i], lims + means[i]) for i in range(ndim)
         }
         priors = ProbDistContainer(priors_in)
 
@@ -265,9 +265,9 @@ class ErynTest(unittest.TestCase):
         # describes priors for all leaves independently
         priors = {
             "gauss": {
-                0: uniform_dist(2.5, 3.5),  # amplitude
-                1: uniform_dist(t.min(), t.max()),  # mean
-                2: uniform_dist(0.01, 0.21),  # sigma
+                "amp": uniform_dist(2.5, 3.5),  # amplitude
+                "mean": uniform_dist(t.min(), t.max()),  # mean
+                "std": uniform_dist(0.01, 0.21),  # sigma
             },
         }
 
@@ -312,7 +312,7 @@ class ErynTest(unittest.TestCase):
 
         nsteps = 1000
         last_sample = ensemble.run_mcmc(
-            state, nsteps, burn=1000, progress=True, thin_by=1
+            state, nsteps, burn=1000, progress=False, thin_by=1
         )
 
         last_sample.branches["gauss"].nleaves
@@ -668,14 +668,11 @@ class ErynTest(unittest.TestCase):
             (0, 2): transform1,
         }
 
-        fill_dict = {
-            "ndim_full": 6,  # full dimensionality after values are added
-            "fill_inds": np.array([2, 3, 5]),  # indexes for fill values in final array
-            "fill_values": np.array([0.0, 1.0, -1.0]),  # associated values for filling
-        }
-
+        fill_dict = {2: 0.0, 3: 1.0, 5: -1.0}
+        input_basis = [0, 1, 4]
+        output_basis = [0, 1, 2, 3, 4, 5]
         tc = TransformContainer(
-            parameter_transforms=parameter_transforms, fill_dict=fill_dict
+            input_basis, output_basis, parameter_transforms=parameter_transforms, fill_dict=fill_dict
         )
 
         x = np.random.uniform(0.1, 4.0, size=(40, 3))
@@ -700,25 +697,23 @@ class ErynTest(unittest.TestCase):
         parameter_transforms2 = {(1, 2): lambda x, y: (x**2, y**2)}
 
         # fill dict for x1
-        fill_dict1 = {
-            "ndim_full": 6,  # full dimensionality after values are added
-            "fill_inds": np.array([2, 3, 5]),  # indexes for fill values in final array
-            "fill_values": np.array([0.0, 1.0, -1.0]),  # associated values for filling
-        }
+        fill_dict1 = {2: 0.0, 3: 1.0, 5: -1.0}
 
         # fill dict for x2
-        fill_dict2 = {
-            "ndim_full": 5,  # full dimensionality after values are added
-            "fill_inds": np.array([1]),  # indexes for fill values in final array
-            "fill_values": np.array([-1.0]),  # associated values for filling
-        }
+        fill_dict2 = {1: -1.0}
 
+        input_basis1 = [0, 1, 4]
+        output_basis1 = [0, 1, 2, 3, 4, 5]
+
+        input_basis2 = [0, 2, 3, 4]
+        output_basis2 = [0, 1, 2, 3, 4]
+        
         tcs = [
             TransformContainer(
-                parameter_transforms=parameter_transforms1, fill_dict=fill_dict1
+                input_basis1, output_basis1, parameter_transforms=parameter_transforms1, fill_dict=fill_dict1
             ),
             TransformContainer(
-                parameter_transforms=parameter_transforms2, fill_dict=fill_dict2
+                input_basis2, output_basis2, parameter_transforms=parameter_transforms2, fill_dict=fill_dict2
             ),
         ]
 
@@ -736,7 +731,7 @@ class ErynTest(unittest.TestCase):
 
         from eryn.utils import PeriodicContainer
 
-        periodic = PeriodicContainer({"sine": {2: 2 * np.pi}})
+        periodic = PeriodicContainer({"sine": {"phi0": 2 * np.pi}}, key_order={"sine": ["amp", "f", "phi0"]})
         ntemps, nwalkers, nleaves_max, ndim = (10, 100, 2, 3)
 
         params_before_1 = {

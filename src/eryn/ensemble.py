@@ -198,6 +198,7 @@ class EnsembleSampler(object):
             if it is changed. In this case, the user should declare a new backend and use the last
             state from the previous backend. **Warning**: If the order of moves of the same move class
             is changed, the check may not catch it, so the tracking may mix move acceptance fractions together.
+            (default: ``True'')
         info (dict, optional): Key and value pairs reprenting any information
             the user wants to add to the backend if the user is not inputing
             their own backend.
@@ -597,6 +598,7 @@ class EnsembleSampler(object):
                 nleaves_max=nleaves_max,
                 rj=self.has_reversible_jump,
                 moves=move_keys,
+                key_order=self.key_order,
                 **info,
             )
             state = np.random.get_state()
@@ -615,6 +617,9 @@ class EnsembleSampler(object):
                         "Configuration of moves has changed. Cannot use the same backend. Declare a new backend and start from the previous state. If you would prefer not to track move acceptance fraction, set track_moves to False in the EnsembleSampler."
                     )
 
+            if self.key_order != self.backend.key_order:
+                raise ValueError("Input key order from priors does not match backend.")
+            
             # Check the backend shape
             for i, (name, shape) in enumerate(self.backend.shape.items()):
                 test_shape = (
@@ -689,7 +694,7 @@ class EnsembleSampler(object):
 
         """
         return self._random.get_state()
-
+    
     @random_state.setter  # NOQA
     def random_state(self, state):
         """
@@ -751,13 +756,14 @@ class EnsembleSampler(object):
         else:
             raise ValueError("Priors must be a dictionary.")
 
+        self.key_order = {key: value.key_order for key, value in self._priors.items()}
         return
 
     @property
     def iteration(self):
         return self.backend.iteration
 
-    def reset(self, **info):
+    def reset(self, **kwargs):
         """
         Reset the backend.
 
@@ -765,7 +771,7 @@ class EnsembleSampler(object):
             **info (dict, optional): information to pass to backend reset method.
 
         """
-        self.backend.reset(self.nwalkers, self.ndims, **info)
+        self.backend.reset(self.nwalkers, self.ndims, **kwargs)
 
     def __getstate__(self):
         # In order to be generally picklable, we need to discard the pool

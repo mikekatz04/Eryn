@@ -248,24 +248,69 @@ class ProbDistContainer:
         # to separate out in list form
         self.priors = []
 
+        self.has_strings = False
+        self.has_ints = False
+
+        # this is for the strings (for the ints it just counts them)
+        current_ind = 0
+        key_order = []
+
         # setup lists
         temp_inds = []
         for inds, dist in priors_in.items():
             # multiple index
             if isinstance(inds, tuple):
-                inds_in = np.asarray(inds)
+                inds_tmp = []
+                for i in range(len(inds)):
+                    if isinstance(inds[i], str):
+                        assert not self.has_ints
+                        self.has_strings = True
+                        inds_tmp.append(current_ind)
+                        key_order.append(inds[i])
+
+                    elif isinstance(inds[i], int):
+                        assert not self.has_strings
+                        self.has_ints = True
+                        inds_tmp.append(i)
+
+                    else:
+                        raise ValueError("Index in tuple must be int or str and all be the same type.")
+
+                    current_ind += 1
+
+                inds_in = np.asarray(inds_tmp)
                 self.priors.append([inds_in, dist])
 
             # single index
             elif isinstance(inds, int):
+                self.has_ints = True
+                assert not self.has_strings
                 inds_in = np.array([inds])
+                self.priors.append([inds_in, dist])
+                current_ind += 1
+
+            elif isinstance(inds, str):
+                assert not self.has_ints
+                self.has_strings = True
+                key_order.append(inds)
+                inds_in = np.array([current_ind])
+                current_ind += 1
                 self.priors.append([inds_in, dist])
 
             else:
                 raise ValueError(
-                    "Keys for prior dictionary must be an integer or tuple."
+                    "Keys for prior dictionary must be an integer, string, or tuple."
                 )
 
+            if self.has_strings:
+                assert not self.has_ints
+                # key order is already set
+                self.key_order = key_order
+
+            if self.has_ints:
+                self.key_order = [i for i in range(current_ind)]  # here current_ind is the total count
+                assert not self.has_strings
+             
             temp_inds.append(np.asarray([inds_in]))
 
         uni_inds = np.unique(np.concatenate(temp_inds, axis=1).flatten())
