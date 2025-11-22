@@ -176,7 +176,7 @@ class HDFBackend(Backend):
         nbranches=1,
         rj=False,
         moves=None,
-        key_order=None
+        key_order=None,
         **info,
     ):
         """Clear the state of the chain and empty the backend

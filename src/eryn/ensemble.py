@@ -242,6 +242,7 @@ class EnsembleSampler(object):
         num_repeats_in_model=1,
         num_repeats_rj=1,
         track_moves=True,
+        key_order=None,
         info={},
     ):
         # store priors
@@ -314,6 +315,7 @@ class EnsembleSampler(object):
         self.branch_names = branch_names
         self.ndims = ndims
         self.nleaves_max = nleaves_max
+        self.key_order = key_order
 
         # setup temperaing information
         # default is no temperatures
@@ -597,6 +599,7 @@ class EnsembleSampler(object):
                 nleaves_max=nleaves_max,
                 rj=self.has_reversible_jump,
                 moves=move_keys,
+                key_order=key_order,
                 **info,
             )
             state = np.random.get_state()
@@ -757,7 +760,7 @@ class EnsembleSampler(object):
     def iteration(self):
         return self.backend.iteration
 
-    def reset(self, **info):
+    def reset(self, **kwargs):
         """
         Reset the backend.
 
@@ -765,7 +768,7 @@ class EnsembleSampler(object):
             **info (dict, optional): information to pass to backend reset method.
 
         """
-        self.backend.reset(self.nwalkers, self.ndims, **info)
+        self.backend.reset(self.nwalkers, self.ndims, **kwargs)
 
     def __getstate__(self):
         # In order to be generally picklable, we need to discard the pool

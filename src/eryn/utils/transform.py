@@ -55,7 +55,7 @@ class TransformContainer:
 
             # iterate through transforms and setup single and multiparameter transforms
             for key, item in parameter_transforms.items():
-                if isinstance(key, str):
+                if isinstance(key, str) or isinstance(key, int):
                     if key not in output_basis:
                         assert key in key_map
                         key = key_map[key]

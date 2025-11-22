@@ -83,6 +83,7 @@ class Backend(object):
         nbranches=1,
         rj=False,
         moves=None,
+        key_order=None,
         **info,
     ):
         """Clear the state of the chain and empty the backend
@@ -118,6 +119,7 @@ class Backend(object):
             branch_names=branch_names,
             rj=rj,
             moves=moves,
+            key_order=key_order,
             info=info,
         )
 
@@ -184,7 +186,8 @@ class Backend(object):
         self.branch_names = branch_names
         self.ndims = ndims
         self.nleaves_max = nleaves_max
-
+        self.key_order = key_order 
+        
         self.iteration = 0
 
         # setup all the holder arrays
