@@ -39,6 +39,7 @@ dependencies = [
   "matplotlib",
   "numpy",
   "pandas",
+  "corner",
   "seaborn",                               # for runtime plots
   "nvidia-ml-py",                          # To detect CUDA version if any
   "platformdirs",                          # To locate config and data dir on all platforms
