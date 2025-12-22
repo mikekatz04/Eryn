@@ -43,7 +43,7 @@ class CompositeUpdate(Update):
         elif isinstance(other, Update):
             return CompositeUpdate(self._updates + [other])
         else:
-            return NotImplemented
+            raise NotImplementedError
     
     def __radd__(self, other):
         """Support other + self."""
@@ -52,7 +52,7 @@ class CompositeUpdate(Update):
         elif isinstance(other, Update):
             return CompositeUpdate([other] + self._updates)
         else:
-            return NotImplemented
+            raise NotImplementedError
     
     def __repr__(self):
         return f"CompositeUpdate({self._updates})"
@@ -60,7 +60,15 @@ class CompositeUpdate(Update):
 
 @dataclasses.dataclass
 class UpdateStep(Update):
-    """Base class for chainable update steps."""
+    """
+    Base class for chainable update steps.
+    
+    Attributes:
+        nsteps (int): Base number of steps between updates.
+        increment (int): Factor by which to increase the interval.
+        increment_every (int): Number of iterations after which to increase the interval.
+        stop (int): Optional iteration to stop updates.
+    """
     nsteps: int = 100
     increment: int = 1
     increment_every: int = 500

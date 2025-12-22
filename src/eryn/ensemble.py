@@ -13,7 +13,7 @@ from .pbar import get_progress_bar
 from .state import State
 from .prior import ProbDistContainer
 
-# from .utils import PlotContainer
+from .utils import PlotContainer
 from .utils import PeriodicContainer
 from .utils.utility import groups_from_inds
 
@@ -233,7 +233,7 @@ class EnsembleSampler(object):
         blobs_dtype=None,  # TODO check this
         plot_iterations=-1,  # TODO: do plot stuff?
         plot_generator=None,
-        plot_name=None,
+        plot_folder=None,
         periodic=None,
         update_fn=None,
         update_iterations=-1,
@@ -662,18 +662,15 @@ class EnsembleSampler(object):
         self.plot_iterations = plot_iterations
 
         if plot_generator is None and self.plot_iterations > 0:
-            raise NotImplementedError
             # set to default if not provided
-            if plot_name is not None:
-                name = plot_name
-            else:
-                name = "output"
+            if plot_folder is  None:
+                plot_folder = "./runtime_plots"
             self.plot_generator = PlotContainer(
-                fp=name, backend=self.backend, thin_chain_by_ac=True
+                backend=self.backend, plots=['base', 'rj'], parent_folder=plot_folder, discard=0.2
             )
         elif self.plot_iterations > 0:
-            raise NotImplementedError
             self.plot_generator = plot_generator
+            self.plot_generator.backend = self.backend # make sure backend is correctly set
 
         # prepare stopping functions
         self.stopping_fn = stopping_fn
@@ -1107,7 +1104,7 @@ class EnsembleSampler(object):
             # diagnostic plots
             # TODO: adjust diagnostic plots
             if self.plot_iterations > 0 and (i + 1) % (self.plot_iterations) == 0:
-                self.plot_generator.generate_plot_info()  # TODO: remove defaults
+                self.plot_generator.produce_plots(sampler=self)  # TODO: remove defaults
 
             # check for stopping before updating
             if (

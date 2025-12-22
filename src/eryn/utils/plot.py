@@ -3,7 +3,8 @@ import os
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib.patches import Ellipse
+from matplotlib.patches import Ellipse, Rectangle
+
 from matplotlib.colors import to_rgba
 
 import corner
@@ -15,7 +16,7 @@ import pandas as pd
 import seaborn as sns
 
 from eryn.utils.utility import stepping_stone_log_evidence, get_integrated_act
-DEFAULT_PALETTE = "coolwarm"
+DEFAULT_PALETTE = "icefire"
 
 try:
     import scienceplots
@@ -25,6 +26,10 @@ except (ImportError, ModuleNotFoundError):
 
 # increase default font size
 mpl.rcParams.update({'font.size': 16})
+
+class Backend:
+    """A placeholder Backend class for type hinting."""
+    pass
 
 def save_or_show(fig, filename=None):
     """
@@ -348,7 +353,7 @@ def traceplot(chain, labels=None, truths=None, filename=None):
             if truths is not None:
                 truths = np.atleast_2d(truths)
                 for j in range(truths.shape[0]):
-                    axs[i].axhline(truths[j, i], color='r', linestyle='--')
+                    axs[i].axhline(truths[j, i], color='k', linestyle='--')
             if labels is not None:
                 axs[i].set_ylabel(labels[i])
 
@@ -676,7 +681,6 @@ def plot_betas_evolution(betas: np.ndarray, palette: str = None, filename: str =
     plt.title('Evolution of Inverse Temperatures')
     
     # Create temperature color gradient legend
-    from matplotlib.patches import Rectangle
     
     ax = plt.gca()
     legend_width = 0.15
@@ -725,7 +729,7 @@ def plot_leaves(nleaves: np.ndarray,
     Plot the histogram of the number of leaves for each temperature.
 
     This method plots a histogram of the number of leaves for each temperature in the `rj_branches` dictionary.
-    It uses the `sampler` object to get the number of leaves for each temperature.
+    It uses the `self.backend` object to get the number of leaves for each temperature.
     The histogram is plotted using the `plt.hist` function from the `matplotlib.pyplot` module.
     The plot includes temperature-specific colors and a legend for the colors.
 
@@ -747,8 +751,6 @@ def plot_leaves(nleaves: np.ndarray,
     
     # Create temperature color gradient legend
     # Use a horizontal gradient showing cold (blue) to hot (red)
-    from matplotlib.patches import Rectangle
-    from matplotlib.collections import PatchCollection
     
     # Add a color bar as legend showing temperature progression
     ax = plt.gca()
@@ -822,12 +824,81 @@ def plot_acceptance_fraction(steps: typing.Union[np.ndarray, list],
     fig = plt.figure(figsize=(10, 6))
     # cold chain total acceptance fraction
     plt.plot(steps, total_acceptance_fraction[:, 0].mean(axis=1), label='Total', color='black', linewidth=2)
-    for move, acc_fraction in moves_acceptance_fraction.items():
-        plt.plot(steps, acc_fraction[:, 0].mean(axis=1), marker='o', label=move)
+    
+    # skip if moves_acceptance_fraction is empty
+    if len(moves_acceptance_fraction) != 0:
+        for move, acc_fraction in moves_acceptance_fraction.items():
+            plt.plot(steps, acc_fraction[:, 0].mean(axis=1), marker='o', label=move)
+
     plt.axhline(y=0.234, color='gray', linestyle='--', linewidth=1, alpha=0.7, label='0.234')
     plt.legend()
     plt.xlabel('Sampler Iteration')
     plt.ylabel('Acceptance Fraction')  
+    plt.title('Acceptance Fraction Over Time')
+
+    save_or_show(fig, filename)
+
+def plot_tempered_acceptance_fraction(steps: typing.Union[np.ndarray, list],
+                            total_acceptance_fraction: np.ndarray,
+                            palette: str = None,
+                            filename: str = None):
+    """
+    Plot the acceptance fraction for different moves over sampling steps.
+
+    Args:
+        steps (np.ndarray or list): Array of sampling steps.
+        total_acceptance_fraction (np.ndarray): Array of total acceptance fractions, shape (nsteps, ntemps, nwalkers).
+        palette (str or list, optional): Seaborn color palette name or list of colors.
+        filename (str, optional): If provided, saves the figure to this filename.
+    """
+    ntemps = total_acceptance_fraction.shape[1]
+    tempcolors = sns.color_palette(palette if palette is not None else DEFAULT_PALETTE, ntemps)
+
+    fig = plt.figure(figsize=(10, 6))
+    
+    for temp in range(ntemps):
+        plt.plot(steps, total_acceptance_fraction[:, temp].mean(axis=1), color=tempcolors[temp], linewidth=1.5, marker='o', alpha=0.8, rasterized=True)
+
+    ax = plt.gca()
+    legend_width = 0.15
+    legend_height = 0.03
+    legend_x = 0.75
+    legend_y = 0.9
+    
+    # Create gradient patches
+    for i, color in enumerate(tempcolors[::-1]):  # Reverse to show cold->hot left to right
+        rect = Rectangle(
+            (legend_x + i * legend_width / ntemps, legend_y),
+            legend_width / ntemps, legend_height,
+            transform=ax.transAxes,
+            facecolor=to_rgba(color, 0.7),
+            edgecolor='none'
+        )
+        ax.add_patch(rect)
+    
+    # Add border and labels
+    border = Rectangle(
+        (legend_x, legend_y), legend_width, legend_height,
+        transform=ax.transAxes,
+        facecolor='none',
+        edgecolor='black',
+        linewidth=0.5
+    )
+    ax.add_patch(border)
+    
+    # Add text labels
+    ax.text(legend_x - 0.01, legend_y + legend_height / 2, r'$T_{\rm max}$',
+            transform=ax.transAxes, ha='right', va='center', fontsize=11, fontweight='normal', antialiased=True)
+    ax.text(legend_x + legend_width + 0.01, legend_y + legend_height / 2, r'$T_0$',
+            transform=ax.transAxes, ha='left', va='center', fontsize=11, fontweight='normal', antialiased=True)
+
+    plt.legend()
+    plt.xlabel('Sampler Iteration')
+    plt.ylabel('Acceptance Fraction')  
+
+    ymin, ymax = plt.ylim()
+    plt.ylim(ymin, 1.2 * ymax)
+
     plt.title('Acceptance Fraction Over Time')
 
     save_or_show(fig, filename)
@@ -1039,6 +1110,7 @@ def produce_tempering_plots(chain: dict,
 def produce_advanced_plots(steps: typing.Union[np.ndarray, list],
                            total_acceptance_fraction: np.ndarray,
                            moves_acceptance_fraction: dict,
+                           palette: str = None,
                            iteration: int = 0,
                            chain: dict = None,
                            parent_folder: str = '.'):
@@ -1052,16 +1124,18 @@ def produce_advanced_plots(steps: typing.Union[np.ndarray, list],
         parent_folder (str, optional): Folder to save the plots. Default is current directory.
     """
 
-    # plot_acceptance_heatmap(
-    #     moves_acceptance_fraction,
-    #     filename=os.path.join(parent_folder, f'acceptance_heatmap.png')
-    # )
-
     plot_acceptance_fraction(
         steps,
         total_acceptance_fraction,
         moves_acceptance_fraction,
         filename=os.path.join(parent_folder, f'acceptance_fraction.png')
+    )
+
+    plot_tempered_acceptance_fraction(
+        steps,
+        total_acceptance_fraction,
+        palette=palette,
+        filename=os.path.join(parent_folder, f'tempered_acceptance_fraction.png')
     )
 
     plot_act_evolution(
@@ -1108,41 +1182,47 @@ def produce_rj_plots(nleaves: dict,
             filename=os.path.join(branch_folder, f'rj_nleaves.png')
         )
 
-        plot_leaves_evolution(
-            leaves[:, 0],
-            filename=os.path.join(branch_folder, f'rj_nleaves_evolution.png')
-        )
+        # plot_leaves_evolution(
+        #     leaves[:, 0],
+        #     filename=os.path.join(branch_folder, f'rj_nleaves_evolution.png')
+        # )
     
     
 
 
-class PlotUpdate(UpdateStep):
+class PlotContainer:
     """An Update that generates diagnostic plots at specified intervals."""
     
     def __init__(self, 
+                 backend: Backend = None,
                  plots : typing.Union[list, str] = 'base',
-                 #labels: dict = None,
+                 branches : list = None,
                  truths: dict = None,
                  overlay_covariance: dict = None,
                  tempering_palette: str = None,
                  parent_folder: str = '.',
                  discard: int = 0,
-                 nsteps: int = 100, 
-                 increment: int = 2, 
-                 increment_every: int = 500,
-                 stop: int = 10000, 
+                 stop: int = int(1e4), 
                  ):
         """
         Args:
-            nsteps (int): Number of steps between plot generations.
+            plots (list or str): List of plot types to generate. Options are 'base', 'tempering', 'advanced', 'rj', or 'all'.
+            branches (list): List of branch names to generate plots for. If None, all branches are used.
+            truths (dict): Dictionary of true parameter values for different branches.
+            overlay_covariance (dict): Dictionary of covariance matrices to overlay on corner plots.
+            tempering_palette (str or list): Seaborn color palette name or list of colors for tempering plots.
             parent_folder (str): Folder to save the plots.
+            discard (int): Number of initial samples to discard from the chain before plotting.
+            stop (int): Maximum number of steps to generate plots for.
         """
 
-        super().__init__(nsteps, increment, increment_every, stop)
+        self.backend = backend
+
         self.parent_folder = parent_folder
         os.makedirs(self.parent_folder, exist_ok=True)
 
         allowable_plots = ['base', 'tempering', 'advanced', 'rj']
+        self.branches = branches
 
         if isinstance(plots, str):
             if plots == 'all':
@@ -1165,13 +1245,14 @@ class PlotUpdate(UpdateStep):
         self.total_acceptance_fraction = None
         self.move_acceptance_fractions = {}
 
+        self.stop = stop
 
     @property
-    def labels(self):
-        return self._labels
-    @labels.setter
-    def labels(self, value):
-        self._labels = value
+    def backend(self):
+        return self._backend
+    @backend.setter
+    def backend(self, value):
+        self._backend = value
 
     @property
     def truths(self):
@@ -1187,15 +1268,30 @@ class PlotUpdate(UpdateStep):
     def overlay_covariance(self, value):
         self._overlay_covariance = value
 
-    def update(self, iteration, last_sample, sampler):
-        """Generate diagnostic plots at specified intervals."""
+    def produce_plots(self, sampler=None) -> None:
+        """
+        Generate diagnostic plots at specified intervals.
 
-        labels = sampler.key_order
+        Args:
+            sampler: The sampler object. If not provided, uses self.backend. In this cases not all the plots could be available.
+        Returns:
+            None
+        """
+
+        if self.backend.iteration > self.stop:
+            return
+
+        labels = self.backend.key_order
     
-        discard = self.discard if self.discard >= 1 else int(self.discard * iteration) 
-        chain = sampler.get_chain(discard=discard)
-        logl = sampler.get_log_like(discard=discard)
-        betas = sampler.get_betas(discard=discard)
+        discard = self.discard if self.discard >= 1 else int(self.discard * self.backend.iteration) 
+        chain = self.backend.get_chain(discard=discard)
+        logl = self.backend.get_log_like(discard=discard)
+        betas = self.backend.get_betas(discard=discard)
+
+        if self.branches is not None:
+            chain = {branch: chain[branch] for branch in self.branches if branch in chain}
+            logl = {branch: logl[branch] for branch in self.branches if branch in logl}
+            betas = {branch: betas[branch] for branch in self.branches if branch in betas}  
 
         for plot in self.plots:
             base_folder = os.path.join(self.parent_folder, plot)
@@ -1207,12 +1303,12 @@ class PlotUpdate(UpdateStep):
                     logl=logl,
                     truths=self.truths,
                     overlay_covariance=self.overlay_covariance,
-                    iteration=iteration,
+                    iteration=self.backend.iteration,
                     labels=labels,
                     parent_folder=base_folder
                 )
             elif plot == 'tempering':      
-                swap_acceptance_fraction = sampler.swap_acceptance_fraction          
+                swap_acceptance_fraction = self.backend.swaps_accepted / float(self.backend.iteration * self.backend.nwalkers)         
                 produce_tempering_plots(
                     chain=chain,
                     betas=betas,
@@ -1224,42 +1320,54 @@ class PlotUpdate(UpdateStep):
                 )
 
             elif plot == 'advanced':
-                self.steps.append(iteration)
+                self.steps.append(self.backend.iteration)
                 if self.total_acceptance_fraction is None:
-                    self.total_acceptance_fraction = sampler.acceptance_fraction[np.newaxis, ...]
+                    self.total_acceptance_fraction = (self.backend.accepted / float(self.backend.iteration))[np.newaxis, ...]
                 else:
-                    self.total_acceptance_fraction = np.vstack((self.total_acceptance_fraction, sampler.acceptance_fraction[np.newaxis, ...])) # shape (niterations, ntemps, nwalkers)
-                moves = sampler.moves
-                for move in moves:
-                    name = move.__class__.__name__
-                    if name not in self.move_acceptance_fractions:
-                        self.move_acceptance_fractions[name] = move.acceptance_fraction[np.newaxis, ...]
-                    else:
-                        self.move_acceptance_fractions[name] = np.vstack((self.move_acceptance_fractions[name], move.acceptance_fraction[np.newaxis, ...])) # shape (niterations, ntemps, nwalkers)
+                    self.total_acceptance_fraction = np.vstack((self.total_acceptance_fraction, (self.backend.accepted / float(self.backend.iteration))[np.newaxis, ...])) # shape (niterations, ntemps, nwalkers)
+                
+                if sampler is not None:
+                    moves = sampler.moves
+                elif hasattr(self.backend, moves):
+                    moves = self.backend.moves
+                else:
+                    moves = None
 
-                full_chain = sampler.get_chain(discard=0) if discard > 0 else chain
+                if moves is not None:
+                    for move in moves:
+                        name = move.__class__.__name__
+                        if name not in self.move_acceptance_fractions:
+                            self.move_acceptance_fractions[name] = move.acceptance_fraction[np.newaxis, ...]
+                        else:
+                            self.move_acceptance_fractions[name] = np.vstack((self.move_acceptance_fractions[name], move.acceptance_fraction[np.newaxis, ...])) # shape (niterations, ntemps, nwalkers)
+
+                full_chain = self.backend.get_chain(discard=0) if discard > 0 else chain
                 
                 produce_advanced_plots(steps=self.steps,
                                         total_acceptance_fraction=self.total_acceptance_fraction,   
                                         moves_acceptance_fraction=self.move_acceptance_fractions,
-                                        iteration=iteration,
+                                        palette=self.tempering_palette,
+                                        iteration=self.backend.iteration,
                                         chain=full_chain,
                                         parent_folder=base_folder
                                     )
 
             elif plot == 'rj':
-                if sampler.has_reversible_jump is False:
+                if self.backend.rj is False:
                     continue
-                nleaves_min = sampler.nleaves_min
-                nleaves_max = sampler.nleaves_max
-                nleaves = sampler.get_nleaves(discard=discard)
+    
+                nleaves = self.backend.get_nleaves(discard=discard)
+
+                nleaves_min = sampler.nleaves_min if sampler is not None else dict(zip(self.backend.rj_branches, [0]*len(self.backend.rj_branches)))
+                nleaves_max = self.backend.nleaves_max
+
                 produce_rj_plots(
                     nleaves=nleaves,
                     nleaves_min=nleaves_min,
                     nleaves_max=nleaves_max,
                     palette=self.tempering_palette,
                     parent_folder=base_folder,
-                    iteration=iteration
+                    iteration=self.backend.iteration
                 )
             
             
