@@ -996,7 +996,11 @@ def produce_base_plots(chain: dict,
                        ):
 
     """
-    Produce a set of standard diagnostic plots: corner plot, trace plot, and log-likelihood plot.
+    Produce a set of standard diagnostic plot. These include:
+    
+    * corner plots for the cold chain per branch,
+    * trace plots for the cold chain per branch,
+    * log-likelihood evolution plots.
 
     Args:
         chain (Dict): Dictionary of MCMC chains for different branches.
@@ -1062,7 +1066,12 @@ def produce_tempering_plots(chain: dict,
                             palette: str = None
                             ):
     """
-    Produce tempering ridge plots for each branch in the chain.
+    Produce tempering ridge plots for each branch in the chain. These include:
+
+    * ridge plots of the tempered distributions per parameter per branch,
+    * the swap acceptance fraction between adjacent temperatures,
+    * the averaged log-likelihood vs. betas plot,
+    * the evolution of betas over sampling steps.
 
     Args:
         chain (Dict): Dictionary of MCMC chains for different branches.
@@ -1115,7 +1124,12 @@ def produce_advanced_plots(steps: typing.Union[np.ndarray, list],
                            chain: dict = None,
                            parent_folder: str = '.'):
     """
-    Produce advanced diagnostic plots such as acceptance heatmaps and acceptance fraction plots.
+    Produce advanced diagnostic plots. These include:
+        
+    * autocorrelation time evolution per parameter per branch in the cold chain, 
+    * the comparison of the maximum autocorrelation  time in each branch against the number of steps, 
+    * the acceptance fraction evolution over steps in the cold chain (both overall and per move), 
+    * the overall acceptance fraction evolution over steps per temperature.
     
     Args:
         steps (Union[np.ndarray, list]): Array or list of sampling steps.
@@ -1152,7 +1166,8 @@ def produce_rj_plots(nleaves: dict,
                      iteration: int = 0):
     
     """
-    Produce RJ diagnostic plots for each branch in the chain.
+    Produce RJ diagnostic plots for each branch in the chain. At present, only plots the histogram of the number of leaves across temperatures.
+    
     Args:
         nleaves (Dict): Dictionary of number of leaves arrays for different branches.
         nleaves_min (Dict): Dictionary of minimum number of leaves for different branches.
@@ -1191,7 +1206,19 @@ def produce_rj_plots(nleaves: dict,
 
 
 class PlotContainer:
-    """An Update that generates diagnostic plots at specified intervals."""
+    """
+    An Update that generates diagnostic plots at specified intervals
+    
+    Args:
+        plots (list or str): List of plot types to generate. Options are 'base', 'tempering', 'advanced', 'rj', or 'all'.  If multiple plot types are desired, provide a list of strings.
+        branches (list, optional): List of branch names to generate plots for. If None, all branches are used.
+        truths (dict, optional): Dictionary of true parameter values for different branches.
+        overlay_covariance (dict, optional): Dictionary of covariance matrices to overlay on corner plots.
+        tempering_palette (str or list, optional): Seaborn color palette name or list of colors for tempering plots. If None, it defaults to `icefire`.
+        parent_folder (str, optional): Folder to save the plots. Default is current directory.
+        discard (float, optional): Number of initial samples to discard from the chain before plotting. If between 0 and 1, it is treated as fraction of total samples. Default is 0.
+        stop (int, optional): Maximum number of steps to generate plots for. Default is 10000.
+    """
     
     def __init__(self, 
                  backend: Backend = None,
@@ -1201,19 +1228,11 @@ class PlotContainer:
                  overlay_covariance: dict = None,
                  tempering_palette: str = None,
                  parent_folder: str = '.',
-                 discard: int = 0,
+                 discard: float = 0,
                  stop: int = int(1e4), 
                  ):
         """
-        Args:
-            plots (list or str): List of plot types to generate. Options are 'base', 'tempering', 'advanced', 'rj', or 'all'.
-            branches (list): List of branch names to generate plots for. If None, all branches are used.
-            truths (dict): Dictionary of true parameter values for different branches.
-            overlay_covariance (dict): Dictionary of covariance matrices to overlay on corner plots.
-            tempering_palette (str or list): Seaborn color palette name or list of colors for tempering plots.
-            parent_folder (str): Folder to save the plots.
-            discard (int): Number of initial samples to discard from the chain before plotting.
-            stop (int): Maximum number of steps to generate plots for.
+        Initialize the PlotContainer.
         """
 
         self.backend = backend
@@ -1283,7 +1302,7 @@ class PlotContainer:
 
         labels = self.backend.key_order
     
-        discard = self.discard if self.discard >= 1 else int(self.discard * self.backend.iteration) 
+        discard = int(self.discard) if self.discard >= 1 else int(self.discard * self.backend.iteration) 
         chain = self.backend.get_chain(discard=discard)
         logl = self.backend.get_log_like(discard=discard)
         betas = self.backend.get_betas(discard=discard)
