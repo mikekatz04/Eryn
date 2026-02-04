@@ -42,7 +42,7 @@ python -m unittest discover
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING) for details on our code of conduct, and the process for submitting pull requests to us.
+Please read [CONTRIBUTING.md](CONTRIBUTING) for details on our code of conduct, and the process for submitting pull requests to us. See [CONTRIBUTORS.md](CONTRIBUTORS) for those that have authored code for and contributed to Eryn.
 
 ## Versioning
 
@@ -97,17 +97,6 @@ archivePrefix = {arXiv},
 ```
 
 Depending on which proposals are used, you may be required to cite more sources. Please make sure you do this properly. 
-
-## Authors
-
-* **Michael Katz**
-* Nikos Karnesis
-* Natalia Korsakova
-* Jonathan Gair
-
-### Contibutors
-
-* Maybe you!
 
 ## License
 
