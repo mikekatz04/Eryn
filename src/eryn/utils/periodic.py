@@ -33,10 +33,11 @@ class PeriodicContainer:
                 if isinstance(var, str):
                     if key_order is None:
                         raise ValueError(f"If providing str values for the variable names, must provide key_order argument.")
-
                     index = key_order[key].index(var)
-                    inds_periodic[key].append(index)
-                    periods[key].append(period)
+                elif isinstance(var, int):
+                    index = var
+                inds_periodic[key].append(index)
+                periods[key].append(period)
 
         self.inds_periodic = {
             key: np.asarray(tmp) for key, tmp in inds_periodic.items()
