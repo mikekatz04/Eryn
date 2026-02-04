@@ -42,7 +42,7 @@ python -m unittest discover
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING) for details on our code of conduct, and the process for submitting pull requests to us. See [CONTRIBUTORS.md](CONTRIBUTORS) for those that have authored code for and contributed to Eryn.
+Please read [CONTRIBUTING](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us. See [CONTRIBUTORS](CONTRIBUTORS.md) for those that have authored code for and contributed to Eryn.
 
 ## Versioning
 
