@@ -8,7 +8,7 @@ requires = [
 [project]
 name = "eryn" #@NAMESUFFIX@
 
-version = "1.2.5"
+version = "1.2.6"
 
 description = "Eryn: an omni-MCMC sampling package."
 
@@ -17,7 +17,7 @@ readme = "README.md"
 authors = [
   { name = "Michael Katz", email = "mikekatz04@gmail.com" },
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 
 classifiers = [
   "License :: OSI Approved :: Apache Software License",
@@ -25,7 +25,6 @@ classifiers = [
   "Programming Language :: C++",
   "Programming Language :: Cython",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
