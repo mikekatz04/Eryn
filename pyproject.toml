@@ -38,6 +38,9 @@ dependencies = [
   "jsonschema",                            # To validate content of file registry
   "matplotlib",
   "numpy",
+  "pandas",
+  "corner",
+  "seaborn",                               # for runtime plots
   "nvidia-ml-py",                          # To detect CUDA version if any
   "platformdirs",                          # To locate config and data dir on all platforms
   "pydantic",                              # To handle citations and references with advanced dataclasses
@@ -68,6 +71,7 @@ optional-dependencies.testing = [
   "matplotlib",
   "corner",
   "chainconsumer",
+  "scienceplots",                          # for runtime plots
 ]
 
 [tool.pyproject-fmt]

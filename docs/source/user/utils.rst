@@ -20,6 +20,19 @@ TransformContainer
     :show-inheritance:
     :inherited-members:
 
+PlotContainer
+~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: eryn.utils.PlotContainer
+    :members:
+    :show-inheritance:
+    :inherited-members:
+
+Plotting Functions
+~~~~~~~~~~~~~~~~~~~~~~
+.. automodule:: eryn.utils.plot
+    :members: produce_base_plots, produce_tempering_plots, produce_advanced_plots, produce_rj_plots
+
 Update functions
 ~~~~~~~~~~~~~~~~~~~
 
@@ -27,6 +40,19 @@ Update Base Class
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: eryn.utils.Update
+    :members: 
+    :show-inheritance:
+    :inherited-members:
+
+Composite Update Base Classes
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: eryn.utils.CompositeUpdate
+    :members:
+    :show-inheritance:
+    :inherited-members:
+
+.. autoclass:: eryn.utils.UpdateStep
     :members:
     :show-inheritance:
     :inherited-members:
