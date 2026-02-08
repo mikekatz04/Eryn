@@ -1321,7 +1321,7 @@ class EnsembleSampler(object):
             temp_unique_groups, inverse = np.unique(group, return_inverse=True)
 
             # use groups_map by finding where temp_unique_groups overlaps with unique_groups
-            keep_groups = groups_map[np.in1d(unique_groups, temp_unique_groups)]
+            keep_groups = groups_map[np.isin(unique_groups, temp_unique_groups)]
 
             # fill group information for Likelihood
             ll_groups[key] = keep_groups[inverse]
