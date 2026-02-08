@@ -18,7 +18,7 @@ class DEMove(RedBlueMove):
     Args:
         sigma (float): The standard deviation of the Gaussian used to stretch
             the proposal vector.
-        gamma0 (Optional[float]): The mean stretch factor for the proposal
+        gamma0 (Optional[dict|float]): The mean stretch factor for the proposal
             vector. By default, it is :math:`2.38 / \sqrt{2\,\mathrm{ndim}}`
             as recommended by the two references.
 
@@ -37,14 +37,19 @@ class DEMove(RedBlueMove):
         self.return_gpu = return_gpu
 
     def setup(self, branch_coords):
+        if isinstance(self.gamma0, float):
+            tmp = {}
+            for key in branch_coords.keys():
+                tmp[key] = self.gamma0
+            self.gamma0 = tmp
+
         self.g0 = self.gamma0
+
         if self.g0 is None:
-            # Pure MAGIC:
             self.g0 = {}
             for key, coords in branch_coords.items():
                 ndim = coords.shape[-1]
                 self.g0[key] = 2.38 / np.sqrt(2 * ndim)
-    
 
     
     def get_new_points(
