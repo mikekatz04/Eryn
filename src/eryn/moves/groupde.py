@@ -26,9 +26,15 @@ class GroupDEMove(GroupMove, DEMove):
         DEMove.__init__(self, **kwargs)
 
     def setup(self, branch_coords):
+        if isinstance(self.gamma0, float):
+            tmp = {}
+            for key in branch_coords.keys():
+                tmp[key] = self.gamma0
+            self.gamma0 = tmp
+
         self.g0 = self.gamma0
+
         if self.g0 is None:
-            # Pure MAGIC:
             self.g0 = {}
             for key, coords in branch_coords.items():
                 ndim = coords.shape[-1]
