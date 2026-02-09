@@ -10,6 +10,7 @@ from .move import Move
 from .red_blue import RedBlueMove
 from .stretch import StretchMove
 from .de import DEMove, DESnookerMove
+from .infomatrix import InfoMatrixMove
 
 # from .walk import WalkMove
 from .tempering import TemperatureControl
@@ -35,6 +36,7 @@ __all__ = [
     "StretchMove",
     "DEMove",
     "DESnookerMove",
+    "InfoMatrixMove",
     "DistributionGenerateRJ",
     "DistributionGenerate",
     "TemperatureControl",
