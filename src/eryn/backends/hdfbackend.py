@@ -469,7 +469,7 @@ class HDFBackend(Backend):
             ntemps=self.ntemps,
             branch_names=self.branch_names,
             rj=self.rj,
-            moves=self.moves,
+            moves=self.moves if hasattr(self, 'moves') else None,
             key_order=self.key_order,
         )
 
