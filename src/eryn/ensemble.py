@@ -628,8 +628,6 @@ class EnsembleSampler(object):
 
                     self.backend.reset(*reset_args, **reset_kwargs)
 
-                    breakpoint()
-                    
                     warnings.warn(
                         "The backend did not have a key order but the sampler does. The backend key order has been set to match the sampler. If this is not what you wanted, please declare a new backend and start from the previous state."
                     )                
