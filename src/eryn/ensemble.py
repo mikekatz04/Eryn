@@ -676,7 +676,20 @@ class EnsembleSampler(object):
                     )
 
             if self.key_order != self.backend.key_order:
-                raise ValueError("Input key order from priors does not match backend.")
+                if self.backend.key_order == {}:
+                    reset_args = self.backend.reset_args
+                    reset_kwargs = self.backend.reset_kwargs
+                    reset_kwargs['key_order'] = self.key_order
+
+                    self.backend.reset(*reset_args, **reset_kwargs)
+
+                    breakpoint()
+                    
+                    warnings.warn(
+                        "The backend did not have a key order but the sampler does. The backend key order has been set to match the sampler. If this is not what you wanted, please declare a new backend and start from the previous state."
+                    )                
+                else:
+                    raise ValueError("Input key order from priors does not match backend.")
 
             # legacy files / backends have no sampler axis and only support nsamplers == 1
             if getattr(self.backend, "nsamplers", 1) != self.nsamplers:
