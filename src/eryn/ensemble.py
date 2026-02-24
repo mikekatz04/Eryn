@@ -377,7 +377,7 @@ class EnsembleSampler(object):
                     "periodic must be PeriodicContainer or dict if not None."
                 )
             elif isinstance(periodic, dict):
-                periodic = PeriodicContainer(periodic)
+                periodic = PeriodicContainer(periodic, key_order=self.key_order)
 
         # Parse the move schedule
         if moves is None:
