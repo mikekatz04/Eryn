@@ -267,17 +267,17 @@ class ProbDistContainer:
                         self.has_strings = True
                         inds_tmp.append(current_ind)
                         key_order.append(inds[i])
-
+                        current_ind += 1
+                        
                     elif isinstance(inds[i], int):
                         assert not self.has_strings
                         self.has_ints = True
-                        inds_tmp.append(i)
+                        inds_tmp.append(inds[i])
 
                     else:
                         raise ValueError("Index in tuple must be int or str and all be the same type.")
 
-                    current_ind += 1
-
+                    
                 inds_in = np.asarray(inds_tmp)
                 self.priors.append([inds_in, dist])
 
