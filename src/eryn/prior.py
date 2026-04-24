@@ -263,20 +263,20 @@ class ProbDistContainer:
                 inds_tmp = []
                 for i in range(len(inds)):
                     if isinstance(inds[i], str):
-                        assert not self.has_ints
+                        assert not self.has_ints, "Cannot mix strings and integer keys."
                         self.has_strings = True
                         inds_tmp.append(current_ind)
                         key_order.append(inds[i])
-
+                        current_ind += 1
+                        
                     elif isinstance(inds[i], int):
                         assert not self.has_strings
                         self.has_ints = True
-                        inds_tmp.append(i)
+                        inds_tmp.append(inds[i])
+                        current_ind += 1
 
                     else:
                         raise ValueError("Index in tuple must be int or str and all be the same type.")
-
-                    current_ind += 1
 
                 inds_in = np.asarray(inds_tmp)
                 self.priors.append([inds_in, dist])
@@ -495,3 +495,33 @@ class ProbDistContainer:
         if self.use_cupy and not self.return_gpu:
             return out.get()
         return out
+
+    def reset_key_order(self, new_key_order):
+        """Resets the key order to a new key order and reshuffles the prior to match the new key order.
+
+        Args:
+            new_key_order (List[str] | List[int]): The new desired order of keys.
+                Must contain the exact same elements as `self.key_order` and be of the same data type.
+
+        Raises:
+            TypeError: Old and new key order must be of the same type
+            ValueError: Old and new key order must have identical elements
+        """
+        if not isinstance(new_key_order[0], type(self.key_order[0])):
+            raise TypeError("The new key order must be of the same type as the current key order.")
+
+        if set(new_key_order) != set(self.key_order) or len(new_key_order) != len(self.key_order):
+            raise ValueError("The new key order must be a permutation of the exact same elements as the current key order.")
+
+        new_idx_map = {key: idx for idx, key in enumerate(new_key_order)}
+        old_to_new_idx = {old_idx: new_idx_map[key] for old_idx, key in enumerate(self.key_order)}
+
+        new_priors = []
+        for inds_in, dist in self.priors:
+            updated_inds = np.array([old_to_new_idx[idx] for idx in inds_in])
+            new_priors.append([updated_inds, dist])
+
+        new_priors.sort(key=lambda item: np.min(item[0]))
+
+        self.priors = new_priors
+        self.key_order = new_key_order

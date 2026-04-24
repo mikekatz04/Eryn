@@ -281,7 +281,10 @@ class HDFBackend(Backend):
             # load info into class and into file
             for key, value in info.items():
                 setattr(self, key, value)
-                g["info"].attrs[key] = value
+                if isinstance(value, np.ndarray) and value.size > 1000:
+                    g["info"].create_dataset(key, data=value)
+                else:
+                    g["info"].attrs[key] = value
 
             # store nleaves max and ndims dicts
             g.create_group("ndims")
