@@ -1003,10 +1003,10 @@ class EnsembleSampler(object):
                         # if i == 0: # To make sure that we first select the Fstat move
                         #     move = self.moves[0]
                         #     # breakpoint()
-                        try:
-                            print("Current move is", move.name)
-                        except AttributeError:
-                            pass
+                        # try:
+                        #     print("Current move is", move.name)
+                        # except AttributeError:
+                        #     pass
                             
                         # Propose (in model)
                         state, accepted_out = move.propose(model, state)
