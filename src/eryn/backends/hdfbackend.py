@@ -133,7 +133,7 @@ class HDFBackend(Backend):
         file_opened = False
 
         try_num = 0
-        max_tries = 100
+        max_tries = 10
         while not file_opened:
             try:
                 f = h5py.File(self.filename, mode)
