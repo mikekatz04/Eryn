@@ -1373,10 +1373,13 @@ class PlotContainer:
             elif plot == 'rj':
                 if self.backend.rj is False:
                     continue
+
+                if len(self.backend.rj_branches) == 0:
+                    continue
     
                 nleaves = self.backend.get_nleaves(discard=discard)
 
-                nleaves_min = sampler.nleaves_min if sampler is not None else dict(zip(self.backend.rj_branches, [0]*len(self.backend.rj_branches)))
+                nleaves_min = sampler.nleaves_min if (sampler is not None and hasattr(sampler, 'nleaves_min')) else dict(zip(self.backend.rj_branches, [0]*len(self.backend.rj_branches)))
                 nleaves_max = self.backend.nleaves_max
 
                 produce_rj_plots(
