@@ -19,6 +19,8 @@ from .multipletry import MultipleTryMove
 from .group import GroupMove
 from .groupstretch import GroupStretchMove
 from .combine import CombineMove
+from .flow import FlowMove
+from .priordraw import PriorDraw
 
 # from .basicmodelswaprj import BasicSymmetricModelSwapRJMove
 from .mtdistgen import MTDistGenMove
@@ -39,4 +41,6 @@ __all__ = [
     "GroupMove",
     "GroupStretchMove",
     "CombineMove",
+    "FlowMove",
+    "PriorDraw",
 ]
