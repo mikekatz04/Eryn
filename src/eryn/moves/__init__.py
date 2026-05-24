@@ -11,6 +11,7 @@ from .red_blue import RedBlueMove
 from .stretch import StretchMove
 
 # from .walk import WalkMove
+from .nuts import NUTSMove, NUTSSampler
 from .tempering import TemperatureControl
 from .rj import ReversibleJumpMove
 from .distgenrj import DistributionGenerateRJ
@@ -39,4 +40,6 @@ __all__ = [
     "GroupMove",
     "GroupStretchMove",
     "CombineMove",
+    "NUTSMove",
+    "NUTSSampler",
 ]

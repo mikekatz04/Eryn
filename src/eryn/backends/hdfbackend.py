@@ -141,10 +141,22 @@ class HDFBackend(Backend):
                 
             except (BlockingIOError, OSError) as e:
                 try_num += 1
-                if try_num >= max_tries:
-                    raise BlockingIOError("Max tries exceeded trying to open h5 file.")
-                print("Failed to open h5 file. Trying again.")
-                time.sleep(10.0)
+                # Only retry on a true lock contention; bail on file-not-found,
+                # bad-mode, etc. so we surface the real error instead of looping
+                # for ~16 min and swallowing it.
+                msg = str(e)
+                lock_like = isinstance(e, BlockingIOError) or (
+                    "unable to lock" in msg.lower()
+                    or "resource temporarily unavailable" in msg.lower()
+                )
+                if not lock_like or try_num >= max_tries:
+                    raise
+                print(
+                    f"h5 open(mode={mode!r}) lock contention (try {try_num}/{max_tries}): "
+                    f"{type(e).__name__}: {e}",
+                    flush=True,
+                )
+                time.sleep(1.0)
 
         # get the data type and store it if it is not previously set
         if not self.dtype_set and self.name in f:
@@ -808,10 +820,22 @@ class HDFBackend(Backend):
                 
             except (BlockingIOError, OSError) as e:
                 try_num += 1
-                if try_num >= max_tries:
-                    raise BlockingIOError("Max tries exceeded trying to open h5 file.")
-                print("Failed to open h5 file. Trying again.")
-                time.sleep(10.0)
+                # Only retry on a true lock contention; bail on file-not-found,
+                # bad-mode, etc. so we surface the real error instead of looping
+                # for ~16 min and swallowing it.
+                msg = str(e)
+                lock_like = isinstance(e, BlockingIOError) or (
+                    "unable to lock" in msg.lower()
+                    or "resource temporarily unavailable" in msg.lower()
+                )
+                if not lock_like or try_num >= max_tries:
+                    raise
+                print(
+                    f"h5 open(mode={mode!r}) lock contention (try {try_num}/{max_tries}): "
+                    f"{type(e).__name__}: {e}",
+                    flush=True,
+                )
+                time.sleep(1.0)
 
 
 class TempHDFBackend(object):
