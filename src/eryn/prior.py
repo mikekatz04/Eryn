@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import stats
 from copy import deepcopy
+from typing import Tuple
 
 try:
     import cupy as cp
@@ -170,7 +171,7 @@ class MappedUniformDistribution:
     @property
     def xp(self):
         """Numpy or Cupy"""
-        xp = np if not self.use_cupy else cp
+        xp = np if not self.dist.use_cupy else cp
         return xp 
 
     def logpdf(self, x):
@@ -186,7 +187,7 @@ class MappedUniformDistribution:
         """
         temp = 1.0 - (self.max - x) / self.diff
         out = self.dist.logpdf(temp)
-        if self.use_cupy and not self.return_gpu:
+        if self.dist.use_cupy and not self.dist.return_gpu:
             return out.get()
         return out
 
@@ -211,7 +212,7 @@ class MappedUniformDistribution:
         temp = self.dist.rvs(size=size)
         
         out = self.max + (temp - 1.0) * self.diff
-        if self.use_cupy and not self.return_gpu:
+        if self.dist.use_cupy and not self.dist.return_gpu:
             return out.get()
         return out
 
@@ -334,7 +335,7 @@ class ProbDistContainer:
         xp = np if not self.use_cupy else cp
         return xp 
 
-    def logpdf(self, x, keys=None):
+    def logpdf(self, x, keys=None, **kwargs):
         """Get logpdf by summing logpdf of individual distributions
 
         Args:
@@ -391,7 +392,7 @@ class ProbDistContainer:
 
         return prior_vals
 
-    def ppf(self, x, groups=None):
+    def ppf(self, x, groups=None, **kwargs):
         """Get logpdf by summing logpdf of individual distributions
 
         Args:
@@ -429,7 +430,7 @@ class ProbDistContainer:
 
         return out_vals
 
-    def rvs(self, size=1, keys=None):
+    def rvs(self, size: int | Tuple[int, ...] = 1, keys=None, **kwargs):
         """Generate random values according to prior distribution
 
         The user will have to be careful if there are prior functions that
