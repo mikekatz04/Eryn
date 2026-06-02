@@ -1052,10 +1052,10 @@ def produce_base_plots(chain: dict,
             filename=os.path.join(branch_folder, f'traceplot.png')
         )
 
-        plot_loglikelihood(
-            logl[:, 0, :],
-            filename=os.path.join(parent_folder, f'loglikelihood.png')
-        )
+    plot_loglikelihood(
+        logl[:, 0, :],
+        filename=os.path.join(parent_folder, f'loglikelihood.png')
+    )
 
 def produce_tempering_plots(chain: dict, 
                             betas: np.ndarray,
@@ -1309,8 +1309,6 @@ class PlotContainer:
 
         if self.branches is not None:
             chain = {branch: chain[branch] for branch in self.branches if branch in chain}
-            logl = {branch: logl[branch] for branch in self.branches if branch in logl}
-            betas = {branch: betas[branch] for branch in self.branches if branch in betas}  
 
         for plot in self.plots:
             base_folder = os.path.join(self.parent_folder, plot)
@@ -1388,6 +1386,3 @@ class PlotContainer:
                     parent_folder=base_folder,
                     iteration=self.backend.iteration
                 )
-            
-            
-            
