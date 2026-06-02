@@ -1065,6 +1065,9 @@ def produce_base_plots(chain: dict,
         nsteps, ntemps, nwalkers, nleaves, ndim = samples.shape
         cold_chain = samples[:, 0, :, :, :].reshape(-1, ndim)
         cold_chain = cold_chain[~np.isnan(cold_chain).any(axis=1)] # remove NaNs
+        if cold_chain.shape[0] == 0:
+            print(f"Skipping plots for branch {branch} due to no valid samples in the cold chain.")
+            continue
 
         cornerplot(
             cold_chain,
