@@ -157,7 +157,7 @@ class NUTSSampler(object):
         if mass.shape != (self.ndim, self.ndim):
             raise ValueError(
                 "metric ndarray must have shape (ndim, ndim); "
-                "got {0} for ndim={1}.".format(mass.shape, self.ndim)
+                f"got {mass.shape} for ndim={self.ndim}."
             )
         self._flat_metric = False
         self._metric_fn = None
@@ -176,7 +176,7 @@ class NUTSSampler(object):
         if M.shape != (x.shape[0], self.ndim, self.ndim):
             raise ValueError(
                 "metric_fn must return an array of shape (N, ndim, ndim); "
-                "got {0}.".format(M.shape)
+                f"got {M.shape}."
             )
         self._mass_matrix = M
         self._mass_chol = np.linalg.cholesky(M)
@@ -347,9 +347,7 @@ class NUTSSampler(object):
         N, D = x.shape
         if D != self.ndim:
             raise ValueError(
-                "x has ndim={0} but sampler configured with ndim={1}".format(
-                    D, self.ndim
-                )
+                f"x has ndim={D} but sampler configured with ndim={self.ndim}"
             )
 
         self._refresh_position_metric(x)
@@ -590,9 +588,7 @@ class NUTSMove(MHMove):
             scale_arr = np.asarray(scale, dtype=float)
             if scale_arr.shape != (self.ndim_per_walker,):
                 raise ValueError(
-                    "scale must have shape (ndim,) = ({0},); got {1}.".format(
-                        self.ndim_per_walker, scale_arr.shape
-                    )
+                    f"scale must have shape (ndim,) = ({self.ndim_per_walker},); got {scale_arr.shape}."
                 )
             metric = np.diag(1.0 / scale_arr**2)
 
@@ -646,8 +642,8 @@ class NUTSMove(MHMove):
             grad_like = np.asarray(grad_like_fn(x))
             if grad_like.shape != (N, ndim):
                 raise ValueError(
-                    "grad_log_like_fn must return shape (N, ndim) = ({0}, {1}); "
-                    "got {2}.".format(N, ndim, grad_like.shape)
+                    f"grad_log_like_fn must return shape (N, ndim) = ({N}, {ndim}); "
+                    f"got {grad_like.shape}."
                 )
             g = betas_flat[:, None] * grad_like
             if grad_prior_fn is not None:
@@ -697,9 +693,7 @@ class NUTSMove(MHMove):
             )
         if ndim != self.ndim_per_walker:
             raise ValueError(
-                "NUTSMove configured with ndim={0} but branch has ndim={1}.".format(
-                    self.ndim_per_walker, ndim
-                )
+                f"NUTSMove configured with ndim={self.ndim_per_walker} but branch has ndim={ndim}."
             )
 
         N = ntemps * nwalkers

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
+import warnings
 from abc import ABC
 from copy import deepcopy
+
 import numpy as np
-import warnings
 
 from ..state import BranchSupplemental, State
 from .move import Move
-
 
 __all__ = ["GroupMove"]
 

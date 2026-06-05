@@ -1,13 +1,14 @@
-from .ensemble import EnsembleSampler
-from .utils import TransformContainer, PeriodicContainer
-from .moves import TemperatureControl, StretchMove
-from .backends.parabackend import ParaBackend
-import numpy as np
 from copy import deepcopy
-from .pbar import get_progress_bar
 from itertools import count
 
+import numpy as np
+
+from .backends.parabackend import ParaBackend
+from .ensemble import EnsembleSampler
+from .moves import StretchMove, TemperatureControl
+from .pbar import get_progress_bar
 from .state import ParaState
+from .utils import PeriodicContainer, TransformContainer
 
 try:
     import cupy as cp
@@ -15,7 +16,7 @@ try:
 except (ModuleNotFoundError, ImportError) as e:
     import numpy as cp
 
-from typing import Union, Callable
+from typing import Callable, Union
 
 
 def shuffle_along_axis(a, axis):

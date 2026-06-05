@@ -76,9 +76,7 @@ class TransformContainer:
                     self.base_transforms["mult_param"][tuple(_tmp)] = item
                 else:
                     raise ValueError(
-                        "Parameter transform keys must be str (or int) or tuple of strs (or ints). {} is neither.".format(
-                            key
-                        )
+                        f"Parameter transform keys must be str (or int) or tuple of strs (or ints). {key} is neither."
                     )
         else:
             self.base_transforms = None

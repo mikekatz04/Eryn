@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import numpy as np
 from copy import deepcopy
+
+import numpy as np
+
 from ..state import State
 from .move import Move
 

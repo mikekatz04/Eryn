@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import numpy as np
 from copy import deepcopy
 
-from ..state import State
+import numpy as np
+
+from ..state import BranchSupplemental, State
 from .move import Move
-from ..state import BranchSupplemental
 
 __all__ = ["MHMove"]
 

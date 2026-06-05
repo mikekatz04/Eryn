@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
-from multiprocessing.sharedctypes import Value
-import numpy as np
 from copy import deepcopy
+from multiprocessing.sharedctypes import Value
+
+import numpy as np
+
 from ..state import State
-from .move import Move
 from .delayedrejection import DelayedRejection
 from .distgen import DistributionGenerate
+from .move import Move
 
 __all__ = ["ReversibleJumpMove"]
 

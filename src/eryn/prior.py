@@ -1,6 +1,7 @@
+from copy import deepcopy
+
 import numpy as np
 from scipy import stats
-from copy import deepcopy
 
 try:
     import cupy as cp

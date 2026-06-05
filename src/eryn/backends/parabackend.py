@@ -2,13 +2,13 @@
 
 import numpy as np
 
+from ..state import ParaState
 from ..utils.utility import (
     get_integrated_act,
-    thermodynamic_integration_log_evidence,
-    stepping_stone_log_evidence,
     psrf,
+    stepping_stone_log_evidence,
+    thermodynamic_integration_log_evidence,
 )
-from ..state import ParaState
 
 __all__ = ["ParaBackend"]
 
@@ -540,14 +540,12 @@ class ParaBackend(object):
             print("  Gelman-Rubin diagnostic \n  <R̂>: Mean value for all parameters\n")
             print("  --------------")
             for branch in self.branch_names:
-                print(" Model: {}".format(branch))
+                print(f" Model: {branch}")
                 print("   T \t <R̂>")
                 print("  --------------")
                 for temp in range(self.ntemps):
                     print(
-                        "   {:01d}\t{:3.2f}".format(
-                            temp, np.mean(Rhat_all_branches[branch][temp])
-                        )
+                        f"   {temp:01d}\t{np.mean(Rhat_all_branches[branch][temp]):3.2f}"
                     )
                 print("\n")
 
@@ -640,18 +638,12 @@ class ParaBackend(object):
             ndim2,
         ):
             raise ValueError(
-                "invalid coordinate dimensions for model {1} with shape {2}; expected {0}".format(
-                    shape, self.branch_name, state.branches[self.branch_name].shape
-                )
+                f"invalid coordinate dimensions for model {self.branch_name} with shape {state.branches[self.branch_name].shape}; expected {shape}"
             )
 
         if (ngroup1,) != state.groups_running.shape:
             raise ValueError(
-                "invalid inds dimensions for model {1} with shape {2}; expected {0}".format(
-                    (ngroup1,),
-                    self.branch_name,
-                    state.groups_running.shape,
-                )
+                f"invalid inds dimensions for model {self.branch_name} with shape {state.groups_running.shape}; expected {(ngroup1,)}"
             )
 
         # make sure log likelihood, log prior, blobs, accepted, rj_accepted, betas are okay
@@ -661,9 +653,7 @@ class ParaBackend(object):
             nwalkers,
         ):
             raise ValueError(
-                "invalid log probability size; expected {0}".format(
-                    (ngroups, ntemps, nwalkers)
-                )
+                f"invalid log probability size; expected {(ngroups, ntemps, nwalkers)}"
             )
         if state.log_prior.shape != (
             ngroups,
@@ -671,9 +661,7 @@ class ParaBackend(object):
             nwalkers,
         ):
             raise ValueError(
-                "invalid log prior size; expected {0}".format(
-                    (ngroups, ntemps, nwalkers)
-                )
+                f"invalid log prior size; expected {(ngroups, ntemps, nwalkers)}"
             )
 
         if accepted.shape != (
@@ -682,9 +670,7 @@ class ParaBackend(object):
             nwalkers,
         ):
             raise ValueError(
-                "invalid acceptance size; expected {0}".format(
-                    (ngroups, ntemps, nwalkers)
-                )
+                f"invalid acceptance size; expected {(ngroups, ntemps, nwalkers)}"
             )
 
         if swaps_accepted is not None and swaps_accepted.shape != (
@@ -692,9 +678,7 @@ class ParaBackend(object):
             ntemps - 1,
         ):
             raise ValueError(
-                "invalid swaps_accepted size; expected {0}".format(
-                    (ngroups, ntemps - 1)
-                )
+                f"invalid swaps_accepted size; expected {(ngroups, ntemps - 1)}"
             )
 
         if state.betas is not None and state.betas.shape != (
@@ -702,7 +686,7 @@ class ParaBackend(object):
             ntemps,
         ):
             raise ValueError(
-                "invalid beta size; expected {0}".format((ngroups, ntemps))
+                f"invalid beta size; expected {(ngroups, ntemps)}"
             )
 
     def save_step(

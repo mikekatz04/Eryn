@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from .mh import MHMove
+
 from ..prior import ProbDistContainer
+from .mh import MHMove
 
 __all__ = ["DistributionGenerate"]
 

@@ -1,21 +1,19 @@
 # *-- coding: utf-8 --*
 import os
-import numpy as np
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from matplotlib.patches import Ellipse, Rectangle
-
-from matplotlib.colors import to_rgba
-
-import corner
 import typing
 
-from eryn.utils.updates import UpdateStep
-
+import corner
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
+from matplotlib.colors import to_rgba
+from matplotlib.patches import Ellipse, Rectangle
 
-from eryn.utils.utility import stepping_stone_log_evidence, get_integrated_act
+from eryn.utils.updates import UpdateStep
+from eryn.utils.utility import get_integrated_act, stepping_stone_log_evidence
+
 DEFAULT_PALETTE = "icefire"
 
 try:

@@ -152,9 +152,7 @@ class _isotropic_proposal(object):
 
         if mode not in self.allowed_modes:
             raise ValueError(
-                ("'{0}' is not a recognized mode. " "Please select from: {1}").format(
-                    mode, self.allowed_modes
-                )
+                (f"'{mode}' is not a recognized mode. " f"Please select from: {self.allowed_modes}")
             )
         self.mode = mode
 

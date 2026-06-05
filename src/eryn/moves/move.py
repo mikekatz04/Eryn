@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from ..state import BranchSupplemental
+from copy import deepcopy
+
 import numpy as np
 
-from copy import deepcopy
+from ..state import BranchSupplemental
 
 try:
     import cupy as cp

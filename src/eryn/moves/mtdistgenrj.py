@@ -1,7 +1,7 @@
 import numpy as np
 
-from eryn.moves.multipletry import MultipleTryMoveRJ
 from eryn.moves import DistributionGenerateRJ
+from eryn.moves.multipletry import MultipleTryMoveRJ
 
 
 class MTDistGenMoveRJ(MultipleTryMoveRJ, DistributionGenerateRJ):
