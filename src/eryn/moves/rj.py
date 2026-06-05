@@ -39,7 +39,7 @@ class ReversibleJumpMove(Move):
         fix_change=None,
         **kwargs
     ):
-        # super(ReversibleJumpMove, self).__init__(**kwargs)
+        # super().__init__(**kwargs)
         Move.__init__(self, is_rj=True, **kwargs)
 
         if nleaves_max is None or nleaves_min is None:

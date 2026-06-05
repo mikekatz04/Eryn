@@ -6,7 +6,7 @@ requires = [
 ]
 
 [project]
-name = "eryn" #@NAMESUFFIX@
+name = "eryn"
 
 version = "1.2.6"
 
@@ -49,8 +49,6 @@ dependencies = [
   "scipy",
   "tqdm",
   "wrapt",
-  #@DEPS_CUPYCUDA@,
-  #@DEPS_ERYNCORE@,
 ]
 
 optional-dependencies.doc = [

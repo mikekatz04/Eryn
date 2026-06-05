@@ -47,7 +47,7 @@ class DelayedRejection(Move):
         self.proposal = proposal
         self.max_iter = max_iter
         self.dr_container = None
-        super(DelayedRejection, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def dr_scheme(
         self,

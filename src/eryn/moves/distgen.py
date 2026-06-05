@@ -29,7 +29,7 @@ class DistributionGenerate(MHMove):
                     "Distributions need to be eryn.prior.ProbDistContainer object."
                 )
         self.generate_dist = generate_dist
-        super(DistributionGenerate, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def get_proposal(self, branches_coords, random, branches_inds=None, **kwargs):
         """Make a proposal

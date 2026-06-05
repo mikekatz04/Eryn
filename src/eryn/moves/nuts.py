@@ -572,7 +572,7 @@ class NUTSMove(MHMove):
         n_adapt=100,
         **kwargs,
     ):
-        super(NUTSMove, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self.ndim_per_walker = int(ndim)
         self.grad_log_like_fn = grad_log_like_fn

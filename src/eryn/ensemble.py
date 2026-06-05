@@ -21,11 +21,7 @@ from .utils.utility import groups_from_inds
 __all__ = ["EnsembleSampler", "walkers_independent"]
 
 
-try:
-    from collections.abc import Iterable
-except ImportError:
-    # for py2.7, will be an Exception in 3.8
-    from collections import Iterable
+from collections.abc import Iterable
 
 
 class EnsembleSampler(object):
