@@ -1,5 +1,6 @@
 # *-- coding: utf-8 --*
 import os
+from shutil import which
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -27,6 +28,18 @@ except (ImportError, ModuleNotFoundError):
 # increase default font size
 mpl.rcParams.update({'font.size': 16})
 
+if which("latex"):
+    mpl.rcParams.update({
+        "text.usetex": True,
+        "font.family": "serif",
+        "font.serif": ["Palatino"],
+    })
+else:
+    print("LaTeX not found. Using default matplotlib fonts.")
+    mpl.rcParams.update({
+        "text.usetex": False,
+    })
+
 class Backend:
     """A placeholder Backend class for type hinting."""
     pass
@@ -44,6 +57,7 @@ def save_or_show(fig, filename=None):
         plt.close(fig)
     else:
         plt.show()
+
 
 def cov_ellipse(mean, cov, ax, n_std=1.0, **kwargs):
     """
@@ -892,7 +906,6 @@ def plot_tempered_acceptance_fraction(steps: typing.Union[np.ndarray, list],
     ax.text(legend_x + legend_width + 0.01, legend_y + legend_height / 2, r'$T_0$',
             transform=ax.transAxes, ha='left', va='center', fontsize=11, fontweight='normal', antialiased=True)
 
-    plt.legend()
     plt.xlabel('Sampler Iteration')
     plt.ylabel('Acceptance Fraction')  
 
@@ -1032,6 +1045,9 @@ def produce_base_plots(chain: dict,
         nsteps, ntemps, nwalkers, nleaves, ndim = samples.shape
         cold_chain = samples[:, 0, :, :, :].reshape(-1, ndim)
         cold_chain = cold_chain[~np.isnan(cold_chain).any(axis=1)] # remove NaNs
+        if cold_chain.shape[0] == 0:
+            print(f"Skipping plots for branch {branch} due to no valid samples in the cold chain.")
+            continue
 
         cornerplot(
             cold_chain,
@@ -1052,10 +1068,10 @@ def produce_base_plots(chain: dict,
             filename=os.path.join(branch_folder, f'traceplot.png')
         )
 
-        plot_loglikelihood(
-            logl[:, 0, :],
-            filename=os.path.join(parent_folder, f'loglikelihood.png')
-        )
+    plot_loglikelihood(
+        logl[:, 0, :],
+        filename=os.path.join(parent_folder, f'loglikelihood.png')
+    )
 
 def produce_tempering_plots(chain: dict, 
                             betas: np.ndarray,
@@ -1309,8 +1325,8 @@ class PlotContainer:
 
         if self.branches is not None:
             chain = {branch: chain[branch] for branch in self.branches if branch in chain}
-            logl = {branch: logl[branch] for branch in self.branches if branch in logl}
-            betas = {branch: betas[branch] for branch in self.branches if branch in betas}  
+            #logl = {branch: logl[branch] for branch in self.branches if branch in logl}
+            #betas = {branch: betas[branch] for branch in self.branches if branch in betas}  
 
         for plot in self.plots:
             base_folder = os.path.join(self.parent_folder, plot)
@@ -1374,10 +1390,13 @@ class PlotContainer:
             elif plot == 'rj':
                 if self.backend.rj is False:
                     continue
+
+                if len(self.backend.rj_branches) == 0:
+                    continue
     
                 nleaves = self.backend.get_nleaves(discard=discard)
 
-                nleaves_min = sampler.nleaves_min if sampler is not None else dict(zip(self.backend.rj_branches, [0]*len(self.backend.rj_branches)))
+                nleaves_min = sampler.nleaves_min if (sampler is not None and hasattr(sampler, 'nleaves_min')) else dict(zip(self.backend.rj_branches, [0]*len(self.backend.rj_branches)))
                 nleaves_max = self.backend.nleaves_max
 
                 produce_rj_plots(

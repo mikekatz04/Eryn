@@ -133,7 +133,7 @@ class HDFBackend(Backend):
         file_opened = False
 
         try_num = 0
-        max_tries = 100
+        max_tries = 10
         while not file_opened:
             try:
                 f = h5py.File(self.filename, mode)
@@ -293,7 +293,10 @@ class HDFBackend(Backend):
             # load info into class and into file
             for key, value in info.items():
                 setattr(self, key, value)
-                g["info"].attrs[key] = value
+                if isinstance(value, np.ndarray) and value.size > 1000:
+                    g["info"].create_dataset(key, data=value)
+                else:
+                    g["info"].attrs[key] = value
 
             # store nleaves max and ndims dicts
             g.create_group("ndims")
@@ -481,7 +484,7 @@ class HDFBackend(Backend):
             ntemps=self.ntemps,
             branch_names=self.branch_names,
             rj=self.rj,
-            moves=self.moves,
+            moves=self.moves if hasattr(self, 'moves') else None,
             key_order=self.key_order,
         )
 

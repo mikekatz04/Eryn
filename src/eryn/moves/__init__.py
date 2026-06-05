@@ -9,6 +9,8 @@ from .mh import MHMove
 from .move import Move
 from .red_blue import RedBlueMove
 from .stretch import StretchMove
+from .de import DEMove, DESnookerMove
+from .infomatrix import InfoMatrixMove
 
 # from .walk import WalkMove
 from .nuts import NUTSMove, NUTSSampler
@@ -19,6 +21,7 @@ from .distgen import DistributionGenerate
 from .multipletry import MultipleTryMove
 from .group import GroupMove
 from .groupstretch import GroupStretchMove
+from .groupde import GroupDEMove, GroupDESnookerMove
 from .combine import CombineMove
 
 # from .basicmodelswaprj import BasicSymmetricModelSwapRJMove
@@ -32,6 +35,9 @@ __all__ = [
     "GaussianMove",
     "RedBlueMove",
     "StretchMove",
+    "DEMove",
+    "DESnookerMove",
+    "InfoMatrixMove",
     "DistributionGenerateRJ",
     "DistributionGenerate",
     "TemperatureControl",
@@ -39,6 +45,8 @@ __all__ = [
     "MultipleTryMove",
     "GroupMove",
     "GroupStretchMove",
+    "GroupDEMove",
+    "GroupDESnookerMove",
     "CombineMove",
     "NUTSMove",
     "NUTSSampler",

@@ -97,7 +97,7 @@ class TransformContainer:
 
             # set up test_inds accordingly
             self.fill_dict["test_inds"] = test_inds
-            self.fill_dict["fill_inds"] = np.asarray(self.fill_dict["fill_inds"])
+            self.fill_dict["fill_inds"] = np.asarray(self.fill_dict["fill_inds"], dtype=int)
             self.fill_dict["fill_values"] = np.asarray(self.fill_dict["fill_values"])
 
         else:
