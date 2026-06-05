@@ -27,6 +27,18 @@ except (ImportError, ModuleNotFoundError):
 # increase default font size
 mpl.rcParams.update({'font.size': 16})
 
+if which("latex"):
+    mpl.rcParams.update({
+        "text.usetex": True,
+        "font.family": "serif",
+        "font.serif": ["Palatino"],
+    })
+else:
+    print("LaTeX not found. Using default matplotlib fonts.")
+    mpl.rcParams.update({
+        "text.usetex": False,
+    })
+
 class Backend:
     """A placeholder Backend class for type hinting."""
     pass
