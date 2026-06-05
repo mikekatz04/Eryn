@@ -23,9 +23,6 @@ try:
 except (ImportError, ModuleNotFoundError, AttributeError):
     pass
 
-# increase default font size
-mpl.rcParams.update({'font.size': 16})
-
 class Backend:
     """A placeholder Backend class for type hinting."""
     pass
@@ -38,7 +35,7 @@ def setup_plotting():
         pass
 
     # increase default font size
-    mpl.rcParams.update({'font.size': 16})
+    # mpl.rcParams.update({'font.size': 16})
 
     if which("latex"):
         mpl.rcParams.update({
@@ -66,6 +63,7 @@ def save_or_show(fig, filename=None):
         plt.close(fig)
     else:
         plt.show()
+
 
 def cov_ellipse(mean, cov, ax, n_std=1.0, **kwargs):
     """
