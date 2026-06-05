@@ -620,7 +620,21 @@ class EnsembleSampler(object):
                         "Configuration of moves has changed. Cannot use the same backend. Declare a new backend and start from the previous state. If you would prefer not to track move acceptance fraction, set track_moves to False in the EnsembleSampler."
                     )
 
-            if self.key_order != self.backend.key_order:
+            def _check_key_orders(ko1, ko2):
+                if isinstance(ko1, dict) and isinstance(ko2, dict):
+                    if ko1.keys() != ko2.keys():
+                        return False
+                    return all(_check_key_orders(ko1[k], ko2[k]) for k in ko1)
+                elif isinstance(ko1, np.ndarray) or isinstance(ko2, np.ndarray):
+                    return np.array_equal(ko1, ko2)
+                elif isinstance(ko1, (list, tuple)) and isinstance(ko2, (list, tuple)):
+                    if len(ko1) != len(ko2):
+                        return False
+                    return all(_check_key_orders(v1, v2) for v1, v2 in zip(ko1, ko2))
+                else:
+                    return ko1 == ko2
+
+            if not _check_key_orders(self.key_order, self.backend.key_order):
                 if self.backend.key_order == {}:
                     reset_args = self.backend.reset_args
                     reset_kwargs = self.backend.reset_kwargs
@@ -985,7 +999,15 @@ class EnsembleSampler(object):
                     for repeat in range(self.num_repeats_in_model):
                         # Choose a random move
                         move = self._random.choice(self.moves, p=self.weights)
-
+                        
+                        # if i == 0: # To make sure that we first select the Fstat move
+                        #     move = self.moves[0]
+                        #     # breakpoint()
+                        # try:
+                        #     print("Current move is", move.name)
+                        # except AttributeError:
+                        #     pass
+                            
                         # Propose (in model)
                         state, accepted_out = move.propose(model, state)
                         accepted += accepted_out
@@ -1038,7 +1060,7 @@ class EnsembleSampler(object):
                         else:
                             moves_accepted_fraction = None
 
-                        print("RIGHT BEFORE SAVE", self.backend.filename)
+                        #print("RIGHT BEFORE SAVE", self.backend.filename)
                         self.backend.save_step(
                             state,
                             accepted,
@@ -1046,7 +1068,7 @@ class EnsembleSampler(object):
                             swaps_accepted=in_model_swaps,
                             moves_accepted_fraction=moves_accepted_fraction,
                         )
-                        print("RIGHT AFTER SAVE", self.backend.filename)
+                        #print("RIGHT AFTER SAVE", self.backend.filename)
 
                     # update after diagnostic and stopping check
                     # if updating and using burn_in, need to make sure it does not use

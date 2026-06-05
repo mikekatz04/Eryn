@@ -1045,6 +1045,9 @@ def produce_base_plots(chain: dict,
         nsteps, ntemps, nwalkers, nleaves, ndim = samples.shape
         cold_chain = samples[:, 0, :, :, :].reshape(-1, ndim)
         cold_chain = cold_chain[~np.isnan(cold_chain).any(axis=1)] # remove NaNs
+        if cold_chain.shape[0] == 0:
+            print(f"Skipping plots for branch {branch} due to no valid samples in the cold chain.")
+            continue
 
         cornerplot(
             cold_chain,
@@ -1065,10 +1068,10 @@ def produce_base_plots(chain: dict,
             filename=os.path.join(branch_folder, f'traceplot.png')
         )
 
-        plot_loglikelihood(
-            logl[:, 0, :],
-            filename=os.path.join(parent_folder, f'loglikelihood.png')
-        )
+    plot_loglikelihood(
+        logl[:, 0, :],
+        filename=os.path.join(parent_folder, f'loglikelihood.png')
+    )
 
 def produce_tempering_plots(chain: dict, 
                             betas: np.ndarray,
@@ -1322,8 +1325,8 @@ class PlotContainer:
 
         if self.branches is not None:
             chain = {branch: chain[branch] for branch in self.branches if branch in chain}
-            logl = {branch: logl[branch] for branch in self.branches if branch in logl}
-            betas = {branch: betas[branch] for branch in self.branches if branch in betas}  
+            #logl = {branch: logl[branch] for branch in self.branches if branch in logl}
+            #betas = {branch: betas[branch] for branch in self.branches if branch in betas}  
 
         for plot in self.plots:
             base_folder = os.path.join(self.parent_folder, plot)
@@ -1387,10 +1390,13 @@ class PlotContainer:
             elif plot == 'rj':
                 if self.backend.rj is False:
                     continue
+
+                if len(self.backend.rj_branches) == 0:
+                    continue
     
                 nleaves = self.backend.get_nleaves(discard=discard)
 
-                nleaves_min = sampler.nleaves_min if sampler is not None else dict(zip(self.backend.rj_branches, [0]*len(self.backend.rj_branches)))
+                nleaves_min = sampler.nleaves_min if (sampler is not None and hasattr(sampler, 'nleaves_min')) else dict(zip(self.backend.rj_branches, [0]*len(self.backend.rj_branches)))
                 nleaves_max = self.backend.nleaves_max
 
                 produce_rj_plots(
