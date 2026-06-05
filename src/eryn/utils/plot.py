@@ -1,5 +1,6 @@
 # *-- coding: utf-8 --*
 import os
+from shutil import which
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -27,6 +28,18 @@ except (ImportError, ModuleNotFoundError):
 # increase default font size
 mpl.rcParams.update({'font.size': 16})
 
+if which("latex"):
+    mpl.rcParams.update({
+        "text.usetex": True,
+        "font.family": "serif",
+        "font.serif": ["Palatino"],
+    })
+else:
+    print("LaTeX not found. Using default matplotlib fonts.")
+    mpl.rcParams.update({
+        "text.usetex": False,
+    })
+
 class Backend:
     """A placeholder Backend class for type hinting."""
     pass
@@ -44,6 +57,7 @@ def save_or_show(fig, filename=None):
         plt.close(fig)
     else:
         plt.show()
+
 
 def cov_ellipse(mean, cov, ax, n_std=1.0, **kwargs):
     """
