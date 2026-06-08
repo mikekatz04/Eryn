@@ -31,6 +31,7 @@ Welcome to Eryn's documentation!
   :caption: Tutorial:
 
   Eryn_tutorial
+  tutorial/Group_moves
 ..   more_tutorials
 
 .. toctree::
