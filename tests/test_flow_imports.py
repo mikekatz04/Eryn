@@ -16,13 +16,9 @@ EXPECTED_ALL = sorted([
     "IdentityTransform",
     "ConditioningStrategy",
     "OneHotLeafConditioning",
-    "TrainerExecutor",
-    "InlineExecutor",
-    "ProcessExecutor",
-    "TrainerError",
+    "get_flow_wrapper",
     "ZukoFlow",
     "WhiteningTransform",
-    "get_flow_wrapper",
 ])
 
 
@@ -122,3 +118,20 @@ def test_get_flow_wrapper_unknown_backend():
 
     with pytest.raises(ValueError, match="zuko"):
         eryn.flows.get_flow_wrapper("nope")
+
+
+def test_misspelled_attribute_raises_attribute_error():
+    """A misspelled attribute name raises AttributeError (not ImportError)."""
+    import eryn.flows
+
+    with pytest.raises(AttributeError):
+        _ = eryn.flows.NopeNope
+
+
+def test_executor_names_raise_attribute_error():
+    """Executor names not yet in __all__ raise AttributeError (not ImportError)."""
+    import eryn.flows
+
+    for name in ("TrainerExecutor", "InlineExecutor", "ProcessExecutor", "TrainerError"):
+        with pytest.raises(AttributeError):
+            getattr(eryn.flows, name)

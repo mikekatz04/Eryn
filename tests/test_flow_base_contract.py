@@ -5,6 +5,8 @@ NOTE: ZukoFlow contract tests are added in T3.
 """
 from __future__ import annotations
 
+import pickle
+
 import numpy as np
 import pytest
 
@@ -13,7 +15,7 @@ from eryn.flows.transforms import IdentityTransform
 
 
 # ---------------------------------------------------------------------------
-# Minimal concrete Flow subclass for testing (no torch, standard normal)
+# Minimal concrete Flow subclasses for testing (no torch, standard normal)
 # ---------------------------------------------------------------------------
 
 class GaussianFlow(Flow):
@@ -22,6 +24,44 @@ class GaussianFlow(Flow):
     def __init__(self, dims: int, device=None, data_transform=None, conditioning=None):
         super().__init__(dims=dims, device=device, data_transform=data_transform,
                          conditioning=conditioning)
+
+    def log_prob(self, x, context=None):
+        x = np.asarray(x, dtype=np.float64)
+        return -0.5 * np.sum(x ** 2, axis=-1) - 0.5 * x.shape[-1] * np.log(2 * np.pi)
+
+    def sample(self, n: int, context=None):
+        return np.random.randn(n, self.dims)
+
+    def sample_and_log_prob(self, n: int, context=None):
+        x = self.sample(n, context=context)
+        lp = self.log_prob(x, context=context)
+        return x, lp
+
+    def fit(self, samples, **kwargs):
+        return FlowHistory()
+
+    def get_weights(self):
+        return {}
+
+    def set_weights(self, weights):
+        pass
+
+    def save(self, h5_file, path="flow"):
+        pass
+
+    @classmethod
+    def load(cls, h5_file, path="flow"):
+        return cls(dims=1)
+
+
+class GaussianFlowKwargs(Flow):
+    """Subclass with extra **flow_kwargs to test VAR_KEYWORD flattening in __new__."""
+
+    def __init__(self, dims: int, device=None, data_transform=None, conditioning=None,
+                 **flow_kwargs):
+        super().__init__(dims=dims, device=device, data_transform=data_transform,
+                         conditioning=conditioning)
+        self.flow_kwargs = flow_kwargs
 
     def log_prob(self, x, context=None):
         x = np.asarray(x, dtype=np.float64)
@@ -180,3 +220,54 @@ def test_fpd_condition_stored():
     f = GaussianFlow(dims=3)
     fpd = FlowProposalDistribution(f, condition=2)
     assert fpd.condition == 2
+
+
+def test_fpd_rvs_2d_tuple_shape():
+    """rvs((5, 3)) must return shape (5, 3, dims) — size + (dims,) contract."""
+    f = GaussianFlow(dims=4)
+    fpd = FlowProposalDistribution(f, condition=0)
+    samples = fpd.rvs((5, 3))
+    assert samples.shape == (5, 3, 4)
+
+
+def test_fpd_rvs_kwargs_accepted():
+    """rvs and logpdf accept and ignore extra kwargs (eryn random_state compat)."""
+    f = GaussianFlow(dims=3)
+    fpd = FlowProposalDistribution(f, condition=0)
+    samples = fpd.rvs(5, random_state=42)
+    assert samples.shape == (5, 3)
+    x = np.random.randn(5, 3)
+    lp = fpd.logpdf(x, random_state=42)
+    assert lp.shape == (5,)
+
+
+# ---------------------------------------------------------------------------
+# VAR_KEYWORD flattening in Flow.__new__ (Fix 3)
+# ---------------------------------------------------------------------------
+
+def test_var_keyword_flattened_in_init_args():
+    """**flow_kwargs contents are merged into _init_args, not nested."""
+    f = GaussianFlowKwargs(dims=5, n_transforms=8, lr=1e-3)
+    cfg = f.config_dict()
+    # Extra kwargs must be top-level, not nested under 'flow_kwargs'
+    assert "flow_kwargs" not in cfg
+    assert cfg["n_transforms"] == 8
+    assert cfg["lr"] == 1e-3
+    assert cfg["dims"] == 5
+
+
+def test_var_keyword_round_trip():
+    """A subclass with **flow_kwargs round-trips through cls(**config_dict())."""
+    f = GaussianFlowKwargs(dims=5, n_transforms=8, lr=1e-3)
+    cfg = f.config_dict()
+    f2 = GaussianFlowKwargs(**cfg)
+    assert f2.dims == f.dims
+    assert f2.flow_kwargs == f.flow_kwargs
+
+
+def test_config_dict_pickle_survives():
+    """config_dict() output survives pickle round-trip (Task-9 spawn-boundary scenario)."""
+    f = GaussianFlowKwargs(dims=5, n_transforms=8, lr=1e-3)
+    cfg = f.config_dict()
+    cfg2 = pickle.loads(pickle.dumps(cfg))
+    assert cfg2 == cfg

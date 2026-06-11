@@ -29,6 +29,11 @@ once that module is implemented (Task 8).
 """
 from __future__ import annotations
 
+# NOTE: ZukoFlow and WhiteningTransform require the 'flow' extra (pip install eryn[flow]).
+# `from eryn.flows import *` will therefore raise AttributeError in environments
+# without torch/zuko — this is intentional and expected for an optional extra.
+# TrainerExecutor/InlineExecutor/ProcessExecutor/TrainerError are omitted until
+# eryn.flows.executors is implemented (Task 8).
 __all__ = [
     "Flow",
     "FlowHistory",
@@ -37,13 +42,9 @@ __all__ = [
     "IdentityTransform",
     "ConditioningStrategy",
     "OneHotLeafConditioning",
-    "TrainerExecutor",
-    "InlineExecutor",
-    "ProcessExecutor",
-    "TrainerError",
+    "get_flow_wrapper",
     "ZukoFlow",
     "WhiteningTransform",
-    "get_flow_wrapper",
 ]
 
 # No module-level import of torch, scipy, sklearn, .torch, or .executors.
@@ -55,8 +56,11 @@ from .transforms import DataTransform, IdentityTransform  # noqa: E402
 from .conditioning import ConditioningStrategy, OneHotLeafConditioning  # noqa: E402
 
 # ---- lazy names — resolved by __getattr__ on first attribute access ----
+# ZukoFlow/WhiteningTransform live in the optional torch subpackage; accessing
+# them without torch raises AttributeError (hasattr-safe), with the install hint
+# chained as cause.  TrainerExecutor/InlineExecutor/ProcessExecutor/TrainerError
+# will be added back once eryn.flows.executors exists (Task 8).
 _TORCH_NAMES = {"ZukoFlow", "WhiteningTransform"}
-_EXECUTOR_NAMES = {"TrainerExecutor", "InlineExecutor", "ProcessExecutor", "TrainerError"}
 
 
 def get_flow_wrapper(backend: str = "zuko"):
@@ -111,7 +115,15 @@ def get_flow_wrapper(backend: str = "zuko"):
 
 
 def __getattr__(name: str):
-    """Lazy attribute access for optional and future names."""
+    """Lazy attribute access for optional names.
+
+    ZukoFlow/WhiteningTransform are resolved on first access.  If torch is not
+    installed, AttributeError is raised (with the install hint chained as cause)
+    so that ``hasattr`` returns ``False`` rather than propagating ImportError.
+
+    Note: ``get_flow_wrapper`` (an explicit function call) keeps raising
+    ``ImportError`` — that is the correct signal for a missing backend there.
+    """
     if name in _TORCH_NAMES:
         try:
             if name == "ZukoFlow":
@@ -121,19 +133,9 @@ def __getattr__(name: str):
                 from .torch.transforms import WhiteningTransform
                 return WhiteningTransform
         except ImportError as exc:
-            raise ImportError(
+            raise AttributeError(
                 f"'{name}' requires the torch backend.  "
                 "Install the optional dependencies with:  pip install eryn[flow]"
-            ) from exc
-
-    if name in _EXECUTOR_NAMES:
-        try:
-            from . import executors as _executors_mod
-            return getattr(_executors_mod, name)
-        except ImportError as exc:
-            raise ImportError(
-                f"'{name}' requires eryn.flows.executors (Task 8).  "
-                "This module is not yet available."
             ) from exc
 
     raise AttributeError(f"module 'eryn.flows' has no attribute {name!r}")
