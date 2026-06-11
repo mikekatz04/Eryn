@@ -7,6 +7,7 @@ extend :class:`Flow` and live in optional subpackages.
 from __future__ import annotations
 
 import inspect
+import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Union
@@ -98,6 +99,18 @@ class Flow(ABC):
     The constructor captures all init arguments (including defaults) and stores
     them in ``_init_args``, enabling :meth:`config_dict` to reconstruct the
     configuration across process boundaries (e.g. multiprocessing spawn).
+
+    **Subclass signature constraints for config_dict round-trips:**
+
+    - All parameters must be named keyword parameters (no ``/`` positional-only).
+    - ``**kwargs``-style parameters are supported: their contents are merged
+      (flattened) into ``_init_args`` at capture time so that
+      ``cls(**flow.config_dict())`` round-trips correctly.  A :exc:`ValueError`
+      is raised if a ``**kwargs`` key collides with an explicitly named
+      parameter.
+    - ``*args``-style (VAR_POSITIONAL) parameters cannot be round-tripped
+      through ``cls(**dict)`` and are therefore silently skipped at capture
+      time.  Avoid ``*args`` in Flow subclass signatures.
     """
 
     def __new__(cls, *args, **kwargs):
@@ -108,13 +121,32 @@ class Flow(ABC):
             bound = sig.bind(None, *args, **kwargs)
             bound.apply_defaults()
             params = list(sig.parameters.keys())
-            # Drop the first parameter ('self')
-            init_args = {
-                k: v
-                for k, v in bound.arguments.items()
-                if k != params[0]
-            }
-        except Exception:
+            self_param = params[0]
+            init_args: dict = {}
+            for k, v in bound.arguments.items():
+                if k == self_param:
+                    continue
+                kind = sig.parameters[k].kind
+                if kind is inspect.Parameter.VAR_KEYWORD:
+                    # Flatten **kwargs into top-level dict; detect collisions.
+                    collisions = set(v.keys()) & set(init_args.keys())
+                    if collisions:
+                        raise ValueError(
+                            f"{cls.__name__}: **kwargs key(s) {collisions} "
+                            "collide with explicit parameter names."
+                        )
+                    init_args.update(v)
+                elif kind is inspect.Parameter.VAR_POSITIONAL:
+                    # *args cannot be reconstructed via cls(**dict); skip.
+                    pass
+                else:
+                    init_args[k] = v
+        except TypeError as exc:
+            warnings.warn(
+                f"{cls.__name__}: could not capture init args for config_dict(); "
+                f"config round-trip will be unavailable ({exc}).",
+                stacklevel=2,
+            )
             init_args = {}
         obj._init_args = init_args
         return obj
@@ -321,13 +353,16 @@ class FlowProposalDistribution:
         self.flow = flow
         self.condition = int(condition)
 
-    def logpdf(self, x) -> np.ndarray:
+    def logpdf(self, x, **kwargs) -> np.ndarray:
         """Evaluate the coords-space log density at ``x``.
 
         Parameters
         ----------
         x : array-like, shape (N, dims)
             Points at which to evaluate the density.
+        **kwargs
+            Accepted and ignored for compatibility with eryn callers that may
+            pass extra keyword arguments (e.g. ``random_state``).
 
         Returns
         -------
@@ -336,20 +371,33 @@ class FlowProposalDistribution:
         """
         return self.flow.log_prob(np.asarray(x), context=self.condition)
 
-    def rvs(self, size) -> np.ndarray:
+    def rvs(self, size, **kwargs) -> np.ndarray:
         """Draw samples from the flow.
+
+        Follows the same shape contract as eryn's ``ProbDistContainer.rvs``:
+        an integer ``size`` returns an array of shape ``(size, dims)``; a
+        tuple ``size`` returns an array of shape ``size + (dims,)``.  For
+        example, ``rvs((5, 3))`` returns shape ``(5, 3, dims)``.
 
         Parameters
         ----------
         size : int or tuple of int
-            Number of samples to draw.  A tuple is accepted for compatibility
-            with eryn's ``DistributionGenerate``; only the first element is
-            used (i.e. ``size=(n,)`` is equivalent to ``size=n``).
+            Number of samples.  An integer ``n`` draws ``n`` samples.  A
+            tuple ``(d0, d1, ...)`` draws ``d0 * d1 * ...`` samples and
+            reshapes the result to ``(d0, d1, ..., dims)``.
+        **kwargs
+            Accepted and ignored for compatibility with eryn callers that may
+            pass extra keyword arguments (e.g. ``random_state``).
 
         Returns
         -------
-        samples : np.ndarray, shape (n, dims)
+        samples : np.ndarray, shape ``size + (dims,)`` or ``(size, dims)``
             Samples drawn from the flow.
         """
-        n = int(np.prod(size)) if isinstance(size, (tuple, list)) else int(size)
+        if isinstance(size, (tuple, list)):
+            shape = tuple(int(s) for s in size)
+            n = int(np.prod(shape)) if shape else 1
+            flat = self.flow.sample(n, context=self.condition)
+            return flat.reshape(shape + (self.flow.dims,))
+        n = int(size)
         return self.flow.sample(n, context=self.condition)

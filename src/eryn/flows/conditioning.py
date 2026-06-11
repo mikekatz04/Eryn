@@ -106,7 +106,9 @@ class OneHotLeafConditioning:
             raise ValueError(
                 f"condition_id {condition_id} out of range [0, {self.nleaves_max})"
             )
-        return np.eye(self.nleaves_max, dtype=np.float32)[condition_id]
+        vec = np.zeros(self.nleaves_max, dtype=np.float32)
+        vec[condition_id] = 1.0
+        return vec
 
     def set_centroids(self, centroids: np.ndarray) -> None:
         """Store per-condition centroids used by :meth:`assign`.
