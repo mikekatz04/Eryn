@@ -662,7 +662,9 @@ class ZukoFlow(BaseTorchFlow):
         samples : np.ndarray, shape (N, dims) or dict[int, np.ndarray]
             Training data.  A plain array is treated as a single condition
             ``{0: samples}``.  A dict maps integer condition ids to per-condition
-            sample arrays.
+            sample arrays.  The entire dataset is moved to ``device`` once before
+            training; very large ``N`` may exhaust device memory, in which case
+            chunk or subsample the data upstream.
         n_epochs : int, optional
             Maximum number of training epochs.  Default is ``100``.
         lr : float, optional
@@ -689,7 +691,9 @@ class ZukoFlow(BaseTorchFlow):
         seed : int or None, optional
             Seed for the train/val shuffle generator.  Passing a fixed value
             makes ``fit`` deterministic given fixed data and flow initialisation.
-            Defaults to ``self.seed`` when ``None``.
+            An int is expected; the value is coerced with ``int()`` at the
+            boundary (whole floats such as ``7.0`` are accepted).  Defaults to
+            ``self.seed`` when ``None``.
         verbose : bool, optional
             If ``True``, print one line per epoch (epoch, train_loss, val_loss).
             Default is ``False``.
@@ -702,6 +706,8 @@ class ZukoFlow(BaseTorchFlow):
 
         Raises
         ------
+        ValueError
+            If ``validation_fraction`` is not strictly within ``(0.0, 1.0)``.
         ValueError
             If the total assembled sample count is less than 2 (cannot split).
         ValueError
@@ -729,6 +735,15 @@ class ZukoFlow(BaseTorchFlow):
         Datasets are small and keeping them on-device avoids per-batch
         host-to-device copies inside the DataLoader.
         """
+        # ------------------------------------------------------------------
+        # 0. Validate hyperparameters at the boundary
+        # ------------------------------------------------------------------
+        if not (0.0 < validation_fraction < 1.0):
+            raise ValueError(
+                "validation_fraction must lie strictly in the open interval "
+                f"(0.0, 1.0), got {validation_fraction}."
+            )
+
         # ------------------------------------------------------------------
         # 1. Normalise samples to dict[int, np.ndarray]
         # ------------------------------------------------------------------
@@ -781,12 +796,10 @@ class ZukoFlow(BaseTorchFlow):
         # ------------------------------------------------------------------
         if not torch.isfinite(z).all():
             # Identify which conditions/dimensions are bad
-            offset = 0
             for cond_id, z_c in zip(samples_dict.keys(), z_list):
                 bad_dims = (~torch.isfinite(z_c)).any(dim=0).nonzero(as_tuple=True)[0].tolist()
                 if bad_dims:
                     bad_conditions.append(f"condition {cond_id}, dims {bad_dims}")
-                offset += z_c.shape[0]
             raise ValueError(
                 "Non-finite values (NaN or Inf) found in assembled latents after "
                 f"data_transform.forward.  Offending: {'; '.join(bad_conditions)}.  "
@@ -803,7 +816,9 @@ class ZukoFlow(BaseTorchFlow):
                 f"got {M}."
             )
 
-        rng_seed = seed if seed is not None else self.seed
+        # Coerce seed at the boundary: ints expected; int() accepts whole floats
+        # (e.g. ``7.0``) and rejects non-numeric input with a clean TypeError.
+        rng_seed = int(seed) if seed is not None else self.seed
         gen = torch.Generator()
         gen.manual_seed(rng_seed)
 
