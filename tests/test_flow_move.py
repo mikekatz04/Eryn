@@ -499,6 +499,54 @@ def test_flowmove_hot_reload_advances_loaded_version_and_changes_outputs():
     np.testing.assert_array_equal(after, after2)
 
 
+def test_flowmove_executor_swap_resets_version_and_applies_new_weights():
+    """Swapping in a NEW executor resets loaded_version so its restarted counter is honoured.
+
+    Regression for I1: the per-executor ``version`` counter restarts at 1 for a
+    replacement executor.  FlowMove gates reload on ``version > loaded_version``,
+    so without a reset, executor B's version 1 would be ignored against the
+    remembered version 3 from executor A — silently freezing hot-reload.  The
+    ``executor`` setter resets ``loaded_version`` (and the harvest counter)
+    whenever a genuinely new executor object is assigned.
+    """
+    pytest.importorskip("torch")
+    flow = _make_flow(seed=0)
+
+    # Distinct weights so we can prove B's weights were actually applied.
+    weights_a = _make_flow(seed=111).get_weights()
+    weights_b = _make_flow(seed=222).get_weights()
+
+    branches = _setup_branches(ndim=2)
+    x = np.full((4, 2), 0.5)
+
+    # Executor A serves version 3 → loaded_version advances to 3.
+    ex_a = _StubExecutor(canned=(3, weights_a))
+    move = FlowMove(flow, branch_name="x", executor=ex_a, harvest_every=1)
+    move.setup(branches)
+    assert move.loaded_version == 3
+    after_a = flow.log_prob(x, context=0).copy()
+
+    # Swap in a NEW executor B serving version 1.  The setter must reset
+    # loaded_version (and the harvest counter) on this real swap.
+    ex_b = _StubExecutor(canned=(1, weights_b))
+    move.executor = ex_b
+    assert move.loaded_version == 0, "executor swap must reset loaded_version"
+    assert move._setup_calls == 0, "executor swap must reset the harvest counter"
+
+    # Next setup honours B's restarted version 1 and applies B's weights.
+    move.setup(branches)
+    assert move.loaded_version == 1
+    after_b = flow.log_prob(x, context=0)
+    assert not np.allclose(after_a, after_b), (
+        "executor B's weights (version 1) were not applied after the swap"
+    )
+
+    # Re-assigning the SAME object is a no-op: counters are preserved.
+    move.executor = ex_b
+    assert move.loaded_version == 1
+    assert move._setup_calls == 1
+
+
 def test_flowmove_trainer_error_propagates_from_setup():
     """A failed trainer surfaces as TrainerError out of setup (not swallowed)."""
     pytest.importorskip("torch")

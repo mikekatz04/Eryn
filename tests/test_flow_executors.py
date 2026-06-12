@@ -661,6 +661,57 @@ def test_process_happy_path_trains_and_serves_weights():
 
 
 # ---------------------------------------------------------------------------
+# 1b. Silent worker death AFTER first weights must still surface loudly (I2).
+# ---------------------------------------------------------------------------
+
+def test_process_worker_death_after_first_weights_surfaces(make_dummy_flow=None):
+    """A worker that crashes AFTER serving version >= 1 must fail loud, not freeze.
+
+    Regression for I2: the dead-process check used to be guarded on
+    ``self._latest is None``, so once any weights had been observed a later
+    crash (here: an external kill → nonzero exitcode) was never surfaced and
+    stale weights were returned forever.  The check now fires regardless of held
+    weights, gated only on ``not self._shutdown``.
+    """
+    pytest.importorskip("torch")
+    flow = _make_tiny_zuko_flow(seed=4)
+    ex = ProcessExecutor(flow, epochs_per_round=2, min_train_samples=50, seed=4)
+    try:
+        rng = np.random.default_rng(0)
+        for _ in range(3):
+            assert ex.submit({0: rng.standard_normal((100, 2)) * 4.0}) is True
+
+        # Happy path first: observe at least version 1.
+        lw = _poll_until_version(ex, target=1)
+        assert lw is not None and lw[0] >= 1, "worker never produced weights"
+        assert ex.version >= 1
+
+        # Now kill the worker hard (simulates OOM-kill / segfault: nonzero code).
+        ex._process.kill()
+        ex._process.join()
+        assert ex._process.exitcode not in (0, None)
+
+        # The death must surface as a TrainerError mentioning the exitcode,
+        # despite weights already having been served.
+        t0 = time.monotonic()
+        raised = None
+        while time.monotonic() < t0 + _POLL_DEADLINE_S:
+            try:
+                ex.latest_weights()
+            except TrainerError as exc:
+                raised = exc
+                break
+            time.sleep(0.1)
+        assert raised is not None, "worker death after first weights never surfaced"
+        assert "exitcode" in str(raised)
+    finally:
+        ex.shutdown()
+    # Shutdown after a killed worker is still clean and idempotent.
+    assert not ex._process.is_alive()
+    ex.shutdown()
+
+
+# ---------------------------------------------------------------------------
 # 2. Immediate shutdown with no submits — worker exits fast (not stuck in get).
 # ---------------------------------------------------------------------------
 
@@ -720,14 +771,18 @@ def test_process_error_propagation_surfaces_trainer_error():
 # 4. Drop policy — no worker; queues buffer; oldest vs newest (non-blocking).
 # ---------------------------------------------------------------------------
 
-def test_process_drop_policy_oldest_displaces(make_dummy_flow=None):
+def test_process_drop_policy_oldest_accepts_when_full(make_dummy_flow=None):
+    # Verifies the "oldest" drop policy stays NON-BLOCKING and ACCEPTS the
+    # incoming batch when the queue is already full (it evicts the oldest to make
+    # room and returns True).  This checks acceptance + non-blocking behaviour,
+    # NOT the data identity of the evicted item.
     flow = _make_fake(dims=2)
     ex = ProcessExecutor(flow, max_pending_batches=1, drop_policy="oldest",
                          start=False)
     try:
         t0 = time.monotonic()
         assert ex.submit({0: np.ones((3, 2))}) is True       # fills the queue
-        assert ex.submit({0: np.ones((3, 2))}) is True       # displaces oldest
+        assert ex.submit({0: np.ones((3, 2))}) is True       # accepted: evicts oldest
         assert time.monotonic() - t0 < 1.0, "submit blocked (must be non-blocking)"
     finally:
         ex.shutdown()

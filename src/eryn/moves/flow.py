@@ -124,11 +124,14 @@ class FlowMove(MHMove):
         self.flow = flow
         self.branch_name = branch_name
         self._active_condition: int = 0
-        self.executor = executor
         self.harvest_every = int(harvest_every)
         self.harvest_temp_index = int(harvest_temp_index)
         self._setup_calls = 0
         self._loaded_version = 0
+        # Initialise through the property so the executor-swap bookkeeping
+        # (version + harvest-counter reset) is defined in exactly one place.
+        self._executor = None
+        self.executor = executor
         super().__init__(*args, **kwargs)
 
     # ------------------------------------------------------------------
@@ -148,6 +151,39 @@ class FlowMove(MHMove):
     def loaded_version(self) -> int:
         """Version of the most recently hot-loaded flow weights (``0`` = none)."""
         return self._loaded_version
+
+    # ------------------------------------------------------------------
+    # executor property — resets hot-reload bookkeeping on a real swap
+    # ------------------------------------------------------------------
+
+    @property
+    def executor(self):
+        """Online-training executor (or ``None``).
+
+        Assigning a **new** executor object resets this move's hot-reload
+        memory (:attr:`loaded_version` back to ``0`` and the internal harvest
+        counter back to ``0``).  This is essential because
+        :attr:`~eryn.flows.executors.TrainerExecutor.version` is *per-executor-
+        instance*: a replacement executor (e.g. a recreated
+        :class:`~eryn.flows.executors.ProcessExecutor` after a worker died)
+        restarts its version counter at ``1``.  Without the reset, :meth:`setup`
+        would compare the new executor's version ``1`` against a remembered
+        ``loaded_version`` of, say, ``7`` and silently ignore every hot-reload
+        for the rest of the run.  Assigning the *same* object that is already
+        installed is a no-op (identity comparison) and preserves the counters.
+        """
+        return self._executor
+
+    @executor.setter
+    def executor(self, new_executor) -> None:
+        # Identity comparison: re-assigning the same object must NOT reset the
+        # counters (that would discard legitimate hot-reload progress); only a
+        # genuinely different executor instance restarts the bookkeeping.
+        if new_executor is self._executor:
+            return
+        self._executor = new_executor
+        self._loaded_version = 0
+        self._setup_calls = 0
 
     # ------------------------------------------------------------------
     # Online-training hook (called at the top of every propose)
