@@ -278,8 +278,10 @@ class Flow(ABC):
         -------
         dict
             Backend-specific weight dictionary (e.g. ``state_dict()`` for
-            PyTorch models).  Values must be NumPy arrays or Python scalars so
-            that the dict can be pickled without torch.
+            PyTorch models).  Values are CPU-resident and picklable; backend
+            implementations may return backend tensors (e.g.
+            :class:`torch.Tensor`) rather than NumPy arrays.  Consumers on
+            both sides of a process boundary must have the backend installed.
         """
 
     @abstractmethod

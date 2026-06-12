@@ -161,9 +161,8 @@ class BaseTorchFlow(Flow):
 
         The module is left on its current device after loading.
 
-        Note: ``set_weights`` does NOT clear the logdet cache.  The logdet
-        depends only on the data_transform (which is unchanged by this call),
-        not on the flow network weights.
+        Note: weights are independent of the data_transform; swapping weights
+        does not change the transform's Jacobian.
 
         Parameters
         ----------
@@ -408,9 +407,6 @@ class ZukoFlow(BaseTorchFlow):
         # --- build and register the flow via the property setter ---
         self.flow = FlowCls(features=dims, context=context_dim, **kw)
 
-        # --- logdet cache (per condition id → float) ---
-        self._logdet_cache: dict = {}
-
     # ------------------------------------------------------------------
     # Context resolution
     # ------------------------------------------------------------------
@@ -442,13 +438,10 @@ class ZukoFlow(BaseTorchFlow):
         if context is None:
             return None, 0
 
-        if self._context_dim == 0:
-            raise ValueError(
-                "This flow was built with context_dim=0 (no conditioning).  "
-                "Pass context=None or rebuild with a ConditioningStrategy."
-            )
-
-        # Integer condition id path (including numpy integer types)
+        # Integer condition id path (including numpy integer types).
+        # Check this before the context_dim==0 guard so the caller gets a
+        # specific "requires a conditioning strategy" message rather than the
+        # generic context_dim==0 one.
         if isinstance(context, (int, np.integer)):
             if self.conditioning is None:
                 raise ValueError(
@@ -460,50 +453,18 @@ class ZukoFlow(BaseTorchFlow):
             ctx = torch.as_tensor(ctx_np, device=self.device)
             return ctx, int(context)
 
-        # Raw array-like context vector path (condition=0 for data_transform)
+        # Raw array-like context vector path.  context_dim==0 is only possible
+        # here (integer path already handled above).
+        if self._context_dim == 0:
+            raise ValueError(
+                "This flow was built with context_dim=0 (no conditioning).  "
+                "Pass context=None or rebuild with a ConditioningStrategy."
+            )
+
         ctx = torch.as_tensor(
             np.asarray(context, dtype=np.float32), device=self.device
         )
         return ctx, 0
-
-    # ------------------------------------------------------------------
-    # Logdet cache
-    # ------------------------------------------------------------------
-
-    def _logdet(self, condition: int) -> float:
-        """Return the cached per-condition log-det of the data_transform.
-
-        The WhiteningTransform Jacobian is constant in x (linear+affine+shift),
-        so it is computed once per condition on a probe point and cached.
-
-        Parameters
-        ----------
-        condition : int
-            Condition id.
-
-        Returns
-        -------
-        float
-            ``log|det J_forward(x, condition)|`` for any ``x``.
-        """
-        if condition not in self._logdet_cache:
-            probe = np.zeros((1, self.dims), dtype=np.float64)
-            z = self.data_transform.forward(probe, condition)
-            # log_abs_det_jacobian may return a torch.Tensor or np.ndarray
-            val = self.data_transform.log_abs_det_jacobian(probe, z, condition)
-            if hasattr(val, "numpy"):
-                val = val.numpy()
-            self._logdet_cache[condition] = float(np.atleast_1d(np.asarray(val))[0])
-        return self._logdet_cache[condition]
-
-    def _clear_logdet_cache(self) -> None:
-        """Invalidate the per-condition logdet cache.
-
-        Called by Task 4's ``fit()`` after refitting the data_transform, since
-        the Jacobian constant changes when new whitening statistics are
-        computed.
-        """
-        self._logdet_cache.clear()
 
     # ------------------------------------------------------------------
     # log_prob
@@ -539,7 +500,13 @@ class ZukoFlow(BaseTorchFlow):
             dist = self._get_dist(ctx, n=len(x))
             log_flow = dist.log_prob(z_t)  # shape (N,)
 
-        logdet = self._logdet(condition)
+        # Per-point log-det: correct for any data_transform (including
+        # non-constant-Jacobian transforms such as LogTransform).  The cost
+        # is negligible next to the flow forward pass.
+        logdet_raw = self.data_transform.log_abs_det_jacobian(x, z, condition)
+        if hasattr(logdet_raw, "detach"):
+            logdet_raw = logdet_raw.detach().cpu().numpy()
+        logdet = np.asarray(logdet_raw, dtype=np.float64)
         return (log_flow.cpu().numpy() + logdet).astype(np.float64)
 
     # ------------------------------------------------------------------
@@ -599,7 +566,14 @@ class ZukoFlow(BaseTorchFlow):
         x = self.data_transform.inverse(z_cpu, condition)
         x = np.asarray(x, dtype=np.float64)
 
-        logdet = self._logdet(condition)
+        # Per-point log-det at the returned coords-space points.
+        # z_cpu is the flow-space representation; pass both so transforms that
+        # cached z during forward can reuse it.  Cost is negligible next to the
+        # flow forward pass.
+        logdet_raw = self.data_transform.log_abs_det_jacobian(x, z_cpu, condition)
+        if hasattr(logdet_raw, "detach"):
+            logdet_raw = logdet_raw.detach().cpu().numpy()
+        logdet = np.asarray(logdet_raw, dtype=np.float64)
         logq = (log_flow.cpu().numpy() + logdet).astype(np.float64)
         return x, logq
 
