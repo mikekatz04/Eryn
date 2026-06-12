@@ -128,7 +128,7 @@ def main():
     # numpy global RNG (warmup start draws) and torch global RNG (flow weight
     # init + flow.sample).  Each sampler additionally seeds its own RandomState.
     np.random.seed(args.seed)
-    import torch
+    import torch  # lazy: keeps --help working without the flow extra
     torch.manual_seed(args.seed)
 
     # --- target: banana (2 Gaussian dims) + 1 periodic dim => ndim = 3 ---
@@ -229,6 +229,12 @@ def main():
         # capture executor state INSIDE the context (the process is alive here)
         ex_version = ex.version
         loaded_version = flow_move.loaded_version
+        if ex_version < 2:
+            print(
+                f"[warn] trainer only reached version {ex_version} within the "
+                "60 s catch-up deadline; the online story below is incomplete "
+                "(slow machine? try a larger --nsteps)."
+            )
         flow_acc = float(np.mean(flow_move.acceptance_fraction))
         proc = ex._process  # for the clean-shutdown report after __exit__
     # <-- context manager exit: graceful shutdown of the trainer process
@@ -237,6 +243,8 @@ def main():
     # find the stretch move object back out of the sampler to report its accept
     stretch_acc = float(np.mean(online_sampler.moves[0].acceptance_fraction))
 
+    # note: includes the catch-up segments appended above, so the pooled sample
+    # count is machine-dependent (the moments are unaffected)
     online = _cold_chain(online_sampler, ndim)
     online_mean, online_std = _moments(online, periodic_dim)
 
