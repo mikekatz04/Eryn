@@ -220,6 +220,15 @@ class TrainerExecutor(ABC):
         bool
             ``True`` if the batch was accepted, ``False`` if it was dropped or
             coalesced (e.g. the trainer is busy, or the executor is shut down).
+
+        Empty harvests
+        --------------
+        Zero-length arrays carry no training data and must be dropped before
+        buffering; a submit with no rows at all (an empty dict, or only empty
+        arrays) returns ``False`` and is **not** counted as an accepted submit.
+        An empty harvest — e.g. a sampling step with no active leaves — is a
+        normal condition, not an error, and must never put the executor into a
+        failed state.
         """
 
     @abstractmethod
@@ -232,6 +241,18 @@ class TrainerExecutor(ABC):
             The newest ``(version, weights)`` observed, or ``None`` if no
             training has completed yet.  Calling this updates :attr:`version`.
 
+        Ownership contract
+        ------------------
+        The returned ``weights`` dict is the executor's **private snapshot**.
+        Callers may *load* it (``flow.set_weights(weights)`` copies the values
+        into the module's parameters) but must **not** mutate it in place.  An
+        executor must guarantee that successive snapshots are not aliased to
+        live training state: mutating a previously returned dict, or training
+        further, must never change a dict a caller is still holding.  A
+        process-backed executor satisfies this naturally (each returned dict is
+        a fresh deserialized copy); an inline executor must deep-copy the
+        clone's weights when stashing them so it matches that semantics.
+
         Raises
         ------
         TrainerError
@@ -241,7 +262,16 @@ class TrainerExecutor(ABC):
     @property
     @abstractmethod
     def version(self) -> int:
-        """Latest version observed via :meth:`latest_weights` (``0`` = none yet)."""
+        """Newest version OBSERVED via :meth:`latest_weights` (``0`` = none yet).
+
+        This is *poll-advanced*: it tracks the highest version a caller has
+        actually pulled through :meth:`latest_weights`, NOT the trainer's
+        internal "produced" counter.  A trainer may have completed a newer fit
+        that no one has polled yet; until :meth:`latest_weights` returns it,
+        :attr:`version` does not advance.  This is THE contract for every
+        executor, including process-based ones — callers use it to decide
+        whether a hot-reload is needed.
+        """
 
     @abstractmethod
     def shutdown(self, timeout: float = 10.0) -> None:
@@ -297,18 +327,23 @@ class InlineExecutor(TrainerExecutor):
         :class:`FlowSpec` snapshot; the caller's object is never mutated.
     fit_kwargs : dict or None, optional
         Extra keyword arguments forwarded to ``flow.fit`` (e.g. ``n_epochs``,
-        ``lr``).  ``refit_data_transform`` and ``verbose`` are set by the
-        executor and must not be supplied here.  Default is ``None`` (empty).
+        ``lr``).  ``refit_data_transform`` and ``verbose`` are controlled by the
+        executor; supplying either raises :class:`ValueError` from ``__init__``.
+        Default is ``None`` (empty).
     train_every : int, optional
         Train on every ``train_every``-th accepted submit.  Default is ``1``
         (train on every submit).
     min_train_samples : int, optional
         Minimum total buffered samples (summed over conditions) required before
-        a fit runs.  Default is ``0``.
+        a fit runs.  Default is ``1``.  Training is always additionally guarded
+        on a non-empty buffer, so this is self-documenting rather than a
+        behaviour change: a fit never runs on zero rows.
     max_buffer_samples : int, optional
         Per-condition ring-buffer cap.  When a condition's buffered sample count
-        exceeds this, the oldest arrays are dropped from the left.  Default is
-        ``20_000``.
+        exceeds this, the oldest arrays are dropped from the left — but the most
+        recent array is always retained whole, so a single submit larger than
+        the cap is kept in full (the effective cap is
+        ``max(max_buffer_samples, one harvest)``).  Default is ``20_000``.
     seed : int or None, optional
         Reserved for parity with asynchronous executors; unused by the inline
         implementation (the clone carries the template flow's own seed).
@@ -321,12 +356,23 @@ class InlineExecutor(TrainerExecutor):
         fit_kwargs: dict | None = None,
         *,
         train_every: int = 1,
-        min_train_samples: int = 0,
+        min_train_samples: int = 1,
         max_buffer_samples: int = 20_000,
         seed=None,
     ):
         self._flow = FlowSpec.from_flow(flow).build()
         self._fit_kwargs = dict(fit_kwargs) if fit_kwargs else {}
+        # refit_data_transform and verbose are controlled by the executor (the
+        # transform is frozen; verbosity is forced off).  Reject them in
+        # fit_kwargs so a caller's collision fails fast rather than being
+        # silently overridden at fit time.
+        _reserved = {"refit_data_transform", "verbose"} & self._fit_kwargs.keys()
+        if _reserved:
+            raise ValueError(
+                f"fit_kwargs may not contain {sorted(_reserved)}: these are "
+                "controlled by the executor (the data transform is frozen and "
+                "verbosity is forced off).  Remove them from fit_kwargs."
+            )
         self._train_every = int(train_every)
         self._min_train_samples = int(min_train_samples)
         self._max_buffer_samples = int(max_buffer_samples)
@@ -372,9 +418,15 @@ class InlineExecutor(TrainerExecutor):
     def submit(self, samples_by_condition: dict) -> bool:
         """Append samples and, every ``train_every``-th accepted call, fit.
 
+        Zero-length arrays are dropped before buffering; a submit that carries
+        no rows at all (an empty dict, or only empty arrays) returns ``False``
+        WITHOUT counting as an accepted submit and without bumping any version.
+        Empty harvests — e.g. a sampling step with no active leaves — are a
+        normal condition, not an error, and must not poison the executor.
+
         Returns ``False`` (drops the batch) after :meth:`shutdown`.  Otherwise
-        always returns ``True`` — the inline executor never coalesces or drops a
-        live batch.
+        returns ``True`` for any submit that buffered at least one row — the
+        inline executor never coalesces or drops a non-empty live batch.
 
         Raises
         ------
@@ -390,20 +442,35 @@ class InlineExecutor(TrainerExecutor):
         if self._shutdown:
             return False
 
+        buffered_any = False
         for cond, arr in samples_by_condition.items():
             cond = int(cond)
             arr = np.asarray(arr)
             arr = arr.reshape(-1, self._flow.dims)
+            if len(arr) == 0:
+                # Drop empty conditions: a harvest with no rows is a normal
+                # sampling condition, not data to train on.
+                continue
             if cond not in self._buffers:
                 self._buffers[cond] = deque()
             self._buffers[cond].append(arr)
             self._trim(cond)
+            buffered_any = True
+
+        # An empty harvest is not an accepted submit: don't count it, don't
+        # train on it, and return False so callers can tell it was a no-op.
+        if not buffered_any:
+            return False
 
         self._accepted_submits += 1
 
         # Train on every train_every-th accepted submit once enough is buffered.
+        # The _buffered_total() > 0 guard is independent of min_train_samples so
+        # we never hand fit() an empty buffer (an empty fit is an error, not a
+        # training step).
         if (
             self._accepted_submits % self._train_every == 0
+            and self._buffered_total() > 0
             and self._buffered_total() >= self._min_train_samples
         ):
             try:
@@ -419,7 +486,15 @@ class InlineExecutor(TrainerExecutor):
                 self._error = exc
             else:
                 self._trained_version += 1
-                self._latest = (self._trained_version, self._flow.get_weights())
+                # Snapshot defensively: get_weights() may return references to the
+                # clone's live (torch) parameters.  Deep-copy so the stashed
+                # snapshot can never be aliased to training state — matching the
+                # natural semantics of a process executor, whose returned dict is
+                # always a fresh deserialized copy.
+                self._latest = (
+                    self._trained_version,
+                    copy.deepcopy(self._flow.get_weights()),
+                )
 
         return True
 

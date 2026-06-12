@@ -13,7 +13,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from eryn.flows.executors import TrainerError
+from eryn.flows.executors import TrainerError, TrainerExecutor
 from eryn.moves import FlowMove, IndependentProposalMove
 
 
@@ -383,8 +383,12 @@ def test_flow_move_active_condition_routing():
 # FlowMove online-training hooks (setup) — stub executor (numpy only)
 # ---------------------------------------------------------------------------
 
-class _StubExecutor:
-    """Records submits and serves canned (version, weights) on demand."""
+class _StubExecutor(TrainerExecutor):
+    """Records submits and serves canned (version, weights) on demand.
+
+    Subclasses the :class:`TrainerExecutor` ABC so a signature change to the
+    seam contract breaks loudly here instead of drifting silently.
+    """
 
     def __init__(self, canned=None, raise_on_poll=False):
         self.submits = []
