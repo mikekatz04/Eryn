@@ -28,6 +28,17 @@ class ConditioningStrategy(Protocol):
     context_dim : int
         Dimensionality of the context vector returned by :meth:`encode`.
 
+    Notes
+    -----
+    :meth:`encode` is the only hot-path requirement: it is called on every flow
+    forward pass and is what defines the protocol.  :meth:`assign` may require
+    implementation-specific setup before it can be called — for example,
+    :class:`OneHotLeafConditioning.assign` raises until
+    :meth:`OneHotLeafConditioning.set_centroids` has been called.  Such setup
+    hooks (``set_centroids`` here) are optional, implementation-specific
+    extensions and are deliberately **not** part of this protocol; only
+    ``context_dim``, ``encode``, and ``assign`` are.
+
     Examples
     --------
     Any class that exposes ``context_dim``, ``encode``, and ``assign`` is
