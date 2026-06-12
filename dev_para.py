@@ -1,15 +1,11 @@
-import matplotlib.pyplot as plt
-
-import numpy as np
-
-import cupy as cp
-
-from eryn.paraensemble import ParaEnsembleSampler
-
-from eryn.prior import ProbDistContainer, uniform_dist
-from eryn.state import ParaState
 
 import corner
+import cupy as cp
+import numpy as np
+
+from eryn.paraensemble import ParaEnsembleSampler
+from eryn.prior import ProbDistContainer, uniform_dist
+from eryn.state import ParaState
 
 
 # Gaussian likelihood
@@ -24,10 +20,23 @@ def log_like_fn(x, mu, invcov, use_gpu=False):
 
 
 class PriorTransformFn:
+    """Demo prior_transform_fn: identity transform + per-group logp adjustment.
+
+    The sampler calls ``transform_to_prior_basis(coords, groups_running)``
+    (in-place map of coords to the basis the priors are defined in) and
+    ``adjust_logp(logp, groups_running)`` (in-place Jacobian adjustment).
+    """
+
     def __init__(self, f_min, f_max, fdot_min, fdot_max):
         self.f_min, self.f_max, self.fdot_min, self.fdot_max = f_min, f_max, fdot_min, fdot_max
 
-    def __call__(self, logp, groups_running):
+    def transform_to_prior_basis(self, coords, groups_running):
+        # priors here are already defined in the sampling basis
+        return
+
+    def adjust_logp(self, logp, groups_running):
+        if groups_running is None:
+            groups_running = np.arange(len(self.f_min))
         f_min_here = self.f_min[groups_running]
         f_max_here = self.f_max[groups_running]
         f_logpdf = np.log(1. / (f_max_here - f_min_here))
