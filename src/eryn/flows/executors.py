@@ -605,9 +605,13 @@ def _trainer_worker(spec, cfg, sample_q, weights_q, stop_event):
 
     On any exception the full child traceback is pushed as
     ``("error", traceback)`` so the parent can re-raise it as a
-    :class:`TrainerError`.  ``cancel_join_thread`` is called on both queues in
-    ``finally`` so a half-flushed feeder thread can never deadlock the child's
-    own exit (a documented macOS ``multiprocessing.Queue`` pitfall).
+    :class:`TrainerError`.  Queue teardown in ``finally`` is deliberately
+    asymmetric: ``sample_q`` (which the child only *reads*) has its feeder
+    join thread cancelled so a half-flushed thread cannot deadlock the
+    child's exit, while ``weights_q`` (which the child *writes*) is
+    ``close()``d and joined so the final weights/error item is flushed
+    before exit — cancelling it would silently discard that last item and
+    turn worker failures into clean exitcode-0 deaths.
     """
     try:
         import torch
