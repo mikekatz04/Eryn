@@ -121,28 +121,42 @@ def _train_toy_flow(samples, steps=400, seed=0):
 
 @pytest.mark.slow
 def test_flowmove_recovers_periodic_target():
-    np.random.seed(0)  # deterministic gate (deliberate: original did not seed numpy)
-    torch.manual_seed(0)
+    # Save/restore the global RNG states: every other test in this suite uses
+    # local default_rng generators, and leaking a reseeded global state would
+    # make unrelated tests ordering-sensitive.
+    np_state = np.random.get_state()
+    torch_state = torch.get_rng_state()
+    try:
+        torch.manual_seed(0)  # load-bearing: flow init + flow sampling read the global torch RNG
 
-    train = _target_samples(8000, seed=1)
-    fm = _train_toy_flow(train)
+        train = _target_samples(8000, seed=1)
+        fm = _train_toy_flow(train)
 
-    ndim, nwalkers = 2, 100
-    priors = {"x": ProbDistContainer({0: uniform_dist(-5.0, 7.0), 1: uniform_dist(0.0, PERIOD)})}
-    periodic = PeriodicContainer({"x": {1: PERIOD}})
+        ndim, nwalkers = 2, 100
+        priors = {"x": ProbDistContainer({0: uniform_dist(-5.0, 7.0), 1: uniform_dist(0.0, PERIOD)})}
+        periodic = PeriodicContainer({"x": {1: PERIOD}})
 
-    move = FlowMove(fm, branch_name="x")
-    move.active_condition = 0
+        move = FlowMove(fm, branch_name="x")
+        move.active_condition = 0  # select the single one-hot condition (nleaves_max=1)
 
-    sampler = EnsembleSampler(
-        nwalkers, {"x": ndim}, _log_target, priors,
-        tempering_kwargs=dict(ntemps=1), vectorize=True,
-        periodic=periodic, moves=[move], branch_names=["x"],
-    )
-    start = State({"x": _target_samples(nwalkers, seed=7).reshape(1, nwalkers, 1, ndim)})
-    sampler.run_mcmc(start, 600, burn=200, progress=False)
+        sampler = EnsembleSampler(
+            nwalkers, {"x": ndim}, _log_target, priors,
+            tempering_kwargs=dict(ntemps=1), vectorize=True,
+            periodic=periodic, moves=[move], branch_names=["x"],
+        )
+        # EnsembleSampler builds its own *unseeded* RandomState (np.random.seed
+        # does not reach it); seed it via the public setter so the accept/reject
+        # draws — and hence the whole gate — are deterministic run-to-run.
+        sampler.random_state = np.random.RandomState(0).get_state()
+        start = State({"x": _target_samples(nwalkers, seed=7).reshape(1, nwalkers, 1, ndim)})
+        sampler.run_mcmc(start, 600, burn=200, progress=False)
 
-    chain = sampler.get_chain()["x"][:, 0, :, 0, :].reshape(-1, ndim)  # (nsteps*nwalkers, ndim)
+        # chain axes: (step, temp, walker, leaf, dim) -> drop temp=0, leaf=0
+        # (valid because ntemps=1 and the branch is single-leaf)
+        chain = sampler.get_chain()["x"][:, 0, :, 0, :].reshape(-1, ndim)  # (nsteps*nwalkers, ndim)
+    finally:
+        np.random.set_state(np_state)
+        torch.set_rng_state(torch_state)
 
     # non-periodic dim: KS vs analytic Normal(1, 0.7)
     ks_p = stats.kstest((chain[:, 0] - 1.0) / 0.7, "norm").pvalue
