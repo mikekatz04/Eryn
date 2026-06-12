@@ -271,3 +271,101 @@ def test_config_dict_pickle_survives():
     cfg = f.config_dict()
     cfg2 = pickle.loads(pickle.dumps(cfg))
     assert cfg2 == cfg
+
+
+# ---------------------------------------------------------------------------
+# ZukoFlow contract — torch-dependent tests
+# Each function calls pytest.importorskip("torch") so the torch-free tests
+# above remain collectible and runnable without torch installed.
+# ---------------------------------------------------------------------------
+
+def _make_zuko_flow_for_contract():
+    """Build a small ZukoFlow with WhiteningTransform + OneHotLeafConditioning."""
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("zuko")
+
+    from eryn.flows import ZukoFlow, WhiteningTransform, OneHotLeafConditioning
+
+    torch.manual_seed(0)
+    rng = np.random.default_rng(0)
+    samples = rng.standard_normal((200, 3))
+
+    cond = OneHotLeafConditioning(nleaves_max=1)
+    wt = WhiteningTransform(ndim=3)
+    wt.fit({0: samples})
+
+    flow = ZukoFlow(
+        dims=3,
+        device="cpu",
+        data_transform=wt,
+        conditioning=cond,
+        seed=0,
+        flow_class="NSF",
+        transforms=2,
+        hidden_features=(32, 32),
+        bins=4,
+    )
+    return flow
+
+
+def test_zukoflow_config_dict_round_trip_reproduces_log_prob():
+    """ZukoFlow(**flow.config_dict()) + set_weights reproduces log_prob (atol 1e-6)."""
+    torch = pytest.importorskip("torch")
+    from eryn.flows import ZukoFlow
+
+    flow = _make_zuko_flow_for_contract()
+    rng = np.random.default_rng(99)
+    x = rng.standard_normal((64, 3))
+
+    cfg = flow.config_dict()
+    flow2 = ZukoFlow(**cfg)
+    flow2.set_weights(flow.get_weights())
+
+    lp1 = flow.log_prob(x, context=0)
+    lp2 = flow2.log_prob(x, context=0)
+    np.testing.assert_allclose(lp1, lp2, atol=1e-6,
+                               err_msg="config_dict round-trip changed log_prob")
+
+
+def test_zukoflow_get_weights_cpu_detached_isolated():
+    """get_weights() tensors are CPU and detached; mutating them leaves the flow unchanged."""
+    torch = pytest.importorskip("torch")
+
+    flow = _make_zuko_flow_for_contract()
+    x = np.zeros((4, 3), dtype=np.float64)
+    lp_before = flow.log_prob(x, context=0)
+
+    weights = flow.get_weights()
+    # All on CPU
+    assert all(v.device.type == "cpu" for v in weights.values())
+    # Mutating the returned dict must not affect the flow
+    for v in weights.values():
+        v.fill_(999.0)
+    lp_after = flow.log_prob(x, context=0)
+    np.testing.assert_allclose(lp_before, lp_after, atol=1e-8)
+
+
+def test_zukoflow_h5_save_load_round_trip(tmp_path):
+    """h5 save/load round-trip reproduces log_prob exactly and restores transform+conditioning."""
+    pytest.importorskip("torch")
+    pytest.importorskip("h5py")
+    from eryn.flows import ZukoFlow
+
+    flow = _make_zuko_flow_for_contract()
+    rng = np.random.default_rng(5)
+    x = rng.standard_normal((64, 3))
+
+    h5_path = str(tmp_path / "contract_flow.h5")
+    flow.save(h5_path)
+    flow2 = ZukoFlow.load(h5_path)
+
+    lp1 = flow.log_prob(x, context=0)
+    lp2 = flow2.log_prob(x, context=0)
+    np.testing.assert_allclose(lp1, lp2, atol=1e-8,
+                               err_msg="h5 save/load changed log_prob")
+
+    # Conditioning and transform must be functional
+    assert flow2.conditioning is not None
+    assert flow2.conditioning.context_dim == flow.conditioning.context_dim
+    z = flow2.data_transform.forward(x, condition=0)
+    assert z.shape == (64, 3)

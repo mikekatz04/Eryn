@@ -8,13 +8,17 @@ This subpackage provides:
 
 - :class:`WhiteningTransform` — periodic-aware per-condition whitening
   preprocessor implementing the :class:`eryn.flows.DataTransform` ABC.
-
-``ZukoFlow`` will be added here in Task 3.
+- :class:`ZukoFlow` — conditional normalizing flow backed by the zuko library,
+  implementing the full :class:`eryn.flows.base.Flow` ABC with coords-space
+  densities and HDF5 serialisation.
 """
 from __future__ import annotations
 
+from .flows import BaseTorchFlow, ZukoFlow
 from .transforms import WhiteningTransform
 
 __all__ = [
+    "BaseTorchFlow",
+    "ZukoFlow",
     "WhiteningTransform",
 ]
