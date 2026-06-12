@@ -7,10 +7,19 @@ verifies that ``FlowSpec.from_flow(...).build()`` reproduces ``log_prob``.
 """
 from __future__ import annotations
 
+import multiprocessing
+import time
+
 import numpy as np
 import pytest
 
-from eryn.flows import FlowSpec, InlineExecutor, TrainerError
+from eryn.flows import (
+    FlowSpec,
+    InlineExecutor,
+    ProcessExecutor,
+    TrainerError,
+    WorkerConfig,
+)
 from eryn.flows.base import Flow, FlowHistory
 from eryn.flows.transforms import DataTransform, IdentityTransform
 
@@ -103,6 +112,19 @@ class _RaisingFlow(FakeFlow):
 
     def fit(self, samples, **kwargs):
         raise RuntimeError("boom in fit")
+
+
+class _ExplodingFlow(FakeFlow):
+    """Module-level FakeFlow whose ``fit`` raises ``RuntimeError('boom')``.
+
+    Defined at module scope so it pickles BY REFERENCE — a ``FlowSpec`` wrapping
+    it can be sent across the spawn boundary and rebuilt in the worker, where
+    its ``fit`` then raises and the executor must surface the child traceback as
+    a :class:`TrainerError` whose message contains ``"boom"``.
+    """
+
+    def fit(self, samples, **kwargs):
+        raise RuntimeError("boom")
 
 
 class _LiveWeightFlow(FakeFlow):
@@ -535,3 +557,303 @@ def test_inline_zuko_trains_and_serves_weights():
     lp = sibling.log_prob(x, context=0)
     assert lp.shape == (16,)
     assert np.all(np.isfinite(lp))
+
+
+# ===========================================================================
+# ProcessExecutor — spawned-worker trainer
+# ===========================================================================
+#
+# These tests run REAL spawned child processes.  spawn re-imports this test
+# module in each child as a NON-main module, so all module-level code here must
+# be import-safe (it is — only class/function defs and a couple of constants).
+# We never need ``if __name__ == "__main__":`` for pytest.
+#
+# Child startup is slow (~2-5 s to import eryn + torch), so every wait is a
+# wall-clock DEADLINE loop (no tight sleeps, no fixed-count polling).
+# ---------------------------------------------------------------------------
+
+# Generous deadline for any "wait until the worker produced something" loop.
+_POLL_DEADLINE_S = 60.0
+
+
+def _make_tiny_zuko_flow(seed: int = 0):
+    """A minimal ZukoFlow + fitted WhiteningTransform for process tests."""
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("zuko")
+    from eryn.flows import ZukoFlow, WhiteningTransform, OneHotLeafConditioning
+
+    torch.manual_seed(seed)
+    rng = np.random.default_rng(seed)
+    samples = rng.standard_normal((200, 2))
+
+    cond = OneHotLeafConditioning(nleaves_max=1)
+    wt = WhiteningTransform(ndim=2)
+    wt.fit({0: samples})
+
+    return ZukoFlow(
+        dims=2,
+        device="cpu",
+        data_transform=wt,
+        conditioning=cond,
+        seed=seed,
+        flow_class="NSF",
+        transforms=1,
+        hidden_features=(16,),
+        bins=3,
+    )
+
+
+def _poll_until_version(ex, target: int = 1, deadline_s: float = _POLL_DEADLINE_S):
+    """Poll ``latest_weights`` until ``version >= target`` or the deadline.
+
+    Returns the last ``latest_weights()`` result (may be ``None`` on timeout).
+    Re-raises any :class:`TrainerError` so failures surface promptly.
+    """
+    t0 = time.monotonic()
+    lw = None
+    while time.monotonic() < t0 + deadline_s:
+        lw = ex.latest_weights()
+        if lw is not None and lw[0] >= target:
+            return lw
+        time.sleep(0.1)
+    return lw
+
+
+# ---- tiny worker config used across process tests (fast fits) -------------
+_TINY_FIT = dict(epochs_per_round=2, min_train_samples=50)
+
+
+# ---------------------------------------------------------------------------
+# 1. Happy path — train, hand off versioned weights, clean shutdown.
+# ---------------------------------------------------------------------------
+
+def test_process_happy_path_trains_and_serves_weights():
+    pytest.importorskip("torch")
+    flow = _make_tiny_zuko_flow(seed=0)
+    # epochs_per_round is the worker-controlled n_epochs; do NOT also pass it via
+    # fit_kwargs (that would collide on the worker's flow.fit call).
+    ex = ProcessExecutor(flow, epochs_per_round=2, min_train_samples=50,
+                         seed=7)
+    try:
+        rng = np.random.default_rng(0)
+        for _ in range(3):
+            assert ex.submit({0: rng.standard_normal((100, 2)) * 4.0}) is True
+
+        lw = _poll_until_version(ex, target=1)
+        assert lw is not None and lw[0] >= 1, "worker never produced weights"
+        version, weights = lw
+        assert ex.version == version
+
+        # Weights load into a sibling flow and change its density.
+        sibling = _make_tiny_zuko_flow(seed=0)
+        x = rng.standard_normal((8, 2))
+        before = sibling.log_prob(x, context=0).copy()
+        sibling.set_weights(weights)
+        after = sibling.log_prob(x, context=0)
+        assert np.all(np.isfinite(after))
+        assert not np.allclose(before, after), "trained weights did not change log_prob"
+    finally:
+        ex.shutdown()
+
+    assert not ex._process.is_alive()
+    assert ex._process.exitcode == 0
+    ex.shutdown()  # idempotent second call: no-op, no raise
+
+
+# ---------------------------------------------------------------------------
+# 2. Immediate shutdown with no submits — worker exits fast (not stuck in get).
+# ---------------------------------------------------------------------------
+
+def test_process_shutdown_without_submits_is_fast():
+    pytest.importorskip("torch")
+    flow = _make_tiny_zuko_flow(seed=1)
+    ex = ProcessExecutor(flow, **_TINY_FIT, seed=1)
+    # Give the child time to come up so we exercise a real running-then-stopped
+    # worker, not a not-yet-started one.
+    t0 = time.monotonic()
+    while time.monotonic() < t0 + _POLL_DEADLINE_S and not ex._process.is_alive():
+        time.sleep(0.05)
+    ex.shutdown(timeout=10.0)
+    assert not ex._process.is_alive()
+    assert ex._process.exitcode == 0
+
+
+# ---------------------------------------------------------------------------
+# 3. Error propagation — child fit raises; TrainerError carries the traceback.
+# ---------------------------------------------------------------------------
+
+def test_process_error_propagation_surfaces_trainer_error():
+    # No real torch flow needed: _ExplodingFlow is a numpy FakeFlow whose fit
+    # raises in the worker.  The worker still imports torch, builds the flow,
+    # and the error path runs identically.
+    pytest.importorskip("torch")  # worker imports torch unconditionally
+    flow = _ExplodingFlow(dims=2, device="cpu",
+                          data_transform=_FittableTransform(True))
+    ex = ProcessExecutor(flow, epochs_per_round=2, min_train_samples=50, seed=3)
+    try:
+        rng = np.random.default_rng(0)
+        # Submit enough rows to cross min_train_samples and trigger the fit.
+        for _ in range(3):
+            ex.submit({0: rng.standard_normal((100, 2))})
+
+        t0 = time.monotonic()
+        raised = None
+        while time.monotonic() < t0 + _POLL_DEADLINE_S:
+            try:
+                ex.latest_weights()
+            except TrainerError as exc:
+                raised = exc
+                break
+            time.sleep(0.1)
+        assert raised is not None, "TrainerError never surfaced from the worker"
+        assert "boom" in str(raised)
+
+        # submit after a recorded failure raises (matches Inline semantics).
+        with pytest.raises(TrainerError):
+            ex.submit({0: rng.standard_normal((100, 2))})
+    finally:
+        ex.shutdown()
+    assert not ex._process.is_alive()
+
+
+# ---------------------------------------------------------------------------
+# 4. Drop policy — no worker; queues buffer; oldest vs newest (non-blocking).
+# ---------------------------------------------------------------------------
+
+def test_process_drop_policy_oldest_displaces(make_dummy_flow=None):
+    flow = _make_fake(dims=2)
+    ex = ProcessExecutor(flow, max_pending_batches=1, drop_policy="oldest",
+                         start=False)
+    try:
+        t0 = time.monotonic()
+        assert ex.submit({0: np.ones((3, 2))}) is True       # fills the queue
+        assert ex.submit({0: np.ones((3, 2))}) is True       # displaces oldest
+        assert time.monotonic() - t0 < 1.0, "submit blocked (must be non-blocking)"
+    finally:
+        ex.shutdown()
+
+
+def test_process_drop_policy_newest_rejects():
+    flow = _make_fake(dims=2)
+    ex = ProcessExecutor(flow, max_pending_batches=1, drop_policy="newest",
+                         start=False)
+    try:
+        t0 = time.monotonic()
+        assert ex.submit({0: np.ones((3, 2))}) is True       # fills the queue
+        assert ex.submit({0: np.ones((3, 2))}) is False      # incoming dropped
+        assert time.monotonic() - t0 < 1.0, "submit blocked (must be non-blocking)"
+    finally:
+        ex.shutdown()
+
+
+# ---------------------------------------------------------------------------
+# 5. Empty submit → False without touching the queue.
+# ---------------------------------------------------------------------------
+
+def test_process_empty_submit_is_false_without_touching_queue():
+    flow = _make_fake(dims=2)
+    ex = ProcessExecutor(flow, max_pending_batches=1, start=False)
+    try:
+        assert ex.submit({}) is False
+        assert ex.submit({0: np.zeros((0, 2))}) is False
+        # Queue untouched: a real batch still fits and a second one displaces it
+        # (proving the empties never consumed the single slot).
+        assert ex.submit({0: np.ones((5, 2))}) is True
+    finally:
+        ex.shutdown()
+
+
+# ---------------------------------------------------------------------------
+# 6. fit_kwargs collision → ValueError.
+# ---------------------------------------------------------------------------
+
+def test_process_fit_kwargs_collision_raises():
+    flow = _make_fake(dims=2)
+    with pytest.raises(ValueError, match="refit_data_transform"):
+        ProcessExecutor(flow, fit_kwargs=dict(refit_data_transform=True),
+                        start=False)
+    with pytest.raises(ValueError, match="verbose"):
+        ProcessExecutor(flow, fit_kwargs=dict(verbose=True), start=False)
+
+
+def test_process_bad_drop_policy_raises():
+    flow = _make_fake(dims=2)
+    with pytest.raises(ValueError, match="drop_policy"):
+        ProcessExecutor(flow, drop_policy="nope", start=False)
+
+
+# ---------------------------------------------------------------------------
+# 7. Context manager joins the child.
+# ---------------------------------------------------------------------------
+
+def test_process_context_manager_joins_child():
+    pytest.importorskip("torch")
+    flow = _make_tiny_zuko_flow(seed=2)
+    with ProcessExecutor(flow, **_TINY_FIT, seed=2) as ex:
+        proc = ex._process
+        # let it come up
+        t0 = time.monotonic()
+        while time.monotonic() < t0 + _POLL_DEADLINE_S and not proc.is_alive():
+            time.sleep(0.05)
+        assert proc.is_alive()
+    assert not proc.is_alive()
+
+
+# ---------------------------------------------------------------------------
+# 8. FlowMove end-to-end smoke with ProcessExecutor.
+# ---------------------------------------------------------------------------
+
+def test_process_flowmove_end_to_end_smoke():
+    pytest.importorskip("torch")
+    from eryn.ensemble import EnsembleSampler
+    from eryn.moves import FlowMove
+    from eryn.prior import ProbDistContainer, uniform_dist
+    from eryn.state import State
+
+    ndim, ntemps, nwalkers = 2, 1, 16
+    flow = _make_tiny_zuko_flow(seed=0)
+    ex = ProcessExecutor(flow, epochs_per_round=2, min_train_samples=50, seed=11)
+    try:
+        move = FlowMove(flow, branch_name="x", executor=ex, harvest_every=2)
+        move.active_condition = 0
+
+        priors = {"x": ProbDistContainer(
+            {0: uniform_dist(-10.0, 10.0), 1: uniform_dist(-10.0, 10.0)}
+        )}
+
+        def _loglike(x):
+            x = np.atleast_2d(x)
+            return -0.5 * np.sum(x ** 2, axis=-1)
+
+        sampler = EnsembleSampler(
+            nwalkers, {"x": ndim}, _loglike, priors,
+            tempering_kwargs=dict(ntemps=ntemps), vectorize=True,
+            moves=[move], branch_names=["x"],
+        )
+        rng = np.random.default_rng(42)
+        start = State({"x": rng.standard_normal((ntemps, nwalkers, 1, ndim))})
+        sampler.run_mcmc(start, 60, burn=0, progress=False)
+
+        chain = sampler.get_chain()["x"]
+        assert chain.shape[0] == 60
+        assert np.all(np.isfinite(chain))
+
+        # Deterministic version assertion: wait for the worker to produce >= 1,
+        # then run a few more steps so the move hot-loads it.
+        lw = _poll_until_version(ex, target=1)
+        assert lw is not None and lw[0] >= 1, "worker never produced weights"
+        sampler.run_mcmc(sampler.get_last_sample(), 5, burn=0, progress=False)
+        assert move.loaded_version >= 1
+    finally:
+        ex.shutdown()
+    assert not ex._process.is_alive()
+
+
+# ---------------------------------------------------------------------------
+# No-zombie guarantee: no child processes left alive after the module's tests.
+# ---------------------------------------------------------------------------
+
+def test_process_no_leftover_children():
+    # If any earlier test leaked a child, this fails loudly.  (Runs last by
+    # definition order within the module.)
+    assert multiprocessing.active_children() == []

@@ -24,7 +24,7 @@ The PyTorch backend (``ZukoFlow``, ``WhiteningTransform``) lives in the
 Importing this module (``eryn.flows``) never triggers a torch import.
 
 **Executor classes** (``TrainerExecutor``, ``InlineExecutor``,
-``TrainerError`` — and, from Task 9, ``ProcessExecutor``) live in
+``ProcessExecutor``, ``WorkerConfig``, ``TrainerError``) live in
 ``eryn.flows.executors``.  That module is torch-free, so these names could be
 imported eagerly; they are kept in the lazy ``__getattr__`` map purely for
 consistency with the other optional names and to keep the import of
@@ -52,6 +52,8 @@ __all__ = [
     "FlowSpec",
     "TrainerExecutor",
     "InlineExecutor",
+    "ProcessExecutor",
+    "WorkerConfig",
 ]
 
 # No module-level import of torch, scipy, sklearn, .torch, or .executors.
@@ -70,7 +72,10 @@ _TORCH_NAMES = {"ZukoFlow", "WhiteningTransform"}
 
 # Executor names live in the torch-free eryn.flows.executors module.  They are
 # always importable (no optional backend), but resolved lazily for consistency.
-_EXECUTOR_NAMES = {"TrainerError", "FlowSpec", "TrainerExecutor", "InlineExecutor"}
+_EXECUTOR_NAMES = {
+    "TrainerError", "FlowSpec", "TrainerExecutor", "InlineExecutor",
+    "ProcessExecutor", "WorkerConfig",
+}
 
 
 def get_flow_wrapper(backend: str = "zuko"):
