@@ -18,6 +18,7 @@ torch = pytest.importorskip("torch")
 pytest.importorskip("zuko")
 
 from eryn.flows.torch.transforms import (  # noqa: E402
+    CircularShiftTransform,
     LogTransform,
     WhiteningTransform,
 )
@@ -228,6 +229,70 @@ def test_forward_unknown_condition_raises():
     wt, _ = _fitted_wt()
     with pytest.raises(ValueError, match="condition"):
         wt.forward(_make_samples(n=5), condition=99)
+
+
+# ---------------------------------------------------------------------------
+# CircularShiftTransform round-trip semantics — explicit invariants
+# ---------------------------------------------------------------------------
+
+def test_circular_shift_round_trip_consistency():
+    """Pin the exact round-trip math of CircularShiftTransform.
+
+    Two identities hold for the circular shift (forward ``_call`` wraps into the
+    fundamental window ``[-T/2, T/2)``; inverse ``_inverse`` canonicalises into
+    ``[0, T)``):
+
+      1.  ``_inverse(_call(x)) == x (mod T)`` for every real ``x`` (a dense
+          coords grid spanning several periods).
+      2.  ``_call(_inverse(z)) == wrap_{[-T/2, T/2)}(z)`` for every real ``z``
+          (a dense latent grid spanning ``[-T, T]``).  In particular it equals
+          ``z`` exactly when ``z`` already lies in ``[-T/2, T/2)``, and folds it
+          back by a full period otherwise.
+
+    Identity (2) is the documented limitation behind the periodic
+    sample/log_prob aliasing: the forward modulo is what makes the map robust to
+    arbitrary external coords, and it is precisely what prevents ``_call`` from
+    recovering a latent the flow drew outside the window.
+    """
+    period = 2 * np.pi
+    half = period / 2.0
+    shift = torch.tensor(0.7, dtype=torch.float64)
+    t = CircularShiftTransform(shift, period)
+
+    # (1) inverse(call(x)) == x (mod period), dense coords grid over 4 periods.
+    x = torch.linspace(-2 * period, 2 * period, 20001, dtype=torch.float64)
+    x_rt = t._inverse(t._call(x))
+    d = (x_rt - x + half) % period - half
+    assert torch.max(torch.abs(d)).item() < 1e-9, "inverse(call(x)) != x (mod T)"
+
+    # (2) call(inverse(z)) == wrap into [-half, half), dense latent grid.
+    z = torch.linspace(-period, period, 20001, dtype=torch.float64)
+    z_rt = t._call(t._inverse(z))
+    z_wrapped = ((z + half) % period) - half
+    assert torch.max(torch.abs(z_rt - z_wrapped)).item() < 1e-9, (
+        "call(inverse(z)) != wrap_{[-half,half)}(z)"
+    )
+    # Exact identity on the fundamental window.
+    z_in = torch.linspace(-half, half - 1e-9, 20001, dtype=torch.float64)
+    assert torch.max(torch.abs(t._call(t._inverse(z_in)) - z_in)).item() < 1e-9, (
+        "call(inverse(z)) != z on the fundamental window [-half, half)"
+    )
+
+
+def test_circular_shift_inverse_in_canonical_bounds():
+    """_inverse always returns canonical coords in [0, period).
+
+    The canonical representative keeps log_prob a proper (periodic) density on
+    the circle; dropping it would make log_prob(theta) != log_prob(theta + T)
+    and bias the FlowMove Hastings factor.  This pins the [0, T) convention.
+    """
+    period = 2 * np.pi
+    t = CircularShiftTransform(torch.tensor(1.3, dtype=torch.float64), period)
+    z = torch.linspace(-3 * period, 3 * period, 5001, dtype=torch.float64)
+    x = t._inverse(z)
+    assert torch.all(x >= 0.0) and torch.all(x < period), (
+        "inverse output left the canonical [0, period) window"
+    )
 
 
 # ---------------------------------------------------------------------------

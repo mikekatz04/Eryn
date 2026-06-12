@@ -128,14 +128,40 @@ class CircularShiftTransform(torch.distributions.Transform):
         self.half_period = period / 2.0
 
     def _call(self, x):
-        # Shift data relative to circular mean and recenter at 0
+        # Forward (coords -> recentered): wrap (x - shift) into the half-open
+        # fundamental window [-T/2, T/2).  This is a true bijection on the
+        # circle and is robust to ANY real input x (e.g. an MH-proposed angle
+        # anywhere on the line), which is why the modulo must stay: log_prob is
+        # called on external coords that need canonicalising into the bulk.
         return ((x - self.shift + self.half_period) % self.period) - self.half_period
 
     def _inverse(self, y):
-        # Revert shift to original periodic bounds
+        # Inverse (recentered -> coords): undo the shift and canonicalise into
+        # the original periodic bounds [0, T).  Round-trip identities:
+        #   * _inverse(_call(x)) == x  (mod T)  for every real x.
+        #   * _call(_inverse(y)) == wrap_{[-T/2, T/2)}(y).  This equals y iff
+        #     y already lies in [-T/2, T/2); for y outside that window the
+        #     forward modulo necessarily folds it back by +/- T.
+        #
+        # The second identity is the crux of the periodic sample/log_prob
+        # contract.  After the downstream affine whitening the flow models the
+        # periodic latent as an UNBOUNDED real coordinate, so it places a small
+        # amount of mass outside scale * [-T/2, T/2).  For such a draw the
+        # coords-space density is the WRAPPED density (a sum over the latent
+        # aliases z + k * scale * T); the single-image value reported by
+        # rsample_and_log_prob can differ from log_prob(inverse(z)) by up to a
+        # few nats at the wrap boundary.  No choice of output window for this
+        # inverse removes that gap (the forward modulo is the obstruction), and
+        # dropping the modulo here would break the periodicity of log_prob and
+        # bias the FlowMove Hastings factor far more severely -- so the canonical
+        # [0, T) representative is kept deliberately.  See
+        # test_circular_shift_round_trip_consistency for the pinned invariants.
         return (y + self.shift) % self.period
 
     def log_abs_det_jacobian(self, x, y):
+        # Circular shift + wrap is volume-preserving: unit Jacobian, log-det 0.
+        # Returned per-element (shape of x); PartialTransform sums over the
+        # selected dims to keep the (N,) convention of the composed transform.
         return torch.zeros_like(x)
 
 
