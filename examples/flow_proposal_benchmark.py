@@ -73,6 +73,11 @@ def _run(move, log_prob, ndim, periodic, bounds, train_samples, nwalkers, nsteps
         moves=[move],
         branch_names=["x"],
     )
+    # DELIBERATE IMPROVEMENT over the original script, whose verdict was
+    # run-to-run flaky: the EnsembleSampler builds an *unseeded* internal
+    # RandomState (eryn.ensemble ~line 679). Seed it deterministically via the
+    # public ``random_state`` setter so the GO/NO-GO gate is reproducible.
+    sampler.random_state = np.random.RandomState(seed).get_state()
     state = State({"x": start_pts.reshape(1, nwalkers, 1, ndim)})
     sampler.run_mcmc(state, nsteps, burn=burn, progress=True)
     chain = sampler.get_chain()["x"][:, 0, :, 0, :]  # (nsteps, nwalkers, ndim)
@@ -94,10 +99,40 @@ def main():
     ap.add_argument("--nsteps", type=int, default=1500)
     ap.add_argument("--burn", type=int, default=500)
     ap.add_argument("--epochs", type=int, default=300)
+    ap.add_argument("--seed", type=int, default=42,
+                    help="master RNG seed for reproducible GO/NO-GO verdicts "
+                         "(DELIBERATE IMPROVEMENT: the original gate was unseeded "
+                         "and could flake across the decision thresholds)")
     args = ap.parse_args()
 
+    # Seed every source of randomness so the verdict is identical run-to-run:
+    # numpy global RNG (start-coord draws when no explicit rng is threaded) and
+    # torch's global RNG (flow weight init + flow.sample draws). Each sampler
+    # arm is additionally seeded inside _run; see _run for the per-arm seeding.
+    np.random.seed(args.seed)
+    try:
+        import torch
+        torch.manual_seed(args.seed)
+    except ImportError:
+        pass
+
     if args.chain:
-        chain = np.load(args.chain)
+        try:
+            chain = np.load(args.chain)
+        except FileNotFoundError:
+            raise SystemExit(f"--chain file not found: {args.chain}")
+        if chain.ndim != 2:
+            raise SystemExit(
+                f"--chain array must be 2-D (n_samples, ndim); "
+                f"got shape {chain.shape} from {args.chain}"
+            )
+        if args.periodic_index is not None and not (
+            0 <= args.periodic_index < chain.shape[1]
+        ):
+            raise SystemExit(
+                f"--periodic-index {args.periodic_index} out of range for a "
+                f"chain with ndim={chain.shape[1]} (valid: 0..{chain.shape[1] - 1})"
+            )
         periodic = (
             {args.periodic_index: (0.0, 2 * np.pi)}
             if args.periodic_index is not None
@@ -154,18 +189,22 @@ def main():
     runargs = dict(nwalkers=args.nwalkers, nsteps=args.nsteps, burn=args.burn)
     results = []
 
+    # Each arm is seeded deterministically but DIFFERENTLY (seed, seed+1,
+    # seed+2). Identical seeds across arms is not required for fairness (the
+    # arms run different move types); reproducibility run-to-run is what the
+    # gate needs.
     fmove = FlowMove(flow, branch_name="x")
     fmove.active_condition = 0
-    _, ess, nev, acc = _run(fmove, log_prob, ndim, periodic, bounds, train_samples, **runargs)
+    _, ess, nev, acc = _run(fmove, log_prob, ndim, periodic, bounds, train_samples, seed=args.seed, **runargs)
     results.append(BenchmarkResult("flow", float(ess.min()), float(ess.min()) / nev, nev, acc))
 
-    gmm = GMMProposalDistribution(train_samples, n_components=10)
+    gmm = GMMProposalDistribution(train_samples, n_components=10, seed=args.seed)
     gmove = IndependentProposalMove(gmm, "x")
-    _, ess, nev, acc = _run(gmove, log_prob, ndim, periodic, bounds, train_samples, **runargs)
+    _, ess, nev, acc = _run(gmove, log_prob, ndim, periodic, bounds, train_samples, seed=args.seed + 1, **runargs)
     results.append(BenchmarkResult("gmm", float(ess.min()), float(ess.min()) / nev, nev, acc))
 
     smove = StretchMove()
-    _, ess, nev, acc = _run(smove, log_prob, ndim, periodic, bounds, train_samples, **runargs)
+    _, ess, nev, acc = _run(smove, log_prob, ndim, periodic, bounds, train_samples, seed=args.seed + 2, **runargs)
     results.append(BenchmarkResult("stretch", float(ess.min()), float(ess.min()) / nev, nev, acc))
 
     # --- verdict (same thresholds as original) ---
@@ -182,6 +221,7 @@ def main():
         "# P0 Flow Proposal Gate - Report", "",
         f"**Target:** {target_name}",
         f"**Walkers:** {args.nwalkers}  **Steps:** {args.nsteps} (burn {args.burn})",
+        f"**Seed:** {args.seed}",
         f"**Final val NLL:** {final_val_nll:.4f}", "",
         "| proposal | min-ESS | evals | ESS/eval | acceptance |",
         "|---|---|---|---|---|",
