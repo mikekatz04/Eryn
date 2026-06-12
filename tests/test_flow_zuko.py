@@ -309,14 +309,17 @@ def test_h5_save_load_with_h5py_handle(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# fit() stub
+# fit() smoke test (Task 4 implemented)
 # ---------------------------------------------------------------------------
 
-def test_fit_raises_not_implemented():
-    """fit() raises NotImplementedError (Training loop lands in Task 4)."""
-    flow, _ = _make_flow()
-    with pytest.raises(NotImplementedError, match="fit"):
-        flow.fit(np.zeros((10, 3)))
+def test_fit_returns_flow_history():
+    """fit() runs and returns a FlowHistory (no longer a stub, Task 4 implemented)."""
+    from eryn.flows.base import FlowHistory
+    flow, samples = _make_flow()
+    history = flow.fit(samples[:200], n_epochs=2, seed=0)
+    assert isinstance(history, FlowHistory)
+    assert len(history.training_loss) >= 1
+    assert len(history.validation_loss) >= 1
 
 
 # ---------------------------------------------------------------------------

@@ -16,6 +16,7 @@ where ``z = transform.forward(x, c)``.
 """
 from __future__ import annotations
 
+import copy
 import json
 import os
 import pickle
@@ -27,6 +28,8 @@ import torch
 import torch.nn as nn
 import zuko
 import zuko.flows
+from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.utils.data import DataLoader, TensorDataset
 
 from eryn.flows.base import Flow, FlowHistory
 from eryn.flows.transforms import IdentityTransform
@@ -367,9 +370,6 @@ class ZukoFlow(BaseTorchFlow):
 
     Notes
     -----
-    ``fit()`` is a stub in this commit; the training loop lands in the next
-    task.  A :exc:`NotImplementedError` is raised if ``fit()`` is called.
-
     The ``data_transform`` always operates in float64 on the CPU, regardless
     of the ``device`` argument.  (MPS does not support float64.)  Only the
     flow network itself is placed on ``device``.
@@ -632,23 +632,308 @@ class ZukoFlow(BaseTorchFlow):
         return x, logq
 
     # ------------------------------------------------------------------
-    # fit stub
+    # fit
     # ------------------------------------------------------------------
 
-    def fit(self, samples, **kwargs) -> FlowHistory:
-        """Train the flow on ``samples``.
+    def fit(
+        self,
+        samples,
+        *,
+        n_epochs: int = 100,
+        lr: float = 1e-3,
+        batch_size: int = 512,
+        validation_fraction: float = 0.2,
+        clip_grad: float | None = None,
+        lr_annealing: bool = False,
+        patience: int | None = None,
+        refit_data_transform: bool = True,
+        seed: int | None = None,
+        verbose: bool = False,
+    ) -> FlowHistory:
+        """Train the flow in-place and return the loss history.
 
-        .. note::
-            Not yet implemented.  The training loop lands in the next commit
-            (Task 4).
+        Implements a plain Adam training loop with optional cosine-annealing
+        learning-rate schedule and patience-based early stopping.  Safe to
+        call inside a spawned trainer process (``num_workers=0``, no tqdm,
+        silent unless ``verbose=True``).
+
+        Parameters
+        ----------
+        samples : np.ndarray, shape (N, dims) or dict[int, np.ndarray]
+            Training data.  A plain array is treated as a single condition
+            ``{0: samples}``.  A dict maps integer condition ids to per-condition
+            sample arrays.
+        n_epochs : int, optional
+            Maximum number of training epochs.  Default is ``100``.
+        lr : float, optional
+            Initial Adam learning rate.  Default is ``1e-3``.
+        batch_size : int, optional
+            Mini-batch size.  Default is ``512``.
+        validation_fraction : float, optional
+            Fraction of assembled samples held out as a validation set.
+            Default is ``0.2``.
+        clip_grad : float or None, optional
+            If not ``None``, ``torch.nn.utils.clip_grad_norm_`` is applied with
+            this max-norm before each optimizer step.  Default is ``None``.
+        lr_annealing : bool, optional
+            If ``True``, a :class:`~torch.optim.lr_scheduler.CosineAnnealingLR`
+            schedule is applied over ``n_epochs``.  Default is ``False``.
+        patience : int or None, optional
+            Early-stopping patience in epochs.  Training stops when the
+            validation loss has not improved for ``patience`` consecutive epochs.
+            ``None`` disables early stopping.  Default is ``None``.
+        refit_data_transform : bool, optional
+            If ``True`` (the default), always re-fit ``self.data_transform``
+            before assembling latents.  If ``False``, re-fit only when the
+            transform is not yet fitted (``not self.data_transform.is_fitted``).
+        seed : int or None, optional
+            Seed for the train/val shuffle generator.  Passing a fixed value
+            makes ``fit`` deterministic given fixed data and flow initialisation.
+            Defaults to ``self.seed`` when ``None``.
+        verbose : bool, optional
+            If ``True``, print one line per epoch (epoch, train_loss, val_loss).
+            Default is ``False``.
+
+        Returns
+        -------
+        history : FlowHistory
+            Per-epoch training and validation losses.  ``best_state`` is loaded
+            back into the flow before returning (best-val-loss model).
 
         Raises
         ------
-        NotImplementedError
+        ValueError
+            If the total assembled sample count is less than 2 (cannot split).
+        ValueError
+            If ``samples`` is a dict with more than one key but
+            ``self.conditioning`` is ``None`` (conditions require a conditioning
+            strategy).
+        ValueError
+            If any assembled latents contain non-finite values (NaN or Inf),
+            naming the offending condition(s) and dimension(s).
+
+        Notes
+        -----
+        **Zuko per-row context batching** — during training, ``ctx_b`` is a
+        ``(B, context_dim)`` batch with one context row per sample.  Calling
+        ``self._flow(ctx_b).log_prob(z_b)`` returns a ``(B,)`` tensor of
+        per-sample log-probabilities because zuko propagates the leading batch
+        dimension through the context network and returns one scalar per row.
+        (Verified against zuko source: a 2-D context argument is treated as a
+        batch of independent contexts, not broadcast as a shared context.  This
+        differs from the 1-D context in ``log_prob`` / ``sample``, which is
+        broadcast over the sample batch.)
+
+        **Tensor placement** — ``z`` and ``ctx`` are moved to ``self.device``
+        once before building the :class:`~torch.utils.data.TensorDataset`.
+        Datasets are small and keeping them on-device avoids per-batch
+        host-to-device copies inside the DataLoader.
         """
-        raise NotImplementedError(
-            "ZukoFlow.fit is implemented in the next commit (training loop)."
+        # ------------------------------------------------------------------
+        # 1. Normalise samples to dict[int, np.ndarray]
+        # ------------------------------------------------------------------
+        if not isinstance(samples, dict):
+            samples_dict = {0: np.asarray(samples, dtype=np.float64)}
+        else:
+            samples_dict = {k: np.asarray(v, dtype=np.float64) for k, v in samples.items()}
+
+        # Guard: multi-condition dict requires a conditioning strategy
+        if len(samples_dict) > 1 and self.conditioning is None:
+            raise ValueError(
+                "samples is a dict with multiple conditions but this flow has no "
+                "conditioning strategy (conditioning=None).  Either pass a single "
+                "array or supply a ConditioningStrategy at construction."
+            )
+
+        # ------------------------------------------------------------------
+        # 2. Fit data transform (conditionally)
+        # ------------------------------------------------------------------
+        if refit_data_transform or not self.data_transform.is_fitted:
+            self.data_transform.fit(samples_dict)
+
+        # ------------------------------------------------------------------
+        # 3. Assemble latents + context rows
+        # ------------------------------------------------------------------
+        z_list: list[torch.Tensor] = []
+        ctx_list: list[torch.Tensor] = []
+        bad_conditions: list[str] = []
+
+        for cond_id, x_c in samples_dict.items():
+            z_c = self.data_transform.forward(x_c, cond_id)
+            # Coerce to float32 CPU tensor
+            if isinstance(z_c, np.ndarray):
+                z_c = torch.as_tensor(z_c.astype(np.float32))
+            elif isinstance(z_c, torch.Tensor):
+                z_c = z_c.float().cpu()
+            z_list.append(z_c)
+
+            if self.conditioning is not None:
+                ctx_row = self.conditioning.encode(int(cond_id))  # float32 (context_dim,)
+                ctx_t = torch.as_tensor(ctx_row)  # shape (context_dim,)
+                ctx_expanded = ctx_t.unsqueeze(0).expand(z_c.shape[0], -1)  # (N_c, context_dim)
+                ctx_list.append(ctx_expanded)
+
+        z = torch.cat(z_list, dim=0)  # (M, dims)
+        ctx = torch.cat(ctx_list, dim=0) if ctx_list else None  # (M, context_dim) or None
+
+        # ------------------------------------------------------------------
+        # 4. NaN / Inf guard
+        # ------------------------------------------------------------------
+        if not torch.isfinite(z).all():
+            # Identify which conditions/dimensions are bad
+            offset = 0
+            for cond_id, z_c in zip(samples_dict.keys(), z_list):
+                bad_dims = (~torch.isfinite(z_c)).any(dim=0).nonzero(as_tuple=True)[0].tolist()
+                if bad_dims:
+                    bad_conditions.append(f"condition {cond_id}, dims {bad_dims}")
+                offset += z_c.shape[0]
+            raise ValueError(
+                "Non-finite values (NaN or Inf) found in assembled latents after "
+                f"data_transform.forward.  Offending: {'; '.join(bad_conditions)}.  "
+                "Check data_transform or input samples."
+            )
+
+        # ------------------------------------------------------------------
+        # 5. Train/val split using seeded generator
+        # ------------------------------------------------------------------
+        M = z.shape[0]
+        if M < 2:
+            raise ValueError(
+                f"Need at least 2 samples after assembly to perform a train/val split, "
+                f"got {M}."
+            )
+
+        rng_seed = seed if seed is not None else self.seed
+        gen = torch.Generator()
+        gen.manual_seed(rng_seed)
+
+        # Global shuffle
+        perm = torch.randperm(M, generator=gen)
+        z = z[perm]
+        if ctx is not None:
+            ctx = ctx[perm]
+
+        n_val = max(1, int(M * validation_fraction))
+        n_train = M - n_val
+        if n_train < 1:
+            raise ValueError(
+                f"Training set is empty after val split (M={M}, n_val={n_val}).  "
+                "Reduce validation_fraction or supply more samples."
+            )
+
+        z_train, z_val = z[:n_train], z[n_train:]
+        ctx_train = ctx[:n_train] if ctx is not None else None
+        ctx_val = ctx[n_train:] if ctx is not None else None
+
+        # ------------------------------------------------------------------
+        # 6. Move to device ONCE; build DataLoaders
+        # ------------------------------------------------------------------
+        z_train = z_train.to(self.device)
+        z_val = z_val.to(self.device)
+        if ctx_train is not None:
+            ctx_train = ctx_train.to(self.device)
+            ctx_val = ctx_val.to(self.device)
+
+        if ctx_train is not None:
+            train_ds = TensorDataset(z_train, ctx_train)
+            val_ds = TensorDataset(z_val, ctx_val)
+        else:
+            train_ds = TensorDataset(z_train)
+            val_ds = TensorDataset(z_val)
+
+        train_gen = torch.Generator()
+        train_gen.manual_seed(rng_seed)
+        train_loader = DataLoader(
+            train_ds,
+            batch_size=batch_size,
+            shuffle=True,
+            generator=train_gen,
+            num_workers=0,
         )
+        val_loader = DataLoader(
+            val_ds,
+            batch_size=batch_size,
+            shuffle=False,
+            num_workers=0,
+        )
+
+        # ------------------------------------------------------------------
+        # 7. Optimizer (and optional LR schedule)
+        # ------------------------------------------------------------------
+        optimizer = torch.optim.Adam(self._flow.parameters(), lr=lr)
+        scheduler = (
+            CosineAnnealingLR(optimizer, T_max=n_epochs) if lr_annealing else None
+        )
+
+        # ------------------------------------------------------------------
+        # 8. Training loop with early stopping and best-state tracking
+        # ------------------------------------------------------------------
+        history = FlowHistory()
+        best_val = float("inf")
+        best_state = copy.deepcopy(self._flow.state_dict())
+        best_epoch = 0
+
+        for epoch in range(n_epochs):
+            # --- train ---
+            self._flow.train()
+            train_losses: list[float] = []
+            for batch in train_loader:
+                optimizer.zero_grad()
+                if ctx_train is not None:
+                    z_b, ctx_b = batch
+                    loss = -self._flow(ctx_b).log_prob(z_b).mean()
+                else:
+                    (z_b,) = batch
+                    loss = -self._flow().log_prob(z_b).mean()
+                loss.backward()
+                if clip_grad is not None:
+                    nn.utils.clip_grad_norm_(self._flow.parameters(), clip_grad)
+                optimizer.step()
+                train_losses.append(loss.item())
+
+            if scheduler is not None:
+                scheduler.step()
+
+            mean_train = float(np.mean(train_losses))
+
+            # --- validate ---
+            self._flow.eval()
+            val_losses: list[float] = []
+            with torch.no_grad():
+                for batch in val_loader:
+                    if ctx_val is not None:
+                        z_b, ctx_b = batch
+                        val_loss = -self._flow(ctx_b).log_prob(z_b).mean()
+                    else:
+                        (z_b,) = batch
+                        val_loss = -self._flow().log_prob(z_b).mean()
+                    val_losses.append(val_loss.item())
+
+            mean_val = float(np.mean(val_losses))
+
+            history.training_loss.append(mean_train)
+            history.validation_loss.append(mean_val)
+
+            if verbose:
+                print(f"epoch {epoch:4d}  train {mean_train:.6f}  val {mean_val:.6f}")
+
+            # --- best-state bookkeeping ---
+            if mean_val < best_val:
+                best_val = mean_val
+                best_state = copy.deepcopy(self._flow.state_dict())
+                best_epoch = epoch
+
+            # --- early stopping ---
+            if patience is not None and (epoch - best_epoch) >= patience:
+                break
+
+        # ------------------------------------------------------------------
+        # 9. Restore best state
+        # ------------------------------------------------------------------
+        self._flow.load_state_dict(best_state)
+        self._flow.eval()
+
+        return history
 
     # ------------------------------------------------------------------
     # Internal helper: build / cache distribution for a given context
