@@ -447,3 +447,162 @@ def test_sample_and_log_prob_per_point_logdet_nonconstant_jacobian():
     logq2 = flow.log_prob(x)
     np.testing.assert_allclose(logq, logq2, atol=1e-4,
         err_msg="sample_and_log_prob logq differs from log_prob(x) with non-constant Jacobian")
+
+
+# ---------------------------------------------------------------------------
+# I1 — h5 overwrite: save larger flow, then smaller flow to same path
+# ---------------------------------------------------------------------------
+
+def test_h5_overwrite_smaller_flow_no_orphan_keys(tmp_path):
+    """Saving flow B (fewer transforms) over flow A must not leave orphan weight datasets.
+
+    Regression for: save into an existing group with require_group left stale
+    weight datasets, causing load() to fail with 'Unexpected key(s)'.
+    """
+    import h5py as h5py_mod
+
+    h5_path = str(tmp_path / "overwrite.h5")
+
+    # Flow A — larger (transforms=4)
+    flow_a = ZukoFlow(
+        dims=3, device="cpu", conditioning=None, seed=1,
+        flow_class="NSF", transforms=4, hidden_features=(32, 32), bins=4,
+    )
+    flow_a.save(h5_path)
+
+    # Flow B — smaller (transforms=2)
+    flow_b = ZukoFlow(
+        dims=3, device="cpu", conditioning=None, seed=2,
+        flow_class="NSF", transforms=2, hidden_features=(32, 32), bins=4,
+    )
+    flow_b.save(h5_path)  # overwrite into the same path
+
+    # load() must return B without KeyError / Unexpected-key error
+    flow_loaded = ZukoFlow.load(h5_path)
+
+    # Weight count must match B (not A)
+    assert len(flow_loaded.get_weights()) == len(flow_b.get_weights()), (
+        "loaded flow has a different number of weight tensors than flow B — "
+        "orphan keys from flow A survived the overwrite"
+    )
+
+    # log_prob must match B at the same points
+    rng = np.random.default_rng(77)
+    x = rng.standard_normal((16, 3))
+    np.testing.assert_allclose(
+        flow_loaded.log_prob(x),
+        flow_b.log_prob(x),
+        atol=1e-6,
+        err_msg="loaded flow log_prob differs from flow B after overwrite",
+    )
+
+
+# ---------------------------------------------------------------------------
+# I2 — numpy-boundary validation
+# ---------------------------------------------------------------------------
+
+def test_log_prob_empty_x_returns_empty():
+    """log_prob with shape (0, dims) returns shape (0,) without error."""
+    flow = _make_unconditional_flow()
+    x = np.empty((0, 3), dtype=np.float64)
+    result = flow.log_prob(x)
+    assert result.shape == (0,), f"expected (0,), got {result.shape}"
+    assert result.dtype == np.float64
+
+
+def test_sample_n_zero_returns_empty():
+    """sample(0) returns shape (0, dims) without error."""
+    flow = _make_unconditional_flow()
+    x = flow.sample(0)
+    assert x.shape == (0, 3), f"expected (0, 3), got {x.shape}"
+    assert x.dtype == np.float64
+
+
+def test_sample_and_log_prob_n_zero_returns_empty():
+    """sample_and_log_prob(0) returns (0, dims) samples and (0,) logq without error."""
+    flow = _make_unconditional_flow()
+    x, logq = flow.sample_and_log_prob(0)
+    assert x.shape == (0, 3), f"expected x shape (0, 3), got {x.shape}"
+    assert logq.shape == (0,), f"expected logq shape (0,), got {logq.shape}"
+    assert x.dtype == np.float64
+    assert logq.dtype == np.float64
+
+
+def test_log_prob_1d_x_raises():
+    """Passing a 1-D array to log_prob raises ValueError (not a silent 0-d scalar)."""
+    flow = _make_unconditional_flow()
+    x_1d = np.zeros(3, dtype=np.float64)  # shape (3,) — wrong
+    with pytest.raises(ValueError, match=r"x must have shape"):
+        flow.log_prob(x_1d)
+
+
+def test_log_prob_wrong_dims_raises():
+    """Passing x with wrong feature dim (N, 5) for a dims=3 flow raises ValueError."""
+    flow = _make_unconditional_flow()  # dims=3
+    x_bad = np.zeros((4, 5), dtype=np.float64)
+    with pytest.raises(ValueError, match=r"x must have shape"):
+        flow.log_prob(x_bad)
+
+
+def test_sample_negative_n_raises():
+    """sample(-1) raises ValueError."""
+    flow = _make_unconditional_flow()
+    with pytest.raises(ValueError, match=r"non-negative"):
+        flow.sample(-1)
+
+
+def test_wrong_length_raw_context_raises():
+    """Passing a raw context vector with wrong length raises a clear ValueError."""
+    flow, _ = _make_flow()  # context_dim = 1 (OneHotLeafConditioning, nleaves_max=1)
+    x = np.zeros((4, 3), dtype=np.float64)
+    bad_ctx = np.array([1.0, 0.0, 0.0], dtype=np.float32)  # length 3, not 1
+    with pytest.raises(ValueError, match=r"Raw context vector"):
+        flow.log_prob(x, context=bad_ctx)
+
+
+# ---------------------------------------------------------------------------
+# Multi-condition inference: log_prob differs across conditions
+# ---------------------------------------------------------------------------
+
+def test_multi_condition_log_prob_differs_across_conditions():
+    """log_prob(x, context=0) differs from log_prob(x, context=1) after fitting different transforms.
+
+    Uses OneHotLeafConditioning(2) + WhiteningTransform fit on two datasets
+    with very different scales/offsets.  Even with random (untrained) flow
+    weights, the whitening guarantees that log_prob values differ between
+    conditions on the same x.
+    """
+    from eryn.flows import WhiteningTransform
+
+    rng = np.random.default_rng(55)
+    # Condition 0: samples near [0, 0, 0] with unit scale
+    samples_0 = rng.multivariate_normal(
+        [0.0, 0.0, 0.0], np.eye(3), size=500
+    ).astype(np.float64)
+    # Condition 1: samples near [10, 10, 10] with scale 5 — very different
+    samples_1 = rng.multivariate_normal(
+        [10.0, 10.0, 10.0], 25 * np.eye(3), size=500
+    ).astype(np.float64)
+
+    cond = OneHotLeafConditioning(nleaves_max=2)
+    wt = WhiteningTransform(ndim=3)
+    wt.fit({0: samples_0, 1: samples_1})
+
+    flow = ZukoFlow(
+        dims=3, device="cpu",
+        data_transform=wt,
+        conditioning=cond,
+        seed=42,
+        flow_class="NSF",
+        transforms=2, hidden_features=(32, 32), bins=4,
+    )
+
+    x = rng.standard_normal((8, 3))
+    lp0 = flow.log_prob(x, context=0)
+    lp1 = flow.log_prob(x, context=1)
+
+    # With different whitening the log_prob values MUST differ on the same x
+    assert not np.allclose(lp0, lp1, atol=1e-3), (
+        "log_prob(x, context=0) and log_prob(x, context=1) are unexpectedly equal; "
+        "the multi-condition whitening is not being applied."
+    )

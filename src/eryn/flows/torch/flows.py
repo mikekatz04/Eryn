@@ -19,7 +19,6 @@ from __future__ import annotations
 import json
 import os
 import pickle
-import warnings
 from typing import Any
 
 import h5py
@@ -215,10 +214,15 @@ class BaseTorchFlow(Flow):
 
             <path>/
                 config          — JSON-serialisable subset of config_dict()
-                data_transform  — pickle blob (np.void scalar dataset)
-                conditioning    — pickle blob (np.void scalar dataset)
+                data_transform  — pickle blob (bytes scalar dataset)
+                conditioning    — pickle blob (bytes scalar dataset)
                 weights/
                     <key>       — one float32 dataset per state_dict tensor
+
+        .. warning::
+            The ``data_transform`` and ``conditioning`` objects are stored as
+            pickle blobs.  Only load flow files from **trusted sources**;
+            ``pickle.loads`` executes arbitrary code.
 
         Parameters
         ----------
@@ -249,12 +253,14 @@ class BaseTorchFlow(Flow):
             grp.create_dataset("conditioning", data=np.bytes_(blob))
 
             # --- weights ---
-            wgrp = grp.require_group("weights")
+            # Delete the entire weights group before repopulating so that
+            # orphan datasets from a prior (larger) flow do not remain and
+            # cause load() to fail with "Unexpected key(s)".
+            if "weights" in grp:
+                del grp["weights"]
+            wgrp = grp.create_group("weights")
             for k, v in self.get_weights().items():
-                arr = v.numpy()
-                if k in wgrp:
-                    del wgrp[k]
-                wgrp.create_dataset(k, data=arr)
+                wgrp.create_dataset(k, data=v.numpy())
         finally:
             if should_close:
                 handle.close()
@@ -262,6 +268,11 @@ class BaseTorchFlow(Flow):
     @classmethod
     def load(cls, h5_file, path: str = "flow") -> "BaseTorchFlow":
         """Load a flow from an HDF5 file.
+
+        .. warning::
+            The ``data_transform`` and ``conditioning`` objects are restored
+            via ``pickle.loads``, which executes arbitrary code.  Only load
+            flow files from **trusted sources**.
 
         Parameters
         ----------
@@ -286,8 +297,8 @@ class BaseTorchFlow(Flow):
 
             # --- config ---
             cfg = json.loads(grp.attrs["config"])
-            # Normalise lists back to tuples for tuple-typed kwargs (e.g. hidden_features)
-            cfg = _restore_tuples(cfg)
+            # Strip keys stored separately as pickle blobs (data_transform, conditioning)
+            cfg = _strip_pickled_keys(cfg)
 
             # --- data_transform ---
             raw = bytes(grp["data_transform"][()])
@@ -359,6 +370,10 @@ class ZukoFlow(BaseTorchFlow):
     ``fit()`` is a stub in this commit; the training loop lands in the next
     task.  A :exc:`NotImplementedError` is raised if ``fit()`` is called.
 
+    The ``data_transform`` always operates in float64 on the CPU, regardless
+    of the ``device`` argument.  (MPS does not support float64.)  Only the
+    flow network itself is placed on ``device``.
+
     Examples
     --------
     >>> from eryn.flows import ZukoFlow, OneHotLeafConditioning
@@ -408,6 +423,34 @@ class ZukoFlow(BaseTorchFlow):
         self.flow = FlowCls(features=dims, context=context_dim, **kw)
 
     # ------------------------------------------------------------------
+    # Input validation helpers
+    # ------------------------------------------------------------------
+
+    def _validate_x(self, x: np.ndarray) -> np.ndarray:
+        """Coerce and validate a sample array.
+
+        Parameters
+        ----------
+        x : array-like
+            Input samples; must have shape ``(N, dims)`` with ``N >= 1``.
+
+        Returns
+        -------
+        x : np.ndarray, shape (N, dims), dtype float64
+
+        Raises
+        ------
+        ValueError
+            If ``x`` is not 2-D or its second axis does not equal ``self.dims``.
+        """
+        x = np.asarray(x, dtype=np.float64)
+        if x.ndim != 2 or x.shape[1] != self.dims:
+            raise ValueError(
+                f"x must have shape (N, {self.dims}), got {x.shape}"
+            )
+        return x
+
+    # ------------------------------------------------------------------
     # Context resolution
     # ------------------------------------------------------------------
 
@@ -425,7 +468,7 @@ class ZukoFlow(BaseTorchFlow):
             Context tensor of shape ``(context_dim,)`` on ``self.device``,
             or ``None`` for unconditional flows.
         condition : int
-            Integer condition id (used for the data_transform and logdet cache).
+            Integer condition id (used for the data_transform).
             Returns ``0`` when context is an array-like (raw vector path).
 
         Raises
@@ -461,9 +504,13 @@ class ZukoFlow(BaseTorchFlow):
                 "Pass context=None or rebuild with a ConditioningStrategy."
             )
 
-        ctx = torch.as_tensor(
-            np.asarray(context, dtype=np.float32), device=self.device
-        )
+        ctx_np = np.asarray(context, dtype=np.float32)
+        if ctx_np.shape != (self._context_dim,):
+            raise ValueError(
+                f"Raw context vector must have shape ({self._context_dim},), "
+                f"got {ctx_np.shape}"
+            )
+        ctx = torch.as_tensor(ctx_np, device=self.device)
         return ctx, 0
 
     # ------------------------------------------------------------------
@@ -489,7 +536,9 @@ class ZukoFlow(BaseTorchFlow):
         -------
         log_prob : np.ndarray, shape (N,), dtype float64
         """
-        x = np.asarray(x, dtype=np.float64)
+        x = self._validate_x(x)
+        if x.shape[0] == 0:
+            return np.empty((0,), dtype=np.float64)
         ctx, condition = self._resolve(context)
 
         # Apply data transform: coords → flow space
@@ -497,7 +546,7 @@ class ZukoFlow(BaseTorchFlow):
         z_t = torch.as_tensor(np.asarray(z, dtype=np.float32), device=self.device)
 
         with torch.no_grad():
-            dist = self._get_dist(ctx, n=len(x))
+            dist = self._get_dist(ctx)
             log_flow = dist.log_prob(z_t)  # shape (N,)
 
         # Per-point log-det: correct for any data_transform (including
@@ -527,7 +576,7 @@ class ZukoFlow(BaseTorchFlow):
         -------
         samples : np.ndarray, shape (n, dims), dtype float64
         """
-        x, _ = self.sample_and_log_prob(n, context=context)
+        x, _ = self.sample_and_log_prob(int(n), context=context)
         return x
 
     # ------------------------------------------------------------------
@@ -553,9 +602,14 @@ class ZukoFlow(BaseTorchFlow):
         log_prob : np.ndarray, shape (n,), dtype float64
             Coords-space log density at each sample.
         """
+        n = int(n)
+        if n < 0:
+            raise ValueError(f"n must be non-negative, got {n}")
+        if n == 0:
+            return np.empty((0, self.dims), dtype=np.float64), np.empty((0,), dtype=np.float64)
         ctx, condition = self._resolve(context)
         with torch.no_grad():
-            dist = self._get_dist(ctx, n=n)
+            dist = self._get_dist(ctx)
             z_t, log_flow = dist.rsample_and_log_prob((n,))
 
         z_t = z_t.reshape(n, self.dims)
@@ -600,7 +654,7 @@ class ZukoFlow(BaseTorchFlow):
     # Internal helper: build / cache distribution for a given context
     # ------------------------------------------------------------------
 
-    def _get_dist(self, ctx, n: int = 1):
+    def _get_dist(self, ctx):
         """Return the zuko conditional distribution for the given context tensor.
 
         Parameters
@@ -611,8 +665,6 @@ class ZukoFlow(BaseTorchFlow):
             broadcasts a 1-D context over the sample batch dimension, so this
             works for both ``log_prob(batch)`` and
             ``rsample_and_log_prob((n,))``.
-        n : int
-            Unused (kept for API symmetry).
 
         Returns
         -------
@@ -711,13 +763,12 @@ def _scalar_or_skip(v):
     return v
 
 
-def _restore_tuples(cfg: dict) -> dict:
-    """Normalise config values loaded from JSON.
+def _strip_pickled_keys(cfg: dict) -> dict:
+    """Remove keys from a JSON-derived config that are stored as pickle blobs.
 
-    Lists that were originally tuples are left as lists; ZukoFlow's
-    ``__init__`` accepts both.  No structural change is needed here, but
-    we strip keys whose values are ``None`` only when they represent
-    objects stored as separate pickle blobs (data_transform, conditioning).
+    ``data_transform`` and ``conditioning`` are serialised separately and
+    injected by :meth:`BaseTorchFlow.load`; removing them here prevents
+    double-assignment when the config dict is unpacked into the constructor.
 
     Parameters
     ----------
@@ -727,8 +778,6 @@ def _restore_tuples(cfg: dict) -> dict:
     -------
     dict
     """
-    # data_transform and conditioning are loaded separately and injected by load();
-    # remove them from the JSON-derived config to avoid double-assignment.
     cfg.pop("data_transform", None)
     cfg.pop("conditioning", None)
     return cfg
