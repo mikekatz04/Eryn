@@ -84,8 +84,13 @@ class IndependentProposalMove(MHMove):
             Hastings log-factors: ``+log q(x_old) - log q(x_new)`` accumulated
             with :func:`numpy.add.at` over all active leaves of ``branch_name``.
         """
+        if self.branch_name not in branches_coords:
+            raise KeyError(
+                f"{type(self).__name__}: branch_name {self.branch_name!r} not in"
+                f" branches_coords (keys: {list(branches_coords)})."
+            )
+
         q = {}
-        factors = None
 
         if branches_inds is None:
             branches_inds = {
@@ -93,11 +98,11 @@ class IndependentProposalMove(MHMove):
                 for name, coords in branches_coords.items()
             }
 
-        for i, (name, coords) in enumerate(branches_coords.items()):
-            ntemps, nwalkers = coords.shape[:2]
+        first = next(iter(branches_coords.values()))
+        factors = np.zeros(first.shape[:2])
+
+        for name, coords in branches_coords.items():
             q[name] = coords.copy()
-            if i == 0:
-                factors = np.zeros((ntemps, nwalkers))
 
             if name != self.branch_name:
                 continue

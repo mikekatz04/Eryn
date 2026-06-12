@@ -34,6 +34,9 @@ class FlowMove(MHMove):
         factors += +log q(x_old) - log q(x_new)
 
     A poor or stale flow only lowers acceptance — it never biases the posterior.
+    This no-bias guarantee relies on IEEE-754: NaN logq values propagate into
+    lnpdiff and NaN comparisons are False, so any proposal with a NaN log-prob
+    is always rejected rather than silently accepted.
     Accumulation uses :func:`numpy.add.at` (not ``+=``) so that duplicate
     ``(temp, walker)`` indices from multi-leaf proposals sum instead of being
     silently overwritten by the last write.
@@ -124,8 +127,13 @@ class FlowMove(MHMove):
 
         dist = FlowProposalDistribution(self.flow, condition=self.active_condition)
 
+        if self.branch_name not in branches_coords:
+            raise KeyError(
+                f"{type(self).__name__}: branch_name {self.branch_name!r} not in"
+                f" branches_coords (keys: {list(branches_coords)})."
+            )
+
         q = {}
-        factors = None
 
         if branches_inds is None:
             branches_inds = {
@@ -133,11 +141,11 @@ class FlowMove(MHMove):
                 for name, coords in branches_coords.items()
             }
 
-        for i, (name, coords) in enumerate(branches_coords.items()):
-            ntemps, nwalkers = coords.shape[:2]
+        first = next(iter(branches_coords.values()))
+        factors = np.zeros(first.shape[:2])
+
+        for name, coords in branches_coords.items():
             q[name] = coords.copy()
-            if i == 0:
-                factors = np.zeros((ntemps, nwalkers))
 
             if name != self.branch_name:
                 continue  # FlowMove only proposes for its own branch
@@ -150,10 +158,15 @@ class FlowMove(MHMove):
 
             # + log q(old): np.add.at so multi-leaf duplicate (temp, walker) indices
             # accumulate instead of last-write-wins on repeated fancy-index +=.
+            # NaN logq values (e.g. from out-of-support old points) propagate into
+            # lnpdiff.  NaN comparisons are always False, so such proposals are
+            # unconditionally rejected — the "no-bias" claim in the class docstring
+            # relies on this IEEE-754 property rather than on an explicit NaN guard.
             np.add.at(factors, where[:2], dist.logpdf(old_points))
 
             # Draw and - log q(new): sample_and_log_prob avoids a second forward
             # pass — the log-prob returned during sampling is reused directly.
+            # Same NaN-rejection applies if the flow returns NaN for new points.
             new_points, logq_new = self.flow.sample_and_log_prob(
                 num, context=self.active_condition
             )
