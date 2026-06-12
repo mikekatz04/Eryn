@@ -128,7 +128,10 @@ def main():
     #   max_epochs=args.epochs   -> n_epochs=args.epochs   (same semantics)
     #   batch_size=2048          -> batch_size=2048         (unchanged)
     #   accelerator="auto"       -> not supported; ZukoFlow always uses device= at construction
-    #   patience=20              -> patience=20             (same; passed to fit)
+    #   patience=20              -> DELIBERATE CHANGE: the original Lightning trainer had no
+    #                               early stopping. fit() restores best-validation weights, so
+    #                               patience can only help the flow arm (no overfit tail) while
+    #                               saving wall-time on long gate runs.
     cond = OneHotLeafConditioning(nleaves_max=1)
     wt = WhiteningTransform(ndim=ndim, periodic=periodic)
     flow = ZukoFlow(
