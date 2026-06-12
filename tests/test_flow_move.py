@@ -267,3 +267,112 @@ def test_flow_move_sampler_smoke():
         f"No proposals accepted in 50 steps (acceptance={acceptance}); "
         "the move is likely mis-wired."
     )
+
+
+# ---------------------------------------------------------------------------
+# Missing-branch guard — both move classes
+# ---------------------------------------------------------------------------
+
+def test_independent_proposal_missing_branch_raises():
+    """get_proposal raises KeyError when branch_name is not in branches_coords."""
+    ndim = 2
+    rng = np.random.default_rng(0)
+    coords = rng.standard_normal((1, 4, 1, ndim))
+    branches = {"x": coords}
+
+    dist = _GaussianDist(ndim, seed=0)
+    move = IndependentProposalMove(dist, branch_name="typo_branch")
+
+    with pytest.raises(KeyError, match="typo_branch"):
+        move.get_proposal(branches, rng)
+
+
+def test_flow_move_missing_branch_raises():
+    """FlowMove.get_proposal raises KeyError when branch_name is not in branches_coords."""
+    pytest.importorskip("torch")
+    flow = _make_flow(seed=0)
+
+    ndim = 2
+    rng = np.random.default_rng(0)
+    coords = rng.standard_normal((1, 4, 1, ndim))
+    branches = {"x": coords}
+
+    move = FlowMove(flow, branch_name="typo_branch")
+
+    with pytest.raises(KeyError, match="typo_branch"):
+        move.get_proposal(branches, rng)
+
+
+# ---------------------------------------------------------------------------
+# active_condition routing — FlowMove (requires torch)
+# ---------------------------------------------------------------------------
+
+def _make_flow_two_conditions(seed: int = 0):
+    """Build a ZukoFlow with OneHotLeafConditioning(2) and two very different scales.
+
+    Condition 0 is fit on tight samples (scale 0.1); condition 1 on wide samples
+    (scale 10).  A flow that ignores the condition would produce the same logq for
+    both calls, making the factors identical — the test asserts they differ.
+    """
+    torch = pytest.importorskip("torch")
+    from eryn.flows import ZukoFlow, WhiteningTransform, OneHotLeafConditioning
+
+    torch.manual_seed(seed)
+    rng = np.random.default_rng(seed)
+
+    # Very different scales so the whiten transform encodes condition-dependent info
+    samples_0 = rng.multivariate_normal(
+        [0.0, 0.0], [[0.01, 0.0], [0.0, 0.01]], size=2000
+    ).astype(np.float64)
+    samples_1 = rng.multivariate_normal(
+        [0.0, 0.0], [[100.0, 0.0], [0.0, 100.0]], size=2000
+    ).astype(np.float64)
+
+    cond = OneHotLeafConditioning(nleaves_max=2)
+    wt = WhiteningTransform(ndim=2)
+    wt.fit({0: samples_0, 1: samples_1})
+
+    flow = ZukoFlow(
+        dims=2,
+        device="cpu",
+        data_transform=wt,
+        conditioning=cond,
+        seed=seed,
+        flow_class="NSF",
+        transforms=3,
+        hidden_features=(64, 64),
+        bins=5,
+    )
+    return flow
+
+
+def test_flow_move_active_condition_routing():
+    """Changing active_condition actually routes to different flow branches.
+
+    Build a flow whose WhiteningTransform is fit on two very different scales.
+    Run get_proposal twice with active_condition=0 and active_condition=1 on
+    identical coordinates.  The resulting factors must differ — a hard-coded
+    condition value of 0 in get_proposal would cause both to return the same
+    factors, failing this test.
+    """
+    pytest.importorskip("torch")
+    flow = _make_flow_two_conditions(seed=42)
+
+    ntemps, nwalkers, nleaves, ndim = 1, 8, 1, 2
+    rng = np.random.default_rng(7)
+    coords = rng.standard_normal((ntemps, nwalkers, nleaves, ndim))
+    branches = {"x": coords}
+
+    move0 = FlowMove(flow, branch_name="x")
+    move0.active_condition = 0
+    _, factors0 = move0.get_proposal(branches, rng)
+
+    # Fresh move with identical coords but condition=1
+    move1 = FlowMove(flow, branch_name="x")
+    move1.active_condition = 1
+    _, factors1 = move1.get_proposal(branches, np.random.default_rng(7))
+
+    assert not np.allclose(factors0, factors1, atol=1e-6), (
+        "factors identical for condition=0 and condition=1 — "
+        "active_condition may not be reaching the flow."
+    )
