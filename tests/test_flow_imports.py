@@ -23,6 +23,8 @@ EXPECTED_ALL = sorted([
     "FlowSpec",
     "TrainerExecutor",
     "InlineExecutor",
+    "ProcessExecutor",
+    "WorkerConfig",
 ])
 
 
@@ -133,19 +135,12 @@ def test_misspelled_attribute_raises_attribute_error():
 
 
 def test_executor_names_resolve():
-    """Executor names (Task 8) resolve from the torch-free executors module."""
+    """Executor names resolve from the torch-free executors module."""
     import eryn.flows
 
-    for name in ("TrainerError", "FlowSpec", "TrainerExecutor", "InlineExecutor"):
+    for name in ("TrainerError", "FlowSpec", "TrainerExecutor", "InlineExecutor",
+                 "ProcessExecutor", "WorkerConfig"):
         assert getattr(eryn.flows, name) is not None
-
-
-def test_process_executor_not_yet_available():
-    """ProcessExecutor (Task 9) is not implemented yet — AttributeError, not ImportError."""
-    import eryn.flows
-
-    with pytest.raises(AttributeError):
-        _ = eryn.flows.ProcessExecutor
 
 
 def test_executors_torch_free_at_module_level():
@@ -157,6 +152,8 @@ def test_executors_torch_free_at_module_level():
         "_ = eryn.flows.InlineExecutor\n"
         "_ = eryn.flows.FlowSpec\n"
         "_ = eryn.flows.TrainerError\n"
+        "_ = eryn.flows.ProcessExecutor\n"
+        "_ = eryn.flows.WorkerConfig\n"
         "assert 'torch' not in sys.modules, 'torch was imported by executors'\n"
         "print('OK')\n"
     )
