@@ -317,3 +317,133 @@ def test_fit_raises_not_implemented():
     flow, _ = _make_flow()
     with pytest.raises(NotImplementedError, match="fit"):
         flow.fit(np.zeros((10, 3)))
+
+
+# ---------------------------------------------------------------------------
+# Regression: per-point log-det (non-constant Jacobian)
+# ---------------------------------------------------------------------------
+
+class _SoftplusTransform:
+    """Custom DataTransform with a non-constant Jacobian for regression testing.
+
+    forward:  z_i = log(1 + exp(x_i))   (softplus, element-wise)
+    inverse:  x_i = log(exp(z_i) - 1)   (inverse softplus)
+    log|det|: sum_i log(sigmoid(x_i)) = sum_i log(1 / (1 + exp(-x_i)))
+
+    The log-det depends on x, so it differs between any two distinct x points.
+    This means the old probe-point cache would return the same scalar for every
+    point and give WRONG densities for at least one of them.
+    """
+
+    def fit(self, samples) -> None:  # no-op
+        pass
+
+    def forward(self, x, condition: int = 0):
+        x = np.asarray(x, dtype=np.float64)
+        return np.log1p(np.exp(x))  # softplus
+
+    def inverse(self, z, condition: int = 0):
+        z = np.asarray(z, dtype=np.float64)
+        return np.log(np.expm1(z))  # inverse softplus
+
+    def log_abs_det_jacobian(self, x, z, condition: int = 0):
+        x = np.asarray(x, dtype=np.float64)
+        # d(softplus)/dx_i = sigmoid(x_i); log-det = sum_i log sigmoid(x_i)
+        log_sigmoid = -np.log1p(np.exp(-x))  # numerically stable log sigmoid
+        return log_sigmoid.sum(axis=-1)  # shape (N,)
+
+    @property
+    def is_fitted(self) -> bool:
+        return True
+
+
+def test_log_prob_per_point_logdet_nonconstant_jacobian():
+    """log_prob uses the per-point log-det for a non-constant-Jacobian transform.
+
+    Regression test for the removed probe-point cache.  The old cache would
+    evaluate log_abs_det_jacobian at a zero probe and return a single scalar
+    for all points.  For _SoftplusTransform the Jacobian varies with x, so:
+
+      - cached (old) implementation: wrong for any x != 0
+      - per-point (new) implementation: matches analytic per-point logdet
+
+    We verify that flow.log_prob(x) matches:
+        flow_net_log_prob(z) + analytic_logdet(x)
+    at two distinct x points, and that the two expected values differ by
+    different amounts than the cached constant would produce.
+    """
+    import torch as _torch
+
+    tr = _SoftplusTransform()
+    flow = ZukoFlow(
+        dims=2,
+        device="cpu",
+        data_transform=tr,
+        conditioning=None,
+        seed=7,
+        flow_class="NSF",
+        transforms=2,
+        hidden_features=(32, 32),
+        bins=4,
+    )
+
+    rng = np.random.default_rng(42)
+    # Two clearly different x values so logdet(x0) != logdet(x1)
+    x0 = rng.uniform(0.5, 1.5, size=(1, 2))
+    x1 = rng.uniform(3.0, 5.0, size=(1, 2))
+
+    # Analytic expected: flow-net log_prob at z + per-point logdet
+    def expected_lp(x_np):
+        z_np = tr.forward(x_np)
+        z_t = _torch.as_tensor(z_np.astype(np.float32))
+        with _torch.no_grad():
+            flow_lp = flow._flow().log_prob(z_t).cpu().numpy()  # shape (1,)
+        logdet = tr.log_abs_det_jacobian(x_np, z_np)           # shape (1,)
+        return (flow_lp + logdet).astype(np.float64)
+
+    exp0 = expected_lp(x0)
+    exp1 = expected_lp(x1)
+
+    got0 = flow.log_prob(x0)
+    got1 = flow.log_prob(x1)
+
+    np.testing.assert_allclose(got0, exp0, atol=1e-5,
+        err_msg="log_prob(x0) does not match per-point expected (non-constant Jacobian)")
+    np.testing.assert_allclose(got1, exp1, atol=1e-5,
+        err_msg="log_prob(x1) does not match per-point expected (non-constant Jacobian)")
+
+    # Confirm the two analytic logdets differ — otherwise the test doesn't
+    # distinguish cached from per-point.
+    logdet0 = tr.log_abs_det_jacobian(x0, tr.forward(x0))[0]
+    logdet1 = tr.log_abs_det_jacobian(x1, tr.forward(x1))[0]
+    assert abs(logdet0 - logdet1) > 0.5, (
+        f"Test misconfigured: logdet0={logdet0:.4f} logdet1={logdet1:.4f} "
+        "are too close to discriminate cached vs per-point."
+    )
+
+
+def test_sample_and_log_prob_per_point_logdet_nonconstant_jacobian():
+    """sample_and_log_prob logq matches log_prob(x) with non-constant Jacobian (atol 1e-4).
+
+    Regression companion to the log_prob test above: verifies that
+    sample_and_log_prob also uses per-point log-det (not a cached scalar).
+    If both methods are consistent the cached implementation would pass here
+    only if both were equally wrong — but the log_prob test above catches that.
+    """
+    tr = _SoftplusTransform()
+    flow = ZukoFlow(
+        dims=2,
+        device="cpu",
+        data_transform=tr,
+        conditioning=None,
+        seed=13,
+        flow_class="NSF",
+        transforms=2,
+        hidden_features=(32, 32),
+        bins=4,
+    )
+
+    x, logq = flow.sample_and_log_prob(64)
+    logq2 = flow.log_prob(x)
+    np.testing.assert_allclose(logq, logq2, atol=1e-4,
+        err_msg="sample_and_log_prob logq differs from log_prob(x) with non-constant Jacobian")
