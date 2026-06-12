@@ -12,8 +12,6 @@ WhiteningTransform
 
 Internal helpers (public for testing / direct use)
 ---------------------------------------------------
-unwrap, wrap
-    Angle-range utilities.
 LogTransform, CircularShiftTransform, LinearMatrixTransform, PartialTransform
     Composable :class:`torch.distributions.Transform` subclasses used by
     :class:`WhiteningTransform` internally.
@@ -22,66 +20,17 @@ from __future__ import annotations
 
 import numpy as np
 import torch
-from zuko.transforms import AffineTransform, ComposeTransform, LULinearTransform  # noqa: F401
+from zuko.transforms import AffineTransform, ComposeTransform
 
 from eryn.flows.transforms import DataTransform
 
 __all__ = [
     "WhiteningTransform",
-    "unwrap",
-    "wrap",
     "LogTransform",
     "CircularShiftTransform",
     "LinearMatrixTransform",
     "PartialTransform",
 ]
-
-
-# ---------------------------------------------------------------------------
-# Module-level helpers
-# ---------------------------------------------------------------------------
-
-def unwrap(x: torch.Tensor, left: float, right: float) -> torch.Tensor:
-    """Unwrap a tensor of angles to the range ``[left, right)``.
-
-    Parameters
-    ----------
-    x : torch.Tensor, shape (N,)
-        Tensor of angles to unwrap.
-    left : float
-        Left boundary of the target range.
-    right : float
-        Right boundary of the target range.
-
-    Returns
-    -------
-    torch.Tensor, shape (N,)
-        Unwrapped angles in ``[left, right)``.
-    """
-    period = right - left
-    mid = (left + right) / 2
-    return ((x - mid) % period) + mid
-
-
-def wrap(x: torch.Tensor, left: float, right: float) -> torch.Tensor:
-    """Wrap a tensor of angles to the range ``[left, right)``.
-
-    Parameters
-    ----------
-    x : torch.Tensor, shape (N,)
-        Tensor of angles to wrap.
-    left : float
-        Left boundary of the target range.
-    right : float
-        Right boundary of the target range.
-
-    Returns
-    -------
-    torch.Tensor, shape (N,)
-        Wrapped angles in ``[left, right)``.
-    """
-    period = right - left
-    return ((x - left) % period) + left
 
 
 # ---------------------------------------------------------------------------
@@ -433,7 +382,7 @@ class WhiteningTransform(DataTransform):
                 f"Available conditions: {list(self.transforms.keys())}"
             )
         return self.transforms[condition](
-            torch.tensor(x, dtype=torch.float64)
+            torch.as_tensor(x, dtype=torch.float64)
         ).to(dtype=torch.float32)
 
     def inverse(self, z: torch.Tensor, condition: int = 0) -> np.ndarray:
@@ -461,7 +410,9 @@ class WhiteningTransform(DataTransform):
                 f"Condition {condition} not found in transforms.  "
                 f"Available conditions: {list(self.transforms.keys())}"
             )
-        return self.transforms[condition].inv(z.to(dtype=torch.float64)).numpy()
+        return self.transforms[condition].inv(
+            torch.as_tensor(z, dtype=torch.float64)
+        ).numpy()
 
     def log_abs_det_jacobian(
         self,
@@ -497,6 +448,8 @@ class WhiteningTransform(DataTransform):
                 f"Condition {condition} not found in transforms.  "
                 f"Available conditions: {list(self.transforms.keys())}"
             )
+        x = torch.as_tensor(x, dtype=torch.float64)
+        z = torch.as_tensor(z, dtype=torch.float64)
         return self.transforms[condition].log_abs_det_jacobian(x, z)
 
     # ------------------------------------------------------------------
