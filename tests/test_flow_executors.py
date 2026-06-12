@@ -105,6 +105,37 @@ class _RaisingFlow(FakeFlow):
         raise RuntimeError("boom in fit")
 
 
+class _LiveWeightFlow(FakeFlow):
+    """FakeFlow whose ``get_weights`` returns a REFERENCE to live mutable state.
+
+    This mimics torch ``get_weights`` returning references to a clone's live
+    parameters: ``log_prob`` reads ``self._scale_arr`` and ``get_weights``
+    hands back that exact array.  Without a defensive copy at stash time, a
+    caller mutating the returned dict would corrupt the executor's clone.
+    """
+
+    def __init__(self, *args, scale: float = 1.0, **kwargs):
+        super().__init__(*args, scale=scale, **kwargs)
+        self._scale_arr = np.array(scale, dtype=np.float64)
+
+    def log_prob(self, x, context=None):
+        x = np.asarray(x, dtype=np.float64)
+        return -0.5 * np.sum((x / float(self._scale_arr)) ** 2, axis=-1)
+
+    def fit(self, samples, **kwargs):
+        hist = super().fit(samples, **kwargs)
+        self._scale_arr = np.array(self.scale, dtype=np.float64)
+        return hist
+
+    def get_weights(self):
+        # Live reference, NOT a copy — the executor must deep-copy when stashing.
+        return {"scale": self._scale_arr}
+
+    def set_weights(self, weights):
+        self._scale_arr = np.asarray(weights["scale"], dtype=np.float64).copy()
+        self.scale = float(self._scale_arr)
+
+
 class _UnpicklableFlow(FakeFlow):
     """FakeFlow carrying a lambda in its config (unpicklable)."""
 
@@ -249,6 +280,98 @@ def test_inline_weights_applied_to_sibling_change_outputs():
     assert not np.allclose(before, after)
 
 
+def test_inline_latest_weights_snapshot_not_aliased_across_versions():
+    """Mutating a returned weights dict must not corrupt a later version's snapshot.
+
+    The ownership contract (ABC latest_weights docstring) says each snapshot is
+    private and not aliased to live training state.  Here we mutate the
+    version-1 dict, train again, and confirm the version-2 snapshot is a fresh,
+    uncorrupted object — exactly as a process executor's freshly deserialized
+    dict would be.
+    """
+    flow = _make_fake(scale=1.0)
+    ex = InlineExecutor(flow, min_train_samples=1)
+    ex.submit({0: np.full((50, 2), 3.0)})
+    v1, w1 = ex.latest_weights()
+
+    # Caller misbehaves: mutate the returned snapshot in place.
+    w1["scale"][...] = 999.0
+
+    # Train again → a new, independent snapshot.
+    ex.submit({0: np.full((50, 2), 3.0)})
+    v2, w2 = ex.latest_weights()
+    assert v2 == v1 + 1
+    assert w2 is not w1
+    assert float(np.asarray(w2["scale"])) != pytest.approx(999.0)
+
+
+def test_inline_latest_weights_not_aliased_to_training_clone_state():
+    """The stashed snapshot is decoupled from the clone's live state.
+
+    Mutating the returned weights array must not change the trainer clone's
+    own log_prob — i.e. the snapshot is a defensive copy (copy.deepcopy at
+    stash time), not a reference to the clone's live parameters (the corruption
+    a process boundary cannot have).
+    """
+    flow = _LiveWeightFlow(dims=2, device="cpu",
+                           data_transform=_FittableTransform(True), scale=1.0)
+    ex = InlineExecutor(flow, min_train_samples=1)
+    x = np.full((4, 2), 2.0)
+
+    ex.submit({0: np.random.randn(200, 2) * 5.0})
+    _, weights = ex.latest_weights()
+    clone_before = ex._flow.log_prob(x).copy()
+
+    # weights["scale"] would BE the clone's live array without the deepcopy fix.
+    assert weights["scale"] is not ex._flow.get_weights()["scale"]
+    # Corrupt the returned snapshot; the clone's density must be unaffected.
+    weights["scale"][...] = 1e6
+    clone_after = ex._flow.log_prob(x)
+    np.testing.assert_array_equal(clone_before, clone_after)
+
+
+# ---------------------------------------------------------------------------
+# InlineExecutor — empty-harvest safety (I2)
+# ---------------------------------------------------------------------------
+
+def test_inline_empty_dict_submit_is_noop_not_error():
+    """submit({}) returns False, bumps no version, and never poisons the executor."""
+    flow = _make_fake()
+    ex = InlineExecutor(flow)  # default min_train_samples now 1
+    assert ex.submit({}) is False
+    assert ex.latest_weights() is None
+    assert ex.version == 0
+    assert flow.fit_count == 0
+    # A subsequent real submit still works (no lingering TrainerError).
+    assert ex.submit({0: np.random.randn(5, 2)}) is True
+    assert ex.latest_weights() is not None
+
+
+def test_inline_zero_row_array_submit_is_noop():
+    """A submit carrying only a zero-row array behaves like an empty submit."""
+    flow = _make_fake(dims=2)
+    ex = InlineExecutor(flow)
+    assert ex.submit({0: np.zeros((0, 2))}) is False
+    assert ex.latest_weights() is None
+    assert ex.version == 0
+    # No deferred TrainerError on the next poll or submit.
+    assert ex.submit({0: np.random.randn(5, 2)}) is True
+
+
+def test_inline_mixed_empty_and_nonempty_buffers_only_nonempty():
+    """A mixed submit (one empty + one non-empty condition) buffers only the real one."""
+    flow = _make_fake(dims=2)
+    ex = InlineExecutor(flow)
+    assert ex.submit({0: np.zeros((0, 2)), 1: np.full((7, 2), 4.0)}) is True
+    # Only condition 1 was buffered; condition 0 never created a buffer.
+    assert 0 not in ex._buffers
+    assert ex._flow.last_fit_n == 7
+    # Training ran on the non-empty rows; the new version is observable on poll.
+    lw = ex.latest_weights()
+    assert lw is not None and lw[0] == 1
+    assert ex.version == 1
+
+
 def test_inline_buffer_cap_trims():
     """Total samples handed to fit never exceed the per-condition cap."""
     flow = _make_fake()
@@ -268,6 +391,35 @@ def test_inline_buffer_cap_multi_condition():
         ex.submit({0: np.random.randn(20, 2), 1: np.random.randn(20, 2)})
     # Each condition trimmed to <= 30; total <= 60.
     assert ex._flow.last_fit_n <= 60
+
+
+def test_inline_single_submit_larger_than_cap_kept_whole():
+    """A single submit bigger than the cap is retained in full (cap = max(cap, harvest)).
+
+    _trim only drops when more than one array is buffered, so the most recent
+    array is always kept whole — a lone oversized harvest is never truncated.
+    """
+    flow = _make_fake()
+    ex = InlineExecutor(flow, min_train_samples=1, max_buffer_samples=50)
+    ex.submit({0: np.random.randn(500, 2)})  # one array, 10x the cap
+    # The whole 500-row array is handed to fit despite exceeding the cap.
+    assert ex._flow.last_fit_n == 500
+
+
+# ---------------------------------------------------------------------------
+# InlineExecutor — fit_kwargs guard (M6)
+# ---------------------------------------------------------------------------
+
+def test_inline_fit_kwargs_rejects_refit_data_transform():
+    flow = _make_fake()
+    with pytest.raises(ValueError, match="refit_data_transform"):
+        InlineExecutor(flow, fit_kwargs=dict(refit_data_transform=True))
+
+
+def test_inline_fit_kwargs_rejects_verbose():
+    flow = _make_fake()
+    with pytest.raises(ValueError, match="verbose"):
+        InlineExecutor(flow, fit_kwargs=dict(verbose=True))
 
 
 # ---------------------------------------------------------------------------
