@@ -287,3 +287,40 @@ def test_fit_returns_flow_history_instance():
     assert isinstance(history, FlowHistoryBase), (
         f"Expected FlowHistory, got {type(history)}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Test 9 — validation_fraction range check
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("bad_fraction", [0.0, 1.0])
+def test_validation_fraction_out_of_range_raises(bad_fraction):
+    """validation_fraction at the closed boundaries (0.0, 1.0) raises ValueError."""
+    rng = np.random.default_rng(0)
+    data = _gauss2d(rng, [0.0, 0.0], np.eye(2), n=200)
+
+    flow = _make_unconditional(seed=1)
+    with pytest.raises(ValueError, match="validation_fraction"):
+        flow.fit(data, n_epochs=2, validation_fraction=bad_fraction, seed=1)
+
+
+# ---------------------------------------------------------------------------
+# Test 10 — seed coerced at the boundary (whole float accepted)
+# ---------------------------------------------------------------------------
+
+def test_seed_whole_float_is_coerced_and_matches_int():
+    """A whole-float seed (7.0) is coerced via int() and gives the same result as int seed 7."""
+    rng = np.random.default_rng(0)
+    data = _gauss2d(rng, [0.0, 0.0], [[1.0, 0.3], [0.3, 1.0]], n=300)
+
+    flow_int = _make_unconditional(seed=11)
+    flow_float = _make_unconditional(seed=11)
+
+    h_int = flow_int.fit(data, n_epochs=3, batch_size=64, seed=7, verbose=False)
+    h_float = flow_float.fit(data, n_epochs=3, batch_size=64, seed=7.0, verbose=False)
+
+    np.testing.assert_array_equal(
+        h_int.validation_loss,
+        h_float.validation_loss,
+        err_msg="seed=7 and seed=7.0 produced different validation_loss sequences",
+    )
