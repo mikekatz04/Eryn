@@ -281,6 +281,18 @@ class TrainerExecutor(ABC):
         :attr:`version` does not advance.  This is THE contract for every
         executor, including process-based ones — callers use it to decide
         whether a hot-reload is needed.
+
+        Per-executor-instance counter
+        -----------------------------
+        The version counter is local to THIS executor object and starts at
+        ``0``.  A *recreated* executor (e.g. a fresh
+        :class:`ProcessExecutor` spun up after a worker died) restarts its
+        counter at ``1`` — it has no memory of a predecessor's versions.  Any
+        consumer that remembers the highest version it has loaded and compares
+        future versions against it MUST reset that memory when it swaps in a new
+        executor, or it will silently ignore the replacement's hot-reloads
+        forever.  :class:`~eryn.moves.flow.FlowMove` does this automatically: its
+        ``executor`` setter resets ``loaded_version`` on a real executor swap.
         """
 
     @abstractmethod
@@ -402,7 +414,13 @@ class InlineExecutor(TrainerExecutor):
     # ------------------------------------------------------------------
 
     def _trim(self, condition: int) -> None:
-        """Drop oldest arrays for ``condition`` until its buffer fits the cap."""
+        """Drop oldest arrays for ``condition`` until its buffer fits the cap.
+
+        Ring-buffer policy: keep in sync with the worker's buffering in
+        :func:`_trainer_worker` (the ``_buffer_item`` inner trim) — both drop
+        the oldest arrays from the left but always retain the most recent array
+        whole, so a single oversized harvest is kept in full.
+        """
         buf = self._buffers[condition]
         total = sum(len(a) for a in buf)
         while total > self._max_buffer_samples and len(buf) > 1:
@@ -627,6 +645,8 @@ def _trainer_worker(spec, cfg, sample_q, weights_q, stop_event):
         # Per-condition ring buffers: condition id -> deque of (N_i, dims) arrays.
         # Same trim semantics as InlineExecutor — drop oldest arrays but always
         # keep the most recent array whole (a lone oversized harvest is kept).
+        # Keep in sync with InlineExecutor._trim (the parent-side implementation
+        # of this identical ring-buffer policy).
         buffers: dict[int, deque] = {}
 
         def _buffer_item(item):
@@ -764,6 +784,15 @@ class ProcessExecutor(TrainerExecutor):
     ``spawn`` starts a fresh interpreter that imports torch cleanly — at the
     cost of a slow (~2-5 s) child startup, which callers must budget for.
 
+    Single-use lifecycle
+    --------------------
+    An executor instance is **single-use**: once :meth:`shutdown` has run, the
+    executor is permanently torn down — :meth:`start` afterwards is a no-op and
+    a stopped worker cannot be restarted.  To resume online training, create a
+    NEW :class:`ProcessExecutor` (and, if a :class:`~eryn.moves.flow.FlowMove`
+    holds it, assign it through ``move.executor =`` so the per-executor version
+    counter reset is applied — see :attr:`TrainerExecutor.version`).
+
     Degenerate ``start=False`` state
     --------------------------------
     The sample queue, weights queue and stop event are created in
@@ -773,6 +802,10 @@ class ProcessExecutor(TrainerExecutor):
     drop policy with no consumer attached; :meth:`latest_weights` returns
     ``None`` (nothing produced); :meth:`shutdown` is safe (no process to join).
     Calling :meth:`start` later drains the buffered batches into the worker.
+    Because the queues/event are allocated in ``__init__``, you should call
+    :meth:`shutdown` (or use the context manager) to release the feeder
+    threads/pipes **even if :meth:`start` was never called** — a never-started
+    executor still owns those resources (M2).
 
     Parameters
     ----------
@@ -976,10 +1009,13 @@ class ProcessExecutor(TrainerExecutor):
         Non-blocking: pulls every pending item with ``get_nowait``, keeping the
         newest ``"weights"`` item seen.  If an ``"error"`` item appears the
         failure is recorded and :class:`TrainerError` (carrying the child
-        traceback) is raised.  If nothing is pending, the executor has not
-        already failed, and the worker process has died with a non-zero (or
-        unknown) exit code, that silent death is recorded and surfaced as a
-        :class:`TrainerError` too.
+        traceback) is raised.  If — after draining — the executor has not
+        already failed and the (non-shutdown) worker process has died with a
+        non-zero (or unknown) exit code, that silent death is recorded and
+        surfaced as a :class:`TrainerError` too.  Crucially this check fires
+        **regardless of whether weights have already been observed**: a worker
+        that crashes mid-run after serving its first version must still fail
+        loud rather than freeze the proposal on the last good weights.
 
         Ownership contract
         ------------------
@@ -1024,12 +1060,20 @@ class ProcessExecutor(TrainerExecutor):
             if self._latest is None or newest[0] > self._latest[0]:
                 self._latest = newest
 
-        # Silent-death detection: nothing pending and the process is gone with a
-        # bad exit code → surface as a failure rather than freezing forever.
+        # Silent-death detection: the worker has died with a bad exit code →
+        # surface as a failure rather than freezing forever on stale weights.
+        # This fires REGARDLESS of whether any weights have already been observed:
+        # a mid-run crash (OOM-kill, segfault → nonzero exitcode) after the first
+        # version must still be loud, or the proposal would silently sample from a
+        # frozen flow for the rest of the run.  It is gated on ``not self._shutdown``
+        # so a worker we deliberately terminated in :meth:`shutdown` (exitcode -15)
+        # is not reported as a spurious failure.  Clean exit (0) or a still-living
+        # / unknown-exitcode worker (None) is never an error here.
         if (
-            self._latest is None
+            not self._shutdown
             and self._error is None
             and self._process is not None
+            and self._started
             and not self._process.is_alive()
         ):
             code = self._process.exitcode
@@ -1100,7 +1144,10 @@ class ProcessExecutor(TrainerExecutor):
             while True:
                 try:
                     q.get_nowait()
-                except (queue.Empty, Exception):
+                except Exception:
+                    # queue.Empty ends the drain normally; any other queue error
+                    # here is from an already-closed queue at teardown and is
+                    # deliberately swallowed (both are subclasses of Exception).
                     break
             try:
                 q.cancel_join_thread()
