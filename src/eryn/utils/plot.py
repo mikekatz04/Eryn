@@ -1,5 +1,6 @@
 # *-- coding: utf-8 --*
 import os
+from shutil import which
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -18,30 +19,32 @@ import seaborn as sns
 from eryn.utils.utility import stepping_stone_log_evidence, get_integrated_act
 DEFAULT_PALETTE = "icefire"
 
-try:
-    import scienceplots
-    plt.style.use(['science'])
-except (ImportError, ModuleNotFoundError):
-    pass
-
-# increase default font size
-mpl.rcParams.update({'font.size': 16})
-
-if which("latex"):
-    mpl.rcParams.update({
-        "text.usetex": True,
-        "font.family": "serif",
-        "font.serif": ["Palatino"],
-    })
-else:
-    print("LaTeX not found. Using default matplotlib fonts.")
-    mpl.rcParams.update({
-        "text.usetex": False,
-    })
-
 class Backend:
     """A placeholder Backend class for type hinting."""
     pass
+
+def setup_plotting():
+    try:
+        import scienceplots
+        plt.style.use(['science'])
+    except:
+        pass
+
+    # increase default font size
+    mpl.rcParams.update({'font.size': 16})
+
+    if which("latex"):
+        mpl.rcParams.update({
+            "text.usetex": True,
+            "font.family": "serif",
+            "font.serif": ["Palatino"],
+        })
+    else:
+        print("LaTeX not found. Using default matplotlib fonts.")
+        mpl.rcParams.update({
+            "text.usetex": False,
+        })
+
 
 def save_or_show(fig, filename=None):
     """
@@ -1246,7 +1249,7 @@ class PlotContainer:
         """
         Initialize the PlotContainer.
         """
-
+        setup_plotting()
         self.backend = backend
 
         self.parent_folder = parent_folder
