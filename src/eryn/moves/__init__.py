@@ -33,6 +33,8 @@ from .combine import CombineMove
 from .mtdistgen import MTDistGenMove
 from .mtdistgenrj import MTDistGenMoveRJ
 from .multipletry import MultipleTryMove
+from .independentmh import IndependentProposalMove
+from .flow import FlowMove
 
 # from .walk import WalkMove
 from .nuts import NUTSMove, NUTSSampler
@@ -65,4 +67,6 @@ __all__ = [
     "CombineMove",
     "NUTSMove",
     "NUTSSampler",
+    "IndependentProposalMove",
+    "FlowMove",
 ]
