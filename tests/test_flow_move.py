@@ -13,6 +13,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from eryn.flows.executors import TrainerError
 from eryn.moves import FlowMove, IndependentProposalMove
 
 
@@ -376,3 +377,194 @@ def test_flow_move_active_condition_routing():
         "factors identical for condition=0 and condition=1 — "
         "active_condition may not be reaching the flow."
     )
+
+
+# ---------------------------------------------------------------------------
+# FlowMove online-training hooks (setup) — stub executor (numpy only)
+# ---------------------------------------------------------------------------
+
+class _StubExecutor:
+    """Records submits and serves canned (version, weights) on demand."""
+
+    def __init__(self, canned=None, raise_on_poll=False):
+        self.submits = []
+        self._canned = canned  # tuple[int, dict] or None
+        self._raise_on_poll = raise_on_poll
+        self.shutdown_called = 0
+
+    def submit(self, samples_by_condition):
+        self.submits.append(samples_by_condition)
+        return True
+
+    def latest_weights(self):
+        if self._raise_on_poll:
+            raise TrainerError("stub trainer died")
+        return self._canned
+
+    @property
+    def version(self):
+        return 0 if self._canned is None else self._canned[0]
+
+    def shutdown(self, timeout: float = 10.0):
+        self.shutdown_called += 1
+
+    def serve(self, version, weights):
+        self._canned = (version, weights)
+
+
+def _setup_branches(ntemps=2, nwalkers=4, nleaves=1, ndim=2, seed=0):
+    rng = np.random.default_rng(seed)
+    coords = rng.standard_normal((ntemps, nwalkers, nleaves, ndim))
+    return {"x": coords}
+
+
+def test_flowmove_executor_none_setup_is_noop():
+    """executor=None: setup does nothing, raises nothing, loaded_version stays 0."""
+    pytest.importorskip("torch")
+    flow = _make_flow(seed=0)
+    move = FlowMove(flow, branch_name="x")  # no executor
+    branches = _setup_branches()
+    move.setup(branches)  # must be a pure no-op
+    assert move.loaded_version == 0
+
+
+def test_flowmove_harvest_every_honored():
+    """harvest_every=3 → submit only on every 3rd setup call; poll every call."""
+    pytest.importorskip("torch")
+    flow = _make_flow(seed=0)
+    ex = _StubExecutor(canned=None)
+    move = FlowMove(flow, branch_name="x", executor=ex, harvest_every=3)
+    branches = _setup_branches()
+
+    for _ in range(6):
+        move.setup(branches)
+
+    # 6 calls / harvest_every=3 → 2 submits.
+    assert len(ex.submits) == 2
+
+
+def test_flowmove_harvest_flattens_cold_chain():
+    """Harvested samples are the cold-chain coords flattened to (-1, ndim)."""
+    pytest.importorskip("torch")
+    flow = _make_flow(seed=0)
+    ex = _StubExecutor(canned=None)
+    move = FlowMove(flow, branch_name="x", executor=ex, harvest_every=1)
+    ntemps, nwalkers, nleaves, ndim = 3, 5, 2, 2
+    branches = _setup_branches(ntemps, nwalkers, nleaves, ndim)
+
+    move.setup(branches)
+
+    assert len(ex.submits) == 1
+    submitted = ex.submits[0]
+    assert set(submitted.keys()) == {move.active_condition}
+    arr = submitted[move.active_condition]
+    # cold chain (temp 0): nwalkers * nleaves rows, ndim columns
+    assert arr.shape == (nwalkers * nleaves, ndim)
+    np.testing.assert_array_equal(arr, branches["x"][0].reshape(-1, ndim))
+
+
+def test_flowmove_hot_reload_advances_loaded_version_and_changes_outputs():
+    """Serving newer weights via the stub hot-loads them and changes flow outputs."""
+    pytest.importorskip("torch")
+    flow = _make_flow(seed=0)
+    other = _make_flow(seed=123)  # different random weights
+    new_weights = other.get_weights()
+
+    ex = _StubExecutor(canned=None)
+    move = FlowMove(flow, branch_name="x", executor=ex, harvest_every=1)
+    branches = _setup_branches(ndim=2)
+
+    x = np.full((4, 2), 0.5)
+    before = flow.log_prob(x, context=0).copy()
+
+    # No weights yet: poll returns None, version stays 0.
+    move.setup(branches)
+    assert move.loaded_version == 0
+
+    # Serve version 1: setup loads it.
+    ex.serve(1, new_weights)
+    move.setup(branches)
+    assert move.loaded_version == 1
+    after = flow.log_prob(x, context=0)
+    assert not np.allclose(before, after), "hot-reloaded weights did not change outputs"
+
+    # Serving the SAME version again must not reload (no-op when not strictly newer).
+    after2 = flow.log_prob(x, context=0)
+    move.setup(branches)
+    assert move.loaded_version == 1
+    np.testing.assert_array_equal(after, after2)
+
+
+def test_flowmove_trainer_error_propagates_from_setup():
+    """A failed trainer surfaces as TrainerError out of setup (not swallowed)."""
+    pytest.importorskip("torch")
+    flow = _make_flow(seed=0)
+    ex = _StubExecutor(raise_on_poll=True)
+    move = FlowMove(flow, branch_name="x", executor=ex, harvest_every=1)
+    branches = _setup_branches()
+
+    with pytest.raises(TrainerError, match="stub trainer died"):
+        move.setup(branches)
+
+
+def test_flowmove_setup_missing_branch_raises():
+    """setup raises KeyError when branch_name absent (same loud guard as get_proposal)."""
+    pytest.importorskip("torch")
+    flow = _make_flow(seed=0)
+    ex = _StubExecutor(canned=None)
+    move = FlowMove(flow, branch_name="typo_branch", executor=ex)
+    branches = _setup_branches()
+
+    with pytest.raises(KeyError, match="typo_branch"):
+        move.setup(branches)
+
+
+def test_flowmove_inline_executor_end_to_end_sampler():
+    """Smoke test: FlowMove + real InlineExecutor through a short EnsembleSampler run."""
+    pytest.importorskip("torch")
+
+    from eryn.ensemble import EnsembleSampler
+    from eryn.flows import InlineExecutor
+    from eryn.prior import ProbDistContainer, uniform_dist
+    from eryn.state import State
+
+    ndim = 2
+    ntemps = 1
+    nwalkers = 16
+
+    flow = _make_flow(seed=0)
+    ex = InlineExecutor(flow, fit_kwargs=dict(n_epochs=1), min_train_samples=0,
+                        train_every=5)
+    move = FlowMove(flow, branch_name="x", executor=ex, harvest_every=2)
+    move.active_condition = 0
+
+    priors = {
+        "x": ProbDistContainer(
+            {0: uniform_dist(-10.0, 10.0), 1: uniform_dist(-10.0, 10.0)}
+        )
+    }
+
+    sampler = EnsembleSampler(
+        nwalkers,
+        {"x": ndim},
+        _log_like_gauss_vectorized,
+        priors,
+        tempering_kwargs=dict(ntemps=ntemps),
+        vectorize=True,
+        moves=[move],
+        branch_names=["x"],
+    )
+
+    rng = np.random.default_rng(42)
+    start_coords = rng.standard_normal((ntemps, nwalkers, 1, ndim))
+    start = State({"x": start_coords})
+
+    sampler.run_mcmc(start, 20, burn=0, progress=False)
+    ex.shutdown()
+
+    chain = sampler.get_chain()["x"]
+    assert chain.shape[0] == 20
+    assert np.all(np.isfinite(chain))
+    # The executor trained at least once and the move hot-loaded new weights.
+    assert ex.version >= 1
+    assert move.loaded_version >= 1

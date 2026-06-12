@@ -45,6 +45,27 @@ class FlowMove(MHMove):
     forward pass through the flow: the log-probability returned by sampling is
     reused directly as ``-log q(new)``.
 
+    **Online training (optional)**
+
+    When an ``executor`` (a :class:`eryn.flows.executors.TrainerExecutor`) is
+    supplied, :meth:`setup` — called at the top of every :meth:`propose` — gains
+    two non-blocking online-training hooks:
+
+    1. **Harvest.** Every ``harvest_every``-th call, the cold-chain coordinates
+       of this move's branch are flattened and submitted to the executor as
+       training data.  The submit is non-blocking by contract; the executor
+       trains a *clone* of the flow off the proposal's critical path.
+    2. **Poll + hot-reload.** On *every* call, the newest trained weights are
+       polled; if a strictly newer version is available it is loaded into this
+       move's flow via ``flow.set_weights``.  The proposal therefore tracks an
+       improving flow without ever blocking.
+
+    Failures propagate loudly: a dead/failed trainer surfaces as
+    :class:`~eryn.flows.executors.TrainerError` out of :meth:`setup` and is NOT
+    swallowed.  A multi-day run silently sampling from a frozen flow is worse
+    than a crash; graceful degradation is a future scheduler policy, not the
+    move's job.
+
     Parameters
     ----------
     flow : eryn.flows.Flow
@@ -55,6 +76,18 @@ class FlowMove(MHMove):
     branch_name : str
         Name of the branch this move proposes for.  All other branches in
         ``branches_coords`` are copied unchanged.
+    executor : eryn.flows.executors.TrainerExecutor or None, optional
+        Online-training executor.  When ``None`` (the default), :meth:`setup`
+        is a pure no-op and the move behaves exactly as a static flow proposal
+        — zero overhead, no executor interaction.
+    harvest_every : int, optional
+        Submit cold-chain coordinates to the executor on every
+        ``harvest_every``-th :meth:`setup` call.  Default is ``1`` (every call).
+        Polling for new weights happens on every call regardless of this value.
+    harvest_temp_index : int, optional
+        Temperature index to harvest from.  Default is ``0`` (the cold chain).
+        Harvesting flattens the ``nwalkers`` x ``nleaves`` coordinates of this
+        temperature into ``(-1, ndim)`` training rows.
     *args, **kwargs
         Passed through to :class:`eryn.moves.MHMove`.
 
@@ -63,17 +96,39 @@ class FlowMove(MHMove):
     active_condition : int
         Condition id passed to the flow on every ``get_proposal`` call.
         Readable and writable; the setter coerces the value to ``int``.
+    loaded_version : int
+        Version of the most recently hot-loaded weights (``0`` if none have been
+        loaded).  Read-only.
 
     Examples
     --------
     >>> move = FlowMove(my_flow, branch_name="x")
     >>> move.active_condition = 2   # switch to condition 2 before sampling
+
+    >>> # With online training:
+    >>> from eryn.flows import InlineExecutor
+    >>> ex = InlineExecutor(my_flow, min_train_samples=1000)
+    >>> move = FlowMove(my_flow, branch_name="x", executor=ex, harvest_every=10)
     """
 
-    def __init__(self, flow, branch_name: str, *args, **kwargs):
+    def __init__(
+        self,
+        flow,
+        branch_name: str,
+        executor=None,
+        harvest_every: int = 1,
+        harvest_temp_index: int = 0,
+        *args,
+        **kwargs,
+    ):
         self.flow = flow
         self.branch_name = branch_name
         self._active_condition: int = 0
+        self.executor = executor
+        self.harvest_every = int(harvest_every)
+        self.harvest_temp_index = int(harvest_temp_index)
+        self._setup_calls = 0
+        self._loaded_version = 0
         super().__init__(*args, **kwargs)
 
     # ------------------------------------------------------------------
@@ -88,6 +143,72 @@ class FlowMove(MHMove):
     @active_condition.setter
     def active_condition(self, c: int) -> None:
         self._active_condition = int(c)
+
+    @property
+    def loaded_version(self) -> int:
+        """Version of the most recently hot-loaded flow weights (``0`` = none)."""
+        return self._loaded_version
+
+    # ------------------------------------------------------------------
+    # Online-training hook (called at the top of every propose)
+    # ------------------------------------------------------------------
+
+    def setup(self, branches_coords):
+        """Harvest cold-chain samples and hot-reload trained weights.
+
+        Called by :meth:`eryn.moves.mh.MHMove.propose` at the top of every
+        proposal.  With no executor configured this is a pure no-op.  With an
+        executor it performs two non-blocking steps:
+
+        - **Harvest** (every ``harvest_every``-th call): the coordinates of this
+          move's branch at temperature ``harvest_temp_index`` (the cold chain by
+          default) are reshaped to ``(-1, ndim)`` — flattening walkers x leaves —
+          and submitted to the executor under :attr:`active_condition`.
+        - **Poll + hot-reload** (every call): the newest trained weights are
+          polled; a strictly newer version is loaded into :attr:`flow`.
+
+        Parameters
+        ----------
+        branches_coords : dict
+            Keys are branch names; values are
+            ``np.ndarray[ntemps, nwalkers, nleaves_max, ndim]`` current
+            coordinates.
+
+        Raises
+        ------
+        KeyError
+            If this move's ``branch_name`` is not present in ``branches_coords``
+            (same loud guard as :meth:`get_proposal`).
+        eryn.flows.executors.TrainerError
+            If the executor's trainer has failed.  Propagated, never swallowed:
+            silently sampling from a frozen flow for a long run is worse than a
+            crash.
+        """
+        if self.executor is None:
+            return
+
+        if self.branch_name not in branches_coords:
+            raise KeyError(
+                f"{type(self).__name__}: branch_name {self.branch_name!r} not in"
+                f" branches_coords (keys: {list(branches_coords)})."
+            )
+
+        self._setup_calls += 1
+
+        # --- harvest (non-blocking submit) ---
+        if self._setup_calls % self.harvest_every == 0:
+            coords = branches_coords[self.branch_name][self.harvest_temp_index]
+            ndim = coords.shape[-1]
+            flat = np.asarray(coords).reshape(-1, ndim)
+            self.executor.submit({self.active_condition: flat})
+
+        # --- poll + hot-reload (non-blocking; TrainerError propagates) ---
+        lw = self.executor.latest_weights()
+        if lw is not None:
+            version, weights = lw
+            if version > self._loaded_version:
+                self.flow.set_weights(weights)
+                self._loaded_version = version
 
     # ------------------------------------------------------------------
     # MHMove interface

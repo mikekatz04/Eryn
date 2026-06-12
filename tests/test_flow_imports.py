@@ -19,6 +19,10 @@ EXPECTED_ALL = sorted([
     "get_flow_wrapper",
     "ZukoFlow",
     "WhiteningTransform",
+    "TrainerError",
+    "FlowSpec",
+    "TrainerExecutor",
+    "InlineExecutor",
 ])
 
 
@@ -128,10 +132,40 @@ def test_misspelled_attribute_raises_attribute_error():
         _ = eryn.flows.NopeNope
 
 
-def test_executor_names_raise_attribute_error():
-    """Executor names not yet in __all__ raise AttributeError (not ImportError)."""
+def test_executor_names_resolve():
+    """Executor names (Task 8) resolve from the torch-free executors module."""
     import eryn.flows
 
-    for name in ("TrainerExecutor", "InlineExecutor", "ProcessExecutor", "TrainerError"):
-        with pytest.raises(AttributeError):
-            getattr(eryn.flows, name)
+    for name in ("TrainerError", "FlowSpec", "TrainerExecutor", "InlineExecutor"):
+        assert getattr(eryn.flows, name) is not None
+
+
+def test_process_executor_not_yet_available():
+    """ProcessExecutor (Task 9) is not implemented yet — AttributeError, not ImportError."""
+    import eryn.flows
+
+    with pytest.raises(AttributeError):
+        _ = eryn.flows.ProcessExecutor
+
+
+def test_executors_torch_free_at_module_level():
+    """Importing eryn.flows.executors and resolving executor names must NOT import torch."""
+    code = (
+        "import sys\n"
+        "import eryn.flows\n"
+        "_ = eryn.flows.TrainerExecutor\n"
+        "_ = eryn.flows.InlineExecutor\n"
+        "_ = eryn.flows.FlowSpec\n"
+        "_ = eryn.flows.TrainerError\n"
+        "assert 'torch' not in sys.modules, 'torch was imported by executors'\n"
+        "print('OK')\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, (
+        f"subprocess failed\nstdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+    assert "OK" in result.stdout

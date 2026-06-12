@@ -23,17 +23,20 @@ The PyTorch backend (``ZukoFlow``, ``WhiteningTransform``) lives in the
 
 Importing this module (``eryn.flows``) never triggers a torch import.
 
-**Executor classes** (``TrainerExecutor``, ``InlineExecutor``, ``ProcessExecutor``,
-``TrainerError``) are defined in ``eryn.flows.executors`` and will be available
-once that module is implemented (Task 8).
+**Executor classes** (``TrainerExecutor``, ``InlineExecutor``,
+``TrainerError`` — and, from Task 9, ``ProcessExecutor``) live in
+``eryn.flows.executors``.  That module is torch-free, so these names could be
+imported eagerly; they are kept in the lazy ``__getattr__`` map purely for
+consistency with the other optional names and to keep the import of
+``eryn.flows`` minimal.
 """
 from __future__ import annotations
 
 # NOTE: ZukoFlow and WhiteningTransform require the 'flow' extra (pip install eryn[flow]).
 # `from eryn.flows import *` will therefore raise AttributeError in environments
 # without torch/zuko — this is intentional and expected for an optional extra.
-# TrainerExecutor/InlineExecutor/ProcessExecutor/TrainerError are omitted until
-# eryn.flows.executors is implemented (Task 8).
+# TrainerExecutor/InlineExecutor/TrainerError come from the torch-free
+# eryn.flows.executors module (resolved lazily in __getattr__).
 __all__ = [
     "Flow",
     "FlowHistory",
@@ -45,6 +48,10 @@ __all__ = [
     "get_flow_wrapper",
     "ZukoFlow",
     "WhiteningTransform",
+    "TrainerError",
+    "FlowSpec",
+    "TrainerExecutor",
+    "InlineExecutor",
 ]
 
 # No module-level import of torch, scipy, sklearn, .torch, or .executors.
@@ -58,9 +65,12 @@ from .conditioning import ConditioningStrategy, OneHotLeafConditioning  # noqa: 
 # ---- lazy names — resolved by __getattr__ on first attribute access ----
 # ZukoFlow/WhiteningTransform live in the optional torch subpackage; accessing
 # them without torch raises AttributeError (hasattr-safe), with the install hint
-# chained as cause.  TrainerExecutor/InlineExecutor/ProcessExecutor/TrainerError
-# will be added back once eryn.flows.executors exists (Task 8).
+# chained as cause.
 _TORCH_NAMES = {"ZukoFlow", "WhiteningTransform"}
+
+# Executor names live in the torch-free eryn.flows.executors module.  They are
+# always importable (no optional backend), but resolved lazily for consistency.
+_EXECUTOR_NAMES = {"TrainerError", "FlowSpec", "TrainerExecutor", "InlineExecutor"}
 
 
 def get_flow_wrapper(backend: str = "zuko"):
@@ -137,5 +147,9 @@ def __getattr__(name: str):
                 f"'{name}' requires the torch backend.  "
                 "Install the optional dependencies with:  pip install eryn[flow]"
             ) from exc
+
+    if name in _EXECUTOR_NAMES:
+        from . import executors
+        return getattr(executors, name)
 
     raise AttributeError(f"module 'eryn.flows' has no attribute {name!r}")
