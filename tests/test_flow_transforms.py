@@ -9,6 +9,7 @@ either is absent.
 from __future__ import annotations
 
 import pickle
+import warnings
 
 import numpy as np
 import pytest
@@ -16,7 +17,10 @@ import pytest
 torch = pytest.importorskip("torch")
 pytest.importorskip("zuko")
 
-from eryn.flows.torch.transforms import WhiteningTransform  # noqa: E402
+from eryn.flows.torch.transforms import (  # noqa: E402
+    LogTransform,
+    WhiteningTransform,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -224,3 +228,68 @@ def test_forward_unknown_condition_raises():
     wt, _ = _fitted_wt()
     with pytest.raises(ValueError, match="condition"):
         wt.forward(_make_samples(n=5), condition=99)
+
+
+# ---------------------------------------------------------------------------
+# LogTransform smoke test
+# ---------------------------------------------------------------------------
+
+def test_log_transform_round_trip_and_ladj():
+    """LogTransform: forward/inverse round-trip and log_abs_det_jacobian finite on positive inputs."""
+    t = LogTransform()
+    x = torch.tensor([0.5, 1.0, 2.0, 10.0], dtype=torch.float32)
+    y = t(x)
+    x_back = t.inv(y)
+    assert torch.allclose(x, x_back, atol=1e-6), "round-trip failed"
+    ladj = t.log_abs_det_jacobian(x, y)
+    assert torch.all(torch.isfinite(ladj)), "log_abs_det_jacobian not finite"
+
+
+# ---------------------------------------------------------------------------
+# numpy-array boundary coercion (periodic dims)
+# ---------------------------------------------------------------------------
+
+def test_forward_accepts_numpy_with_periodic():
+    """forward() accepts a numpy array when periodic dims are present (shape + finiteness)."""
+    wt, samples = _fitted_wt()
+    x_np = samples[:8]  # plain ndarray
+    z = wt.forward(x_np, condition=0)
+    assert z.shape == (8, 3)
+    assert torch.all(torch.isfinite(z))
+
+
+def test_log_abs_det_jacobian_accepts_numpy_with_periodic():
+    """log_abs_det_jacobian() accepts numpy arrays and matches tensor-input result."""
+    wt, samples = _fitted_wt()
+    x_np = samples[:8]
+    z_np = wt.forward(x_np, condition=0).numpy().astype(np.float64)
+
+    # tensor inputs (reference)
+    ladj_tensor = wt.log_abs_det_jacobian(
+        torch.as_tensor(x_np), torch.as_tensor(z_np), condition=0
+    )
+    # numpy inputs
+    ladj_numpy = wt.log_abs_det_jacobian(x_np, z_np, condition=0)
+
+    assert ladj_numpy.shape == (8,)
+    assert torch.all(torch.isfinite(ladj_numpy))
+    assert torch.allclose(ladj_tensor.float(), ladj_numpy.float(), atol=1e-5)
+
+
+def test_inverse_unknown_condition_raises():
+    """inverse() with an unknown condition raises ValueError (symmetry with forward)."""
+    wt, samples = _fitted_wt()
+    z_dummy = wt.forward(samples[:5], condition=0)
+    with pytest.raises(ValueError, match="condition"):
+        wt.inverse(z_dummy, condition=99)
+
+
+def test_forward_no_userwarning_on_tensor_input():
+    """forward() must not emit UserWarning when given an existing tensor."""
+    wt, samples = _fitted_wt()
+    x_tensor = torch.as_tensor(samples[:5], dtype=torch.float32)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        # Should not raise — as_tensor avoids the copy-construct warning
+        z = wt.forward(x_tensor, condition=0)
+    assert z.shape == (5, 3)
