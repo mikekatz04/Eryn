@@ -110,11 +110,16 @@ class EvalCountingTarget:
         Total number of individual point evaluations since construction or
         the last :meth:`reset` call.
 
+    Notes
+    -----
+    ``n_evals`` is a plain attribute increment, not an atomic counter; it is
+    not safe under concurrent calls (e.g. a multithreaded pool).
+
     Examples
     --------
     >>> import numpy as np
     >>> target = EvalCountingTarget(lambda x: -0.5 * np.sum(x**2, axis=1))
-    >>> target(np.zeros((10, 3)))
+    >>> _ = target(np.zeros((10, 3)))
     >>> target.n_evals
     10
     """
@@ -139,11 +144,11 @@ class EvalCountingTarget:
 # ---------------------------------------------------------------------------
 
 def banana_periodic_target(ndim_gauss: int = 4, period: float = 2 * np.pi):
-    """Non-Gaussian 'banana' (curved) target with one periodic dimension.
+    """Non-Gaussian / curved (banana) target with a periodic dimension.
 
-    A realistic multimodal posterior stand-in when no real chain file is
-    available.  The Gaussian part is a curved 'banana' distribution; the
-    last dimension is periodic.
+    A realistic posterior stand-in when no real chain file is available.
+    The Gaussian part is a curved 'banana' distribution; the last dimension
+    is periodic.
 
     Parameters
     ----------
@@ -227,6 +232,9 @@ def chain_kde_target(
         Vectorized log-density accepting ``(N, ndim)`` and returning ``(N,)``.
     sampler : callable
         ``sampler(n, seed=0)`` draws ``n`` samples by sub-sampling ``chain``.
+        Drawing is without replacement when ``n <= len(chain)``; if ``n``
+        exceeds the chain length the sampler falls back to drawing *with*
+        replacement so oversampling never raises.
     ndim : int
         Number of dimensions (``chain.shape[1]``).
     periodic : dict
@@ -249,7 +257,9 @@ def chain_kde_target(
 
     def sampler(n, seed=0):
         r = np.random.default_rng(seed)
-        return chain[r.choice(len(chain), size=n, replace=False)]
+        # oversampling (n > len(chain)) can't draw without replacement, so
+        # fall back to replacement in that case rather than raising.
+        return chain[r.choice(len(chain), size=n, replace=n > len(chain))]
 
     ndim = chain.shape[1]
     return log_prob, sampler, ndim, (periodic or {})

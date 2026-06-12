@@ -195,6 +195,23 @@ def test_chain_kde_target_with_periodic():
     assert periodic_out == periodic_in
 
 
+def test_chain_kde_target_sampler_oversample_falls_back_to_replacement():
+    """sampler(n) with n > len(chain) draws with replacement instead of raising."""
+    pytest.importorskip("scipy")
+    from eryn.flows.benchmark import chain_kde_target
+
+    rng = np.random.default_rng(2)
+    chain = rng.normal(size=(10, 2))  # short chain
+    _, sampler, _, _ = chain_kde_target(chain)
+    # n > len(chain): would raise ValueError under replace=False
+    draws = sampler(25, seed=0)
+    assert draws.shape == (25, 2)
+    # n <= len(chain): unique rows (no replacement)
+    draws_small = sampler(10, seed=0)
+    assert draws_small.shape == (10, 2)
+    assert len(np.unique(draws_small, axis=0)) == 10
+
+
 # ---------------------------------------------------------------------------
 # GMMProposalDistribution tests (requires sklearn)
 # ---------------------------------------------------------------------------
@@ -250,29 +267,24 @@ def test_gmm_proposal_rvs_shuffle():
 
 
 def test_gmm_proposal_requires_sklearn(monkeypatch):
-    """GMMProposalDistribution raises ImportError without scikit-learn."""
-    import sys
-    import importlib
+    """GMMProposalDistribution raises a clear ImportError without scikit-learn.
 
-    # Save original entry and block sklearn
-    original = sys.modules.get("sklearn.mixture", None)
-    sys.modules["sklearn.mixture"] = None  # type: ignore[assignment]
-    try:
-        # Force re-import of benchmark so the lazy import runs fresh
-        import eryn.flows.benchmark as bm
-        import importlib as _il
-        _il.reload(bm)
-        with pytest.raises((ImportError, AttributeError)):
-            rng = np.random.default_rng(0)
-            samples = rng.normal(size=(50, 2))
-            bm.GMMProposalDistribution(samples, n_components=2)
-    except (ImportError, AttributeError):
-        pass  # acceptable — the ImportError was raised before we could catch it
-    finally:
-        if original is None:
-            sys.modules.pop("sklearn.mixture", None)
-        else:
-            sys.modules["sklearn.mixture"] = original
+    The lazy ``from sklearn.mixture import GaussianMixture`` lives inside
+    ``__init__``.  We block sklearn by setting its sys.modules entries to
+    ``None`` (importing a ``None`` module raises ImportError), which exercises
+    the production try/except even though sklearn is installed in the dev venv.
+    """
+    from eryn.flows.benchmark import GMMProposalDistribution
+
+    # Setting a sys.modules entry to None makes ``import <name>`` raise
+    # ImportError. monkeypatch restores both entries at teardown.
+    monkeypatch.setitem(sys.modules, "sklearn", None)
+    monkeypatch.setitem(sys.modules, "sklearn.mixture", None)
+
+    rng = np.random.default_rng(0)
+    samples = rng.normal(size=(50, 2))
+    with pytest.raises(ImportError, match="scikit-learn"):
+        GMMProposalDistribution(samples, n_components=2)
 
 
 # ---------------------------------------------------------------------------
