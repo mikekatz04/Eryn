@@ -238,9 +238,11 @@ class WhiteningTransform(DataTransform):
         self,
         ndim: int,
         periodic: dict[int, tuple[float, float]] | None = None,
+        shared: bool = False,
     ):
         self.ndim = ndim
         self.periodic = periodic or {}
+        self.shared = bool(shared)
         self._set_indices()
         self._transforms: dict[int, ComposeTransform] | None = None
 
@@ -325,7 +327,7 @@ class WhiteningTransform(DataTransform):
         return self._transforms is not None
 
     def fit(self, samples: np.ndarray | dict[int, np.ndarray]) -> None:
-        """Fit per-condition whitening transforms from training samples.
+        """Fit the whitening transform(s) from training samples.
 
         Parameters
         ----------
@@ -337,47 +339,87 @@ class WhiteningTransform(DataTransform):
         Returns
         -------
         None
-        """
-        self._transforms = {}
 
+        Notes
+        -----
+        With ``shared=True`` all conditions' samples are pooled into a single
+        whitening map applied regardless of the ``condition`` argument — robust
+        when a condition (e.g. a leaf) appears only after fitting.  With
+        ``shared=False`` (default) one map is fit per condition.
+        """
+        if self.shared:
+            if isinstance(samples, dict):
+                pooled = np.concatenate(
+                    [np.asarray(v) for v in samples.values()], axis=0
+                )
+            else:
+                pooled = np.asarray(samples)
+            # one shared map, stored under key 0; _transform_for ignores condition
+            self._transforms = {0: self._fit_one(pooled)}
+            return
+
+        self._transforms = {}
         if not isinstance(samples, dict):
             samples = {0: samples}
-
         for condition, cond_samples in samples.items():
-            transforms_list: list = []
+            self._transforms[condition] = self._fit_one(cond_samples)
 
-            if len(self.periodic_indices) > 0:
-                # For the periodic components, circular-shift so the bulk
-                # does not straddle the period boundary.
-                periodic_transform = self._build_periodic_transform(cond_samples)
-                samples_unwrapped = periodic_transform(
-                    torch.tensor(cond_samples, dtype=torch.float64)
-                )
-                transforms_list.append(periodic_transform)
-            else:
-                samples_unwrapped = torch.tensor(cond_samples, dtype=torch.float64)
+    def _fit_one(self, cond_samples: np.ndarray) -> ComposeTransform:
+        """Build one whitening ``ComposeTransform`` from a sample array."""
+        transforms_list: list = []
 
-            # 1. Center the data (mean = 0)
-            mean = torch.mean(samples_unwrapped, dim=0)
-            centering_transform = AffineTransform(
-                (-mean).to(dtype=torch.float64),
-                torch.ones_like(mean, dtype=torch.float64),
+        if len(self.periodic_indices) > 0:
+            # For the periodic components, circular-shift so the bulk
+            # does not straddle the period boundary.
+            periodic_transform = self._build_periodic_transform(cond_samples)
+            samples_unwrapped = periodic_transform(
+                torch.tensor(cond_samples, dtype=torch.float64)
             )
-            transforms_list.append(centering_transform)
+            transforms_list.append(periodic_transform)
+        else:
+            samples_unwrapped = torch.tensor(cond_samples, dtype=torch.float64)
 
-            centered_samples = samples_unwrapped - mean
+        # 1. Center the data (mean = 0)
+        mean = torch.mean(samples_unwrapped, dim=0)
+        centering_transform = AffineTransform(
+            (-mean).to(dtype=torch.float64),
+            torch.ones_like(mean, dtype=torch.float64),
+        )
+        transforms_list.append(centering_transform)
 
-            # 2. Block-diagonal whitening: joint Cholesky for non-periodic
-            # components, marginal-std scaling for periodic components.
-            # Periodic posteriors are often bimodal (due to symmetries), so
-            # including them in the joint Cholesky inflates the conditional
-            # variance of the periodic block, producing large (~±10) latent
-            # values.  The flow learns any remaining cross-correlations.
-            matrix = self._build_whitening_matrix(centered_samples)
-            matrix_transform = LinearMatrixTransform(matrix)
-            transforms_list.append(matrix_transform)
+        centered_samples = samples_unwrapped - mean
 
-            self._transforms[condition] = ComposeTransform(transforms_list)
+        # 2. Block-diagonal whitening: joint Cholesky for non-periodic
+        # components, marginal-std scaling for periodic components.
+        # Periodic posteriors are often bimodal (due to symmetries), so
+        # including them in the joint Cholesky inflates the conditional
+        # variance of the periodic block, producing large (~±10) latent
+        # values.  The flow learns any remaining cross-correlations.
+        matrix = self._build_whitening_matrix(centered_samples)
+        matrix_transform = LinearMatrixTransform(matrix)
+        transforms_list.append(matrix_transform)
+
+        return ComposeTransform(transforms_list)
+
+    def _transform_for(self, condition: int) -> ComposeTransform:
+        """Return the fitted transform serving ``condition``.
+
+        In shared mode the single pooled map serves every condition (so an
+        unseen condition never raises).  Otherwise the per-condition map is
+        looked up and a missing condition raises ``ValueError``.
+        """
+        if self._transforms is None:
+            raise RuntimeError(
+                "WhiteningTransform has not been fitted yet.  Call fit(samples) first."
+            )
+        if self.shared:
+            return self._transforms[0]
+        if condition not in self._transforms:
+            raise ValueError(
+                f"Condition {condition} not found in transforms.  "
+                f"Available conditions: {list(self._transforms.keys())}"
+            )
+        return self._transforms[condition]
 
     def forward(self, x: np.ndarray, condition: int = 0) -> torch.Tensor:
         """Map coords-space samples to flow-space latents.
@@ -402,12 +444,7 @@ class WhiteningTransform(DataTransform):
         ValueError
             If ``condition`` has no fitted transform.
         """
-        if condition not in self.transforms:
-            raise ValueError(
-                f"Condition {condition} not found in transforms.  "
-                f"Available conditions: {list(self.transforms.keys())}"
-            )
-        return self.transforms[condition](
+        return self._transform_for(condition)(
             torch.as_tensor(x, dtype=torch.float64)
         ).to(dtype=torch.float32)
 
@@ -431,12 +468,7 @@ class WhiteningTransform(DataTransform):
         ValueError
             If ``condition`` has no fitted transform.
         """
-        if condition not in self.transforms:
-            raise ValueError(
-                f"Condition {condition} not found in transforms.  "
-                f"Available conditions: {list(self.transforms.keys())}"
-            )
-        return self.transforms[condition].inv(
+        return self._transform_for(condition).inv(
             torch.as_tensor(z, dtype=torch.float64)
         ).numpy()
 
@@ -469,14 +501,9 @@ class WhiteningTransform(DataTransform):
         ValueError
             If ``condition`` has no fitted transform.
         """
-        if condition not in self.transforms:
-            raise ValueError(
-                f"Condition {condition} not found in transforms.  "
-                f"Available conditions: {list(self.transforms.keys())}"
-            )
         x = torch.as_tensor(x, dtype=torch.float64)
         z = torch.as_tensor(z, dtype=torch.float64)
-        return self.transforms[condition].log_abs_det_jacobian(x, z)
+        return self._transform_for(condition).log_abs_det_jacobian(x, z)
 
     # ------------------------------------------------------------------
     # Private construction helpers
