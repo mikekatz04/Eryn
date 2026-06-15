@@ -6,6 +6,7 @@ extend :class:`Flow` and live in optional subpackages.
 """
 from __future__ import annotations
 
+import copy
 import inspect
 import warnings
 from abc import ABC, abstractmethod
@@ -288,12 +289,45 @@ class Flow(ABC):
     def set_weights(self, weights: dict) -> None:
         """Restore the flow's trainable weights from a dict produced by :meth:`get_weights`.
 
+        Backends should also accept the **snapshot** form produced by
+        :meth:`get_snapshot` — a ``{"net", "data_transform"}`` dict — and install
+        both the net and the matched transform atomically.  The two forms are
+        disambiguated by the literal ``"net"`` key (a real weight dict's keys are
+        parameter names, never ``"net"``).
+
         Parameters
         ----------
         weights : dict
-            Weight dictionary in the same format as returned by
-            :meth:`get_weights`.
+            Either a bare weight dictionary in the format returned by
+            :meth:`get_weights`, or a snapshot from :meth:`get_snapshot`.
         """
+
+    def get_snapshot(self) -> dict:
+        """Return a self-contained ``{"net", "data_transform"}`` snapshot.
+
+        Bundles the net weights (:meth:`get_weights`) with a deep copy of the
+        current :attr:`data_transform`, so the pair is a matched, directly-usable
+        ``(transform, net)`` handoff: applying it to a fresh, identically
+        configured flow — even one whose transform is still *unfitted* —
+        reproduces this flow's densities.  This is the unit a
+        :class:`~eryn.flows.executors.TrainerExecutor` ships back to the parent
+        so the trained net and the transform it was trained against can never
+        drift apart (a mismatch silently biases the density).
+
+        The transform is deep-copied (mirroring the :meth:`get_weights` clone
+        discipline) so the snapshot can never alias live training state.
+
+        Returns
+        -------
+        dict
+            ``{"net": <get_weights() dict>, "data_transform": <deep copy>}``.
+            Pass it straight to :meth:`set_weights`, which detects the snapshot
+            form by its ``"net"`` key.
+        """
+        return {
+            "net": self.get_weights(),
+            "data_transform": copy.deepcopy(self.data_transform),
+        }
 
     @abstractmethod
     def save(self, h5_file, path: str = "flow") -> None:

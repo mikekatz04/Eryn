@@ -12,7 +12,7 @@ trains the flow.
 Three pieces live here:
 
 - :class:`FlowSpec` — a picklable ``(class, config, weights)`` snapshot of a
-  flow with its data transform **frozen**, used to build an identically
+  flow (its data transform may be unfitted), used to build an identically
   configured clone in a worker (or inline).
 - :class:`TrainerExecutor` — the abstract, non-blocking training interface.
 - :class:`InlineExecutor` — a synchronous reference implementation that trains a
@@ -26,14 +26,21 @@ Design contract
 - Failures surface loudly: a dead/failed trainer raises :class:`TrainerError`
   from :meth:`TrainerExecutor.latest_weights` (and, for the inline executor,
   from subsequent :meth:`submit` calls).  Callers do not swallow it.
-- The data transform is FROZEN for the executor's lifetime: workers always call
-  ``flow.fit(..., refit_data_transform=False)`` so the coords-latent map is
-  identical on both sides of any process boundary and a weights-only handoff
-  stays exact.  :meth:`FlowSpec.from_flow` therefore asserts the transform is
-  already fitted.
+- The data transform is fitted lazily, then frozen: the executor fits the
+  transform on its FIRST training round (once ``min_train_samples`` are
+  buffered), then keeps it frozen for the rest of its life (workers fit with
+  ``refit_data_transform=False`` thereafter), so the coords-latent map is fixed
+  and the handoff stays exact.  An optional ``refit_transform_every=K`` re-fits
+  the transform every K rounds as a drift valve.  Because the executor (or its
+  worker) is the side that fits the transform, every weight handoff is a
+  **self-contained snapshot** carrying the fitted transform alongside the net
+  (see :meth:`eryn.flows.torch.flows.BaseTorchFlow.get_snapshot`) — the parent
+  installs both atomically and never disagrees with the trainer on the map.
 - Everything that may cross a future process boundary is picklable;
   :meth:`FlowSpec.from_flow` eagerly round-trips ``pickle.dumps(spec)`` so
-  unpicklable user objects fail fast in the parent with a clear message.
+  unpicklable user objects fail fast in the parent with a clear message.  An
+  *unfitted* transform is picklable (it holds only its config + ``None`` maps),
+  so snapshotting before any samples have been seen is supported.
 """
 from __future__ import annotations
 
@@ -83,10 +90,12 @@ class FlowSpec:
     type (a module-level class pickles by reference); the configuration and the
     CPU weights are deep-copied snapshots.
 
-    The data transform inside ``config`` is **frozen**: the worker that builds
-    from this spec must train with ``refit_data_transform=False`` so that the
-    coords-latent map matches the parent's exactly and a weights-only handoff
-    back to the parent stays numerically exact.
+    The data transform inside ``config`` may be **unfitted**: the executor that
+    builds from this spec fits it lazily on the first training round and then
+    freezes it (training thereafter with ``refit_data_transform=False``).  The
+    fitted transform travels back to the parent inside each weight snapshot, so
+    the coords-latent map agrees on both sides regardless of which side fitted
+    it.
 
     Parameters
     ----------
@@ -119,8 +128,11 @@ class FlowSpec:
         Parameters
         ----------
         flow : eryn.flows.base.Flow
-            Flow whose data transform is already fitted.  Its class must be
-            importable by reference and its config/weights must be picklable.
+            Flow to snapshot.  Its data transform may be **unfitted** — the
+            executor fits it lazily on the first training round.  The flow class
+            must be importable by reference and its config/weights must be
+            picklable (an unfitted transform is picklable: it holds only its
+            config and ``None`` maps).
         worker_device : str, optional
             Device string written into ``config["device"]`` for the rebuilt
             flow.  Default is ``"cpu"`` — training a clone on CPU is the safe
@@ -133,29 +145,13 @@ class FlowSpec:
 
         Raises
         ------
-        ValueError
-            If ``flow.data_transform`` is not fitted.  The data transform is
-            frozen for the executor's lifetime, so it must be fitted *before*
-            an executor is created — e.g. by calling ``flow.fit`` on warmup
-            samples once (which fits the transform), or by fitting the transform
-            directly.  Workers train with ``refit_data_transform=False`` and
-            never re-fit it.
         TypeError
             If the assembled spec is not picklable (e.g. the data transform or
             conditioning closes over a lambda or holds a device tensor).  The
             message names the offending concept.
         """
-        # Frozen-transform contract: the transform must already be fitted so the
-        # coords-latent map is fixed for the executor's whole lifetime.
-        if not flow.data_transform.is_fitted:
-            raise ValueError(
-                "FlowSpec.from_flow requires flow.data_transform.is_fitted == True. "
-                "The data transform is FROZEN for the executor's lifetime (workers "
-                "always fit with refit_data_transform=False), so it must be fitted "
-                "before the executor is created.  Fit it first — e.g. call "
-                "flow.fit(warmup_samples) once (which fits the transform), or fit "
-                "the transform directly — then build the executor."
-            )
+        # The data transform need not be fitted here: the executor fits it on
+        # the first training round and ships it back inside each snapshot.
 
         # Deep-copy config so later mutation of the live flow cannot leak in,
         # and override device for the worker / clone.
@@ -211,6 +207,13 @@ class TrainerExecutor(ABC):
     caller only through :meth:`latest_weights`; the caller then applies them to
     its own flow via ``flow.set_weights``.
 
+    What :meth:`latest_weights` returns is a **self-contained snapshot** — a
+    ``{"net", "data_transform"}`` dict pairing the trained net with the
+    transform it was trained against (see
+    :meth:`eryn.flows.torch.flows.BaseTorchFlow.get_snapshot`).  Passing it to
+    ``flow.set_weights`` installs both atomically, so the caller's flow is always
+    a matched, usable pair even when its own transform started unfitted.
+
     Failures are surfaced loudly: once training has failed,
     :meth:`latest_weights` raises :class:`TrainerError`.
     """
@@ -243,25 +246,28 @@ class TrainerExecutor(ABC):
 
     @abstractmethod
     def latest_weights(self):
-        """Return the newest ``(version, weights)`` seen so far (non-blocking).
+        """Return the newest ``(version, snapshot)`` seen so far (non-blocking).
 
         Returns
         -------
         tuple[int, dict] or None
-            The newest ``(version, weights)`` observed, or ``None`` if no
-            training has completed yet.  Calling this updates :attr:`version`.
+            The newest ``(version, snapshot)`` observed, or ``None`` if no
+            training has completed yet.  The ``snapshot`` is a
+            ``{"net", "data_transform"}`` dict (see the class docstring): pass it
+            straight to ``flow.set_weights``, which installs the matched net and
+            transform atomically.  Calling this updates :attr:`version`.
 
         Ownership contract
         ------------------
-        The returned ``weights`` dict is the executor's **private snapshot**.
-        Callers may *load* it (``flow.set_weights(weights)`` copies the values
-        into the module's parameters) but must **not** mutate it in place.  An
-        executor must guarantee that successive snapshots are not aliased to
-        live training state: mutating a previously returned dict, or training
-        further, must never change a dict a caller is still holding.  A
-        process-backed executor satisfies this naturally (each returned dict is
-        a fresh deserialized copy); an inline executor must deep-copy the
-        clone's weights when stashing them so it matches that semantics.
+        The returned ``snapshot`` dict is the executor's **private** copy.
+        Callers may *load* it (``flow.set_weights(snapshot)`` copies the values
+        into the module's parameters / installs the transform) but must **not**
+        mutate it in place.  An executor must guarantee that successive snapshots
+        are not aliased to live training state: mutating a previously returned
+        dict, or training further, must never change a dict a caller is still
+        holding.  A process-backed executor satisfies this naturally (each
+        returned dict is a fresh deserialized copy); an inline executor must
+        deep-copy the snapshot when stashing it so it matches that semantics.
 
         Raises
         ------
@@ -295,6 +301,27 @@ class TrainerExecutor(ABC):
         ``executor`` setter resets ``loaded_version`` on a real executor swap.
         """
 
+    @property
+    def latest_val_nll(self):
+        """Most recent latent-space validation NLL, or ``None`` before any fit.
+
+        After each trained version a concrete executor captures the final-epoch
+        validation loss (``history.validation_loss[-1]``) — the flow's negative
+        log-likelihood in *latent* space — so a user can watch training progress
+        without touching the critical path.  Returns the value from the most
+        recent completed fit, or ``None`` if no fit has finished yet.  This is a
+        concrete default returning ``None`` so a minimal executor that does not
+        track the metric need not override it.
+
+        Latent-space NLL is comparable across rounds while the transform is
+        frozen (the default).  Under ``refit_transform_every`` periodic
+        re-fitting the latent space itself changes, so the metric shifts by the
+        changing transform log-det at each re-fit and is only comparable
+        *between* re-fits.  (A coords-space NLL would be invariant but is not
+        computed here.)
+        """
+        return None
+
     @abstractmethod
     def shutdown(self, timeout: float = 10.0) -> None:
         """Shut the executor down (idempotent).
@@ -326,8 +353,14 @@ class InlineExecutor(TrainerExecutor):
     is never touched, and weights only flow back through :meth:`latest_weights`.
 
     The clone is built via ``FlowSpec.from_flow(flow).build()`` — the executor
-    does NOT train the caller's flow object.  The data transform is frozen
-    (fits use ``refit_data_transform=False``), matching the cross-process
+    does NOT train the caller's flow object.  The data transform is fitted
+    **lazily**: the first training round fits it (``refit_data_transform=True``)
+    and then it is frozen for the rest of the executor's life
+    (``refit_data_transform=False``), unless ``refit_transform_every=K`` is set,
+    in which case it is re-fitted every K rounds as a drift valve.  Each
+    :meth:`latest_weights` hands back a self-contained snapshot
+    (``{"net", "data_transform"}``) so the caller installs the trained net and
+    the transform it was trained against atomically — matching the cross-process
     handoff semantics where parent and child must agree on the coords-latent
     map.
 
@@ -345,7 +378,8 @@ class InlineExecutor(TrainerExecutor):
     Parameters
     ----------
     flow : eryn.flows.base.Flow
-        Template flow with a fitted data transform.  A clone is built from a
+        Template flow.  Its data transform may be unfitted — the executor fits
+        it on the first training round.  A clone is built from a
         :class:`FlowSpec` snapshot; the caller's object is never mutated.
     fit_kwargs : dict or None, optional
         Extra keyword arguments forwarded to ``flow.fit`` (e.g. ``n_epochs``,
@@ -355,6 +389,13 @@ class InlineExecutor(TrainerExecutor):
     train_every : int, optional
         Train on every ``train_every``-th accepted submit.  Default is ``1``
         (train on every submit).
+    refit_transform_every : int or None, optional
+        Drift valve for the (otherwise frozen) data transform.  ``None`` (the
+        default) fits the transform once on the first training round and freezes
+        it forever after.  When set to an integer ``K``, the transform is
+        ALSO re-fitted on every ``K``-th completed training round (rounds are
+        counted from 1, so ``K=2`` re-fits on rounds 2, 4, ...).  Re-fitting
+        changes the latent space, so it shifts :attr:`latest_val_nll`.
     min_train_samples : int, optional
         Minimum total buffered samples (summed over conditions) required before
         a fit runs.  Default is ``1``.  Training is always additionally guarded
@@ -380,6 +421,7 @@ class InlineExecutor(TrainerExecutor):
         train_every: int = 1,
         min_train_samples: int = 1,
         max_buffer_samples: int = 20_000,
+        refit_transform_every: int | None = None,
         seed=None,
     ):
         self._flow = FlowSpec.from_flow(flow).build()
@@ -398,13 +440,21 @@ class InlineExecutor(TrainerExecutor):
         self._train_every = int(train_every)
         self._min_train_samples = int(min_train_samples)
         self._max_buffer_samples = int(max_buffer_samples)
+        self._refit_transform_every = (
+            int(refit_transform_every) if refit_transform_every is not None else None
+        )
         self._seed = seed
 
         # Per-condition ring buffers: condition id -> deque of (N_i, dims) arrays.
         self._buffers: dict[int, deque] = {}
         self._accepted_submits = 0
         self._trained_version = 0
+        # Lazy-fit bookkeeping: the transform is fitted on the first training
+        # round and (unless refit_transform_every is set) frozen thereafter.
+        self._transform_fitted = False
+        self._round_count = 0
         self._latest: tuple[int, dict] | None = None
+        self._latest_val_nll: float | None = None
         self._seen_version = 0
         self._error: BaseException | None = None
         self._shutdown = False
@@ -501,10 +551,18 @@ class InlineExecutor(TrainerExecutor):
             and self._buffered_total() > 0
             and self._buffered_total() >= self._min_train_samples
         ):
+            # Lazy fit-once-then-freeze: fit the transform on the first round,
+            # then keep it frozen — unless refit_transform_every=K asks for a
+            # periodic re-fit (rounds counted from 1, so K=2 → rounds 2, 4, ...).
+            next_round = self._round_count + 1
+            do_refit = (not self._transform_fitted) or (
+                self._refit_transform_every is not None
+                and next_round % self._refit_transform_every == 0
+            )
             try:
-                self._flow.fit(
+                history = self._flow.fit(
                     self._assemble(),
-                    refit_data_transform=False,
+                    refit_data_transform=do_refit,
                     verbose=False,
                     **self._fit_kwargs,
                 )
@@ -513,22 +571,32 @@ class InlineExecutor(TrainerExecutor):
                 # process executor whose failure is only seen when next polled.
                 self._error = exc
             else:
+                self._transform_fitted = True
+                self._round_count = next_round
                 self._trained_version += 1
-                # Snapshot defensively: get_weights() may return references to the
-                # clone's live (torch) parameters.  Deep-copy so the stashed
-                # snapshot can never be aliased to training state — matching the
-                # natural semantics of a process executor, whose returned dict is
-                # always a fresh deserialized copy.
+                # Capture the latent-space validation NLL for monitoring (None
+                # if the fit produced no validation history).
+                val_loss = getattr(history, "validation_loss", None)
+                if val_loss:
+                    self._latest_val_nll = float(val_loss[-1])
+                # Stash a self-contained snapshot ({"net", "data_transform"}).
+                # get_snapshot() already deep-copies the transform; deep-copy the
+                # whole snapshot so the net dict (which may reference the clone's
+                # live torch parameters) can never alias training state either —
+                # matching a process executor, whose returned dict is always a
+                # fresh deserialized copy.
                 self._latest = (
                     self._trained_version,
-                    copy.deepcopy(self._flow.get_weights()),
+                    copy.deepcopy(self._flow.get_snapshot()),
                 )
 
         return True
 
     def latest_weights(self):
-        """Return the newest stashed ``(version, weights)`` (or ``None``).
+        """Return the newest stashed ``(version, snapshot)`` (or ``None``).
 
+        The ``snapshot`` is a ``{"net", "data_transform"}`` dict: pass it to
+        ``flow.set_weights`` to install the matched net + transform atomically.
         Updates :attr:`version` to the returned version.
 
         Raises
@@ -543,14 +611,19 @@ class InlineExecutor(TrainerExecutor):
 
         if self._latest is None:
             return None
-        version, weights = self._latest
+        version, snapshot = self._latest
         self._seen_version = version
-        return version, weights
+        return version, snapshot
 
     @property
     def version(self) -> int:
         """Latest version observed via :meth:`latest_weights` (``0`` = none yet)."""
         return self._seen_version
+
+    @property
+    def latest_val_nll(self):
+        """Latent-space validation NLL of the most recent fit (``None`` if none yet)."""
+        return self._latest_val_nll
 
     def shutdown(self, timeout: float = 10.0) -> None:
         """Mark the executor shut down (idempotent).
@@ -595,6 +668,11 @@ class WorkerConfig:
         Extra keyword arguments forwarded to ``flow.fit`` (e.g. ``lr``).
         ``refit_data_transform`` and ``verbose`` are controlled by the executor
         and rejected in :class:`ProcessExecutor.__init__`.  Default is empty.
+    refit_transform_every : int or None, optional
+        Drift valve for the data transform.  ``None`` (the default) fits the
+        transform once on the first training round and freezes it; an integer
+        ``K`` re-fits it every ``K``-th round.  Mirrors
+        :class:`InlineExecutor`'s knob of the same name.
     """
 
     epochs_per_round: int = 20
@@ -603,6 +681,7 @@ class WorkerConfig:
     torch_num_threads: int = 2
     seed: int = 1234
     fit_kwargs: dict = field(default_factory=dict)
+    refit_transform_every: int | None = None
 
 
 def _trainer_worker(spec, cfg, sample_q, weights_q, stop_event):
@@ -612,10 +691,16 @@ def _trainer_worker(spec, cfg, sample_q, weights_q, stop_event):
     :class:`FlowSpec` the parent constructed), then loops: pull sample batches
     off ``sample_q``, coalesce everything currently pending into the per-
     condition ring buffers, and — once at least ``cfg.min_train_samples`` are
-    buffered — run exactly ONE ``flow.fit`` over the concatenated buffers with
-    the data transform frozen.  Each successful fit bumps an internal version
-    and pushes ``("weights", version, weights)`` onto the bounded ``weights_q``,
-    dropping the oldest queued item if the parent has not drained it.
+    buffered — run exactly ONE ``flow.fit`` over the concatenated buffers.  The
+    data transform is fitted on the FIRST training round and frozen thereafter
+    (``cfg.refit_transform_every=K`` re-fits it every K rounds).  Each
+    successful fit bumps an internal version and pushes
+    ``("weights", version, snapshot, val_nll)`` onto the bounded ``weights_q``,
+    dropping the oldest queued item if the parent has not drained it.  The
+    ``snapshot`` is a self-contained ``{"net", "data_transform"}`` dict (the
+    fitted transform travels with the net so the parent installs a matched pair)
+    and ``val_nll`` is the final-epoch latent-space validation loss for
+    monitoring.
 
     Shutdown is driven by EITHER mechanism: a ``None`` sentinel on ``sample_q``
     (a clean wake from a blocked ``get``) or ``stop_event`` being set (works
@@ -674,6 +759,8 @@ def _trainer_worker(spec, cfg, sample_q, weights_q, stop_event):
             }
 
         version = 0
+        round_count = 0
+        transform_fitted = False
         while not stop_event.is_set():
             try:
                 item = sample_q.get(timeout=0.5)
@@ -699,15 +786,32 @@ def _trainer_worker(spec, cfg, sample_q, weights_q, stop_event):
             if total < cfg.min_train_samples or total == 0:
                 continue
 
-            flow.fit(
+            # Lazy fit-once-then-freeze, mirroring InlineExecutor: fit the
+            # transform on the first round, freeze it after, and (if
+            # refit_transform_every=K) re-fit every K-th round.
+            next_round = round_count + 1
+            do_refit = (not transform_fitted) or (
+                cfg.refit_transform_every is not None
+                and next_round % cfg.refit_transform_every == 0
+            )
+            history = flow.fit(
                 _assemble(),
                 n_epochs=cfg.epochs_per_round,
-                refit_data_transform=False,
+                refit_data_transform=do_refit,
                 verbose=False,
                 **cfg.fit_kwargs,
             )
+            transform_fitted = True
+            round_count = next_round
             version += 1
-            _put_drop_oldest(weights_q, ("weights", version, flow.get_weights()))
+            val_loss = getattr(history, "validation_loss", None)
+            val_nll = float(val_loss[-1]) if val_loss else None
+            # Ship a self-contained snapshot carrying the fitted transform with
+            # the net (picklable: CPU net tensors + picklable transform).
+            _put_drop_oldest(
+                weights_q,
+                ("weights", version, flow.get_snapshot(), val_nll),
+            )
     except Exception:  # noqa: BLE001 — surface ANY failure to the parent.
         _put_drop_oldest(weights_q, ("error", traceback.format_exc()))
     finally:
@@ -763,11 +867,14 @@ class ProcessExecutor(TrainerExecutor):
 
     A single child process (started with the ``"spawn"`` start method — see
     below) rebuilds the flow from a :class:`FlowSpec` and trains it on coalesced
-    sample batches, returning versioned CPU weights through a small bounded
-    queue.  The parent side is entirely non-blocking: :meth:`submit` offers a
-    batch with ``put_nowait`` (applying ``drop_policy`` on a full queue) and
+    sample batches, returning versioned self-contained snapshots
+    (``{"net", "data_transform"}``) through a small bounded queue.  The worker
+    fits the data transform on its first round and ships it back inside every
+    snapshot, so the parent always installs a matched net + transform.  The
+    parent side is entirely non-blocking: :meth:`submit` offers a batch with
+    ``put_nowait`` (applying ``drop_policy`` on a full queue) and
     :meth:`latest_weights` drains whatever the worker has produced so far,
-    keeping the newest weights snapshot.
+    keeping the newest snapshot.
 
     This is the production executor behind the :class:`TrainerExecutor` seam; it
     honours exactly the ABC contract that :class:`InlineExecutor` does
@@ -810,9 +917,9 @@ class ProcessExecutor(TrainerExecutor):
     Parameters
     ----------
     flow : eryn.flows.base.Flow
-        Template flow with a fitted data transform.  Snapshotted into a
-        ``FlowSpec`` (``worker_device="cpu"``); the caller's object is never
-        touched.
+        Template flow.  Its data transform may be unfitted — the worker fits it
+        on the first round.  Snapshotted into a ``FlowSpec``
+        (``worker_device="cpu"``); the caller's object is never touched.
     fit_kwargs : dict or None, optional
         Extra keyword arguments forwarded to the worker's ``flow.fit``.
         ``refit_data_transform`` / ``verbose`` collide with executor-controlled
@@ -823,6 +930,9 @@ class ProcessExecutor(TrainerExecutor):
         Minimum buffered samples before the worker fits.  Default is ``1000``.
     max_buffer_samples : int, optional
         Per-condition ring-buffer cap in the worker.  Default is ``20_000``.
+    refit_transform_every : int or None, optional
+        Drift valve for the data transform: ``None`` (default) fits it once and
+        freezes it; an integer ``K`` re-fits it every ``K``-th worker round.
     max_pending_batches : int, optional
         ``maxsize`` of the sample queue.  Backpressure: once this many batches
         are queued, :meth:`submit` applies ``drop_policy``.  Default is ``4``.
@@ -855,6 +965,7 @@ class ProcessExecutor(TrainerExecutor):
         epochs_per_round: int = 20,
         min_train_samples: int = 1000,
         max_buffer_samples: int = 20_000,
+        refit_transform_every: int | None = None,
         max_pending_batches: int = 4,
         drop_policy: str = "oldest",
         torch_num_threads: int = 2,
@@ -886,6 +997,11 @@ class ProcessExecutor(TrainerExecutor):
             torch_num_threads=int(torch_num_threads),
             seed=int(seed),
             fit_kwargs=fit_kwargs,
+            refit_transform_every=(
+                int(refit_transform_every)
+                if refit_transform_every is not None
+                else None
+            ),
         )
         self._drop_policy = drop_policy
 
@@ -901,6 +1017,7 @@ class ProcessExecutor(TrainerExecutor):
         self._shutdown = False
         self._error: BaseException | None = None
         self._latest: tuple[int, dict] | None = None
+        self._latest_val_nll: float | None = None
         self._seen_version = 0
         self._exitcode: int | None = None
 
@@ -1004,18 +1121,21 @@ class ProcessExecutor(TrainerExecutor):
             return False
 
     def latest_weights(self):
-        """Drain the weights queue and return the newest ``(version, weights)``.
+        """Drain the weights queue and return the newest ``(version, snapshot)``.
 
         Non-blocking: pulls every pending item with ``get_nowait``, keeping the
-        newest ``"weights"`` item seen.  If an ``"error"`` item appears the
-        failure is recorded and :class:`TrainerError` (carrying the child
-        traceback) is raised.  If — after draining — the executor has not
+        newest ``"weights"`` item seen.  Each ``"weights"`` item is
+        ``("weights", version, snapshot, val_nll)`` where ``snapshot`` is a
+        self-contained ``{"net", "data_transform"}`` dict; the latest item's
+        ``val_nll`` updates :attr:`latest_val_nll`.  If an ``"error"`` item
+        appears the failure is recorded and :class:`TrainerError` (carrying the
+        child traceback) is raised.  If — after draining — the executor has not
         already failed and the (non-shutdown) worker process has died with a
         non-zero (or unknown) exit code, that silent death is recorded and
         surfaced as a :class:`TrainerError` too.  Crucially this check fires
         **regardless of whether weights have already been observed**: a worker
         that crashes mid-run after serving its first version must still fail
-        loud rather than freeze the proposal on the last good weights.
+        loud rather than freeze the proposal on the last good snapshot.
 
         Ownership contract
         ------------------
@@ -1028,7 +1148,7 @@ class ProcessExecutor(TrainerExecutor):
         Returns
         -------
         tuple[int, dict] or None
-            The newest observed ``(version, weights)``, or ``None`` if nothing
+            The newest observed ``(version, snapshot)``, or ``None`` if nothing
             has been produced yet.  Advances :attr:`version` on a new
             observation (poll-advanced).
         """
@@ -1038,6 +1158,7 @@ class ProcessExecutor(TrainerExecutor):
             ) from self._error
 
         newest: tuple[int, dict] | None = None
+        newest_val_nll: float | None = None
         while True:
             try:
                 kind, *rest = self._weights_q.get_nowait()
@@ -1050,15 +1171,17 @@ class ProcessExecutor(TrainerExecutor):
                 )
                 raise self._error
             elif kind == "weights":
-                version, weights = rest
+                version, snapshot, val_nll = rest
                 if newest is None or version > newest[0]:
-                    newest = (version, weights)
+                    newest = (version, snapshot)
+                    newest_val_nll = val_nll
 
         if newest is not None:
             # Only keep it if it is strictly newer than what we already stashed
             # (queue draining is monotonic, but guard defensively).
             if self._latest is None or newest[0] > self._latest[0]:
                 self._latest = newest
+                self._latest_val_nll = newest_val_nll
 
         # Silent-death detection: the worker has died with a bad exit code →
         # surface as a failure rather than freezing forever on stale weights.
@@ -1086,14 +1209,23 @@ class ProcessExecutor(TrainerExecutor):
 
         if self._latest is None:
             return None
-        version, weights = self._latest
+        version, snapshot = self._latest
         self._seen_version = version
-        return version, weights
+        return version, snapshot
 
     @property
     def version(self) -> int:
         """Newest version observed via :meth:`latest_weights` (``0`` = none yet)."""
         return self._seen_version
+
+    @property
+    def latest_val_nll(self):
+        """Latent-space validation NLL of the newest observed version (or ``None``).
+
+        Updated by :meth:`latest_weights` when a strictly-newer version is
+        drained, so poll that first to refresh it.
+        """
+        return self._latest_val_nll
 
     def shutdown(self, timeout: float = 10.0) -> None:
         """Stop the worker and reclaim it (idempotent).

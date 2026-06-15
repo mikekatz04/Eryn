@@ -241,9 +241,13 @@ class FlowMove(MHMove):
         # --- poll + hot-reload (non-blocking; TrainerError propagates) ---
         lw = self.executor.latest_weights()
         if lw is not None:
-            version, weights = lw
+            version, snapshot = lw
             if version > self._loaded_version:
-                self.flow.set_weights(weights)
+                # ``snapshot`` is a self-contained {"net", "data_transform"}
+                # payload: set_weights installs the matched transform + net
+                # atomically, so this flow never disagrees with the trainer on
+                # the coords-latent map.
+                self.flow.set_weights(snapshot)
                 self._loaded_version = version
 
     # ------------------------------------------------------------------

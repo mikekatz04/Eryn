@@ -158,20 +158,50 @@ class BaseTorchFlow(Flow):
         """
         return {k: v.detach().cpu().clone() for k, v in self._flow.state_dict().items()}
 
-    def set_weights(self, weights: dict) -> None:
-        """Restore trainable weights from a dict produced by :meth:`get_weights`.
+    def set_weights(self, obj: dict) -> None:
+        """Restore weights from either a bare state_dict or a full snapshot.
+
+        Two input forms are accepted (detected by the ``"net"`` sentinel key):
+
+        - **Snapshot form** — ``{"net": <state_dict>, "data_transform": <transform>}``
+          (the output of :meth:`get_snapshot`).  The net state_dict is loaded
+          AND, when ``data_transform`` is not ``None``, that transform is
+          installed onto this flow (``self.data_transform = ...``) so the net and
+          its matched transform are swapped in **atomically** — they always agree
+          on the coords-latent map.
+        - **Bare form** — a plain net ``state_dict`` (the output of
+          :meth:`get_weights`).  Loaded as-is; the data transform is left
+          untouched.  This is the legacy contract and stays fully supported.
+
+        The two forms are disambiguated by the literal key ``"net"``: a real
+        torch ``state_dict`` is also a dict, but its keys are module-parameter
+        names (``"transforms.0...."`` etc.) and can never literally equal
+        ``"net"``, so the sentinel cannot collide.
 
         The module is left on its current device after loading.
 
-        Note: weights are independent of the data_transform; swapping weights
-        does not change the transform's Jacobian.
+        Note: net weights are independent of the data_transform; in the bare
+        form, swapping weights does not change the transform's Jacobian.  In the
+        snapshot form both move together by design.
 
         Parameters
         ----------
-        weights : dict
-            Weight dict in the format returned by :meth:`get_weights`.
+        obj : dict
+            A snapshot (``{"net", ...}``) or a bare net state_dict.
         """
-        self._flow.load_state_dict(weights)
+        if isinstance(obj, dict) and "net" in obj:
+            # Snapshot form: install the matched transform first (if shipped),
+            # then load the net it was trained against.  A real state_dict can
+            # never reach this branch — its keys are parameter paths, never the
+            # literal "net" sentinel.
+            transform = obj.get("data_transform")
+            if transform is not None:
+                self.data_transform = transform
+            state_dict = obj["net"]
+        else:
+            # Bare form: a plain net state_dict (legacy / get_weights() output).
+            state_dict = obj
+        self._flow.load_state_dict(state_dict)
         # Ensure the module stays on the correct device (load_state_dict may
         # leave parameters on CPU if the dict came from a CPU clone).
         self._flow.to(self.device)

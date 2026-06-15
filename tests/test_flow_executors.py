@@ -96,7 +96,16 @@ class FakeFlow(Flow):
     def get_weights(self):
         return {"scale": np.array(self.scale, dtype=np.float64)}
 
-    def set_weights(self, weights):
+    def set_weights(self, obj):
+        # Polymorphic, mirroring the Flow ABC contract: accept either a bare
+        # weight dict ({"scale": ...}) or a snapshot ({"net", "data_transform"}).
+        if isinstance(obj, dict) and "net" in obj:
+            transform = obj.get("data_transform")
+            if transform is not None:
+                self.data_transform = transform
+            weights = obj["net"]
+        else:
+            weights = obj
         self.scale = float(np.asarray(weights["scale"]))
 
     def save(self, h5_file, path="flow"):
@@ -153,7 +162,14 @@ class _LiveWeightFlow(FakeFlow):
         # Live reference, NOT a copy — the executor must deep-copy when stashing.
         return {"scale": self._scale_arr}
 
-    def set_weights(self, weights):
+    def set_weights(self, obj):
+        if isinstance(obj, dict) and "net" in obj:
+            transform = obj.get("data_transform")
+            if transform is not None:
+                self.data_transform = transform
+            weights = obj["net"]
+        else:
+            weights = obj
         self._scale_arr = np.asarray(weights["scale"], dtype=np.float64).copy()
         self.scale = float(self._scale_arr)
 
@@ -177,10 +193,12 @@ def _make_fake(dims: int = 2, scale: float = 1.0) -> FakeFlow:
 # FlowSpec
 # ---------------------------------------------------------------------------
 
-def test_flowspec_from_flow_unfitted_transform_raises():
+def test_flowspec_from_flow_allows_unfitted_transform():
+    """An unfitted transform is allowed: the executor fits it lazily."""
     flow = FakeFlow(dims=2, data_transform=_FittableTransform(fitted=False))
-    with pytest.raises(ValueError, match="is_fitted"):
-        FlowSpec.from_flow(flow)
+    spec = FlowSpec.from_flow(flow)  # must NOT raise
+    rebuilt = spec.build()
+    assert rebuilt.data_transform.is_fitted is False
 
 
 def test_flowspec_from_flow_unpicklable_config_raises():
@@ -314,17 +332,17 @@ def test_inline_latest_weights_snapshot_not_aliased_across_versions():
     flow = _make_fake(scale=1.0)
     ex = InlineExecutor(flow, min_train_samples=1)
     ex.submit({0: np.full((50, 2), 3.0)})
-    v1, w1 = ex.latest_weights()
+    v1, s1 = ex.latest_weights()
 
-    # Caller misbehaves: mutate the returned snapshot in place.
-    w1["scale"][...] = 999.0
+    # Caller misbehaves: mutate the returned snapshot's net dict in place.
+    s1["net"]["scale"][...] = 999.0
 
     # Train again → a new, independent snapshot.
     ex.submit({0: np.full((50, 2), 3.0)})
-    v2, w2 = ex.latest_weights()
+    v2, s2 = ex.latest_weights()
     assert v2 == v1 + 1
-    assert w2 is not w1
-    assert float(np.asarray(w2["scale"])) != pytest.approx(999.0)
+    assert s2 is not s1
+    assert float(np.asarray(s2["net"]["scale"])) != pytest.approx(999.0)
 
 
 def test_inline_latest_weights_not_aliased_to_training_clone_state():
@@ -341,13 +359,14 @@ def test_inline_latest_weights_not_aliased_to_training_clone_state():
     x = np.full((4, 2), 2.0)
 
     ex.submit({0: np.random.randn(200, 2) * 5.0})
-    _, weights = ex.latest_weights()
+    _, snapshot = ex.latest_weights()
     clone_before = ex._flow.log_prob(x).copy()
 
-    # weights["scale"] would BE the clone's live array without the deepcopy fix.
-    assert weights["scale"] is not ex._flow.get_weights()["scale"]
+    # snapshot["net"]["scale"] would BE the clone's live array without the
+    # deepcopy fix.
+    assert snapshot["net"]["scale"] is not ex._flow.get_weights()["scale"]
     # Corrupt the returned snapshot; the clone's density must be unaffected.
-    weights["scale"][...] = 1e6
+    snapshot["net"]["scale"][...] = 1e6
     clone_after = ex._flow.log_prob(x)
     np.testing.assert_array_equal(clone_before, clone_after)
 
@@ -559,6 +578,136 @@ def test_inline_zuko_trains_and_serves_weights():
     assert np.all(np.isfinite(lp))
 
 
+# ---------------------------------------------------------------------------
+# Lazy transform fit (Inline) — unfitted transform fitted on first round, the
+# snapshot carries it, and it reproduces densities on a fresh flow.
+# ---------------------------------------------------------------------------
+
+def _make_zuko_flow_unfitted(seed: int = 0):
+    """A ZukoFlow with a shared, UNFITTED WhiteningTransform."""
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("zuko")
+    from eryn.flows import ZukoFlow, WhiteningTransform, OneHotLeafConditioning
+
+    torch.manual_seed(seed)
+    cond = OneHotLeafConditioning(nleaves_max=1)
+    wt = WhiteningTransform(ndim=3, shared=True)  # NOT fitted
+    assert wt.is_fitted is False
+    return ZukoFlow(
+        dims=3, device="cpu", data_transform=wt, conditioning=cond, seed=seed,
+        flow_class="NSF", transforms=2, hidden_features=(32, 32), bins=4,
+    )
+
+
+def test_inline_lazy_fit_unfitted_transform():
+    """Inline executor with an UNFITTED shared transform: FlowSpec does not raise,
+    the first round fits the transform, and the snapshot reproduces densities."""
+    pytest.importorskip("torch")
+    flow = _make_zuko_flow_unfitted(seed=0)
+
+    # FlowSpec no longer raises on an unfitted transform.
+    spec = FlowSpec.from_flow(flow)
+    assert spec.build().data_transform.is_fitted is False
+
+    ex = InlineExecutor(flow, fit_kwargs=dict(n_epochs=2), min_train_samples=50)
+    # The executor's clone started unfitted.
+    assert ex._flow.data_transform.is_fitted is False
+    assert ex.latest_val_nll is None
+
+    rng = np.random.default_rng(1)
+    data = rng.standard_normal((300, 3)) * 3.0
+    assert ex.submit({0: data}) is True
+
+    # After the first round the clone's transform is fitted and a snapshot exists.
+    assert ex._flow.data_transform.is_fitted is True
+    version, snapshot = ex.latest_weights()
+    assert version == 1
+    assert set(snapshot.keys()) == {"net", "data_transform"}
+    assert snapshot["data_transform"].is_fitted is True
+    assert ex.latest_val_nll is not None and np.isfinite(ex.latest_val_nll)
+
+    # Apply the snapshot to a FRESH flow whose own transform is unfitted: it must
+    # become fitted and reproduce the trainer clone's densities.
+    fresh = _make_zuko_flow_unfitted(seed=0)
+    assert fresh.data_transform.is_fitted is False
+    fresh.set_weights(snapshot)
+    assert fresh.data_transform.is_fitted is True
+    x = rng.standard_normal((16, 3))
+    lp_clone = ex._flow.log_prob(x, context=0)
+    lp_fresh = fresh.log_prob(x, context=0)
+    np.testing.assert_allclose(lp_clone, lp_fresh, atol=1e-6,
+                               err_msg="snapshot did not reproduce clone densities")
+
+
+def _shared_whitening_matrix(transform):
+    """Return a clone of the pooled whitening matrix of a fitted shared WhiteningTransform.
+
+    A refit changes this matrix; a freeze leaves it bit-identical.  Compared
+    instead of object identity because snapshots deep-copy the transform.
+    """
+    compose = transform.transforms[0]  # shared map under key 0
+    lin = next(t for t in compose.parts if hasattr(t, "matrix"))
+    return lin.matrix.clone()
+
+
+def test_inline_refit_transform_every_refits_on_expected_rounds():
+    """refit_transform_every=2: the transform refits on rounds 1, 2, 4 and is
+    frozen on rounds 3, 5 (rounds counted from 1; round 1 is the first fit)."""
+    torch = pytest.importorskip("torch")
+    flow = _make_zuko_flow_unfitted(seed=0)
+    ex = InlineExecutor(flow, fit_kwargs=dict(n_epochs=2), min_train_samples=1,
+                        refit_transform_every=2)
+    rng = np.random.default_rng(2)
+
+    mats = []
+    for i in range(5):
+        # Vary the data spread each round so a refit visibly changes the matrix.
+        ex.submit({0: rng.standard_normal((60, 3)) * (2.0 + i)})
+        _, snap = ex.latest_weights()
+        mats.append(_shared_whitening_matrix(snap["data_transform"]))
+
+    # round 1: first fit. round 2 (2%2==0): refit → differs from round 1.
+    assert not torch.allclose(mats[0], mats[1]), "round 2 should refit"
+    # round 3 (3%2!=0): frozen → identical to round 2.
+    assert torch.allclose(mats[1], mats[2]), "round 3 should stay frozen"
+    # round 4 (4%2==0): refit → differs from round 3.
+    assert not torch.allclose(mats[2], mats[3]), "round 4 should refit"
+    # round 5 (5%2!=0): frozen → identical to round 4.
+    assert torch.allclose(mats[3], mats[4]), "round 5 should stay frozen"
+
+
+def test_inline_refit_transform_every_none_freezes_after_first():
+    """Default (refit_transform_every=None): the transform is fitted once on
+    round 1 and frozen on every subsequent round."""
+    torch = pytest.importorskip("torch")
+    flow = _make_zuko_flow_unfitted(seed=0)
+    ex = InlineExecutor(flow, fit_kwargs=dict(n_epochs=2), min_train_samples=1)
+    rng = np.random.default_rng(3)
+
+    mats = []
+    for i in range(3):
+        ex.submit({0: rng.standard_normal((60, 3)) * (2.0 + i)})
+        _, snap = ex.latest_weights()
+        mats.append(_shared_whitening_matrix(snap["data_transform"]))
+    # All rounds share the round-1 whitening matrix (frozen forever).
+    assert torch.allclose(mats[0], mats[1])
+    assert torch.allclose(mats[1], mats[2])
+
+
+def test_inline_latest_val_nll_advances():
+    """latest_val_nll is None before the first version and finite after (real fit)."""
+    pytest.importorskip("torch")
+    flow = _make_zuko_flow_unfitted(seed=0)
+    ex = InlineExecutor(flow, fit_kwargs=dict(n_epochs=2), min_train_samples=1)
+    assert ex.latest_val_nll is None
+    rng = np.random.default_rng(4)
+    ex.submit({0: rng.standard_normal((120, 3))})
+    assert ex.version == 0  # not yet polled
+    ex.latest_weights()
+    assert ex.latest_val_nll is not None
+    assert np.isfinite(ex.latest_val_nll)
+
+
 # ===========================================================================
 # ProcessExecutor — spawned-worker trainer
 # ===========================================================================
@@ -658,6 +807,63 @@ def test_process_happy_path_trains_and_serves_weights():
     assert not ex._process.is_alive()
     assert ex._process.exitcode == 0
     ex.shutdown()  # idempotent second call: no-op, no raise
+
+
+# ---------------------------------------------------------------------------
+# 1a. Lazy transform fit end-to-end: unfitted shared transform → worker fits it
+#     on the first round, ships it inside the snapshot, parent reproduces densities.
+# ---------------------------------------------------------------------------
+
+def _make_tiny_zuko_flow_unfitted(seed: int = 0):
+    """A minimal ZukoFlow with a shared, UNFITTED WhiteningTransform."""
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("zuko")
+    from eryn.flows import ZukoFlow, WhiteningTransform, OneHotLeafConditioning
+
+    torch.manual_seed(seed)
+    cond = OneHotLeafConditioning(nleaves_max=1)
+    wt = WhiteningTransform(ndim=2, shared=True)  # NOT fitted
+    assert wt.is_fitted is False
+    return ZukoFlow(
+        dims=2, device="cpu", data_transform=wt, conditioning=cond, seed=seed,
+        flow_class="NSF", transforms=1, hidden_features=(16,), bins=3,
+    )
+
+
+def test_process_lazy_fit_snapshot_end_to_end():
+    pytest.importorskip("torch")
+    flow = _make_tiny_zuko_flow_unfitted(seed=0)
+    # FlowSpec snapshot of an unfitted transform must not raise.
+    ex = ProcessExecutor(flow, epochs_per_round=2, min_train_samples=50, seed=21)
+    try:
+        assert ex.latest_val_nll is None
+        rng = np.random.default_rng(0)
+        for _ in range(3):
+            assert ex.submit({0: rng.standard_normal((100, 2)) * 4.0}) is True
+
+        lw = _poll_until_version(ex, target=1)
+        assert lw is not None and lw[0] >= 1, "worker never produced weights"
+        version, snapshot = lw
+        # Snapshot is self-contained and carries a FITTED transform.
+        assert set(snapshot.keys()) == {"net", "data_transform"}
+        assert snapshot["data_transform"].is_fitted is True
+        # val NLL surfaced for monitoring.
+        assert ex.latest_val_nll is not None and np.isfinite(ex.latest_val_nll)
+
+        # Apply to a sibling whose own transform is unfitted → reproduces the
+        # worker's log_prob (loose tol: independent torch RNG across processes).
+        sibling = _make_tiny_zuko_flow_unfitted(seed=0)
+        assert sibling.data_transform.is_fitted is False
+        x = rng.standard_normal((8, 2))
+        sibling.set_weights(snapshot)
+        assert sibling.data_transform.is_fitted is True
+        lp = sibling.log_prob(x, context=0)
+        assert lp.shape == (8,)
+        assert np.all(np.isfinite(lp))
+    finally:
+        ex.shutdown()
+    assert not ex._process.is_alive()
+    assert ex._process.exitcode == 0
 
 
 # ---------------------------------------------------------------------------
