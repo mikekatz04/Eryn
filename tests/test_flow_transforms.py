@@ -358,3 +358,80 @@ def test_forward_no_userwarning_on_tensor_input():
         # Should not raise — as_tensor avoids the copy-construct warning
         z = wt.forward(x_tensor, condition=0)
     assert z.shape == (5, 3)
+
+
+# ---------------------------------------------------------------------------
+# shared mode
+# ---------------------------------------------------------------------------
+
+def _shared_wt():
+    """Shared WhiteningTransform fit on two differently-located leaf clouds."""
+    rng = np.random.default_rng(1)
+    a = np.column_stack([rng.normal(0.0, 1.0, (1500, 2)),
+                         rng.normal(1.0, 0.3, 1500) % (2 * np.pi)])
+    b = np.column_stack([rng.normal(5.0, 2.0, (1500, 2)),
+                         rng.normal(4.0, 0.5, 1500) % (2 * np.pi)])
+    wt = WhiteningTransform(ndim=3, periodic={2: (0.0, 2 * np.pi)}, shared=True)
+    wt.fit({0: a, 1: b})
+    return wt, np.concatenate([a, b], axis=0)
+
+
+def test_shared_uses_one_map_for_every_condition():
+    """A shared transform whitens identically regardless of the condition arg."""
+    wt, pooled = _shared_wt()
+    x = pooled[:32]
+    z0 = wt.forward(x, condition=0)
+    z1 = wt.forward(x, condition=1)
+    assert torch.equal(z0, z1)
+
+
+def test_shared_accepts_unseen_condition():
+    """The key robustness property: a condition never seen at fit time still works
+    (a leaf that becomes active only after the one-time fit)."""
+    wt, pooled = _shared_wt()
+    x = pooled[:16]
+    z = wt.forward(x, condition=99)  # leaf 99 never appeared in fit()
+    assert z.shape == (16, 3) and torch.isfinite(z).all()
+    ld = wt.log_abs_det_jacobian(x, z, condition=99)
+    assert ld.shape == (16,) and torch.isfinite(ld).all()
+    back = wt.inverse(z, condition=99)
+    assert np.allclose(back % (2 * np.pi), x % (2 * np.pi), atol=1e-4) or \
+        np.allclose(back[:, :2], x[:, :2], atol=1e-4)
+
+
+def test_shared_round_trip_and_logdet_shape():
+    wt, pooled = _shared_wt()
+    x = pooled[:64]
+    z = wt.forward(x, condition=0)
+    back = wt.inverse(z, condition=0)
+    assert np.allclose(back[:, :2], x[:, :2], atol=1e-4)
+    assert wt.log_abs_det_jacobian(x, z, condition=0).shape == (64,)
+
+
+def test_shared_is_picklable():
+    wt, pooled = _shared_wt()
+    x = pooled[:16]
+    wt2 = pickle.loads(pickle.dumps(wt))
+    assert wt2.shared is True and wt2.is_fitted
+    assert torch.equal(wt.forward(x, 0), wt2.forward(x, 0))
+
+
+def test_shared_fit_array_or_dict_equivalent():
+    """Pooling a dict equals fitting the concatenation directly."""
+    rng = np.random.default_rng(2)
+    a = rng.standard_normal((500, 2))
+    b = rng.standard_normal((500, 2)) + 3.0
+    wt_dict = WhiteningTransform(ndim=2, shared=True)
+    wt_dict.fit({0: a, 1: b})
+    wt_arr = WhiteningTransform(ndim=2, shared=True)
+    wt_arr.fit(np.concatenate([a, b], axis=0))
+    x = np.concatenate([a, b], axis=0)[:20]
+    assert torch.allclose(wt_dict.forward(x, 0), wt_arr.forward(x, 0), atol=1e-10)
+
+
+def test_non_shared_still_raises_unseen_condition():
+    """Default (per-condition) behavior is unchanged: unknown condition raises."""
+    wt, _ = _fitted_wt()  # shared=False
+    x = np.zeros((4, 3))
+    with pytest.raises(ValueError, match="[Cc]ondition"):
+        wt.forward(x, condition=99)
