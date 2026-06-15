@@ -113,8 +113,10 @@ class FlowSpec:
 
     Notes
     -----
-    Construct via :meth:`from_flow` rather than directly: ``from_flow`` enforces
-    the frozen-transform contract and verifies picklability eagerly.
+    Construct via :meth:`from_flow` rather than directly: it snapshots the
+    config/weights and verifies picklability eagerly.  The data transform may
+    be **unfitted** — the executor fits it lazily on the first training round
+    and ships the fitted transform back inside each weights snapshot.
     """
 
     flow_class: type
@@ -577,18 +579,16 @@ class InlineExecutor(TrainerExecutor):
                 # Capture the latent-space validation NLL for monitoring (None
                 # if the fit produced no validation history).
                 val_loss = getattr(history, "validation_loss", None)
-                if val_loss:
+                if val_loss is not None and len(val_loss):
                     self._latest_val_nll = float(val_loss[-1])
                 # Stash a self-contained snapshot ({"net", "data_transform"}).
-                # get_snapshot() already deep-copies the transform; deep-copy the
-                # whole snapshot so the net dict (which may reference the clone's
-                # live torch parameters) can never alias training state either —
-                # matching a process executor, whose returned dict is always a
-                # fresh deserialized copy.
-                self._latest = (
-                    self._trained_version,
-                    copy.deepcopy(self._flow.get_snapshot()),
-                )
+                # get_snapshot() already deep-copies the transform; only the net
+                # dict can reference the clone's live torch parameters, so copy
+                # just that — matching a process executor, whose returned dict is
+                # always a fresh deserialized copy.
+                snapshot = self._flow.get_snapshot()
+                snapshot["net"] = copy.deepcopy(snapshot["net"])
+                self._latest = (self._trained_version, snapshot)
 
         return True
 
@@ -805,7 +805,11 @@ def _trainer_worker(spec, cfg, sample_q, weights_q, stop_event):
             round_count = next_round
             version += 1
             val_loss = getattr(history, "validation_loss", None)
-            val_nll = float(val_loss[-1]) if val_loss else None
+            val_nll = (
+                float(val_loss[-1])
+                if (val_loss is not None and len(val_loss))
+                else None
+            )
             # Ship a self-contained snapshot carrying the fitted transform with
             # the net (picklable: CPU net tensors + picklable transform).
             _put_drop_oldest(
@@ -987,8 +991,9 @@ class ProcessExecutor(TrainerExecutor):
                 f"drop_policy must be 'oldest' or 'newest', got {drop_policy!r}."
             )
 
-        # Snapshot the flow NOW (in the parent) so picklability and the
-        # frozen-transform contract fail fast here, not deep inside a spawn.
+        # Snapshot the flow NOW (in the parent) so picklability fails fast here,
+        # not deep inside a spawn. The transform may be unfitted; the worker
+        # fits it on the first round and ships it back in each snapshot.
         self._spec = FlowSpec.from_flow(flow, worker_device="cpu")
         self._cfg = WorkerConfig(
             epochs_per_round=int(epochs_per_round),
