@@ -345,6 +345,74 @@ def test_zukoflow_get_weights_cpu_detached_isolated():
     np.testing.assert_allclose(lp_before, lp_after, atol=1e-8)
 
 
+def test_zukoflow_get_snapshot_round_trip_reproduces_log_prob():
+    """get_snapshot() → set_weights() on a fresh flow with an UNFITTED transform
+    reproduces log_prob to ~1e-6, proving the transform handoff makes the parent
+    usable.  Mutating the returned snapshot does not change the live flow."""
+    torch = pytest.importorskip("torch")
+    from eryn.flows import ZukoFlow, WhiteningTransform, OneHotLeafConditioning
+
+    flow = _make_zuko_flow_for_contract()  # transform already fitted
+    rng = np.random.default_rng(99)
+    x = rng.standard_normal((64, 3))
+
+    snapshot = flow.get_snapshot()
+    assert set(snapshot.keys()) == {"net", "data_transform"}
+    assert snapshot["data_transform"].is_fitted is True
+
+    # Fresh, identically-configured flow but with an UNFITTED transform.
+    cond = OneHotLeafConditioning(nleaves_max=1)
+    fresh_transform = WhiteningTransform(ndim=3)
+    assert fresh_transform.is_fitted is False
+    fresh = ZukoFlow(
+        dims=3, device="cpu", data_transform=fresh_transform, conditioning=cond,
+        seed=0, flow_class="NSF", transforms=2, hidden_features=(32, 32), bins=4,
+    )
+    # The snapshot installs the fitted transform AND the net atomically.
+    fresh.set_weights(snapshot)
+    assert fresh.data_transform.is_fitted is True
+
+    lp1 = flow.log_prob(x, context=0)
+    lp2 = fresh.log_prob(x, context=0)
+    np.testing.assert_allclose(lp1, lp2, atol=1e-6,
+                               err_msg="snapshot handoff changed log_prob")
+
+
+def test_zukoflow_get_snapshot_isolation():
+    """Mutating the snapshot must not change the live flow (deep-copy isolation)."""
+    torch = pytest.importorskip("torch")
+
+    flow = _make_zuko_flow_for_contract()
+    x = np.zeros((4, 3), dtype=np.float64)
+    lp_before = flow.log_prob(x, context=0)
+
+    snapshot = flow.get_snapshot()
+    for v in snapshot["net"].values():
+        v.fill_(999.0)
+    # The deep-copied transform is a different object than the live one.
+    assert snapshot["data_transform"] is not flow.data_transform
+
+    lp_after = flow.log_prob(x, context=0)
+    np.testing.assert_allclose(lp_before, lp_after, atol=1e-8)
+
+
+def test_zukoflow_set_weights_bare_state_dict_still_works():
+    """Legacy set_weights(get_weights()) (bare state_dict) must keep working."""
+    torch = pytest.importorskip("torch")
+    from eryn.flows import ZukoFlow
+
+    flow = _make_zuko_flow_for_contract()
+    rng = np.random.default_rng(7)
+    x = rng.standard_normal((32, 3))
+    lp_before = flow.log_prob(x, context=0)
+
+    # Bare state_dict round-trip — the legacy contract.
+    flow.set_weights(flow.get_weights())
+    lp_after = flow.log_prob(x, context=0)
+    np.testing.assert_allclose(lp_before, lp_after, atol=1e-8,
+                               err_msg="bare state_dict round-trip changed log_prob")
+
+
 def test_zukoflow_h5_save_load_round_trip(tmp_path):
     """h5 save/load round-trip reproduces log_prob exactly and restores transform+conditioning."""
     pytest.importorskip("torch")
