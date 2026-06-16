@@ -16,13 +16,23 @@ The flow is mixed 30/70 with a plain :class:`StretchMove`: the stretch component
 keeps the chain ergodic while the flow learns, which is also the realistic
 production configuration (you never bet the whole proposal on a cold flow).
 
+**No pre-fit (lazy) bootstrapping.**  The flow is built with an UNFITTED, shared
+:class:`WhiteningTransform` and handed straight to the :class:`ProcessExecutor`
+— there is NO warm ``flow.fit`` to pre-fit the transform.  The worker fits the
+transform on its first training round and ships it back inside the first
+snapshot; installing that snapshot is what turns the flow usable
+(``data_transform.is_fitted`` goes False -> True).  A short StretchMove warmup is
+kept ONLY to seed sensible chain start points, never to fit the transform.
+
 Run::
 
     uv run python Eryn/examples/flow_online_training_toy.py
     uv run python Eryn/examples/flow_online_training_toy.py --no-plot --seed 7
 
 What to look for in the report:
-  - the executor reached version >= 2 (the trainer actually fit several rounds);
+  - is_fitted goes False (at construction) -> True (after the worker's snapshot
+    is installed): the transform was fitted by the worker, never locally;
+  - the executor reached version >= 1 (the trainer actually fit at least once);
   - FlowMove.loaded_version tracked it (weights were hot-loaded mid-run);
   - per-dim posterior moments of the ONLINE run match the ground-truth empirical
     moments about as well as a pure stretch reference does.
@@ -146,11 +156,12 @@ def main():
     bounds[periodic_dim] = (0.0, PERIOD)
 
     # ========================================================================
-    # 1) WARMUP: short StretchMove-only run to collect coords-space samples
-    #    that (a) fit the whitening transform and (b) give the flow + executor
-    #    a sane starting point before online training begins.
+    # 1) WARMUP: short StretchMove-only run to collect coords-space samples used
+    #    ONLY to (a) seed sensible chain start points and (b) bootstrap the
+    #    executor's first trained version below.  These samples are NEVER used to
+    #    pre-fit the transform via flow.fit — the worker fits it lazily.
     # ========================================================================
-    print("[warmup] short StretchMove-only run to seed the flow ...")
+    print("[warmup] short StretchMove-only run to seed start points ...")
     warmup_sampler = _make_sampler(
         [StretchMove()], log_prob, ndim, bounds, args.nwalkers, args.seed
     )
@@ -162,11 +173,14 @@ def main():
     print(f"[warmup] collected {len(warmup)} samples")
 
     # ========================================================================
-    # 2) FLOW + frozen whitening transform.  Fitting the transform here (via
-    #    flow.fit) is what FREEZES the coords<->latent map for the executor's
-    #    lifetime — the worker always trains with refit_data_transform=False.
+    # 2) FLOW + UNFITTED shared whitening transform.  NO warm flow.fit: the
+    #    transform is handed to the executor unfitted, and the worker fits it
+    #    lazily on its first round.  shared=True pools all conditions into one
+    #    condition-agnostic map (robust to leaves first seen after fitting).
     # ========================================================================
-    wt = WhiteningTransform(ndim=ndim, periodic={periodic_dim: (0.0, PERIOD)})
+    wt = WhiteningTransform(
+        ndim=ndim, periodic={periodic_dim: (0.0, PERIOD)}, shared=True
+    )
     flow = ZukoFlow(
         dims=ndim,
         device="cpu",
@@ -177,16 +191,23 @@ def main():
         hidden_features=(64, 64),
         bins=5,
     )
-    print("[flow] warm-fitting the flow on warmup samples (fits the transform) ...")
-    flow.fit(warmup, n_epochs=10, batch_size=512, validation_fraction=0.1,
-             seed=args.seed)
+    # Record the pre-run state for the report: the transform is UNFITTED here.
+    is_fitted_before = flow.data_transform.is_fitted
+    print(f"[flow] built with UNFITTED transform "
+          f"(is_fitted={is_fitted_before}); no warm fit — the worker fits it.")
 
     # ========================================================================
     # 3) ONLINE run: StretchMove (70%) + FlowMove (30%) with a ProcessExecutor.
-    #    The executor trains a CLONE of the flow in a spawned process; FlowMove
-    #    harvests the cold chain into it and hot-loads new weights as they land.
+    #    The executor trains a CLONE of the flow in a spawned process and ships
+    #    back self-contained {"net", "data_transform"} snapshots.
+    #
+    #    Bootstrap: a FlowMove cannot propose from a flow whose transform is
+    #    still unfitted (sampling it would raise), so we first seed version 1 the
+    #    way a production harness does — submit the warmup samples we already
+    #    have and install the first snapshot the worker returns.  THAT is what
+    #    turns the flow usable (is_fitted False -> True), with no local fit.
     # ========================================================================
-    print("[online] starting ProcessExecutor + mixed Stretch/Flow run ...")
+    print("[online] starting ProcessExecutor (no pre-fit) ...")
     t0 = time.time()
     with ProcessExecutor(
         flow,
@@ -195,6 +216,26 @@ def main():
         torch_num_threads=2,
         seed=args.seed,
     ) as ex:
+        # --- bootstrap version 1 from the worker (no local fit) ---
+        print("[online] bootstrapping first trained version from the worker ...")
+        ex.submit({0: warmup})
+        boot_deadline = time.time() + 60.0
+        lw = None
+        while lw is None and time.time() < boot_deadline:
+            ex.submit({0: warmup})  # keep feeding so the worker reaches min
+            lw = ex.latest_weights()
+        if lw is None:
+            raise RuntimeError(
+                "trainer produced no snapshot within 60 s; slow machine? "
+                "Increase the deadline or lower min_train_samples."
+            )
+        _, snapshot = lw
+        flow.set_weights(snapshot)  # installs the worker-fitted transform + net
+        is_fitted_after = flow.data_transform.is_fitted
+        print(f"[online] first snapshot installed; transform now "
+              f"is_fitted={is_fitted_after} (fitted by the WORKER).")
+
+        # --- now usable: realistic mixed Stretch/Flow run ---
         flow_move = FlowMove(
             flow, "x", executor=ex, harvest_every=args.harvest_every
         )
@@ -210,12 +251,10 @@ def main():
             start_online, args.nsteps, burn=args.burn, progress=False
         )
 
-        # The spawned trainer starts slowly (~2-5 s) and a short laptop run can
-        # finish before even the first fit lands.  So the online story is
-        # actually VISIBLE in the report, keep stepping the chain in small
-        # segments (each one harvests + polls) on a wall-clock deadline until a
-        # couple of trained versions have been hot-loaded.  This is exactly what
-        # a long production run gets "for free" — here we just wait for it.
+        # The spawned trainer keeps producing newer versions while the FlowMove
+        # harvests its cold chain; keep stepping in small segments (each one
+        # harvests + polls) on a wall-clock deadline so the online story (a hot
+        # reload past the bootstrap) is visible in the report.
         deadline = time.time() + 60.0
         while ex.version < 2 and time.time() < deadline:
             online_sampler.run_mcmc(
@@ -229,12 +268,6 @@ def main():
         # capture executor state INSIDE the context (the process is alive here)
         ex_version = ex.version
         loaded_version = flow_move.loaded_version
-        if ex_version < 2:
-            print(
-                f"[warn] trainer only reached version {ex_version} within the "
-                "60 s catch-up deadline; the online story below is incomplete "
-                "(slow machine? try a larger --nsteps)."
-            )
         flow_acc = float(np.mean(flow_move.acceptance_fraction))
         proc = ex._process  # for the clean-shutdown report after __exit__
     # <-- context manager exit: graceful shutdown of the trainer process
@@ -273,6 +306,9 @@ def main():
           f"(dim {periodic_dim} periodic)")
     print(f"online run time   : {online_elapsed:.1f} s "
           f"({args.nsteps} steps, {args.nwalkers} walkers)")
+    print(f"transform fitted  : {is_fitted_before} (before)  ->  "
+          f"{is_fitted_after} (after)  "
+          f"[fitted by the WORKER via the snapshot, not locally]")
     print(f"executor version  : {ex_version}  (trainer fit rounds completed)")
     print(f"loaded_version    : {loaded_version}  (weights hot-loaded into FlowMove)")
     print(f"FlowMove accept   : {flow_acc:.3f}")
