@@ -220,6 +220,27 @@ class WhiteningTransform(DataTransform):
         Mapping from dimension index to ``(left, right)`` boundary of that
         periodic component (e.g. ``{2: (0.0, 2 * pi)}``).  Default is ``None``
         (no periodic dimensions).
+    shared : bool, optional
+        Whitening granularity.  Default ``False`` fits **one map per condition**
+        (per leaf): each condition is centered on its own mean and scaled by its
+        own covariance — the right choice when the conditions are different
+        sources in the same parameter space (different means) and the set of
+        conditions is **fixed** (e.g. non-RJ runs), so every condition is present
+        by fit time.  ``True`` fits a **single map on the pooled samples** of all
+        conditions and applies it regardless of the ``condition`` argument; the
+        flow's conditioning (not the whitening) then carries per-condition
+        identity.  Shared mode does not center each condition, but it is robust
+        when a condition is first seen *after* fitting (e.g. an RJ run where
+        leaves are added/removed) — an unseen condition reuses the shared map
+        instead of raising.
+
+    Notes
+    -----
+    Under a fit-once-then-freeze trainer (the executor's lazy fit), ``shared=False``
+    requires every condition to be present in the first ``fit`` call: a condition
+    that first appears in a later frozen round has no map and will raise.  This
+    holds automatically for fixed leaves; use ``shared=True`` when the active set
+    of conditions can change over the run.
 
     Examples
     --------

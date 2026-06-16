@@ -639,6 +639,65 @@ def test_inline_lazy_fit_unfitted_transform():
                                err_msg="snapshot did not reproduce clone densities")
 
 
+def _make_zuko_flow_unfitted_perleaf(nleaves: int = 2, seed: int = 0):
+    """A ZukoFlow with a PER-LEAF (shared=False), UNFITTED WhiteningTransform."""
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("zuko")
+    from eryn.flows import ZukoFlow, WhiteningTransform, OneHotLeafConditioning
+
+    torch.manual_seed(seed)
+    cond = OneHotLeafConditioning(nleaves_max=nleaves)
+    wt = WhiteningTransform(ndim=3, shared=False)  # per-leaf, NOT fitted
+    assert wt.is_fitted is False
+    return ZukoFlow(
+        dims=3, device="cpu", data_transform=wt, conditioning=cond, seed=seed,
+        flow_class="NSF", transforms=2, hidden_features=(32, 32), bins=4,
+    )
+
+
+def test_inline_lazy_fit_per_leaf_multi_condition():
+    """Per-leaf (shared=False) lazy fit across two leaves — the fixed-leaf / non-RJ
+    path.  The first round fits ONE map per condition (each source centered on its
+    own mean), the snapshot carries all per-leaf maps, and applying it to a fresh
+    flow reproduces densities for EACH condition independently."""
+    pytest.importorskip("torch")
+    flow = _make_zuko_flow_unfitted_perleaf(nleaves=2, seed=0)
+
+    # FlowSpec does not raise on the unfitted per-leaf transform.
+    assert FlowSpec.from_flow(flow).build().data_transform.is_fitted is False
+
+    # min_train_samples low enough that the first fit fires once BOTH leaves have
+    # contributed (fixed leaves accumulate together, so both are present).
+    ex = InlineExecutor(flow, fit_kwargs=dict(n_epochs=2), min_train_samples=1)
+    rng = np.random.default_rng(2)
+    # two leaves with very different means/scales (different sources)
+    a = rng.standard_normal((400, 3)) * 0.5 + np.array([0.0, 0.0, 0.0])
+    b = rng.standard_normal((400, 3)) * 3.0 + np.array([10.0, -5.0, 2.0])
+    assert ex.submit({0: a, 1: b}) is True
+
+    version, snapshot = ex.latest_weights()
+    assert version == 1
+    wt = snapshot["data_transform"]
+    assert wt.is_fitted is True and wt.shared is False
+    # per-leaf: each condition has its OWN fitted map (not one shared map)
+    assert set(wt.transforms.keys()) == {0, 1}
+
+    # the two maps genuinely differ (each centred on its own source) — a shared
+    # map would whiten both identically
+    x = rng.standard_normal((8, 3))
+    assert not np.allclose(wt.forward(x, 0).numpy(), wt.forward(x, 1).numpy())
+
+    # snapshot reproduces the trainer clone's densities for BOTH conditions
+    fresh = _make_zuko_flow_unfitted_perleaf(nleaves=2, seed=0)
+    fresh.set_weights(snapshot)
+    assert fresh.data_transform.is_fitted is True
+    for ctx in (0, 1):
+        np.testing.assert_allclose(
+            ex._flow.log_prob(x, context=ctx), fresh.log_prob(x, context=ctx),
+            atol=1e-6, err_msg=f"per-leaf snapshot mismatch at condition {ctx}",
+        )
+
+
 def _shared_whitening_matrix(transform):
     """Return a clone of the pooled whitening matrix of a fitted shared WhiteningTransform.
 
