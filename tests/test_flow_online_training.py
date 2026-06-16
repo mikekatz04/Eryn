@@ -285,3 +285,214 @@ def test_online_training_full_loop():
     finally:
         np.random.set_state(np_state)
         torch.set_rng_state(torch_state)
+
+
+@pytest.mark.slow
+def test_online_training_lazy_no_prefit():
+    """End-to-end NO-PRE-FIT path: the worker fits the transform, hands it back.
+
+    The companion to :func:`test_online_training_full_loop`, but proving the
+    *lazy* bootstrapping the user actually runs: a flow is built with an
+    **UNFITTED** shared :class:`WhiteningTransform` and handed straight to a
+    :class:`ProcessExecutor` with no warm ``flow.fit`` — something that raised
+    before CT2 (``FlowSpec.from_flow`` asserted ``is_fitted``).  The harvested
+    cold chain trains the clone in the worker; the first trained snapshot ships
+    the *fitted* transform back, and the live flow hot-loads it via
+    ``set_weights`` (the same call :meth:`FlowMove.setup` makes).  The core new
+    guarantee asserted here is that the LIVE flow's transform goes False -> True
+    via that handoff — it was NEVER fitted locally.
+
+    Bootstrapping note (see also the module finding): a :class:`FlowMove` cannot
+    *propose* from a flow whose transform is still unfitted — ``get_proposal``
+    samples the flow, which raises ``RuntimeError`` on an unfitted transform.  So
+    the live flow must reach version 1 BEFORE a mixed Stretch/Flow run lets the
+    FlowMove fire.  We seed that first version exactly the way a production
+    harness does: submit the warmup samples (already in hand) to the executor and
+    poll the first snapshot into the live flow — no local fit, the worker does it.
+    Once usable, the mixed run continues harvesting and advancing versions.
+
+    Asserts:
+      (a) ``flow.data_transform.is_fitted`` is False right after construction and
+          True after the worker's first snapshot is hot-loaded — the fitted
+          transform came from the worker via the snapshot, NOT a local fit (THE
+          point of CT2);
+      (b) ``ex.version >= 1`` and ``flow_move.loaded_version >= 1`` — a trained
+          snapshot was produced and the move hot-loaded it during the mixed run;
+      (c) the now-usable flow returns finite ``log_prob`` /
+          ``sample_and_log_prob`` (the installed transform + net are a matched,
+          working pair);
+      (d) ``ex.latest_val_nll`` is finite (the worker reported a real fit);
+      (e) clean shutdown: ``proc.exitcode == 0``, not alive, no zombie.
+
+    Same RNG hygiene as the pre-fit test (save/restore global numpy + torch RNG;
+    seed each sampler's own RandomState) and the same bounded wall-clock catch-up
+    continuation so a fast toy MCMC that outruns the ~2-5 s spawn startup still
+    observes a trained version before the deadline.
+    """
+    np_state = np.random.get_state()
+    torch_state = torch.get_rng_state()
+    try:
+        np.random.seed(SEED)
+        torch.manual_seed(SEED)
+
+        log_prob, sampler_fn, ndim, periodic = banana_periodic_target(ndim_gauss=2)
+        periodic_dim = ndim - 1
+
+        # generous box prior over the support; periodic dim fixed to (0, 2pi).
+        truth = sampler_fn(50_000, seed=SEED + 1)
+        lo = truth.min(0) - 2.0
+        hi = truth.max(0) + 2.0
+        bounds = {d: (float(lo[d]), float(hi[d])) for d in range(ndim)}
+        bounds[periodic_dim] = (0.0, PERIOD)
+
+        # --- warmup: short stretch-only run.  Used to seed chain start points AND
+        # to bootstrap the executor's first version below.  Crucially we NEVER
+        # call flow.fit on it — the worker fits the transform lazily.
+        warmup_sampler = _build_sampler(
+            [StretchMove()], log_prob, ndim, bounds, SEED
+        )
+        warmup_sampler.run_mcmc(
+            State({"x": sampler_fn(NWALKERS, seed=SEED).reshape(
+                1, NWALKERS, 1, ndim)}),
+            WARMUP_STEPS, burn=WARMUP_BURN, progress=False,
+        )
+        warmup = _cold_chain(warmup_sampler, ndim)
+
+        # --- flow with an UNFITTED, shared whitening transform: NO warm fit. ---
+        wt = WhiteningTransform(
+            ndim=ndim, periodic={periodic_dim: (0.0, PERIOD)}, shared=True
+        )
+        flow = ZukoFlow(
+            dims=ndim,
+            device="cpu",
+            conditioning=OneHotLeafConditioning(nleaves_max=1),
+            data_transform=wt,
+            seed=SEED,
+            transforms=3,
+            hidden_features=(64, 64),
+            bins=5,
+        )
+        # THE precondition: the transform is unfitted at hand-off time.  Building
+        # a ProcessExecutor from this flow would have raised before CT2.
+        assert flow.data_transform.is_fitted is False, (
+            "transform must be UNFITTED before the executor — this test proves "
+            "the no-pre-fit path."
+        )
+
+        proc = None
+        with ProcessExecutor(
+            flow,
+            # epochs_per_round is the ProcessExecutor's n_epochs knob; passing
+            # n_epochs in fit_kwargs would collide with it in the worker.
+            epochs_per_round=10,
+            min_train_samples=1500,
+            torch_num_threads=2,
+            seed=SEED,
+        ) as ex:
+            # ----------------------------------------------------------------
+            # BOOTSTRAP version 1 from the worker WITHOUT a local fit: submit the
+            # warmup samples and wait (bounded) for the first snapshot, then
+            # install it with the very same set_weights() call FlowMove.setup
+            # makes.  This is what turns the unfitted flow usable.
+            # ----------------------------------------------------------------
+            ex.submit({0: warmup})
+            t0 = time.monotonic()
+            lw = None
+            while lw is None and time.monotonic() < t0 + _POLL_DEADLINE_S:
+                ex.submit({0: warmup})  # keep feeding so the worker has >= min
+                lw = ex.latest_weights()
+            assert lw is not None, (
+                f"trainer never produced a first snapshot within "
+                f"{_POLL_DEADLINE_S}s; the spawned trainer is too slow at these "
+                "budgets — report timings rather than relaxing."
+            )
+            version, snapshot = lw
+            assert version >= 1
+
+            # (a) THE core new guarantee: the LIVE flow's transform was UNFITTED,
+            # and installing the worker's snapshot makes it fitted — never a local
+            # fit.  The snapshot carries {"net", "data_transform"}; set_weights
+            # installs the matched pair atomically (exactly FlowMove.setup's call).
+            assert flow.data_transform.is_fitted is False
+            flow.set_weights(snapshot)
+            assert flow.data_transform.is_fitted is True, (
+                "live flow transform should be fitted AFTER installing the "
+                "worker snapshot: the snapshot must carry the fitted transform."
+            )
+
+            # (c) the flow is now usable: finite log_prob + sample_and_log_prob.
+            probe = flow.sample(64, context=0)
+            lp = flow.log_prob(probe, context=0)
+            assert np.all(np.isfinite(lp)), "log_prob produced non-finite values"
+            xs, logq = flow.sample_and_log_prob(64, context=0)
+            assert np.all(np.isfinite(xs)) and np.all(np.isfinite(logq)), (
+                "sample_and_log_prob produced non-finite values"
+            )
+
+            # (d) the worker reported a real fit — its latent-space val NLL is finite.
+            assert ex.latest_val_nll is not None and np.isfinite(ex.latest_val_nll), (
+                f"executor latest_val_nll not finite: {ex.latest_val_nll!r}"
+            )
+
+            # ----------------------------------------------------------------
+            # Now the flow is usable, run the realistic mixed Stretch/Flow loop.
+            # FlowMove harvests its cold chain into the SAME executor and
+            # hot-loads newer snapshots as they land — proving the online story
+            # past the bootstrap.  The move starts at loaded_version 0 (its own
+            # bookkeeping), so it re-loads version 1 (or newer) on its first poll.
+            # ----------------------------------------------------------------
+            flow_move = FlowMove(
+                flow, "x", executor=ex, harvest_every=HARVEST_EVERY
+            )
+            sampler = _build_sampler(
+                [(StretchMove(), 0.7), (flow_move, 0.3)],
+                log_prob, ndim, bounds, SEED,
+            )
+            start = State({"x": warmup[
+                np.random.RandomState(SEED).choice(
+                    len(warmup), NWALKERS, replace=False)
+            ].reshape(1, NWALKERS, 1, ndim)})
+            sampler.run_mcmc(start, NSTEPS, burn=BURN, progress=False)
+
+            # A few more steps so the move's setup() polls + hot-loads at least
+            # the bootstrap version into its own bookkeeping.
+            t1 = time.monotonic()
+            while (flow_move.loaded_version < 1
+                   and time.monotonic() < t1 + _POLL_DEADLINE_S):
+                sampler.run_mcmc(
+                    sampler.get_last_sample(), 30, burn=0, progress=False
+                )
+
+            # (b) versions advanced + the move hot-loaded a trained snapshot.
+            assert ex.version >= 1
+            assert flow_move.loaded_version >= 1, (
+                f"FlowMove hot-load lagged: loaded_version="
+                f"{flow_move.loaded_version}, executor version={ex.version}."
+            )
+            # transform stays fitted across the mixed run (live flow is the same
+            # object the move hot-loads into).
+            assert flow.data_transform.is_fitted is True
+
+            # Surface a dead trainer as a clear failure rather than a teardown crash.
+            try:
+                ex.latest_weights()
+            except TrainerError as exc:  # pragma: no cover - failure path
+                pytest.fail(f"trainer raised TrainerError during the run: {exc}")
+
+            proc = ex._process
+        # <-- context manager exit: graceful shutdown of the trainer process.
+
+        # (e) clean shutdown, no zombie.
+        assert proc is not None
+        assert not proc.is_alive(), "trainer process still alive after shutdown"
+        assert proc.exitcode == 0, (
+            f"trainer did not exit gracefully: exitcode={proc.exitcode} "
+            "(0 expected; a negative code means terminate/kill had to fire)"
+        )
+        ex.shutdown()  # idempotent second call: must be a no-op, no raise
+        assert proc not in multiprocessing.active_children(), (
+            "trainer left a zombie in multiprocessing.active_children()"
+        )
+    finally:
+        np.random.set_state(np_state)
+        torch.set_rng_state(torch_state)
