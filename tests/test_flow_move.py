@@ -173,6 +173,38 @@ def test_flow_move_factor_identity():
                                err_msg="FlowMove factors != log q(old) - log q(new)")
 
 
+def test_flow_move_unfitted_transform_is_identity_noop():
+    """A FlowMove over a flow whose WhiteningTransform is UNFITTED must not raise:
+    it proposes an identity move (old coords, zero factors) until the transform
+    is fitted (e.g. by the trainer's first snapshot).  This is what lets the move
+    be mixed in from step 0 of a lazy/no-pre-fit online run."""
+    torch = pytest.importorskip("torch")
+    from eryn.flows import ZukoFlow, WhiteningTransform, OneHotLeafConditioning
+
+    wt = WhiteningTransform(ndim=2, shared=True)  # UNFITTED
+    assert wt.is_fitted is False
+    flow = ZukoFlow(
+        dims=2, device="cpu", data_transform=wt,
+        conditioning=OneHotLeafConditioning(1), seed=0,
+        flow_class="NSF", transforms=2, hidden_features=(16,), bins=3,
+    )
+    move = FlowMove(flow, branch_name="x")
+    move.active_condition = 0
+
+    ntemps, nwalkers, nleaves, ndim = 1, 6, 1, 2
+    rng = np.random.default_rng(3)
+    coords = rng.standard_normal((ntemps, nwalkers, nleaves, ndim))
+
+    q, factors = move.get_proposal({"x": coords}, rng)  # must NOT raise
+    np.testing.assert_array_equal(q["x"], coords)       # identity proposal
+    assert np.all(factors == 0.0) and factors.shape == (ntemps, nwalkers)
+
+    # once the transform is fitted, the move proposes for real (non-identity)
+    wt.fit({0: rng.standard_normal((500, 2))})
+    q2, factors2 = move.get_proposal({"x": coords}, rng)
+    assert not np.array_equal(q2["x"], coords)
+
+
 def test_flow_move_multileaf_accumulates_factors():
     """Regression: multi-leaf factors must SUM per-leaf contributions (np.add.at)."""
     torch = pytest.importorskip("torch")

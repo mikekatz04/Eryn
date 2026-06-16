@@ -294,6 +294,18 @@ class FlowMove(MHMove):
                 f" branches_coords (keys: {list(branches_coords)})."
             )
 
+        # Until the flow's data transform is fitted, the flow cannot be evaluated
+        # (a WhiteningTransform raises before fit).  This is the normal startup
+        # state when the move is mixed in from step 0 and the transform is fitted
+        # lazily by the trainer: propose an identity move (old coords, zero
+        # factors) so the move is a harmless pass-through until the first trained
+        # snapshot is installed (via setup()'s hot-reload).  IdentityTransform is
+        # always fitted, so a flow without whitening is never blocked here.
+        if not self.flow.data_transform.is_fitted:
+            q = {name: coords.copy() for name, coords in branches_coords.items()}
+            first = next(iter(branches_coords.values()))
+            return q, np.zeros(first.shape[:2])
+
         q = {}
 
         if branches_inds is None:
