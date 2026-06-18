@@ -674,6 +674,8 @@ class ZukoFlow(BaseTorchFlow):
         batch_size: int = 512,
         validation_fraction: float = 0.2,
         clip_grad: float | None = None,
+        optimizer: str | Any = "adam",
+        optimizer_kwargs: dict | None = None,
         lr_annealing: bool = False,
         patience: int | None = None,
         refit_data_transform: bool = True,
@@ -707,6 +709,21 @@ class ZukoFlow(BaseTorchFlow):
         clip_grad : float or None, optional
             If not ``None``, ``torch.nn.utils.clip_grad_norm_`` is applied with
             this max-norm before each optimizer step.  Default is ``None``.
+        optimizer : str or type, optional
+            Which optimizer to use.  A string is resolved against
+            ``torch.optim`` (case-insensitive for the common names —
+            ``"adam"``, ``"adamw"``, ``"sgd"``, ``"rmsprop"``, ...); a
+            ``torch.optim.Optimizer`` subclass is used directly.  A string or
+            class spec — unlike a bare lambda — pickles cleanly across the
+            :class:`~eryn.flows.executors.ProcessExecutor` spawn boundary, so the
+            same selection works for the online trainer.  Default is ``"adam"``,
+            which reproduces the previous hard-coded behaviour exactly.
+        optimizer_kwargs : dict or None, optional
+            Extra keyword arguments forwarded to the optimizer constructor (e.g.
+            ``{"weight_decay": 1e-2}`` for AdamW, ``{"momentum": 0.9}`` for SGD).
+            ``lr`` is the canonical top-level argument and always wins: any ``lr``
+            present here is dropped so the two cannot silently disagree.  Default
+            is ``None``.
         lr_annealing : bool, optional
             If ``True``, a :class:`~torch.optim.lr_scheduler.CosineAnnealingLR`
             schedule is applied over ``n_epochs``.  Default is ``False``.
@@ -747,6 +764,12 @@ class ZukoFlow(BaseTorchFlow):
         ValueError
             If any assembled latents contain non-finite values (NaN or Inf),
             naming the offending condition(s) and dimension(s).
+        ValueError
+            If ``optimizer`` is a string that does not resolve to a
+            ``torch.optim`` class.
+        TypeError
+            If ``optimizer`` is neither a string nor a
+            ``torch.optim.Optimizer`` subclass.
 
         Notes
         -----
@@ -905,7 +928,12 @@ class ZukoFlow(BaseTorchFlow):
         # ------------------------------------------------------------------
         # 7. Optimizer (and optional LR schedule)
         # ------------------------------------------------------------------
-        optimizer = torch.optim.Adam(self._flow.parameters(), lr=lr)
+        opt_cls = _resolve_optimizer(optimizer)
+        opt_kwargs = dict(optimizer_kwargs or {})
+        # `lr` is the canonical top-level knob; it wins over any lr smuggled in
+        # via optimizer_kwargs so the two never silently disagree.
+        opt_kwargs.pop("lr", None)
+        optimizer = opt_cls(self._flow.parameters(), lr=lr, **opt_kwargs)
         scheduler = (
             CosineAnnealingLR(optimizer, T_max=n_epochs) if lr_annealing else None
         )
@@ -1043,6 +1071,54 @@ def _resolve_flow_class(flow_class):
                 f"Some valid names: {valid[:10]}"
             ) from None
     raise TypeError(f"flow_class must be a str or callable, got {type(flow_class)}")
+
+
+def _resolve_optimizer(optimizer):
+    """Resolve a torch.optim optimizer class from a name or a class.
+
+    Mirrors :func:`_resolve_flow_class`: a string is looked up on
+    ``torch.optim`` (with a small lowercase-alias table for the common
+    optimizers), and a ``torch.optim.Optimizer`` subclass is returned as-is.
+
+    Parameters
+    ----------
+    optimizer : str or type
+        Optimizer name (e.g. ``"adam"``, ``"adamw"``, ``"sgd"``) or a
+        ``torch.optim.Optimizer`` subclass.
+
+    Returns
+    -------
+    type
+        The optimizer class.
+
+    Raises
+    ------
+    ValueError
+        If a string name does not resolve to a ``torch.optim`` attribute.
+    TypeError
+        If ``optimizer`` is neither a string nor an Optimizer subclass.
+    """
+    if isinstance(optimizer, str):
+        # torch.optim classes are CamelCase; accept common lowercase spellings.
+        aliases = {
+            "adam": "Adam", "adamw": "AdamW", "sgd": "SGD",
+            "rmsprop": "RMSprop", "adamax": "Adamax", "adagrad": "Adagrad",
+            "nadam": "NAdam", "radam": "RAdam",
+        }
+        name = aliases.get(optimizer.lower(), optimizer)
+        try:
+            return getattr(torch.optim, name)
+        except AttributeError:
+            raise ValueError(
+                f"Unknown optimizer {optimizer!r}.  Pass a torch.optim class name "
+                f"(e.g. 'Adam', 'AdamW', 'SGD') or one of {sorted(aliases)}."
+            ) from None
+    if isinstance(optimizer, type) and issubclass(optimizer, torch.optim.Optimizer):
+        return optimizer
+    raise TypeError(
+        f"optimizer must be a str or a torch.optim.Optimizer subclass, "
+        f"got {type(optimizer)!r}."
+    )
 
 
 def _make_serialisable(cfg: dict) -> dict:
