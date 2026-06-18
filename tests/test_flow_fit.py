@@ -324,3 +324,129 @@ def test_seed_whole_float_is_coerced_and_matches_int():
         h_float.validation_loss,
         err_msg="seed=7 and seed=7.0 produced different validation_loss sequences",
     )
+
+
+# ---------------------------------------------------------------------------
+# Test 11 — selectable optimizer
+# ---------------------------------------------------------------------------
+
+def test_unknown_optimizer_name_raises():
+    """An unresolvable optimizer name raises ValueError naming the bad spec."""
+    rng = np.random.default_rng(0)
+    data = _gauss2d(rng, [0.0, 0.0], np.eye(2), n=120)
+
+    flow = _make_unconditional(seed=1)
+    with pytest.raises(ValueError, match="optimizer"):
+        flow.fit(data, n_epochs=2, optimizer="notanoptimizer", seed=1)
+
+
+def test_optimizer_invalid_type_raises():
+    """A non-str / non-Optimizer-subclass optimizer raises TypeError."""
+    rng = np.random.default_rng(0)
+    data = _gauss2d(rng, [0.0, 0.0], np.eye(2), n=120)
+
+    flow = _make_unconditional(seed=1)
+    with pytest.raises(TypeError, match="optimizer"):
+        flow.fit(data, n_epochs=2, optimizer=123, seed=1)
+
+
+def test_optimizer_string_selects_class_and_forwards_kwargs(monkeypatch):
+    """optimizer='adamw' instantiates AdamW; optimizer_kwargs are forwarded."""
+    import torch.optim as optim
+
+    seen: dict = {}
+    real_adamw = optim.AdamW
+
+    def spy(params, **kw):
+        opt = real_adamw(params, **kw)
+        seen["cls"] = type(opt).__name__
+        seen["kw"] = kw
+        return opt
+
+    # The resolver looks the class up via getattr(torch.optim, "AdamW"), so
+    # patching the attribute on the module is what fit() will pick up.
+    monkeypatch.setattr(optim, "AdamW", spy)
+
+    rng = np.random.default_rng(0)
+    data = _gauss2d(rng, [0.0, 0.0], np.eye(2), n=200)
+    flow = _make_unconditional(seed=1)
+    flow.fit(
+        data,
+        n_epochs=1,
+        lr=1e-2,
+        optimizer="adamw",
+        optimizer_kwargs={"weight_decay": 0.123},
+        seed=1,
+        verbose=False,
+    )
+
+    assert seen["cls"] == "AdamW"
+    assert seen["kw"]["weight_decay"] == 0.123
+    # top-level lr is passed through to the optimizer
+    assert seen["kw"]["lr"] == 1e-2
+
+
+def test_optimizer_class_accepted():
+    """A torch.optim.Optimizer subclass can be passed directly and trains."""
+    import torch as _torch
+
+    rng = np.random.default_rng(0)
+    data = _gauss2d(rng, [0.0, 0.0], [[1.0, 0.3], [0.3, 1.0]], n=300)
+    flow = _make_unconditional(seed=1)
+    history = flow.fit(
+        data, n_epochs=2, lr=1e-2, optimizer=_torch.optim.AdamW, seed=1, verbose=False
+    )
+    assert len(history.validation_loss) >= 1
+
+
+def test_default_optimizer_is_adam_with_no_extra_kwargs(monkeypatch):
+    """Default optimizer='adam' builds Adam and forwards no extra kwargs (backward compat)."""
+    import torch.optim as optim
+
+    seen: dict = {}
+    real_adam = optim.Adam
+
+    def spy(params, **kw):
+        seen["cls"] = "Adam"
+        seen["kw"] = kw
+        return real_adam(params, **kw)
+
+    monkeypatch.setattr(optim, "Adam", spy)
+
+    rng = np.random.default_rng(0)
+    data = _gauss2d(rng, [0.0, 0.0], np.eye(2), n=200)
+    flow = _make_unconditional(seed=1)
+    flow.fit(data, n_epochs=1, lr=1e-3, seed=1, verbose=False)
+
+    assert seen["cls"] == "Adam"
+    assert seen["kw"]["lr"] == 1e-3
+    # No optimizer_kwargs supplied => only lr is passed
+    assert set(seen["kw"]) == {"lr"}
+
+
+def test_top_level_lr_overrides_optimizer_kwargs_lr(monkeypatch):
+    """A duplicate lr in optimizer_kwargs is dropped; the top-level lr wins."""
+    import torch.optim as optim
+
+    seen: dict = {}
+    real_adam = optim.Adam
+
+    def spy(params, **kw):
+        seen["kw"] = kw
+        return real_adam(params, **kw)
+
+    monkeypatch.setattr(optim, "Adam", spy)
+
+    rng = np.random.default_rng(0)
+    data = _gauss2d(rng, [0.0, 0.0], np.eye(2), n=200)
+    flow = _make_unconditional(seed=1)
+    flow.fit(
+        data,
+        n_epochs=1,
+        lr=1e-3,
+        optimizer_kwargs={"lr": 999.0},
+        seed=1,
+        verbose=False,
+    )
+
+    assert seen["kw"]["lr"] == 1e-3
