@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
+import warnings
 from abc import ABC
 from copy import deepcopy
+
 import numpy as np
-import warnings
 
 from ..state import BranchSupplemental, State
 from .move import Move
-
 
 __all__ = ["RedBlueMove"]
 
@@ -41,7 +41,7 @@ class RedBlueMove(Move, ABC):
     def __init__(
         self, nsplits=2, randomize_split=True, live_dangerously=False, **kwargs
     ):
-        super(RedBlueMove, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.nsplits = int(nsplits)
         self.live_dangerously = live_dangerously
         self.randomize_split = randomize_split

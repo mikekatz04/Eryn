@@ -13,7 +13,6 @@ import numpy as np
 from .. import __version__
 from .backend import Backend
 
-
 try:
     import h5py
 except ImportError:
@@ -235,7 +234,7 @@ class HDFBackend(Backend):
                     raise ValueError("branch_names must be string or list of strings.")
 
             else:
-                branch_names = ["model_{}".format(i) for i in range(nbranches)]
+                branch_names = [f"model_{i}" for i in range(nbranches)]
 
             nbranches = len(branch_names)
 
@@ -802,7 +801,7 @@ class HDFBackend(Backend):
                         g["rj_accepted"][:] += rj_accepted
 
                     for i, v in enumerate(state.random_state):
-                        g.attrs["random_state_{0}".format(i)] = v
+                        g.attrs[f"random_state_{i}"] = v
 
                     g.attrs["iteration"] = iteration + 1
 

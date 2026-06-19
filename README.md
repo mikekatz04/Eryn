@@ -2,7 +2,7 @@
 
 Eryn is an advanced MCMC sampler. It has the capability to run with parallel tempering, multiple model types, and unknown counts within each model type using Reversible Jump MCMC techniques. Eryn is heavily based on [emcee](https://emcee.readthedocs.io/en/stable/). The `emcee` base structure with the Ensemble Sampler, State objects, proposal setup, and storage backends is carried over into Eryn with small changes to account for the increased complexity. In a simple sense, Eryn is an advanced (and slightly more complicated) version of `emcee`. 
 
-If you use Eryn in your publication, please cite the paper [arXiv:2303.02164](https://arxiv.org/abs/2303.02164), its [zenodo](https://zenodo.org/records/17162828), and [emcee](https://emcee.readthedocs.io/en/stable/). The documentation for Eryn can be found here: [mikekatz04.github.io/Eryn](https://mikekatz04.github.io/Eryn). You will find the code on Github: [github.com/mikekatz04/Eryn](https://github.com/mikekatz04/Eryn). 
+If you use Eryn in your publication, please cite the paper [arXiv:2303.02164](https://arxiv.org/abs/2303.02164), its [zenodo](https://zenodo.org/records/17162828), and [emcee](https://emcee.readthedocs.io/en/stable/). The documentation for Eryn can be found here: [lisa-analysis-tools.github.io/Eryn](https://lisa-analysis-tools.github.io/Eryn). You will find the code on Github: [github.com/lisa-analysis-tools/Eryn](https://github.com/lisa-analysis-tools/Eryn). 
 
 ## Getting Started
 
@@ -17,7 +17,7 @@ To import eryn:
 from eryn.ensemble import EnsembleSampler
 ```
 
-See [examples notebook](https://github.com/mikekatz04/Eryn/blob/main/examples/Eryn_tutorial.ipynb) for more info. You can also navigate the [Documentation](https://mikekatz04.github.io/Eryn/index.html) pages.
+See [examples notebook](https://github.com/lisa-analysis-tools/Eryn/blob/main/examples/Eryn_tutorial.ipynb) for more info. You can also navigate the [Documentation](https://lisa-analysis-tools.github.io/Eryn/index.html) pages.
 
 ### Normalizing-flow proposals
 
@@ -58,7 +58,7 @@ Please read [CONTRIBUTING](CONTRIBUTING.md) for details on our code of conduct, 
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/mikekatz04/Eryn/tags).
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/lisa-analysis-tools/Eryn/tags).
 
 ## Citation
 
@@ -79,7 +79,7 @@ When using this package, please cite at minimum the following sources:
   author       = {Michael Katz and
                   Nikolaos Karnesis and
                   Natalia Korsakova},
-  title        = {mikekatz04/Eryn: first full release},
+  title        = {lisa-analysis-tools/Eryn: first full release},
   month        = mar,
   year         = 2023,
   publisher    = {Zenodo},

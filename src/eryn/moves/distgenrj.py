@@ -2,8 +2,8 @@
 
 import numpy as np
 
-from .rj import ReversibleJumpMove
 from ..prior import ProbDistContainer
+from .rj import ReversibleJumpMove
 
 __all__ = ["DistributionGenerateRJ"]
 
@@ -30,7 +30,7 @@ class DistributionGenerateRJ(ReversibleJumpMove):
                     "Distributions need to be eryn.prior.ProbDistContiner object."
                 )
         self.generate_dist = generate_dist
-        super(DistributionGenerateRJ, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def get_model_change_proposal(self, inds, random, nleaves_min, nleaves_max):
         """Helper function for changing the model count by 1.

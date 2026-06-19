@@ -2,13 +2,13 @@
 
 import numpy as np
 
+from ..state import State
 from ..utils.utility import (
     get_integrated_act,
-    thermodynamic_integration_log_evidence,
-    stepping_stone_log_evidence,
     psrf,
+    stepping_stone_log_evidence,
+    thermodynamic_integration_log_evidence,
 )
-from ..state import State
 
 __all__ = ["Backend"]
 
@@ -144,7 +144,7 @@ class Backend(object):
                 raise ValueError("branch_names must be string or list of strings.")
 
         else:
-            branch_names = ["model_{}".format(i) for i in range(nbranches)]
+            branch_names = [f"model_{i}" for i in range(nbranches)]
 
         nbranches = len(branch_names)
 
@@ -803,14 +803,12 @@ class Backend(object):
             print("  Gelman-Rubin diagnostic \n  <R̂>: Mean value for all parameters\n")
             print("  --------------")
             for branch in self.branch_names:
-                print(" Model: {}".format(branch))
+                print(f" Model: {branch}")
                 print("   T \t <R̂>")
                 print("  --------------")
                 for temp in range(self.ntemps):
                     print(
-                        "   {:01d}\t{:3.2f}".format(
-                            temp, np.mean(Rhat_all_branches[branch][temp])
-                        )
+                        f"   {temp:01d}\t{np.mean(Rhat_all_branches[branch][temp]):3.2f}"
                     )
                 print("\n")
 
@@ -939,18 +937,12 @@ class Backend(object):
                 ndim2,
             ) or nleaves1 > nleaves2:
                 raise ValueError(
-                    "invalid coordinate dimensions for model {1} with shape {2}; expected {0}".format(
-                        shape, key, state.branches[key].shape
-                    )
+                    f"invalid coordinate dimensions for model {key} with shape {state.branches[key].shape}; expected {shape}"
                 )
 
             if (ntemp1, nwalker1, nleaves1) != state.branches[key].inds.shape:
                 raise ValueError(
-                    "invalid inds dimensions for model {1} with shape {2}; expected {0}".format(
-                        (ntemp1, nwalker1, nleaves1),
-                        key,
-                        state.branches[key].inds.shape,
-                    )
+                    f"invalid inds dimensions for model {key} with shape {state.branches[key].inds.shape}; expected {(ntemp1, nwalker1, nleaves1)}"
                 )
 
         # make sure log likelihood, log prior, blobs, accepted, rj_accepted, betas are okay
@@ -959,14 +951,14 @@ class Backend(object):
             nwalkers,
         ):
             raise ValueError(
-                "invalid log probability size; expected {0}".format((ntemps, nwalkers))
+                f"invalid log probability size; expected {(ntemps, nwalkers)}"
             )
         if state.log_prior.shape != (
             ntemps,
             nwalkers,
         ):
             raise ValueError(
-                "invalid log prior size; expected {0}".format((ntemps, nwalkers))
+                f"invalid log prior size; expected {(ntemps, nwalkers)}"
             )
         if state.blobs is not None and not has_blobs:
             raise ValueError("unexpected blobs")
@@ -974,19 +966,19 @@ class Backend(object):
             raise ValueError("expected blobs, but none were given")
         if state.blobs is not None and state.blobs.shape[:2] != (ntemps, nwalkers):
             raise ValueError(
-                "invalid blobs size; expected {0}".format((ntemps, nwalkers))
+                f"invalid blobs size; expected {(ntemps, nwalkers)}"
             )
         if accepted.shape != (
             ntemps,
             nwalkers,
         ):
             raise ValueError(
-                "invalid acceptance size; expected {0}".format((ntemps, nwalkers))
+                f"invalid acceptance size; expected {(ntemps, nwalkers)}"
             )
 
         if swaps_accepted is not None and swaps_accepted.shape != (ntemps - 1,):
             raise ValueError(
-                "invalid swaps_accepted size; expected {0}".format(ntemps - 1)
+                f"invalid swaps_accepted size; expected {ntemps - 1}"
             )
         if self.rj:
             if rj_accepted.shape != (
@@ -994,13 +986,11 @@ class Backend(object):
                 nwalkers,
             ):
                 raise ValueError(
-                    "invalid rj acceptance size; expected {0}".format(
-                        (ntemps, nwalkers)
-                    )
+                    f"invalid rj acceptance size; expected {(ntemps, nwalkers)}"
                 )
 
         if state.betas is not None and state.betas.shape != (ntemps,):
-            raise ValueError("invalid beta size; expected {0}".format(ntemps))
+            raise ValueError(f"invalid beta size; expected {ntemps}")
 
     def get_move_info(self):
         """Get move information.
@@ -1140,9 +1130,7 @@ class Backend(object):
             out_info["ac_thin"] = int(0.5 * np.min(list(tau.values())))
         except Exception as e:
             print(
-                "Failed to calculate the autocorrelation length. Will not output this piece of information. \n\n Actual error: [{}]".format(
-                    e
-                )
+                f"Failed to calculate the autocorrelation length. Will not output this piece of information. \n\n Actual error: [{e}]"
             )
             out_info["ac_thin"] = 1
             out_info["ac_burn"] = 1

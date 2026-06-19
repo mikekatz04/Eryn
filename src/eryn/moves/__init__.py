@@ -2,7 +2,12 @@
 
 # from .de import DEMove
 # from .de_snooker import DESnookerMove
+from .combine import CombineMove
+from .distgen import DistributionGenerate
+from .distgenrj import DistributionGenerateRJ
 from .gaussian import GaussianMove
+from .group import GroupMove
+from .groupstretch import GroupStretchMove
 
 # from .kde import KDEMove
 from .mh import MHMove
@@ -11,6 +16,8 @@ from .red_blue import RedBlueMove
 from .stretch import StretchMove
 from .de import DEMove, DESnookerMove
 from .infomatrix import InfoMatrixMove
+from .independentmh import IndependentProposalMove
+from .flow import FlowMove
 
 # from .walk import WalkMove
 from .nuts import NUTSMove, NUTSSampler
@@ -28,8 +35,6 @@ from .combine import CombineMove
 from .mtdistgen import MTDistGenMove
 from .mtdistgenrj import MTDistGenMoveRJ
 from .multipletry import MultipleTryMove
-from .independentmh import IndependentProposalMove
-from .flow import FlowMove
 
 __all__ = [
     "Move",

@@ -481,9 +481,7 @@ class State(object):
 
             elif coords[name].ndim < 2 or coords[name].ndim > 4:
                 raise ValueError(
-                    "Dimension off coordinates must be between 2 and 4. coords dimension is {0}.".format(
-                        coords.ndim
-                    )
+                    f"Dimension off coordinates must be between 2 and 4. coords dimension is {coords.ndim}."
                 )
 
         # if no inds given, make sure this is clear for all Branch objects
@@ -682,9 +680,7 @@ class ParaState(object):
 
             elif coords[name].ndim < 2 or coords[name].ndim > 4:
                 raise ValueError(
-                    "Dimension off coordinates must be between 2 and 4. coords dimension is {0}.".format(
-                        coords.ndim
-                    )
+                    f"Dimension off coordinates must be between 2 and 4. coords dimension is {coords.ndim}."
                 )
 
         if branch_supplemental is None:

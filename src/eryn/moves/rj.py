@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
-from multiprocessing.sharedctypes import Value
-import numpy as np
 from copy import deepcopy
+from multiprocessing.sharedctypes import Value
+
+import numpy as np
+
 from ..state import State
-from .move import Move
 from .delayedrejection import DelayedRejection
 from .distgen import DistributionGenerate
+from .move import Move
 
 __all__ = ["ReversibleJumpMove"]
 
@@ -39,7 +41,7 @@ class ReversibleJumpMove(Move):
         fix_change=None,
         **kwargs
     ):
-        # super(ReversibleJumpMove, self).__init__(**kwargs)
+        # super().__init__(**kwargs)
         Move.__init__(self, is_rj=True, **kwargs)
 
         if nleaves_max is None or nleaves_min is None:

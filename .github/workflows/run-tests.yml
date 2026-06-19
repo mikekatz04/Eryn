@@ -13,6 +13,23 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Eryn modernization (2026-06-04): ruff lint + format-check step.
+  # Runs in parallel with the install_and_run_tests matrix below.
+  ruff:
+    name: Ruff lint + format check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ruff
+        run: python -m pip install "ruff>=0.9.0"
+      - name: Run ruff check
+        run: ruff check src/eryn
+      - name: Run ruff format --check
+        run: ruff format --check src/eryn
+
   install_and_run_tests:
     name: Install and run tests
     runs-on: ${{ matrix.os }}
@@ -21,9 +38,12 @@ jobs:
         shell: bash -el {0}
     strategy:
       fail-fast: false
+      # Eryn modernization (2026-06-04): expand matrix to all supported
+      # Python versions (3.10..3.13 matching `requires-python` in
+      # pyproject.toml). Pre-3M the matrix was 3.12-only.
       matrix:
-        os: ["ubuntu-latest", ]
-        python-version: ["3.12", ]
+        os: ["ubuntu-latest"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - name: Get the code
         uses: actions/checkout@v4
@@ -35,17 +55,14 @@ jobs:
         run: |
           which python
           python --version
-          which cmake
-          cmake --version
           python -m pip install -v .
-      # - name: Run tests alone without coverage.
-      #   run: |
-      #     python -m unittest tests/test*
-      # TODO: add back in
-      # - name: Install coverage
-      #   run: |
-      #     python -m pip install coverage[toml]
-      # - name: Run module tests & show coverage results
-      #   run: |
-      #     coverage run --source=eryn -m unittest discover
-      #     coverage report -m
+      # Eryn modernization (2026-06-04): coverage steps re-enabled (were
+      # commented out pre-modernization). Coverage report posted to job
+      # log; future work can wire up coveralls/codecov upload.
+      - name: Install coverage
+        run: |
+          python -m pip install coverage[toml]
+      - name: Run module tests & show coverage results
+        run: |
+          coverage run --source=eryn -m unittest discover
+          coverage report -m

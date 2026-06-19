@@ -50,7 +50,7 @@ class StretchMove(RedBlueMove):
         self.return_gpu = return_gpu
 
         # how it was formerly
-        # super(StretchMove, self).__init__(**kwargs)
+        # super().__init__(**kwargs)
 
     def adjust_factors(self, factors, ndims_old, ndims_new):
         """Adjust the ``factors`` based on changing dimensions.

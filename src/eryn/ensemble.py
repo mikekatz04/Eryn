@@ -1,31 +1,24 @@
 # -*- coding: utf-8 -*-
 
 import warnings
+from copy import deepcopy
+from itertools import count
 
 import numpy as np
-from itertools import count
-from copy import deepcopy
 
 from .backends import Backend, HDFBackend
 from .model import Model
-from .moves import StretchMove, TemperatureControl, DistributionGenerateRJ, GaussianMove
+from .moves import DistributionGenerateRJ, GaussianMove, StretchMove, TemperatureControl
 from .pbar import get_progress_bar
-from .state import State
 from .prior import ProbDistContainer
-
-from .utils import PlotContainer
-from .utils import PeriodicContainer
+from .state import State
+from .utils import PeriodicContainer, PlotContainer
 from .utils.utility import groups_from_inds
-
 
 __all__ = ["EnsembleSampler", "walkers_independent"]
 
 
-try:
-    from collections.abc import Iterable
-except ImportError:
-    # for py2.7, will be an Exception in 3.8
-    from collections import Iterable
+from collections.abc import Iterable
 
 
 class EnsembleSampler(object):
@@ -35,7 +28,7 @@ class EnsembleSampler(object):
     everything from a basic non-tempered MCMC to a parallel-tempered,
     global fit containing multiple branches (models) and a variable
     number of leaves (sources) per branch.
-    See `here <https://mikekatz04.github.io/Eryn/Eryn_tutorial.html#The-Tree-Metaphor>`_
+    See `here <https://lisa-analysis-tools.github.io/Eryn/Eryn_tutorial.html#The-Tree-Metaphor>`_
     for a basic explainer.
 
     Parameters related to parallelization can be controlled via the ``pool`` argument.
@@ -75,7 +68,7 @@ class EnsembleSampler(object):
                 ``args`` and ``kwargs`` below.
 
                 Please see the
-                `tutorial <https://mikekatz04.github.io/Eryn/Eryn_tutorial.html#>`_
+                `tutorial <https://lisa-analysis-tools.github.io/Eryn/Eryn_tutorial.html#>`_
                 for more information.
 
         priors (dict): The prior dictionary can take four forms.
@@ -98,7 +91,7 @@ class EnsembleSampler(object):
         provide_groups (bool, optional): If ``True``, provide groups as described in ``log_like_fn`` above.
             A group parameter is added for each branch. (default: ``False``)
         provide_supplemental (bool, optional): If ``True``, it will provide keyword arguments to
-            the Likelihood function: ``supps`` and ``branch_supps``. Please see the `Tutorial <https://mikekatz04.github.io/Eryn/Eryn_tutorial.html#>`_
+            the Likelihood function: ``supps`` and ``branch_supps``. Please see the `Tutorial <https://lisa-analysis-tools.github.io/Eryn/Eryn_tutorial.html#>`_
             and :class:`eryn.state.BranchSupplemental` for more information.
         tempering_kwargs (dict, optional): Keyword arguments for initialization of the
             tempering class: :class:`eryn.moves.tempering.TemperatureControl`.  (default: ``{}``)
@@ -270,7 +263,7 @@ class EnsembleSampler(object):
                 raise ValueError("branch_names must be string or list of strings.")
 
         else:
-            branch_names = ["model_{}".format(i) for i in range(nbranches)]
+            branch_names = [f"model_{i}" for i in range(nbranches)]
 
         nbranches = len(branch_names)
 
@@ -659,9 +652,9 @@ class EnsembleSampler(object):
                 if shape != test_shape:
                     raise ValueError(
                         (
-                            "the shape of the backend ({0}) is incompatible with the "
-                            "shape of the sampler ({1} for model {2})"
-                        ).format(shape, test_shape, name)
+                            f"the shape of the backend ({shape}) is incompatible with the "
+                            f"shape of the sampler ({test_shape} for model {name})"
+                        )
                     )
 
             # Get the last random state
@@ -757,9 +750,7 @@ class EnsembleSampler(object):
                     for ind, dist in test.items():
                         if not hasattr(dist, "logpdf"):
                             raise ValueError(
-                                "Distribution for model {0} and index {1} does not have logpdf method.".format(
-                                    key, ind
-                                )
+                                f"Distribution for model {key} and index {ind} does not have logpdf method."
                             )
 
                     self._priors[key] = ProbDistContainer(test)

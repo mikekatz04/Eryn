@@ -4,29 +4,30 @@ from shutil import which
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib.patches import Ellipse, Rectangle
-
-from matplotlib.colors import to_rgba
-
-import corner
-import typing
-
-from eryn.utils.updates import UpdateStep
-
+import numpy as np
 import pandas as pd
 import seaborn as sns
+from matplotlib.colors import to_rgba
+from matplotlib.patches import Ellipse, Rectangle
 
-from eryn.utils.utility import stepping_stone_log_evidence, get_integrated_act
+from eryn.utils.updates import UpdateStep
+from eryn.utils.utility import get_integrated_act, stepping_stone_log_evidence
+
 DEFAULT_PALETTE = "icefire"
 
-try:
-    import scienceplots
-    plt.style.use(['science'])
-except (ImportError, ModuleNotFoundError):
+class Backend:
+    """A placeholder Backend class for type hinting."""
     pass
 
-# increase default font size
-mpl.rcParams.update({'font.size': 16})
+def setup_plotting():
+    try:
+        import scienceplots
+        plt.style.use(['science'])
+    except:
+        pass
+
+    # increase default font size
+    mpl.rcParams.update({'font.size': 16})
 
 if which("latex"):
     mpl.rcParams.update({
@@ -1250,7 +1251,7 @@ class PlotContainer:
         """
         Initialize the PlotContainer.
         """
-
+        setup_plotting()
         self.backend = backend
 
         self.parent_folder = parent_folder
@@ -1325,8 +1326,6 @@ class PlotContainer:
 
         if self.branches is not None:
             chain = {branch: chain[branch] for branch in self.branches if branch in chain}
-            #logl = {branch: logl[branch] for branch in self.branches if branch in logl}
-            #betas = {branch: betas[branch] for branch in self.branches if branch in betas}  
 
         for plot in self.plots:
             base_folder = os.path.join(self.parent_folder, plot)
@@ -1407,6 +1406,3 @@ class PlotContainer:
                     parent_folder=base_folder,
                     iteration=self.backend.iteration
                 )
-            
-            
-            

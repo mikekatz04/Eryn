@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from ..state import BranchSupplemental
-from . import Move
 import numpy as np
 import tqdm
+
+from ..state import BranchSupplemental
+from .move import Move
 
 __all__ = ["CombineMove"]
 

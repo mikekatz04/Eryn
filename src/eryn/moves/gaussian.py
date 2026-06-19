@@ -63,7 +63,7 @@ class GaussianMove(MHMove):
                 proposal = _isotropic_proposal(np.sqrt(cov), factor, mode)
             self.all_proposal[name] = proposal
 
-        super(GaussianMove, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def get_proposal(self, branches_coords, random, branches_inds=None, **kwargs):
         """Get proposal from Gaussian distribution
@@ -152,9 +152,7 @@ class _isotropic_proposal(object):
 
         if mode not in self.allowed_modes:
             raise ValueError(
-                ("'{0}' is not a recognized mode. " "Please select from: {1}").format(
-                    mode, self.allowed_modes
-                )
+                (f"'{mode}' is not a recognized mode. " f"Please select from: {self.allowed_modes}")
             )
         self.mode = mode
 

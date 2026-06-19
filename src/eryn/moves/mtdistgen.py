@@ -1,7 +1,7 @@
 import numpy as np
 
-from eryn.moves.multipletry import MultipleTryMove
 from eryn.moves import MHMove
+from eryn.moves.multipletry import MultipleTryMove
 
 
 class MTDistGenMove(MultipleTryMove, MHMove):

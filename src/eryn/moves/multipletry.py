@@ -1,8 +1,9 @@
-from multiprocessing.sharedctypes import Value
-import numpy as np
 import warnings
-from copy import deepcopy
 from abc import ABC
+from copy import deepcopy
+from multiprocessing.sharedctypes import Value
+
+import numpy as np
 
 # from scipy.special import logsumexp
 
@@ -15,9 +16,9 @@ except (ModuleNotFoundError, ImportError):
 
     gpu_available = False
 
-from .rj import ReversibleJumpMove
 from ..prior import ProbDistContainer
 from ..utils.utility import groups_from_inds
+from .rj import ReversibleJumpMove
 
 ___ = ["MultipleTryMove"]
 

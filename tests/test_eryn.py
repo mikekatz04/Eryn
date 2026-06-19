@@ -806,6 +806,101 @@ class ErynTest(unittest.TestCase):
             coords, nsteps, burn=burn, progress=False, thin_by=thin_by
         )
 
+    def test_transform_inverse(self):
+        # single-param transforms with fill values and a key_map,
+        # mirroring a typical GB-style setup
+        input_basis = ["lnA", "f0", "fdot", "cosinc"]
+        output_basis = ["A", "f0", "fdot", "fddot", "inc"]
+        tc = TransformContainer(
+            input_basis=input_basis,
+            output_basis=output_basis,
+            parameter_transforms={"lnA": np.exp, "cosinc": np.arccos},
+            fill_dict={"fddot": 0.0},
+            key_map={"lnA": "A", "cosinc": "inc"},
+            inverse_parameter_transforms={"lnA": np.log, "cosinc": np.cos},
+        )
+
+        x = np.random.uniform(0.1, 0.9, size=(40, 4))
+        full = tc.both_transforms(x)
+        self.assertEqual(full.shape, (40, 5))
+
+        # unfill_values drops the filled entries
+        unfilled = tc.unfill_values(full)
+        self.assertEqual(unfilled.shape, (40, 4))
+
+        # full round trip recovers the sampling-basis points
+        back = tc.both_inverse_transforms(full)
+        np.testing.assert_allclose(back, x, rtol=1e-13, atol=1e-15)
+
+        # round trip the other way (sampling -> full -> sampling -> full)
+        np.testing.assert_allclose(tc.both_transforms(back), full, rtol=1e-13)
+
+        # return_transpose and 1-D inputs work
+        back_T = tc.both_inverse_transforms(full, return_transpose=True)
+        np.testing.assert_allclose(back_T, back.T)
+        np.testing.assert_allclose(tc.both_inverse_transforms(full[0]), x[0], rtol=1e-13)
+
+        # multi-parameter inverses unwind in reverse order: forward applies
+        # single-param transforms first (logM -> mT), then the
+        # multi-param map ((mT, q) -> (m1, m2)); the inverse must undo
+        # the multi-param map first
+        tc_mass = TransformContainer(
+            input_basis=["logM", "q", "spin"],
+            output_basis=["logM", "q", "spin"],
+            parameter_transforms={
+                "logM": np.exp,
+                ("logM", "q"): lambda mT, q: (mT / (1 + q), mT * q / (1 + q)),
+            },
+            inverse_parameter_transforms={
+                "logM": np.log,
+                ("logM", "q"): lambda m1, m2: (m1 + m2, m2 / m1),
+            },
+        )
+        y = np.array([[np.log(3e6), 0.5, 0.9], [np.log(1e5), 0.25, -0.3]])
+        np.testing.assert_allclose(
+            tc_mass.both_inverse_transforms(tc_mass.both_transforms(y)), y, rtol=1e-13
+        )
+
+        # no inverses provided -> requesting the inverse raises
+        tc_no_inv = TransformContainer(
+            input_basis=["a", "b"],
+            output_basis=["a", "b"],
+            parameter_transforms={"a": np.exp},
+        )
+        with self.assertRaises(ValueError):
+            tc_no_inv.both_inverse_transforms(y[:, :2])
+
+        # partial inverses (missing a forward key) also raise
+        tc_partial = TransformContainer(
+            input_basis=["a", "b"],
+            output_basis=["a", "b"],
+            parameter_transforms={"a": np.exp, "b": np.exp},
+            inverse_parameter_transforms={"a": np.log},
+        )
+        with self.assertRaises(ValueError):
+            tc_partial.inverse_transform_base_parameters(y[:, :2])
+
+        # no transforms at all -> inverse methods pass through
+        tc_empty = TransformContainer(input_basis=["a", "b"], output_basis=["a", "b"])
+        np.testing.assert_allclose(
+            tc_empty.both_inverse_transforms(y[:, :2]), y[:, :2]
+        )
+
+        # empty fill_dict ({}) round-trips as a no-op fill
+        tc_empty_fill = TransformContainer(
+            input_basis=["a", "b"],
+            output_basis=["a", "b"],
+            parameter_transforms={"a": np.exp},
+            fill_dict={},
+            inverse_parameter_transforms={"a": np.log},
+        )
+        z = np.random.uniform(0.1, 0.9, size=(10, 2))
+        np.testing.assert_allclose(
+            tc_empty_fill.both_inverse_transforms(tc_empty_fill.both_transforms(z)),
+            z,
+            rtol=1e-13,
+        )
+
     def test_group_stretch(self):
 
         from eryn.moves import GroupStretchMove

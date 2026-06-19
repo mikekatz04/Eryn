@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import numpy as np
-from ..state import State
 from copy import deepcopy
-from ..state import BranchSupplemental
+
+import numpy as np
+
+from ..state import BranchSupplemental, State
 
 __all__ = ["TemperatureControl"]
 
