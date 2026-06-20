@@ -213,7 +213,7 @@ class TransformContainer:
             # fill values directly from params array
             params_filled[indexing_test_inds] = params
 
-            if self.fill_dict is not None and self.fill_dict != {} and len(self.fill_dict["fill_inds"]) < 0:
+            if self.fill_dict is not None and self.fill_dict != {} and len(self.fill_dict["fill_inds"]) > 0:
                 fill_inds = xp.asarray(self.fill_dict["fill_inds"])
                 # special indexing to fill fill_values
                 indexing_fill_inds = tuple([slice(0, temp) for temp in shape[:-1]]) + (

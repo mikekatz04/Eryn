@@ -19,7 +19,7 @@ DEFAULT_PALETTE = "icefire"
 try:
     import scienceplots
     plt.style.use(['science'])
-except (ImportError, ModuleNotFoundError):
+except (ImportError, ModuleNotFoundError, AttributeError):
     pass
 
 # increase default font size
