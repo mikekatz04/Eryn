@@ -1,5 +1,6 @@
 # *-- coding: utf-8 --*
 import os
+from shutil import which
 import typing
 
 import corner
@@ -28,6 +29,29 @@ mpl.rcParams.update({'font.size': 16})
 class Backend:
     """A placeholder Backend class for type hinting."""
     pass
+
+def setup_plotting():
+    try:
+        import scienceplots
+        plt.style.use(['science'])
+    except:
+        pass
+
+    # increase default font size
+    mpl.rcParams.update({'font.size': 16})
+
+    if which("latex"):
+        mpl.rcParams.update({
+            "text.usetex": True,
+            "font.family": "serif",
+            "font.serif": ["Palatino"],
+        })
+    else:
+        print("LaTeX not found. Using default matplotlib fonts.")
+        mpl.rcParams.update({
+            "text.usetex": False,
+        })
+
 
 def save_or_show(fig, filename=None):
     """
@@ -1050,10 +1074,10 @@ def produce_base_plots(chain: dict,
             filename=os.path.join(branch_folder, f'traceplot.png')
         )
 
-        plot_loglikelihood(
-            logl[:, 0, :],
-            filename=os.path.join(parent_folder, f'loglikelihood.png')
-        )
+    plot_loglikelihood(
+        logl[:, 0, :],
+        filename=os.path.join(parent_folder, f'loglikelihood.png')
+    )
 
 def produce_tempering_plots(chain: dict, 
                             betas: np.ndarray,
@@ -1232,7 +1256,7 @@ class PlotContainer:
         """
         Initialize the PlotContainer.
         """
-
+        setup_plotting()
         self.backend = backend
 
         self.parent_folder = parent_folder
@@ -1307,8 +1331,6 @@ class PlotContainer:
 
         if self.branches is not None:
             chain = {branch: chain[branch] for branch in self.branches if branch in chain}
-            logl = {branch: logl[branch] for branch in self.branches if branch in logl}
-            betas = {branch: betas[branch] for branch in self.branches if branch in betas}  
 
         for plot in self.plots:
             base_folder = os.path.join(self.parent_folder, plot)
@@ -1386,6 +1408,3 @@ class PlotContainer:
                     parent_folder=base_folder,
                     iteration=self.backend.iteration
                 )
-            
-            
-            

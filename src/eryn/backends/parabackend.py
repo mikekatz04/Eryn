@@ -4,7 +4,6 @@ import numpy as np
 
 from ..state import ParaState
 from ..utils.utility import (
-    get_integrated_act,
     psrf,
     stepping_stone_log_evidence,
     thermodynamic_integration_log_evidence,
@@ -112,7 +111,7 @@ class ParaBackend(object):
         self.reset_kwargs = dict(
             ntemps=ntemps,
             branch_name=branch_name,
-            info=info,
+            **info,
         )
 
         # load info into class
@@ -130,9 +129,7 @@ class ParaBackend(object):
         self.iteration = 0
 
         # setup all the holder arrays
-        self.accepted = np.zeros(
-            (self.ngroups, self.ntemps, self.nwalkers), dtype=self.dtype
-        )
+        self.accepted = np.zeros((self.ngroups, self.ntemps, self.nwalkers), dtype=self.dtype)
         self.swaps_accepted = np.zeros(
             (
                 self.ngroups,
@@ -150,17 +147,11 @@ class ParaBackend(object):
         }
 
         # inds correspond to leaves used or not
-        self.groups_running = {
-            self.branch_name: np.empty((0, self.ngroups), dtype=bool)
-        }
+        self.groups_running = {self.branch_name: np.empty((0, self.ngroups), dtype=bool)}
 
         # log likelihood and prior
-        self.log_like = np.empty(
-            (0, self.ngroups, self.ntemps, self.nwalkers), dtype=self.dtype
-        )
-        self.log_prior = np.empty(
-            (0, self.ngroups, self.ntemps, self.nwalkers), dtype=self.dtype
-        )
+        self.log_like = np.empty((0, self.ngroups, self.ntemps, self.nwalkers), dtype=self.dtype)
+        self.log_prior = np.empty((0, self.ngroups, self.ntemps, self.nwalkers), dtype=self.dtype)
 
         # temperature ladder
         self.betas = np.empty((0, self.ngroups, self.ntemps), dtype=self.dtype)
@@ -191,16 +182,12 @@ class ParaBackend(object):
 
         if self.iteration <= 0:
             raise AttributeError(
-                "you must run the sampler with "
-                "'store == True' before accessing the "
-                "results"
+                "you must run the sampler with 'store == True' before accessing the results"
             )
 
         # prepare chain for output
         if name == "chain":
-            v_all = self.chain[self.branch_name][
-                discard + thin - 1 : self.iteration : thin
-            ]
+            v_all = self.chain[self.branch_name][discard + thin - 1 : self.iteration : thin]
 
             return v_all
 
@@ -368,24 +355,20 @@ class ParaBackend(object):
         """
         if (not self.initialized) or self.iteration <= 0:
             raise AttributeError(
-                "you must run the sampler with "
-                "'store == True' before accessing the "
-                "results"
+                "you must run the sampler with 'store == True' before accessing the results"
             )
 
         thin = self.iteration - it if it != self.iteration else 1
         discard = it + 1 - thin
-        # check for blobs
 
-        # fill a ParaState with quantities from the last sample in the chain
+        # fill a ParaState with quantities from sample ``it`` in the chain;
+        # each getter returns one step, so take index 0 to drop the step axis
         sample = ParaState(
-            {self.branch_name: self.get_chain(discard=discard, thin=thin)},
+            {self.branch_name: self.get_chain(discard=discard, thin=thin)[0]},
             log_like=self.get_log_like(discard=discard, thin=thin)[0],
             log_prior=self.get_log_prior(discard=discard, thin=thin)[0],
-            groups_running={
-                self.branch_name: self.get_inds(discard=discard, thin=thin)
-            },
-            betas=self.get_betas(discard=discard, thin=thin).squeeze(),
+            groups_running=self.get_groups_running(discard=discard, thin=thin)[0],
+            betas=self.get_betas(discard=discard, thin=thin)[0],
             random_state=self.random_state,
         )
         return sample
@@ -437,8 +420,8 @@ class ParaBackend(object):
         # make sure that the betas were fixed during sampling (after burn in)
         if not (betas_all == betas_all[0]).all():
             raise ValueError(
-                """Cannot compute evidence estimation if betas are allowed to vary. Use stop_adaptation 
-                kwarg in temperature settings."""
+                "Cannot compute evidence estimation if betas are allowed to vary. "
+                "Use stop_adaptation kwarg in temperature settings."
             )
 
         # setup information
@@ -544,9 +527,7 @@ class ParaBackend(object):
                 print("   T \t <R̂>")
                 print("  --------------")
                 for temp in range(self.ntemps):
-                    print(
-                        f"   {temp:01d}\t{np.mean(Rhat_all_branches[branch][temp]):3.2f}"
-                    )
+                    print(f"   {temp:01d}\t{np.mean(Rhat_all_branches[branch][temp]):3.2f}")
                 print("\n")
 
         return Rhat_all_branches
@@ -556,9 +537,7 @@ class ParaBackend(object):
         """The dimensions of the ensemble
 
         Returns:
-            dict: Shape of samples
-                Keys are ``branch_names`` and values are tuples with
-                shapes of individual branches: (ntemps, nwalkers, nleaves_max, ndim).
+            tuple: ``(ngroups, ntemps, nwalkers, ndim)``.
 
         """
         return (self.ngroups, self.ntemps, self.nwalkers, self.ndim)
@@ -575,7 +554,6 @@ class ParaBackend(object):
 
         # determine the number of entries in the chains
         i = ngrow - (len(self.chain[list(self.chain.keys())[0]]) - self.iteration)
-        {self.branch_name: (self.ngroups, self.ntemps, self.nwalkers, self.ndim)}
 
         # temperary addition to chains
         a = {
@@ -660,34 +638,26 @@ class ParaBackend(object):
             ntemps,
             nwalkers,
         ):
-            raise ValueError(
-                f"invalid log prior size; expected {(ngroups, ntemps, nwalkers)}"
-            )
+            raise ValueError(f"invalid log prior size; expected {(ngroups, ntemps, nwalkers)}")
 
         if accepted.shape != (
             ngroups,
             ntemps,
             nwalkers,
         ):
-            raise ValueError(
-                f"invalid acceptance size; expected {(ngroups, ntemps, nwalkers)}"
-            )
+            raise ValueError(f"invalid acceptance size; expected {(ngroups, ntemps, nwalkers)}")
 
         if swaps_accepted is not None and swaps_accepted.shape != (
             ngroups,
             ntemps - 1,
         ):
-            raise ValueError(
-                f"invalid swaps_accepted size; expected {(ngroups, ntemps - 1)}"
-            )
+            raise ValueError(f"invalid swaps_accepted size; expected {(ngroups, ntemps - 1)}")
 
         if state.betas is not None and state.betas.shape != (
             ngroups,
             ntemps,
         ):
-            raise ValueError(
-                f"invalid beta size; expected {(ngroups, ntemps)}"
-            )
+            raise ValueError(f"invalid beta size; expected {(ngroups, ntemps)}")
 
     def save_step(
         self,
@@ -726,8 +696,7 @@ class ParaBackend(object):
             # use self.store_missing_leaves to set value for missing leaves
             # state retains old coordinates
             coords_in = (
-                state.branches[self.branch_name].coords
-                * state.groups_running[:, None, None, None]
+                state.branches[self.branch_name].coords * state.groups_running[:, None, None, None]
             ).get()
 
             coords_in[~state.groups_running.get()] = self.store_missing_leaves
@@ -751,8 +720,7 @@ class ParaBackend(object):
             # use self.store_missing_leaves to set value for missing leaves
             # state retains old coordinates
             coords_in = (
-                state.branches[self.branch_name].coords
-                * state.groups_running[:, None, None, None]
+                state.branches[self.branch_name].coords * state.groups_running[:, None, None, None]
             )
 
             coords_in[~state.groups_running] = self.store_missing_leaves

@@ -1,30 +1,126 @@
+# -*- coding: utf-8 -*-
+
 from copy import deepcopy
 from itertools import count
+from typing import Callable
 
 import numpy as np
+from gpubackendtools import get_backend, get_first_backend
+from gpubackendtools.exceptions import GPUBACKENDTOOLSException
 
 from .backends.parabackend import ParaBackend
 from .ensemble import EnsembleSampler
 from .moves import StretchMove, TemperatureControl
 from .pbar import get_progress_bar
 from .state import ParaState
-from .utils import PeriodicContainer, TransformContainer
+from .utils import PeriodicContainer
 
-try:
-    import cupy as cp
+__all__ = ["ParaEnsembleSampler"]
 
-except (ModuleNotFoundError, ImportError) as e:
-    import numpy as cp
+# Eryn ships no compiled code of its own: the compute backend (numpy / cupy)
+# is sourced from the GPUBackendTools (GBT) backend registry. Preference
+# order used when a CUDA device is requested via the ``gpu`` argument.
+_CUDA_BACKEND_PRIORITY = ("gbt_cuda13x", "gbt_cuda12x", "gbt_cuda11x")
 
-from typing import Callable, Union
 
+def shuffle_along_axis(a, axis, xp=np):
+    """Independently shuffle array ``a`` along ``axis``.
 
-def shuffle_along_axis(a, axis):
-    idx = np.random.rand(*a.shape).argsort(axis=axis)
-    return np.take_along_axis(a, idx, axis=axis)
+    Args:
+        a (ndarray): Array to shuffle.
+        axis (int): Axis along which to shuffle.
+        xp (module, optional): Array module (``numpy`` or ``cupy``) matching
+            the type of ``a``. (default: ``numpy``)
+
+    Returns:
+        ndarray: Copy of ``a`` shuffled along ``axis``.
+
+    """
+    idx = xp.random.rand(*a.shape).argsort(axis=axis)
+    return xp.take_along_axis(a, idx, axis=axis)
 
 
 class ParaEnsembleSampler(EnsembleSampler):
+    """Vectorized ensemble sampler running many independent ensembles at once.
+
+    This sampler advances ``ngroups`` independent parallel-tempered ensembles
+    simultaneously. All groups share a single (vectorized) likelihood call per
+    proposal, which makes this sampler well suited to GPU likelihoods where
+    batching across groups is much cheaper than looping over them. Each group
+    is a self-contained ensemble with shape ``(ntemps, nwalkers, ndim)`` and
+    its own temperature ladder; groups can be switched on and off between
+    steps via ``ParaState.groups_running``.
+
+    The compute backend (CPU/GPU) is fixed at instantiation through the
+    ``force_backend`` / ``gpu`` arguments and is sourced from the
+    GPUBackendTools (GBT) backend registry — Eryn ships no compiled code of
+    its own. All internal arrays use the matching array module (``self.xp``:
+    ``numpy`` for the CPU backend, ``cupy`` for CUDA backends).
+
+    Args:
+        ndim (int): Number of dimensions in the parameter space.
+        nwalkers (int): Number of walkers per temperature per group.
+            Must be even (the stretch proposal splits walkers in half).
+        ngroups (int): Number of independent ensembles run simultaneously.
+        log_like_fn (callable): Likelihood function. Receives a 2D array of
+            parameters flattened over all groups/temperatures/walkers with
+            in-prior points and must return a 1D array of log-likelihood
+            values of matching length.
+        priors (dict): Dictionary with ``name`` as the key and a
+            :class:`eryn.prior.ProbDistContainer` as the value.
+        tempering_kwargs (dict, optional): Keyword arguments for
+            :class:`eryn.moves.tempering.TemperatureControl`. If ``None``,
+            no tempering is used (``ntemps = 1``). (default: ``None``)
+        args (list or tuple, optional): Positional arguments passed to
+            ``log_like_fn``. (default: ``()``)
+        kwargs (dict, optional): Keyword arguments passed to ``log_like_fn``.
+            (default: ``None``)
+        gpu (int, optional): If provided, use this CUDA device and run with
+            ``cupy`` (resolved through the first available GBT CUDA backend).
+            If ``None`` (and no CUDA ``force_backend`` is given), run on CPU
+            with ``numpy``. (default: ``None``)
+        force_backend (str, optional): Name of the GBT backend to use, e.g.
+            ``"cpu"``, ``"cuda12x"`` (or prefixed: ``"gbt_cpu"``). Overrides
+            the default CPU resolution; combine with ``gpu`` to also select
+            the CUDA device index. The jax backend is not supported (this
+            sampler mutates arrays in place). (default: ``None``)
+        periodic (dict or :class:`eryn.utils.PeriodicContainer`, optional):
+            Periodic-parameter information passed to the stretch proposal.
+            (default: ``None``)
+        backend (ParaBackend, optional): Storage backend. If ``None``, an
+            in-memory :class:`eryn.backends.ParaBackend` is created.
+            (default: ``None``)
+        update_fn (callable, optional): Called as ``update_fn(i, state, sampler)``
+            every ``update_iterations`` proposals. (default: ``None``)
+        update_iterations (int, optional): Number of proposals between calls
+            to ``update_fn``. ``<= 0`` disables updates. (default: ``-1``)
+        stopping_fn (callable, optional): Called as ``stopping_fn(i, state, sampler)``
+            every ``stopping_iterations`` sampler iterations; a truthy return
+            stops sampling. (default: ``None``)
+        stopping_iterations (int, optional): Number of iterations between calls
+            to ``stopping_fn``. ``<= 0`` disables stopping checks. (default: ``-1``)
+        prior_transform_fn (object, optional): Object implementing
+            ``transform_to_prior_basis(coords, groups_running)`` (in-place map
+            of coordinates to the basis in which ``priors`` is defined) and
+            ``adjust_logp(logp, groups_running)`` (in-place Jacobian
+            adjustment of the log-prior). Used for per-group prior bounds
+            (e.g. per-band frequency limits). If ``None``, coordinates are
+            passed to ``priors`` unchanged. (default: ``None``)
+        name (str, optional): Branch name for the single branch sampled.
+            (default: ``"model_0"``)
+        provide_supplemental (bool, optional): If ``True``, pass ``supps`` and
+            ``branch_supps`` keyword arguments through to ``log_like_fn``.
+            (default: ``False``)
+        gibbs_sampling_setup (bool np.ndarray[ndim], optional): If provided,
+            only parameters where this mask is ``True`` are sampled; the
+            remaining dimensions stay fixed at their current values.
+            (default: ``None``)
+
+    Raises:
+        ValueError: Invalid inputs.
+
+    """
+
     def __init__(
         self,
         ndim: int,
@@ -32,28 +128,39 @@ class ParaEnsembleSampler(EnsembleSampler):
         ngroups: int,
         log_like_fn,
         priors,
-        tempering_kwargs: Union[dict, None] = None,
-        args: Union[list, tuple] = (),
-        kwargs: dict = {},
-        gpu: int = None,
-        periodic: Union[dict, None] = None,
-        backend: Union[ParaBackend] = None,  # add ParaHDFBackend
-        update_fn: Callable = None,
-        update_iterations=-1,
-        stopping_fn: Callable = None,
-        stopping_iterations: int=-1,
+        tempering_kwargs: dict | None = None,
+        args: list | tuple = (),
+        kwargs: dict | None = None,
+        gpu: int | None = None,
+        force_backend: str | None = None,
+        periodic: dict | None = None,
+        backend: ParaBackend | None = None,  # add ParaHDFBackend
+        update_fn: Callable | None = None,
+        update_iterations: int = -1,
+        stopping_fn: Callable | None = None,
+        stopping_iterations: int = -1,
         prior_transform_fn=None,
-        name="model_0",
-        provide_supplemental=False,
+        name: str = "model_0",
+        provide_supplemental: bool = False,
         gibbs_sampling_setup=None,
     ):
+        if nwalkers % 2 != 0:
+            raise ValueError(
+                f"nwalkers must be even for the stretch proposal split. Got {nwalkers}."
+            )
+
+        if not isinstance(priors, dict) or name not in priors:
+            raise ValueError(f"priors must be a dict containing the branch name {name!r} as a key.")
+
         self.ndim = ndim
         self.nwalkers = nwalkers
         self.ngroups = ngroups
         self.log_like_fn = log_like_fn
         self.priors = priors
         self.logl_args = args
-        self.logl_kwargs = kwargs
+        self.logl_kwargs = kwargs if kwargs is not None else {}
+        # resolve the GBT compute backend before anything touches self.xp
+        self._compute_backend_name = self._resolve_compute_backend(force_backend, gpu)
         self.gpu = gpu
         self.periodic = periodic
         self.update_fn = update_fn
@@ -65,11 +172,14 @@ class ParaEnsembleSampler(EnsembleSampler):
         self.provide_supplemental = provide_supplemental
         self.gibbs_sampling_setup = gibbs_sampling_setup
 
+        # for run_mcmc(initial_state=None, ...) continuation
+        self._previous_state = None
+
         if self.gibbs_sampling_setup is not None:
             assert isinstance(self.gibbs_sampling_setup, np.ndarray)
-            self.gibbs_sampling_setup = self.xp.asarray(self.gibbs_sampling_setup)
             assert len(self.gibbs_sampling_setup) == self.ndim
             assert self.gibbs_sampling_setup.dtype == bool
+            self.gibbs_sampling_setup = self.xp.asarray(self.gibbs_sampling_setup)
 
         if tempering_kwargs is None:
             self.ntemps = 1
@@ -77,13 +187,12 @@ class ParaEnsembleSampler(EnsembleSampler):
             self.base_temperature_control = None
 
         else:
-            self.base_temperature_control = TemperatureControl(
-                ndim, nwalkers, **tempering_kwargs
-            )
+            self.base_temperature_control = TemperatureControl(ndim, nwalkers, **tempering_kwargs)
             self.ntemps = self.base_temperature_control.ntemps
-            self.betas = self.xp.tile(
-                self.base_temperature_control.betas, (self.ngroups, 1)
-            )
+            self.betas = self.xp.tile(self.base_temperature_control.betas, (self.ngroups, 1))
+
+        # hyperbolic-decay clock for adaptive temperature adjustments
+        self.time_temp = 0
 
         self.backend = backend
 
@@ -95,7 +204,6 @@ class ParaEnsembleSampler(EnsembleSampler):
                 self.ndim,
             )
 
-        self.periodic = periodic
         self.move_proposal = StretchMove(
             periodic=self.periodic,
             temperature_control=self.base_temperature_control,
@@ -103,6 +211,7 @@ class ParaEnsembleSampler(EnsembleSampler):
             use_gpu=self.use_gpu,
         )
 
+        # index helpers mapping (group, temp, walker) positions
         self.temp_guide = (
             self.xp.repeat(
                 self.xp.arange(self.ntemps)[:, None],
@@ -128,6 +237,7 @@ class ParaEnsembleSampler(EnsembleSampler):
 
     @property
     def random_state(self):
+        """Random number generator (``numpy.random`` or ``cupy.random``)."""
         return self._random
 
     @random_state.setter
@@ -136,20 +246,23 @@ class ParaEnsembleSampler(EnsembleSampler):
 
     @property
     def periodic(self):
+        """:class:`eryn.utils.PeriodicContainer` or ``None``."""
         return self._periodic
 
     @periodic.setter
     def periodic(self, periodic):
-        if periodic is not None:
-            if isinstance(periodic, dict):
-                self._periodic = PeriodicContainer(periodic)
-            elif isinstance(periodic, PeriodicContainer):
-                self._periodic = periodic
-        else:
+        if isinstance(periodic, dict):
+            self._periodic = PeriodicContainer(periodic)
+        elif isinstance(periodic, PeriodicContainer) or periodic is None:
             self._periodic = periodic
+        else:
+            raise ValueError(
+                f"periodic must be None, dict, or PeriodicContainer. Got {type(periodic)}."
+            )
 
     @property
     def backend(self):
+        """:class:`eryn.backends.ParaBackend` storage object."""
         return self._backend
 
     @backend.setter
@@ -166,31 +279,87 @@ class ParaEnsembleSampler(EnsembleSampler):
         else:
             self._backend = backend
 
+    @staticmethod
+    def _resolve_compute_backend(force_backend, gpu):
+        """Map ``(force_backend, gpu)`` inputs to a GBT backend name.
+
+        ``force_backend`` wins when given (bare names like ``"cpu"`` /
+        ``"cuda12x"`` get the ``gbt_`` prefix). A bare ``gpu`` index implies
+        the first available CUDA backend. Default is CPU.
+        """
+        if force_backend is not None:
+            if not isinstance(force_backend, str):
+                raise ValueError(
+                    f"force_backend must be a backend name string. Got {type(force_backend)}."
+                )
+            backend_name = (
+                force_backend if force_backend.startswith("gbt_") else f"gbt_{force_backend}"
+            )
+            if "jax" in backend_name:
+                raise ValueError(
+                    "ParaEnsembleSampler mutates arrays in place and does not "
+                    "support the jax backend. Use 'cpu' or a 'cuda*' backend."
+                )
+            try:
+                backend = get_backend(backend_name)
+            except GPUBACKENDTOOLSException as e:
+                raise ValueError(f"Requested backend {backend_name!r} is not available: {e}") from e
+            if gpu is not None and not backend.uses_cupy:
+                raise ValueError(
+                    f"gpu={gpu} conflicts with non-CUDA force_backend={force_backend!r}."
+                )
+            return backend.name
+
+        if gpu is not None:
+            try:
+                return get_first_backend(_CUDA_BACKEND_PRIORITY).name
+            except GPUBACKENDTOOLSException as e:
+                raise ValueError(
+                    f"gpu={gpu} requested, but no CUDA backend is available: {e}. "
+                    "Use gpu=None to run on CPU."
+                ) from e
+
+        return get_backend("gbt_cpu").name
+
+    @property
+    def compute_backend(self):
+        """GBT :class:`gpubackendtools.gpubackendtools.Backend` providing ``xp``."""
+        return get_backend(self._compute_backend_name)
+
     @property
     def xp(self):
-        xp = cp if self.use_gpu else np
-        return xp
+        """Array module from the GBT backend: ``cupy`` on GPU, else ``numpy``."""
+        return self.compute_backend.xp
 
     @property
     def use_gpu(self):
-        if self.gpu is not None:
-            return True
-        else:
-            return False
+        """Whether this sampler instance runs on GPU."""
+        return self.compute_backend.uses_cupy
 
     @property
     def gpu(self):
+        """CUDA device index or ``None`` for CPU."""
         return self._gpu
 
     @gpu.setter
     def gpu(self, gpu):
-        self._gpu = gpu
         if gpu is not None:
-            cp.cuda.runtime.setDevice(gpu)
+            if not self.compute_backend.uses_cupy:
+                # explicit device request on a CPU-resolved sampler:
+                # switch to the first available CUDA backend
+                try:
+                    self._compute_backend_name = get_first_backend(_CUDA_BACKEND_PRIORITY).name
+                except GPUBACKENDTOOLSException as e:
+                    raise ValueError(
+                        f"gpu={gpu} requested, but no CUDA backend is available: {e}. "
+                        "Use gpu=None to run on CPU."
+                    ) from e
+            self.xp.cuda.runtime.setDevice(gpu)
+        self._gpu = gpu
 
     def add_gpu_index(self, gpu):
+        """Set the CUDA device index (switches the sampler to GPU)."""
         self.gpu = gpu
-        cp.cuda.runtime.setDevice(gpu)
 
     def sample(
         self,
@@ -202,20 +371,20 @@ class ParaEnsembleSampler(EnsembleSampler):
         store=True,
         progress=False,
     ):
-        """Advance the chain as a generator
+        """Advance the chains as a generator
 
         Args:
-            initial_state (:class:`ParaState` or ndarray[ntemps, nwalkers, nleaves_max, ndim] or dict): The initial
+            initial_state (:class:`ParaState` or ndarray[ngroups, ntemps, nwalkers, ndim] or dict): The initial
                 :class:`ParaState` or positions of the walkers in the
-                parameter space. If multiple branches used, must be dict with keys
-                as the ``branch_names`` and values as the positions. If ``betas`` are
-                provided in the state object, they will be loaded into the
-                ``temperature_control``.
+                parameter space. If a dict, keys should be the ``name``
+                of this sampler's branch. If ``betas`` are provided in the
+                state object, they will be loaded into the sampler.
             iterations (int or None, optional): The number of steps to generate.
                 ``None`` generates an infinite stream (requires ``store=False``).
                 (default: 1)
-            tune (bool, optional): If ``True``, the parameters of some moves
-                will be automatically tuned. (default: ``False``)
+            tune (bool, optional): Included for signature compatibility with
+                :class:`eryn.ensemble.EnsembleSampler`; not used here.
+                (default: ``False``)
             thin_by (int, optional): If you only want to store and yield every
                 ``thin_by`` samples in the chain, set ``thin_by`` to an
                 integer greater than 1. When this is set, ``iterations *
@@ -231,11 +400,9 @@ class ParaEnsembleSampler(EnsembleSampler):
                 ``'notebook'``, which shows a progress bar suitable for
                 Jupyter notebooks.  If ``False``, no progress bar will be
                 shown. (default: ``False``)
-            skip_initial_state_check (bool, optional): If ``True``, a check
-                that the initial_state can fully explore the space will be
-                skipped. If using reversible jump, the user needs to ensure this on their own
-                (``skip_initial_state_check``is set to ``False`` in this case.
-                (default: ``True``)
+            skip_initial_state_check (bool, optional): Included for signature
+                compatibility with :class:`eryn.ensemble.EnsembleSampler`;
+                not used here. (default: ``True``)
 
         Returns:
             ParaState: Every ``thin_by`` steps, this generator yields the :class:`ParaState` of the ensemble.
@@ -248,20 +415,17 @@ class ParaEnsembleSampler(EnsembleSampler):
             raise ValueError("'store' must be False when 'iterations' is None")
 
         # Interpret the input as a walker state and check the dimensions.
-
-        # initial_state.__class__ rather than ParaState in case it is a subclass
-        # of ParaState
-        if (
-            hasattr(initial_state, "__class__")
-            and issubclass(initial_state.__class__, ParaState)
-            and not isinstance(initial_state.__class__, ParaState)
-        ):
-            state = initial_state.__class__(initial_state, copy=True)
+        # type(initial_state) rather than ParaState in case it is a subclass.
+        if isinstance(initial_state, ParaState):
+            state = type(initial_state)(initial_state, copy=True)
         else:
             state = ParaState(initial_state, copy=True)
 
+        if state.groups_running is None:
+            state.groups_running = self.xp.ones(self.ngroups, dtype=bool)
+
         # Check the backend shape
-        for i, (name, branch) in enumerate(state.branches.items()):
+        for name, branch in state.branches.items():
             ngroups_, ntemps_, nwalkers_, ndim_ = branch.shape
             if (ngroups_, ntemps_, nwalkers_, ndim_) != (
                 self.ngroups,
@@ -269,19 +433,35 @@ class ParaEnsembleSampler(EnsembleSampler):
                 self.nwalkers,
                 self.ndim,
             ):
-                raise ValueError("incompatible input dimensions")
+                raise ValueError(
+                    f"incompatible input dimensions for branch {name}: "
+                    f"{branch.shape} vs expected "
+                    f"{(self.ngroups, self.ntemps, self.nwalkers, self.ndim)}"
+                )
 
         # get log prior and likelihood if not provided in the initial state
         if state.log_prior is None:
-            coords = {name: value[state.groups_running] for name, value in state.branches_coords.items()}
+            coords = {
+                name: value[state.groups_running] for name, value in state.branches_coords.items()
+            }
             state.log_prior = self.xp.full((self.ngroups, self.ntemps, self.nwalkers), -np.inf)
-            state.log_prior[state.groups_running] = self.compute_log_prior(coords, groups_running=self.xp.arange(self.ngroups)[state.groups_running])
+            state.log_prior[state.groups_running] = self.compute_log_prior(
+                coords,
+                groups_running=self.xp.arange(self.ngroups)[state.groups_running],
+            )
 
         if state.log_like is None:
             state.log_like = self.xp.full((self.ngroups, self.ntemps, self.nwalkers), -1e300)
-            coords = {name: value[state.groups_running] for name, value in state.branches_coords.items()}
-            supps_in = None if state.supplemental is None else state.supplemental[state.groups_running]
-            branch_supps_in = {name: None if tmp is None else tmp[state.groups_running] for name, tmp in state.branches_supplemental.items()}
+            coords = {
+                name: value[state.groups_running] for name, value in state.branches_coords.items()
+            }
+            supps_in = (
+                None if state.supplemental is None else state.supplemental[state.groups_running]
+            )
+            branch_supps_in = {
+                name: None if tmp is None else tmp[state.groups_running]
+                for name, tmp in state.branches_supplemental.items()
+            }
 
             state.log_like[state.groups_running] = self.compute_log_like(
                 coords,
@@ -292,12 +472,10 @@ class ParaEnsembleSampler(EnsembleSampler):
 
         # get betas out of state object if they are there
         if state.betas is not None:
-            if (
-                state.betas.shape[1] != self.ntemps
-                or state.betas.shape[0] != self.ngroups
-            ):
+            if state.betas.shape != (self.ngroups, self.ntemps):
                 raise ValueError(
-                    "Input state has inverse temperatures (betas), but not the correct number of temperatures according to sampler inputs."
+                    "Input state has inverse temperatures (betas) with shape "
+                    f"{state.betas.shape}; expected {(self.ngroups, self.ntemps)}."
                 )
 
             self.betas = state.betas.copy()
@@ -345,7 +523,7 @@ class ParaEnsembleSampler(EnsembleSampler):
                     accepted = self.xp.zeros((self.ngroups, self.ntemps, self.nwalkers))
                     # Propose (in model)
                     state, accepted_out = self.propose(state)
-                    
+
                     accepted += accepted_out
 
                     if self.ntemps > 1:
@@ -386,13 +564,26 @@ class ParaEnsembleSampler(EnsembleSampler):
         supps=None,  # only used if self.provide_supplemental is True
         branch_supps=None,
     ):
-        # if supps is not None:
-        #     raise NotImplementedError
+        """Compute the log-likelihood for in-prior points.
 
-        # if branch_supps is not None:
-        #     if branch_supps[self.name] is not None:
-        #         raise NotImplementedError
+        Args:
+            coords (dict): Coordinates keyed by branch ``name`` with values of
+                shape ``(num_groups_running, ntemps, nwalkers, ndim)``.
+            groups_running (ndarray, optional): Indices of the running groups
+                associated with the leading axis of ``coords``. (default: ``None``)
+            logp (ndarray, optional): Pre-computed log-prior. If ``None``, it
+                is computed here. Points with ``-inf`` log-prior are skipped
+                and filled with ``-1e300``. (default: ``None``)
+            supps (optional): Supplemental information passed through to the
+                likelihood when ``provide_supplemental`` is set. (default: ``None``)
+            branch_supps (optional): Branch supplemental information passed
+                through to the likelihood when ``provide_supplemental`` is set.
+                (default: ``None``)
 
+        Returns:
+            ndarray: Log-likelihood with the same shape as ``logp``.
+
+        """
         if groups_running is not None:
             assert coords[self.name].shape[0] == len(groups_running)
 
@@ -414,9 +605,7 @@ class ParaEnsembleSampler(EnsembleSampler):
         else:
             kwargs = self.logl_kwargs
 
-        logl[keep_logp] = self.log_like_fn(
-            coords_arr, *self.logl_args, **kwargs
-        )
+        logl[keep_logp] = self.log_like_fn(coords_arr, *self.logl_args, **kwargs)
 
         # fix any nans that may come up
         logl[self.xp.isnan(logl)] = -1e300
@@ -427,36 +616,51 @@ class ParaEnsembleSampler(EnsembleSampler):
         return logl
 
     def compute_log_prior(self, coords, groups_running=None):
+        """Compute the log-prior.
 
+        If ``prior_transform_fn`` is set, coordinates are first mapped to the
+        prior basis and the resulting log-prior is Jacobian-adjusted.
+
+        Args:
+            coords (dict): Coordinates keyed by branch ``name`` with values of
+                shape ``(num_groups_running, ntemps, nwalkers, ndim)``.
+            groups_running (ndarray, optional): Indices of the running groups
+                associated with the leading axis of ``coords``. (default: ``None``)
+
+        Returns:
+            ndarray: Log-prior of shape ``coords[name].shape[:-1]``.
+
+        """
         if groups_running is not None:
             assert coords[self.name].shape[0] == len(groups_running)
 
         shape_in = coords[self.name].shape[:-1]
 
-        coords_logp_buffer = coords[self.name].copy()
+        if self.prior_transform_fn is not None:
+            coords_logp_buffer = coords[self.name].copy()
+            self.prior_transform_fn.transform_to_prior_basis(coords_logp_buffer, groups_running)
+        else:
+            coords_logp_buffer = coords[self.name]
 
-        self.prior_transform_fn.transform_to_prior_basis(coords_logp_buffer, groups_running)
         coords_logp_in = coords_logp_buffer.reshape(-1, self.ndim)
-        
+
         logp = self.priors[self.name].logpdf(coords_logp_in).reshape(shape_in)
 
-        self.prior_transform_fn.adjust_logp(logp, groups_running)
+        if self.prior_transform_fn is not None:
+            self.prior_transform_fn.adjust_logp(logp, groups_running)
 
         return logp
 
-    def run_mcmc(
-        self, initial_state, nsteps, burn=None, post_burn_update=False, **kwargs
-    ):
+    def run_mcmc(self, initial_state, nsteps, burn=None, post_burn_update=False, **kwargs):
         """
         Iterate :func:`sample` for ``nsteps`` iterations and return the result.
 
         Args:
-            initial_state (ParaState or ndarray[ntemps, nwalkers, nleaves_max, ndim] or dict): The initial
+            initial_state (ParaState or ndarray[ngroups, ntemps, nwalkers, ndim] or dict): The initial
                 :class:`ParaState` or positions of the walkers in the
-                parameter space. If multiple branches used, must be dict with keys
-                as the ``branch_names`` and values as the positions. If ``betas`` are
-                provided in the state object, they will be loaded into the
-                ``temperature_control``.
+                parameter space. If a dict, keys should be the ``name``
+                of this sampler's branch. If ``betas`` are provided in the
+                state object, they will be loaded into the sampler.
             nsteps (int): The number of steps to generate. The total number of proposals is ``nsteps * thin_by``.
             burn (int, optional): Number of burn steps to run before storing information. The ``thin_by`` kwarg is ignored when counting burn steps since there is no storage (equivalent to ``thin_by=1``).
             post_burn_update (bool, optional): If ``True``, run ``update_fn`` after burn in.
@@ -473,13 +677,14 @@ class ParaEnsembleSampler(EnsembleSampler):
         if initial_state is None:
             if self._previous_state is None:
                 raise ValueError(
-                    "Cannot have `initial_state=None` if run_mcmc has never "
-                    "been called."
+                    "Cannot have `initial_state=None` if run_mcmc has never been called."
                 )
             initial_state = self._previous_state
 
         # setup thin_by info
         thin_by = 1 if "thin_by" not in kwargs else kwargs["thin_by"]
+
+        results = None
 
         # run burn in
         if burn is not None and burn != 0:
@@ -508,8 +713,6 @@ class ParaEnsembleSampler(EnsembleSampler):
         if nsteps == 0:
             return initial_state
 
-        results = None
-
         i = 0
         for results in self.sample(initial_state, iterations=nsteps, **kwargs):
             # check for stopping before updating
@@ -531,6 +734,16 @@ class ParaEnsembleSampler(EnsembleSampler):
         return results
 
     def propose(self, state):
+        """Run one stretch proposal (plus temperature swaps) on all running groups.
+
+        Args:
+            state (ParaState): Current state of all groups.
+
+        Returns:
+            tuple: ``(new_state, accepted)`` where ``accepted`` has shape
+                ``(ngroups, ntemps, nwalkers)``.
+
+        """
         new_state = ParaState(state, copy=True)
         groups_running = new_state.groups_running.copy()
         num_groups_running = groups_running.sum().item()
@@ -548,28 +761,29 @@ class ParaEnsembleSampler(EnsembleSampler):
             inds_here = self.xp.asarray(inds_here)
             inds_not_here = self.xp.asarray(inds_not_here)
 
-            s_in = np.zeros((self.ntemps * num_groups_running, int(self.nwalkers / 2), 1, self.ndim))
-            
             s_in = (
                 new_state.branches[self.name]
                 .coords[:, :, inds_here][groups_running]
                 .reshape(
-                    (self.ntemps * num_groups_running, int(self.nwalkers / 2), 1, self.ndim)
+                    (
+                        self.ntemps * num_groups_running,
+                        self.nwalkers // 2,
+                        1,
+                        self.ndim,
+                    )
                 )
             )
             c_in = [
                 new_state.branches[self.name]
                 .coords[:, :, inds_not_here][groups_running]
-                .reshape(
-                    (self.ntemps * num_groups_running, int(self.nwalkers / 2), 1, -1)
-                )
+                .reshape((self.ntemps * num_groups_running, self.nwalkers // 2, 1, -1))
             ]
 
             temps_here = self.temp_guide[:, :, inds_here][groups_running]
             walkers_here = self.walker_guide[:, :, inds_here][groups_running]
             groups_here = self.group_guide[:, :, inds_here][groups_running]
 
-            if not hasattr(new_state, "random_state") or new_state.random_state is None:
+            if getattr(new_state, "random_state", None) is None:
                 new_state.random_state = self.random_state
 
             if self.gibbs_sampling_setup is not None:
@@ -578,34 +792,56 @@ class ParaEnsembleSampler(EnsembleSampler):
                 gibbs_ndim = self.ndim
 
             new_points_dict, factors = self.move_proposal.get_proposal(
-                {self.name: s_in}, {self.name: c_in}, new_state.random_state, gibbs_ndim=gibbs_ndim
+                {self.name: s_in},
+                {self.name: c_in},
+                new_state.random_state,
+                gibbs_ndim=gibbs_ndim,
             )
             new_points = {
                 self.name: new_points_dict[self.name].reshape(
-                    num_groups_running, self.ntemps, int(self.nwalkers / 2), -1
+                    num_groups_running, self.ntemps, self.nwalkers // 2, -1
                 )
             }
 
             if self.gibbs_sampling_setup is not None:
+                # parameters outside the Gibbs mask stay fixed at the
+                # *current* values of the walkers being updated
                 new_points[self.name][:, :, :, ~self.gibbs_sampling_setup] = (
                     new_state.branches[self.name]
-                    .coords[:, :, inds_not_here][groups_running]
+                    .coords[:, :, inds_here][groups_running]
                     .reshape(
-                        (num_groups_running, self.ntemps, int(self.nwalkers / 2), self.ndim)
+                        (
+                            num_groups_running,
+                            self.ntemps,
+                            self.nwalkers // 2,
+                            self.ndim,
+                        )
                     )[:, :, :, ~self.gibbs_sampling_setup]
                 )
 
-            logp = self.compute_log_prior(new_points, groups_running=self.xp.arange(self.ngroups)[groups_running])
+            logp = self.compute_log_prior(
+                new_points,
+                groups_running=self.xp.arange(self.ngroups)[groups_running],
+            )
             factors = factors.reshape(logp.shape)
-            
+
             supps_in = None  # new_state.supplemental[]
 
             branch_supps_in = {}
             if new_state.branches_supplemental[self.name] is not None:
-                branch_supps_in[self.name] = {key: tmp[groups_running] for key, tmp in new_state.branches_supplemental[self.name][:, :, inds_here].items()}
-            
+                branch_supps_in[self.name] = {
+                    key: tmp[groups_running]
+                    for key, tmp in new_state.branches_supplemental[self.name][
+                        :, :, inds_here
+                    ].items()
+                }
+
             logl = self.compute_log_like(
-                new_points, groups_running=self.xp.arange(self.ngroups)[groups_running], logp=logp, supps=supps_in, branch_supps=branch_supps_in
+                new_points,
+                groups_running=self.xp.arange(self.ngroups)[groups_running],
+                logp=logp,
+                supps=supps_in,
+                branch_supps=branch_supps_in,
             )
 
             prev_logl_here = new_state.log_like[:, :, inds_here][groups_running]
@@ -618,17 +854,13 @@ class ParaEnsembleSampler(EnsembleSampler):
             logP = state.betas[groups_running][:, :, None] * logl + logp
 
             lnpdiff = factors + logP - prev_logP_here
-            keep = lnpdiff > self.xp.asarray(
-                self.xp.log(new_state.random_state.rand(*logP.shape))
-            )
+            keep = lnpdiff > self.xp.asarray(self.xp.log(new_state.random_state.rand(*logP.shape)))
 
             keep_tuple = (groups_here[keep], temps_here[keep], walkers_here[keep])
             accepted[keep_tuple] = 1
             new_state.log_prior[keep_tuple] = logp[keep]
             new_state.log_like[keep_tuple] = logl[keep]
-            new_state.branches[self.name].coords[keep_tuple] = new_points[self.name][
-                keep
-            ]
+            new_state.branches[self.name].coords[keep_tuple] = new_points[self.name][keep]
 
         if self.ntemps > 1:
             self.tempering_operations(new_state)
@@ -642,14 +874,10 @@ class ParaEnsembleSampler(EnsembleSampler):
         num_groups_running = groups_running.sum().item()
 
         # prepare information on how many swaps are accepted this time
-        self.swaps_accepted = self.xp.zeros(
-            (self.ngroups, self.ntemps - 1), dtype=int
-        )
+        self.swaps_accepted = self.xp.zeros((self.ngroups, self.ntemps - 1), dtype=int)
         self.swaps_proposed = self.xp.full_like(self.swaps_accepted, self.nwalkers)
 
-        swaps_accepted_tmp = self.xp.zeros(
-            (num_groups_running, self.ntemps - 1), dtype=int
-        )
+        swaps_accepted_tmp = self.xp.zeros((num_groups_running, self.ntemps - 1), dtype=int)
         swaps_proposed_tmp = self.xp.full_like(swaps_accepted_tmp, self.nwalkers)
 
         # iterate from highest to lowest temperatures
@@ -663,10 +891,14 @@ class ParaEnsembleSampler(EnsembleSampler):
 
             # permute the indices for the walkers in each temperature to randomize swap positions
             iperm = shuffle_along_axis(
-                self.xp.tile(self.xp.arange(self.nwalkers), (num_groups_running, 1)), -1
+                self.xp.tile(self.xp.arange(self.nwalkers), (num_groups_running, 1)),
+                -1,
+                xp=self.xp,
             )
             i1perm = shuffle_along_axis(
-                self.xp.tile(self.xp.arange(self.nwalkers), (num_groups_running, 1)), -1
+                self.xp.tile(self.xp.arange(self.nwalkers), (num_groups_running, 1)),
+                -1,
+                xp=self.xp,
             )
 
             # random draw that produces log of the acceptance fraction
@@ -678,8 +910,8 @@ class ParaEnsembleSampler(EnsembleSampler):
             walker_swap_i = iperm.flatten()
             walker_swap_i1 = i1perm.flatten()
 
-            temp_swap_i = np.full_like(walker_swap_i, i)
-            temp_swap_i1 = np.full_like(walker_swap_i1, i - 1)
+            temp_swap_i = self.xp.full_like(walker_swap_i, i)
+            temp_swap_i1 = self.xp.full_like(walker_swap_i1, i - 1)
             group_swap = self.xp.repeat(
                 self.xp.arange(len(groups_running))[groups_running], self.nwalkers
             )
@@ -711,9 +943,9 @@ class ParaEnsembleSampler(EnsembleSampler):
             logl_tmp_i = state.log_like[keep_i_tuple].copy()
             logp_tmp_i = state.log_prior[keep_i_tuple].copy()
 
-            state.branches[self.name].coords[keep_i_tuple] = state.branches[
-                self.name
-            ].coords[keep_i1_tuple]
+            state.branches[self.name].coords[keep_i_tuple] = state.branches[self.name].coords[
+                keep_i1_tuple
+            ]
             state.log_like[keep_i_tuple] = state.log_like[keep_i1_tuple]
             state.log_prior[keep_i_tuple] = state.log_prior[keep_i1_tuple]
 
@@ -723,17 +955,16 @@ class ParaEnsembleSampler(EnsembleSampler):
 
         self.swaps_accepted[groups_running] = swaps_accepted_tmp
 
-        # print(prev_logl.max(axis=(1, 2)))
-        if self.base_temperature_control.adaptive:
-            # print(time.perf_counter() - st)
+        # mirror TemperatureControl: respect adaptive + stop_adaptation settings
+        if self.base_temperature_control.adaptive and (
+            self.base_temperature_control.stop_adaptation < 0
+            or self.time_temp < self.base_temperature_control.stop_adaptation
+        ):
             ratios = swaps_accepted_tmp / swaps_proposed_tmp
 
             # adjust temps
             betas0 = state.betas[groups_running].copy()
             betas1 = state.betas[groups_running].copy()
-
-            if not hasattr(self, "time_temp"):
-                self.time_temp = 0
 
             # Modulate temperature adjustments with a hyperbolic decay.
             decay = self.base_temperature_control.adaptation_lag / (
@@ -749,279 +980,7 @@ class ParaEnsembleSampler(EnsembleSampler):
             # Compute new ladder (hottest and coldest chains don't move).
             deltaTs = self.xp.diff(1 / betas1[:, :-1], axis=-1)
             deltaTs *= self.xp.exp(dSs)
-            betas1[:, 1:-1] = 1 / (np.cumsum(deltaTs, axis=-1) + 1 / betas1[:, 0][:, None])
+            betas1[:, 1:-1] = 1 / (self.xp.cumsum(deltaTs, axis=-1) + 1 / betas1[:, 0][:, None])
 
             dbetas = betas1 - betas0
             state.betas[groups_running] += dbetas
-
-
-"""
-    convergence_iter_count = 500
-
-    new_points = priors_good.rvs(size=(ntemps, nwalkers, len(band_inds_here)))  # , psds=lisasens_in[0][None, :])
-
-    fix = xp.any(xp.isinf(new_points), axis=-1) | xp.any(xp.isnan(new_points), axis=-1)
-    while xp.any(fix):
-        tmp = priors_good.rvs(size=int((fix.flatten() == True).sum()))
-        new_points[fix == True] = tmp
-        fix = xp.any(xp.isinf(new_points), axis=-1) | xp.any(xp.isnan(new_points), axis=-1)
-
-    # TODO: fix fs stuff
-    prev_logp = priors_good.logpdf(new_points.reshape(-1, ndim)).reshape(new_points.shape[:-1])
-    assert not xp.any(xp.isinf(prev_logp))
-    new_points_with_fs = new_points.copy()
-
-    L = 2.5e9
-    amp_transform = AmplitudeFromSNR(L, current_info.general_info['Tobs'], fd=current_info.general_info["fd"], sens_fn="lisasens", use_cupy=True)
-
-    original_snr_params = new_points_with_fs[:, :, :, 0].copy()
-    new_points_with_fs[:, :, :, 1] = (f0_maxs[band_inds_here] - f0_mins[band_inds_here]) * new_points_with_fs[:, :, :, 1] + f0_mins[band_inds_here]
-    new_points_with_fs[:, :, :, 2] = (fdot_maxs[band_inds_here] - fdot_mins[band_inds_here]) * new_points_with_fs[:, :, :, 2] + fdot_mins[band_inds_here]
-    new_points_with_fs[:, :, :, 0] = amp_transform(new_points_with_fs[:, :, :, 0].flatten(), new_points_with_fs[:, :, :, 1].flatten() / 1e3, psds=lisasens_in[0][None, :])[0].reshape(new_points_with_fs.shape[:-1])
-
-    lp_factors = np.log(original_snr_params / new_points_with_fs[:, :, :, 0])
-    prev_logp += lp_factors
-    transform_fn = gb_info["transform"]
-
-    new_points_in = transform_fn.both_transforms(new_points_with_fs.reshape(-1, ndim), xp=xp).reshape(new_points_with_fs.shape[:-1] + (ndim + 1,)).reshape(-1, ndim + 1)
-    inner_product = 4 * df * (xp.sum(data_in[0].conj() * data_in[0] / psd_in[0]) + xp.sum(data_in[1].conj() * data_in[1] / psd_in[1])).real
-    ll = (-1/2 * inner_product - xp.sum(xp.log(xp.asarray(psd_in)))).item()
-    gb.d_d = inner_product
-
-    start_ll = -1/2 * inner_product
-    print(ll)
-
-    waveform_kwargs = gb_info["waveform_kwargs"].copy()
-    if "N" in waveform_kwargs:
-        waveform_kwargs.pop("N")
-
-    prev_logl = xp.asarray(gb.get_ll(new_points_in, data_in, psd_in, phase_marginalize=True, **waveform_kwargs).reshape(prev_logp.shape))
-
-    if xp.any(xp.isnan(prev_logl)):
-        breakpoint()
-
-    old_points = new_points.copy()
-    
-    best_logl = prev_logl.max(axis=(0, 1))
-    best_logl_ind = prev_logl.reshape(ntemps * nwalkers, len(band_inds_here)).argmax(axis=0)
-    
-    best_logl_coords = old_points.reshape(ntemps * nwalkers, len(band_inds_here), ndim)[(best_logl_ind, xp.arange(len(band_inds_here)))]
-
-    start_best_logl = best_logl.copy()
-
-    
-    still_going_here = xp.ones(len(band_inds_here), dtype=bool)
-    num_proposals_per = np.zeros_like(still_going_here, dtype=int)
-    iter_count = np.zeros_like(still_going_here, dtype=int)
-    betas = xp.repeat(xp.asarray(temperature_control.betas[:, None].copy()), len(band_inds_here), axis=-1)
-
-    run_number = 0
-    for prop_i in range(num_max_proposals):  # tqdm(range(num_max_proposals)):
-        # st = time.perf_counter()
-        
-        original_snr_params = new_points_with_fs[:, :, :, 0].copy()
-
-        
-
-        new_best_logl = prev_logl.max(axis=(0, 1))
-
-        improvement = (new_best_logl - best_logl > 0.01)
-
-        # print(new_best_logl - best_logl, best_logl)
-        best_logl[improvement] = new_best_logl[improvement]
-
-        best_logl_ind = prev_logl.reshape(ntemps * nwalkers, len(band_inds_here)).argmax(axis=0)[improvement]
-        best_logl_coords[improvement] = old_points.reshape(ntemps * nwalkers, len(band_inds_here), ndim)[(best_logl_ind, xp.arange(len(band_inds_here))[improvement])]
-
-        best_binaries_coords_with_fs = best_logl_coords.copy()
-
-        best_binaries_coords_with_fs[:, 1] = (f0_maxs[band_inds_here] - f0_mins[band_inds_here]) * best_binaries_coords_with_fs[:, 1] + f0_mins[band_inds_here]
-        best_binaries_coords_with_fs[:, 2] = (fdot_maxs[band_inds_here] - fdot_mins[band_inds_here]) * best_binaries_coords_with_fs[:, 2] + fdot_mins[band_inds_here]
-        best_binaries_coords_with_fs[:, 0] = amp_transform(best_binaries_coords_with_fs[:, 0].flatten(), best_binaries_coords_with_fs[:, 1].flatten() / 1e3, psds=lisasens_in[0][None, :])[0].reshape(best_binaries_coords_with_fs.shape[:-1])
-
-        best_logl_points_in = transform_fn.both_transforms(best_binaries_coords_with_fs, xp=xp)
-
-        best_logl_check = xp.asarray(gb.get_ll(best_logl_points_in, data_in, psd_in, phase_marginalize=True, **waveform_kwargs))
-
-        if prop_i > convergence_iter_count:
-            iter_count[improvement] = 0
-            iter_count[~improvement] += 1
-
-        num_proposals_per[still_going_here] += 1
-        still_going_here[iter_count >= convergence_iter_count] = False
-        
-        if prop_i % convergence_iter_count == 0:
-            print(f"Proposal {prop_i}, Still going:", still_going_here.sum().item())  # , still_going_here[825], np.sort(prev_logl[0, :, 825] - start_ll))
-        if run_number == 2:
-            iter_count[:] = 0
-            collect_sample_check_iter += 1
-            if collect_sample_check_iter % thin_by == 0:
-                coords_with_fs = old_points.transpose(2, 0, 1, 3)[still_going_here, 0, :].copy()
-                coords_with_fs[:, :, 1] = (f0_maxs[band_inds_here[still_going_here]] - f0_mins[band_inds_here][still_going_here])[:, None] * coords_with_fs[:, :, 1] + f0_mins[band_inds_here[still_going_here]][:, None]
-                coords_with_fs[:, :, 2] = (fdot_maxs[band_inds_here[still_going_here]] - fdot_mins[band_inds_here][still_going_here])[:, None] * coords_with_fs[:, :, 2] + fdot_mins[band_inds_here[still_going_here]][:, None]
-                coords_with_fs[:, :, 0] = amp_transform(coords_with_fs[:, :, 0].flatten(), coords_with_fs[:, :, 1].flatten() / 1e3, psds=lisasens_in[0][None, :])[0].reshape(coords_with_fs.shape[:-1])
-    
-                samples_store[:, collect_sample_iter] = coords_with_fs.get()
-                collect_sample_iter += 1
-                print(collect_sample_iter, num_samples_store)
-                if collect_sample_iter == num_samples_store:
-                    still_going_here[:] = False
-
-        if still_going_here.sum().item() == 0:
-            if run_number < 2:
-                betas = xp.repeat(xp.asarray(temperature_control.betas[:, None].copy()), len(band_inds_here), axis=-1)
-                
-                old_points_old = old_points.copy()
-                old_points[:] = best_logl_coords[None, None, :]
-
-                gen_points = old_points.transpose(2, 0, 1, 3).reshape(best_logl_coords.shape[0], -1, ndim).copy()
-                iter_count[:] = 0
-                still_going_here[:] = True
-
-                factor = 1e-5
-                cov = xp.ones(ndim) * 1e-3
-                cov[1] = 1e-8
-
-                still_going_start_like = xp.ones(best_logl_coords.shape[0], dtype=bool)
-                starting_points = np.zeros((best_logl_coords.shape[0], nwalkers * ntemps, ndim))
-
-                iter_check = 0
-                max_iter = 10000
-                while np.any(still_going_start_like) and iter_check < max_iter:
-                    num_still_going_start_like = still_going_start_like.sum().item()
-                    
-                    start_like = np.zeros((num_still_going_start_like, nwalkers * ntemps))
-                
-                    logp = np.full_like(start_like, -np.inf)
-                    tmp = xp.zeros((num_still_going_start_like, ntemps * nwalkers, ndim))
-                    fix = xp.ones((num_still_going_start_like, ntemps * nwalkers), dtype=bool)
-                    while xp.any(fix):
-                        tmp[fix] = (gen_points[still_going_start_like, :] * (1. + factor * cov * xp.random.randn(num_still_going_start_like, nwalkers * ntemps, ndim)))[fix]
-
-                        tmp[:, :, 3] = tmp[:, :, 3] % (2 * np.pi)
-                        tmp[:, :, 5] = tmp[:, :, 5] % (np.pi)
-                        tmp[:, :, 6] = tmp[:, :, 6] % (2 * np.pi)
-                        logp = priors_good.logpdf(tmp.reshape(-1, ndim)).reshape(tmp.shape[:-1])
-
-                        fix = xp.isinf(logp)
-                        if xp.all(fix):
-                            factor /= 10.0
-
-                    new_points_with_fs = tmp.copy()
-
-                    original_snr_params = new_points_with_fs[:, :, 0].copy()
-                    new_points_with_fs[:, :, 1] = (f0_maxs[None, band_inds_here[still_going_start_like]] - f0_mins[None, band_inds_here[still_going_start_like]]).T * new_points_with_fs[:, :, 1] + f0_mins[None, band_inds_here[still_going_start_like]].T
-                    new_points_with_fs[:, :, 2] = (fdot_maxs[None, band_inds_here[still_going_start_like]] - fdot_mins[None, band_inds_here[still_going_start_like]]).T * new_points_with_fs[:, :, 2] + fdot_mins[None, band_inds_here[still_going_start_like]].T
-                    new_points_with_fs[:, :, 0] = amp_transform(new_points_with_fs[:, :, 0].flatten(), new_points_with_fs[:, :, 1].flatten() / 1e3, psds=lisasens_in[0][None, :])[0].reshape(new_points_with_fs.shape[:-1])
- 
-                    lp_factors = np.log(original_snr_params / new_points_with_fs[:, :, 0])
-                    logp += lp_factors
-                    new_points_in = transform_fn.both_transforms(new_points_with_fs.reshape(-1, ndim), xp=xp)
-
-                    start_like = xp.asarray(gb.get_ll(new_points_in, data_in, psd_in, phase_marginalize=True, **waveform_kwargs)).reshape(new_points_with_fs.shape[:-1])
-
-                    old_points[:, :, still_going_start_like, :] = tmp.transpose(1, 0, 2).reshape(ntemps, nwalkers, -1, ndim)
-                    prev_logl[:, :, still_going_start_like] = start_like.T.reshape(ntemps, nwalkers, -1)
-                    prev_logp[:, :, still_going_start_like] = logp.T.reshape(ntemps, nwalkers, -1)
-                    # fix any nans that may come up
-                    start_like[xp.isnan(start_like)] = -1e300
-                    
-                    update = xp.arange(still_going_start_like.shape[0])[still_going_start_like][xp.std(start_like, axis=-1) > 15.0]
-                    still_going_start_like[update] = False 
-
-                    iter_check += 1
-                    factor *= 1.5
-                    
-                    # if still_going_start_like[400]:
-   
-                    #     ind_check = np.where(np.arange(still_going_start_like.shape[0])[still_going_start_like] == 400)[0]
-                    #     print(iter_check, still_going_start_like.sum(), start_like[ind_check].max(axis=-1), start_like[ind_check].min(axis=-1), start_like[ind_check].max(axis=-1) - start_like[ind_check].min(axis=-1), xp.std(start_like, axis=-1)[ind_check])
-
-                # breakpoint()
-                if run_number == 1:
-                    best_binaries_coords_with_fs = best_logl_coords.copy()
-
-                    best_binaries_coords_with_fs[:, 1] = (f0_maxs[band_inds_here] - f0_mins[band_inds_here]) * best_binaries_coords_with_fs[:, 1] + f0_mins[band_inds_here]
-                    best_binaries_coords_with_fs[:, 2] = (fdot_maxs[band_inds_here] - fdot_mins[band_inds_here]) * best_binaries_coords_with_fs[:, 2] + fdot_mins[band_inds_here]
-                    best_binaries_coords_with_fs[:, 0] = amp_transform(best_binaries_coords_with_fs[:, 0].flatten(), best_binaries_coords_with_fs[:, 1].flatten() / 1e3, psds=lisasens_in[0][None, :])[0].reshape(best_binaries_coords_with_fs.shape[:-1])
-            
-                    best_logl_points_in = transform_fn.both_transforms(best_binaries_coords_with_fs, xp=xp)
-
-                    best_logl_check = xp.asarray(gb.get_ll(best_logl_points_in, data_in, psd_in, phase_marginalize=True, **waveform_kwargs))
-
-                    if not xp.allclose(best_logl, best_logl_check):
-                        breakpoint()
-
-                    snr_lim = gb_info["search_info"]["snr_lim"]
-                    keep_binaries = gb.d_h / xp.sqrt(gb.h_h.real) > snr_lim
-
-                    print(f"SNR lim: {snr_lim}")
-                    
-                    still_going_here = keep_binaries.copy()
-
-                    num_new_binaries = keep_binaries.sum().item()
-                    print(f"num new search: {num_new_binaries}")
-
-                    thin_by = 25
-                    num_samples_store = 30
-                    samples_store = np.zeros((still_going_here.sum().item(), num_samples_store, nwalkers, ndim))
-                    collect_sample_iter = 0
-                    collect_sample_check_iter = 0
-
-                    # # TODO: add in based on sensitivity changing
-                    # # band_inds_running[band_inds_here[~keep_binaries].get()] = False
-                    # keep_coords = best_binaries_coords_with_fs[keep_binaries].get()
-
-                    # # adjust the phase from marginalization
-                    # phase_change = np.angle(gb.non_marg_d_h)[keep_binaries.get()]
-                    # keep_coords[:, 3] -= phase_change
-                    # # best_logl_points_in[keep_binaries, 4] -= xp.asarray(phase_change)
-
-                    # # check if there are sources near band edges that are overlapping
-                    # assert np.all(keep_coords[:, 1] == np.sort(keep_coords[:, 1]))
-                    # f_found = keep_coords[:, 1] / 1e3
-                    # N = get_N(np.full_like(f_found, 1e-30), f_found, Tobs=waveform_kwargs["T"], oversample=waveform_kwargs["oversample"])
-                    # inds_check = np.where((np.diff(f_found) / df).astype(int) < N[:-1])[0]
-
-                    # params_add = keep_coords[inds_check]
-                    # params_remove = keep_coords[inds_check + 1]
-                    # N_check = N[inds_check]
-
-                    # params_add_in = transform_fn.both_transforms(params_add)
-                    # params_remove_in = transform_fn.both_transforms(params_remove)
-
-                    # waveform_kwargs_tmp = waveform_kwargs.copy()
-                    # if "N" in waveform_kwargs_tmp:
-                    #     waveform_kwargs_tmp.pop("N")
-                    # waveform_kwargs_tmp["use_c_implementation"] = False
-
-                    # gb.swap_likelihood_difference(params_add_in, params_remove_in, data_in, psd_in, N=256, **waveform_kwargs_tmp)
-
-                    # likelihood_difference = -1/2 * (gb.add_add + gb.remove_remove - 2 * gb.add_remove).real.get()
-                    # overlap = (gb.add_remove.real / np.sqrt(gb.add_add.real * gb.remove_remove.real)).get()
-
-                    # fix = np.where((likelihood_difference > -100.0) | (overlap > 0.4))
-
-                    # if np.any(fix):
-                    #     params_comp_add = params_add[fix]
-                    #     params_comp_remove = params_remove[fix]
-
-                    #     # not actually in the data yet, just using swap for quick likelihood comp
-                    #     snr_add = (gb.d_h_add.real[fix] / gb.add_add.real[fix] ** (1/2)).get()
-                    #     snr_remove = (gb.d_h_remove.real[fix] / gb.remove_remove.real[fix] ** (1/2)).get()
-
-                    #     inds_add = inds_check[fix]
-                    #     inds_remove = inds_add + 1
-
-                    #     inds_delete = (inds_add) * (snr_add < snr_remove) + (inds_remove) * (snr_remove < snr_add)
-                    #     keep_coords = np.delete(keep_coords, inds_delete, axis=0)
-                        
-
-                run_number += 1
-
-            else:
-                break
-
-    return fit_gmm(samples_store, comm, comm_info)
-
-    """
