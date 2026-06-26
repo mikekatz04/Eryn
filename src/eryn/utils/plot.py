@@ -4,9 +4,9 @@ from shutil import which
 import typing
 
 import corner
+import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib.colors import to_rgba
@@ -16,12 +16,6 @@ from eryn.utils.updates import UpdateStep
 from eryn.utils.utility import get_integrated_act, stepping_stone_log_evidence
 
 DEFAULT_PALETTE = "icefire"
-
-try:
-    import scienceplots
-    plt.style.use(['science'])
-except (ImportError, ModuleNotFoundError, AttributeError):
-    pass
 
 class Backend:
     """A placeholder Backend class for type hinting."""
