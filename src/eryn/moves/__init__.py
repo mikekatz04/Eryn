@@ -1,17 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# from .de import DEMove
-# from .de_snooker import DESnookerMove
-from .combine import CombineMove
-from .distgen import DistributionGenerate
-from .distgenrj import DistributionGenerateRJ
-from .gaussian import GaussianMove
-from .group import GroupMove
-from .groupstretch import GroupStretchMove
-
-# from .kde import KDEMove
-from .mh import MHMove
 from .move import Move
+from .mh import MHMove
+from .gaussian import GaussianMove
 from .red_blue import RedBlueMove
 from .stretch import StretchMove
 from .de import DEMove, DESnookerMove
@@ -19,12 +10,13 @@ from .infomatrix import InfoMatrixMove
 from .independentmh import IndependentProposalMove
 from .flow import FlowMove
 
+# from .kde import KDEMove
 # from .walk import WalkMove
 from .nuts import NUTSMove, NUTSSampler
 from .tempering import TemperatureControl
 from .rj import ReversibleJumpMove
-from .distgenrj import DistributionGenerateRJ
 from .distgen import DistributionGenerate
+from .distgenrj import DistributionGenerateRJ
 from .multipletry import MultipleTryMove
 from .group import GroupMove
 from .groupstretch import GroupStretchMove
@@ -34,7 +26,6 @@ from .combine import CombineMove
 # from .basicmodelswaprj import BasicSymmetricModelSwapRJMove
 from .mtdistgen import MTDistGenMove
 from .mtdistgenrj import MTDistGenMoveRJ
-from .multipletry import MultipleTryMove
 
 __all__ = [
     "Move",

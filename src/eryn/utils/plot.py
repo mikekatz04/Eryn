@@ -1,10 +1,12 @@
 # *-- coding: utf-8 --*
 import os
 from shutil import which
+import typing
+
+import corner
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib.colors import to_rgba
