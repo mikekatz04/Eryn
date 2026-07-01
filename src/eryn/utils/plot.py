@@ -17,6 +17,15 @@ from eryn.utils.utility import get_integrated_act, stepping_stone_log_evidence
 
 DEFAULT_PALETTE = "icefire"
 
+try:
+    import scienceplots
+    plt.style.use(['science'])
+except (ImportError, ModuleNotFoundError, AttributeError):
+    pass
+
+# increase default font size
+mpl.rcParams.update({'font.size': 16})
+
 class Backend:
     """A placeholder Backend class for type hinting."""
     pass
