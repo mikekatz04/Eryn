@@ -386,38 +386,52 @@ def plot_loglikelihood(logl, filename=None):
     
     save_or_show(fig, filename)
 
-    # plot a facet grid of loglikelihood evolution  for each walker
-    # Reshape: logl is (nsteps, nwalkers), need to flatten properly
-    max_logl = np.max(logl, axis=(0,1))
-    facet_logl = logl - max_logl
+    # plot a facet grid of loglikelihood evolution for each walker.
+    # This is a *diagnostic* and must never abort a (multi-hour) run: with few
+    # walkers/steps and large per-walker logL offsets the small facets can make
+    # matplotlib's tight_layout produce a NaN axis length ("cannot convert float
+    # NaN to integer"). Guard the whole block so a layout failure is skipped, not
+    # fatal; the primary log-likelihood plot above is already saved.
+    grid = None
+    try:
+        # Reshape: logl is (nsteps, nwalkers), need to flatten properly
+        max_logl = np.max(logl, axis=(0,1))
+        facet_logl = logl - max_logl
 
-    step = np.tile(range(nsteps), nwalkers)
-    walker = np.repeat(np.arange(nwalkers, dtype=int), nsteps)
+        step = np.tile(range(nsteps), nwalkers)
+        walker = np.repeat(np.arange(nwalkers, dtype=int), nsteps)
 
-    df = pd.DataFrame(np.c_[facet_logl.flat, step, walker],
-                      columns=[r"$\Delta \log\mathcal{L}$", "step", "walker"])
-    
-    # Initialize a grid of plots with an Axes for each walker
-    grid = sns.FacetGrid(df, col="walker", hue="walker", #palette="tab20c",
-                     col_wrap=int(np.floor(np.sqrt(nwalkers))), height=1.5)
-    
-    # Draw a line plot to show the trajectory of each random walk
-    grid.map(plt.plot, "step", r"$\Delta \log\mathcal{L}$", marker=".", rasterized=True)
+        df = pd.DataFrame(np.c_[facet_logl.flat, step, walker],
+                          columns=[r"$\Delta \log\mathcal{L}$", "step", "walker"])
 
-    grid.refline(y=0, linestyle=":") # Add a horizontal reference line at y=0 ~ average loglikelihood at each step
+        # Initialize a grid of plots with an Axes for each walker
+        grid = sns.FacetGrid(df, col="walker", hue="walker", #palette="tab20c",
+                         col_wrap=int(np.floor(np.sqrt(nwalkers))), height=1.5)
 
-    # Adjust the arrangement of the plots
-    grid.set_titles(col_template="Walker {col_name:.0f}")
-    grid.set_axis_labels("Step", r"$\Delta \log\mathcal{L}$")
-    # Disable tight_layout to avoid warning
-    grid.tight_layout = lambda *args, **kwargs: None
-    grid.tight_layout()
+        # Draw a line plot to show the trajectory of each random walk
+        grid.map(plt.plot, "step", r"$\Delta \log\mathcal{L}$", marker=".", rasterized=True)
 
-    # add overall title
-    plt.subplots_adjust(top=0.9)
-    grid.figure.suptitle(r"$\Delta \log\mathcal{L}_w = \log\mathcal{L}_w - \max(\log\mathcal{L})$", fontsize=16)
+        grid.refline(y=0, linestyle=":") # Add a horizontal reference line at y=0 ~ average loglikelihood at each step
 
-    save_or_show(grid.figure, filename.replace('.png', '_facet.png') if filename else None)
+        # Adjust the arrangement of the plots
+        grid.set_titles(col_template="Walker {col_name:.0f}")
+        grid.set_axis_labels("Step", r"$\Delta \log\mathcal{L}$")
+        # Disable tight_layout to avoid warning
+        grid.tight_layout = lambda *args, **kwargs: None
+        grid.tight_layout()
+
+        # add overall title
+        plt.subplots_adjust(top=0.9)
+        grid.figure.suptitle(r"$\Delta \log\mathcal{L}_w = \log\mathcal{L}_w - \max(\log\mathcal{L})$", fontsize=16)
+
+        save_or_show(grid.figure, filename.replace('.png', '_facet.png') if filename else None)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(
+            "Skipping per-walker log-likelihood facet plot: %s: %s", type(e).__name__, e
+        )
+        if grid is not None:
+            plt.close(grid.figure)
 
 def tempering_ridgeplot(chain, labels=None, palette=None, 
                         bw_adjust=0.5, aspect=5, height=0.5, hspace=-0.25,
