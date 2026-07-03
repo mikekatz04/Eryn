@@ -687,8 +687,7 @@ class WorkerConfig:
 def _trainer_worker(spec, cfg, sample_q, weights_q, stop_event):
     """Child-process training loop (module-level so it is spawn-importable).
 
-    Rebuilds the flow from ``spec`` (device forced to ``"cpu"`` by the
-    :class:`FlowSpec` the parent constructed), then loops: pull sample batches
+    Rebuilds the flow from ``spec``, then loops: pull sample batches
     off ``sample_q``, coalesce everything currently pending into the per-
     condition ring buffers, and — once at least ``cfg.min_train_samples`` are
     buffered — run exactly ONE ``flow.fit`` over the concatenated buffers.  The
@@ -725,7 +724,7 @@ def _trainer_worker(spec, cfg, sample_q, weights_q, stop_event):
         torch.manual_seed(cfg.seed)
         np.random.seed(cfg.seed % (2 ** 32))
 
-        flow = spec.build()  # device forced to "cpu" by the parent's FlowSpec
+        flow = spec.build()
 
         # Per-condition ring buffers: condition id -> deque of (N_i, dims) arrays.
         # Same trim semantics as InlineExecutor — drop oldest arrays but always
@@ -928,6 +927,8 @@ class ProcessExecutor(TrainerExecutor):
         Extra keyword arguments forwarded to the worker's ``flow.fit``.
         ``refit_data_transform`` / ``verbose`` collide with executor-controlled
         knobs and raise :class:`ValueError`.  Default is ``None``.
+    worker_device : str, optional
+        Device the worker builds the flow on.  Default is ``"cpu"``.
     epochs_per_round : int, optional
         ``n_epochs`` per fit in the worker.  Default is ``20``.
     min_train_samples : int, optional
@@ -966,6 +967,7 @@ class ProcessExecutor(TrainerExecutor):
         flow,
         fit_kwargs: dict | None = None,
         *,
+        worker_device: str = "cpu",
         epochs_per_round: int = 20,
         min_train_samples: int = 1000,
         max_buffer_samples: int = 20_000,
@@ -994,7 +996,8 @@ class ProcessExecutor(TrainerExecutor):
         # Snapshot the flow NOW (in the parent) so picklability fails fast here,
         # not deep inside a spawn. The transform may be unfitted; the worker
         # fits it on the first round and ships it back in each snapshot.
-        self._spec = FlowSpec.from_flow(flow, worker_device="cpu")
+        self._worker_device = worker_device
+        self._spec = FlowSpec.from_flow(flow, worker_device=worker_device)
         self._cfg = WorkerConfig(
             epochs_per_round=int(epochs_per_round),
             min_train_samples=int(min_train_samples),
@@ -1231,6 +1234,11 @@ class ProcessExecutor(TrainerExecutor):
         drained, so poll that first to refresh it.
         """
         return self._latest_val_nll
+    
+    @property
+    def worker_device(self) -> str:
+        """Device the worker builds the flow on (``"cpu"`` by default)."""
+        return self._worker_device
 
     def shutdown(self, timeout: float = 10.0) -> None:
         """Stop the worker and reclaim it (idempotent).
