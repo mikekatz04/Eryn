@@ -6,7 +6,7 @@
 
 from eryn.ensemble import EnsembleSampler
 from eryn.state import State
-from eryn.prior import ProbDistContainer, uniform_dist
+from eryn.priors import ProbDistContainer, UniformDistribution
 from eryn.utils import TransformContainer
 from eryn.moves import (
     GaussianMove,
@@ -54,18 +54,6 @@ def log_like_fn_gauss_pulse(params, t, data, sigma):
     return ll
 
 
-def gaussian_pulse(x, a, b, c):
-    f_x = a * np.exp(-((x - b) ** 2) / (2 * c**2))
-    return f_x
-
-
-def combine_gaussians(t, params):
-    template = np.zeros_like(t)
-    for param in params:
-        template += gaussian_pulse(t, *param)  # *params -> a, b, c
-    return template
-
-
 def sine(x, a, b, c):
     f_x = a * np.sin(2 * np.pi * b * x + c)
     return f_x
@@ -105,7 +93,7 @@ class ErynTest(unittest.TestCase):
 
         lims = 5.0
         priors_in = {
-            f"x{i}": uniform_dist(-lims + means[i], lims + means[i]) for i in range(ndim)
+            f"x{i}": UniformDistribution(-lims + means[i], lims + means[i]) for i in range(ndim)
         }
         priors = ProbDistContainer(priors_in)
 
@@ -165,7 +153,7 @@ class ErynTest(unittest.TestCase):
 
         lims = 5.0
         priors_in = {
-             f"x{i}": uniform_dist(-lims + means[i], lims + means[i]) for i in range(ndim)
+             f"x{i}": UniformDistribution(-lims + means[i], lims + means[i]) for i in range(ndim)
         }
         priors = ProbDistContainer(priors_in)
 
@@ -265,9 +253,9 @@ class ErynTest(unittest.TestCase):
         # describes priors for all leaves independently
         priors = {
             "gauss": {
-                "amp": uniform_dist(2.5, 3.5),  # amplitude
-                "mean": uniform_dist(t.min(), t.max()),  # mean
-                "std": uniform_dist(0.01, 0.21),  # sigma
+                "amp": UniformDistribution(2.5, 3.5),  # amplitude
+                "mean": UniformDistribution(t.min(), t.max()),  # mean
+                "std": UniformDistribution(0.01, 0.21),  # sigma
             },
         }
 
@@ -415,14 +403,14 @@ class ErynTest(unittest.TestCase):
         # describes priors for all leaves independently
         priors = {
             "gauss": {
-                0: uniform_dist(2.5, 3.5),  # amplitude
-                1: uniform_dist(t.min(), t.max()),  # mean
-                2: uniform_dist(0.01, 0.21),  # sigma
+                0: UniformDistribution(2.5, 3.5),  # amplitude
+                1: UniformDistribution(t.min(), t.max()),  # mean
+                2: UniformDistribution(0.01, 0.21),  # sigma
             },
             "sine": {
-                0: uniform_dist(0.5, 1.5),  # amplitude
-                1: uniform_dist(1.0, 20.0),  # mean
-                2: uniform_dist(0.0, 2 * np.pi),  # sigma
+                0: UniformDistribution(0.5, 1.5),  # amplitude
+                1: UniformDistribution(1.0, 20.0),  # mean
+                2: UniformDistribution(0.0, 2 * np.pi),  # sigma
             },
         }
 
@@ -583,14 +571,14 @@ class ErynTest(unittest.TestCase):
         # describes priors for all leaves independently
         priors = {
             "gauss": {
-                0: uniform_dist(2.5, 3.5),  # amplitude
-                1: uniform_dist(t.min(), t.max()),  # mean
-                2: uniform_dist(0.01, 0.21),  # sigma
+                0: UniformDistribution(2.5, 3.5),  # amplitude
+                1: UniformDistribution(t.min(), t.max()),  # mean
+                2: UniformDistribution(0.01, 0.21),  # sigma
             },
             "sine": {
-                0: uniform_dist(0.5, 1.5),  # amplitude
-                1: uniform_dist(1.0, 20.0),  # mean
-                2: uniform_dist(0.0, 2 * np.pi),  # sigma
+                0: UniformDistribution(0.5, 1.5),  # amplitude
+                1: UniformDistribution(1.0, 20.0),  # mean
+                2: UniformDistribution(0.0, 2 * np.pi),  # sigma
             },
         }
 
@@ -769,7 +757,7 @@ class ErynTest(unittest.TestCase):
         # set prior limits
         lims = 50.0
         priors_in = {
-            i: uniform_dist(-lims + means[i], lims + means[i]) for i in range(ndim)
+            i: UniformDistribution(-lims + means[i], lims + means[i]) for i in range(ndim)
         }
         priors = ProbDistContainer(priors_in)
 
@@ -1076,9 +1064,9 @@ class ErynTest(unittest.TestCase):
         # describes priors for all leaves independently
         priors = {
             "gauss": {
-                0: uniform_dist(2.5, 3.5),  # amplitude
-                1: uniform_dist(t.min(), t.max()),  # mean
-                2: uniform_dist(0.01, 0.21),  # sigma
+                0: UniformDistribution(2.5, 3.5),  # amplitude
+                1: UniformDistribution(t.min(), t.max()),  # mean
+                2: UniformDistribution(0.01, 0.21),  # sigma
             },
         }
 
@@ -1158,7 +1146,7 @@ class ErynTest(unittest.TestCase):
         # set prior limits
         lims = 5.0
         priors_in = {
-            i: uniform_dist(-lims + means[i], lims + means[i]) for i in range(ndim)
+            i: UniformDistribution(-lims + means[i], lims + means[i]) for i in range(ndim)
         }
         priors = ProbDistContainer(priors_in)
 
@@ -1270,9 +1258,9 @@ class ErynTest(unittest.TestCase):
         priors = {
             "gauss": ProbDistContainer(
                 {
-                    0: uniform_dist(2.5, 3.5),  # amplitude
-                    1: uniform_dist(t.min(), t.max()),  # mean
-                    2: uniform_dist(0.01, 0.21),  # sigma
+                    0: UniformDistribution(2.5, 3.5),  # amplitude
+                    1: UniformDistribution(t.min(), t.max()),  # mean
+                    2: UniformDistribution(0.01, 0.21),  # sigma
                 }
             )
         }

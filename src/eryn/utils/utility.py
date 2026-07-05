@@ -329,3 +329,16 @@ def psrf(C, ndims, per_walker=False):
     var_θ = (nn - 1) / nn * W + 1 / nn * B
     R̂ = np.sqrt(var_θ / W)
     return R̂
+
+from typing import TYPE_CHECKING, TypeAlias, Union
+if TYPE_CHECKING:
+    # Strict typing context: Pylance will use this branch.
+    try:
+        import cupy as cp # type: ignore[import]
+        NDArrayLike: TypeAlias = Union[np.ndarray, cp.ndarray]
+    except ImportError:
+        NDArrayLike: TypeAlias = np.ndarray
+else:
+    # Runtime context: Python executes this branch without loading cupy.
+    # Set to np.ndarray so it evaluates as a valid Type at runtime without crashing.
+    NDArrayLike: TypeAlias = np.ndarray  

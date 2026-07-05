@@ -1,11 +1,16 @@
+from __future__ import annotations
+
+from typing import Any, Callable, List, Dict, Tuple, TypeVar
+
 try:
-    import cupy as xp
+    import cupy as xp # type: ignore[import]
 
 except (ModuleNotFoundError, ImportError) as e:
     pass
 
 import numpy as np
 
+Element = TypeVar("Element", str, int)
 
 class TransformContainer:
     """Container for helpful transformations
@@ -44,16 +49,22 @@ class TransformContainer:
 
     """
 
-    def __init__(self, input_basis=None, output_basis=None, parameter_transforms=None, fill_dict=None, key_map={}, inverse_parameter_transforms=None):
-
+    def __init__(
+        self, 
+        input_basis: List[Element], 
+        output_basis: List[Element], 
+        parameter_transforms: Dict[Element | Tuple[Element, ...], Callable] | None = None, 
+        inverse_parameter_transforms: Dict[Element | Tuple[Element, ...], Callable] | None = None,
+        fill_dict: Dict[Element, float] | None = None, 
+        key_map: Dict[Element, Element] = {}, 
+    ):
 
         # store originals
+        self.input_basis, self.output_basis = input_basis, output_basis
         self.original_parameter_transforms = parameter_transforms
         self.original_inverse_parameter_transforms = inverse_parameter_transforms
         self.ndim_full = len(output_basis)
         self.ndim = len(input_basis)
-
-        self.input_basis, self.output_basis = input_basis, output_basis
 
         test_inds = []
         for key in input_basis:
@@ -164,7 +175,7 @@ class TransformContainer:
 
             # multi parameter transforms
             for inds, trans_fn in self.base_transforms["mult_param"].items():
-                temp = trans_fn(*[params_temp[i] for i in inds])
+                temp = trans_fn(*[params_temp[i].copy() for i in inds])
                 for j, i in enumerate(inds):
                     params_temp[i] = temp[j]
 
@@ -343,7 +354,7 @@ class TransformContainer:
             for inds, trans_fn in reversed(
                 list(self.base_inverse_transforms["mult_param"].items())
             ):
-                temp = trans_fn(*[params_temp[i] for i in inds])
+                temp = trans_fn(*[params_temp[i].copy() for i in inds])
                 for j, i in enumerate(inds):
                     params_temp[i] = temp[j]
 
