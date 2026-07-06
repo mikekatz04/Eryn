@@ -233,10 +233,7 @@ class FlowMove(MHMove):
 
         # --- harvest (non-blocking submit) ---
         if self._setup_calls % self.harvest_every == 0:
-            coords = branches_coords[self.branch_name][self.harvest_temp_index]
-            ndim = coords.shape[-1]
-            flat = np.asarray(coords).reshape(-1, ndim)
-            self.executor.submit({self.active_condition: flat})
+            self.submit(branches_coords)
 
         # --- poll + hot-reload (non-blocking; TrainerError propagates) ---
         lw = self.executor.latest_weights()
@@ -249,6 +246,34 @@ class FlowMove(MHMove):
                 # the coords-latent map.
                 self.flow.set_weights(snapshot)
                 self._loaded_version = version
+
+    def submit(self, branches_coords: dict):
+        """
+        Submit the cold-chain coordinates of this move's branch to the executor for training.
+
+        Args:
+            branches_coords (dict): Keys are branch names; values are
+                ``np.ndarray[ntemps, nwalkers, nleaves_max, ndim]`` current
+                coordinates.
+        """
+        coords = branches_coords[self.branch_name]
+        ntemps, nwalkers, nleaves_max, ndim = coords.shape
+        for leaf in range(nleaves_max):
+            self.submit_leaf(coords, leaf)
+        
+
+    def submit_leaf(self, coords: np.ndarray, leaf: int):
+        """
+        Submit the cold-chain coordinates of a specific leaf of this move's branch to the executor for training.
+
+        Args:
+            coords (np.ndarray): Coordinates of shape (ntemps, nwalkers, nleaves_max, ndim).
+            leaf (int): Index of the leaf to submit.
+        """
+        leaf_coords = coords[self.harvest_temp_index, :, leaf]
+        ndim = leaf_coords.shape[-1]
+        flat = np.asarray(leaf_coords).reshape(-1, ndim)
+        self.executor.submit({leaf: flat})
 
     # ------------------------------------------------------------------
     # MHMove interface
