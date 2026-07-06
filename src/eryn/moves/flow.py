@@ -82,7 +82,8 @@ class FlowMove(MHMove):
         — zero overhead, no executor interaction.
     harvest_every : int, optional
         Submit cold-chain coordinates to the executor on every
-        ``harvest_every``-th :meth:`setup` call.  Default is ``1`` (every call).
+        ``harvest_every``-th :meth:`setup` call.  Default is ``1`` (every call). If ``None``, harvesting is disabled. 
+
         Polling for new weights happens on every call regardless of this value.
     harvest_temp_index : int, optional
         Temperature index to harvest from.  Default is ``0`` (the cold chain).
@@ -124,7 +125,7 @@ class FlowMove(MHMove):
         self.flow = flow
         self.branch_name = branch_name
         self._active_condition: int = 0
-        self.harvest_every = int(harvest_every)
+        self.harvest_every = int(harvest_every) if harvest_every is not None else None
         self.harvest_temp_index = int(harvest_temp_index)
         self._setup_calls = 0
         self._loaded_version = 0
@@ -232,7 +233,7 @@ class FlowMove(MHMove):
         self._setup_calls += 1
 
         # --- harvest (non-blocking submit) ---
-        if self._setup_calls % self.harvest_every == 0:
+        if self.harvest_every is not None and self._setup_calls % self.harvest_every == 0:
             self.submit(branches_coords)
 
         # --- poll + hot-reload (non-blocking; TrainerError propagates) ---
@@ -254,26 +255,29 @@ class FlowMove(MHMove):
         Args:
             branches_coords (dict): Keys are branch names; values are
                 ``np.ndarray[ntemps, nwalkers, nleaves_max, ndim]`` current
-                coordinates.
+                coordinates, or ``np.ndarray[nsteps, ntemps, nwalkers, nleaves_max, ndim]`` if the move is called from a multi-step context.
         """
         coords = branches_coords[self.branch_name]
-        ntemps, nwalkers, nleaves_max, ndim = coords.shape
-        for leaf in range(nleaves_max):
-            self.submit_leaf(coords, leaf)
         
+        batch = {
+            leaf: coords[..., self.harvest_temp_index, :, leaf, :].reshape(-1, coords.shape[-1])
+            for leaf in range(coords.shape[-2])
+        }
 
-    def submit_leaf(self, coords: np.ndarray, leaf: int):
+        self.submit_by_leaf(batch)
+
+    def submit_by_leaf(self, batch: dict):
         """
-        Submit the cold-chain coordinates of a specific leaf of this move's branch to the executor for training.
+        Submit a batch of coordinates to the executor for training.
 
         Args:
-            coords (np.ndarray): Coordinates of shape (ntemps, nwalkers, nleaves_max, ndim).
-            leaf (int): Index of the leaf to submit.
+            batch (dict): Keys are leaf indices; values are
+                ``np.ndarray[n_samples, ndim]`` coordinates for that leaf.
         """
-        leaf_coords = coords[self.harvest_temp_index, :, leaf]
-        ndim = leaf_coords.shape[-1]
-        flat = np.asarray(leaf_coords).reshape(-1, ndim)
-        self.executor.submit({leaf: flat})
+        if self.executor is None:
+            return
+        
+        self.executor.submit(batch)
 
     # ------------------------------------------------------------------
     # MHMove interface
