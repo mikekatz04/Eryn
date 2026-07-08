@@ -46,14 +46,21 @@ from __future__ import annotations
 
 import copy
 import multiprocessing
+import os
 import pickle
 import queue
 import traceback
+import warnings
 from abc import ABC, abstractmethod
 from collections import deque
 from dataclasses import dataclass, field
 
 import numpy as np
+
+# Torch-free and plotting-free at import time (h5py/matplotlib/corner are
+# imported lazily inside its functions), so this keeps the module's
+# import-hygiene contract intact.
+from . import diagnostics as _diagnostics
 
 # NOTE: ``multiprocessing`` is imported at module level — that is torch-free and
 # fine.  torch is NEVER imported here: the worker (:func:`_trainer_worker`)
@@ -324,6 +331,18 @@ class TrainerExecutor(ABC):
         """
         return None
 
+    @property
+    def latest_history(self):
+        """Full :class:`~eryn.flows.base.FlowHistory` of the most recent fit.
+
+        Per-epoch training/validation loss curves of the newest completed
+        training round, or ``None`` before any fit.  For asynchronous
+        executors this is refreshed by :meth:`latest_weights` (poll first).
+        Concrete default returning ``None`` so a minimal executor that does
+        not track it need not override it.
+        """
+        return None
+
     @abstractmethod
     def shutdown(self, timeout: float = 10.0) -> None:
         """Shut the executor down (idempotent).
@@ -342,6 +361,47 @@ class TrainerExecutor(ABC):
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """Exit the runtime context, calling :meth:`shutdown`."""
         self.shutdown()
+
+
+def _validate_monitoring_args(save_path, diagnostics_dir, plot_corner) -> None:
+    """Fail-fast validation for the checkpoint/diagnostics knobs.
+
+    Shared by both executors so misconfiguration (missing optional packages,
+    ``plot_corner`` without a ``diagnostics_dir``) surfaces in the parent's
+    ``__init__`` with an actionable message — not deep inside a worker spawn.
+    Also creates the output directories so the first save cannot fail on a
+    missing path.
+    """
+    if plot_corner and diagnostics_dir is None:
+        raise ValueError(
+            "plot_corner=True requires diagnostics_dir to be set (the corner "
+            "plots are written there)."
+        )
+    if save_path is not None:
+        try:
+            import h5py  # noqa: F401
+        except ImportError as exc:  # pragma: no cover - h5py is a core eryn dep
+            raise ImportError(
+                "save_path requires h5py for the HDF5 checkpoint."
+            ) from exc
+        parent = os.path.dirname(os.path.abspath(str(save_path)))
+        os.makedirs(parent, exist_ok=True)
+    if diagnostics_dir is not None:
+        try:
+            import matplotlib  # noqa: F401
+        except ImportError as exc:
+            raise ImportError(
+                "diagnostics_dir requires matplotlib for the loss/trend plots."
+            ) from exc
+        os.makedirs(diagnostics_dir, exist_ok=True)
+    if plot_corner:
+        try:
+            import corner  # noqa: F401
+        except ImportError as exc:
+            raise ImportError(
+                "plot_corner=True requires the optional 'corner' package "
+                "(pip install corner)."
+            ) from exc
 
 
 class InlineExecutor(TrainerExecutor):
@@ -413,6 +473,33 @@ class InlineExecutor(TrainerExecutor):
         Reserved for parity with asynchronous executors; unused by the inline
         implementation (the clone carries the template flow's own seed).
         Default is ``None``.
+    save_path : str or None, optional
+        HDF5 checkpoint of the latest fit.  When set, every ``save_every``-th
+        trained version is written atomically to this path via
+        :func:`eryn.flows.diagnostics.save_checkpoint` — the file always holds
+        the newest fit and round-trips a fully usable flow through
+        ``FlowClass.load(save_path)`` (fitted transform included).  A save
+        failure is a real training failure: it is recorded and surfaced as
+        :class:`TrainerError` on the next poll/submit (deferred, like a fit
+        failure).  Default is ``None`` (no checkpointing).
+    save_every : int, optional
+        Checkpoint cadence in trained versions.  Default is ``1``.
+    diagnostics_dir : str or None, optional
+        Directory for per-round diagnostic PNGs: per-round loss curves
+        (``flow_loss_v####.png``) and a running validation-NLL trend
+        (``flow_val_nll_trend.png``).  Plot failures are best-effort — they
+        emit a :class:`RuntimeWarning` and never interrupt training.  Default
+        is ``None`` (no plots).
+    diagnostics_every : int, optional
+        Plot cadence in trained versions.  Default is ``1``.
+    plot_corner : bool, optional
+        When ``True`` (requires ``diagnostics_dir`` and the optional
+        ``corner`` package), each diagnostics round also writes one corner
+        plot per condition overlaying that round's training buffer with an
+        equal number of draws from the freshly trained flow
+        (``flow_corner_v####_cond#.png``).  Default is ``False``.
+    corner_max_samples : int, optional
+        Cap on points per data set in each corner plot.  Default is ``5000``.
     """
 
     def __init__(
@@ -425,6 +512,12 @@ class InlineExecutor(TrainerExecutor):
         max_buffer_samples: int = 20_000,
         refit_transform_every: int | None = None,
         seed=None,
+        save_path: str | None = None,
+        save_every: int = 1,
+        diagnostics_dir: str | None = None,
+        diagnostics_every: int = 1,
+        plot_corner: bool = False,
+        corner_max_samples: int = 5000,
     ):
         self._flow = FlowSpec.from_flow(flow).build()
         self._fit_kwargs = dict(fit_kwargs) if fit_kwargs else {}
@@ -447,6 +540,16 @@ class InlineExecutor(TrainerExecutor):
         )
         self._seed = seed
 
+        _validate_monitoring_args(save_path, diagnostics_dir, plot_corner)
+        self._save_path = str(save_path) if save_path is not None else None
+        self._save_every = int(save_every)
+        self._diagnostics_dir = (
+            str(diagnostics_dir) if diagnostics_dir is not None else None
+        )
+        self._diagnostics_every = int(diagnostics_every)
+        self._plot_corner = bool(plot_corner)
+        self._corner_max_samples = int(corner_max_samples)
+
         # Per-condition ring buffers: condition id -> deque of (N_i, dims) arrays.
         self._buffers: dict[int, deque] = {}
         self._accepted_submits = 0
@@ -457,6 +560,10 @@ class InlineExecutor(TrainerExecutor):
         self._round_count = 0
         self._latest: tuple[int, dict] | None = None
         self._latest_val_nll: float | None = None
+        self._latest_history = None
+        # Per-round (version, val_nll) record feeding the trend plot.
+        self._round_versions: list[int] = []
+        self._round_val_nlls: list = []
         self._seen_version = 0
         self._error: BaseException | None = None
         self._shutdown = False
@@ -561,9 +668,10 @@ class InlineExecutor(TrainerExecutor):
                 self._refit_transform_every is not None
                 and next_round % self._refit_transform_every == 0
             )
+            train_data = self._assemble()
             try:
                 history = self._flow.fit(
-                    self._assemble(),
+                    train_data,
                     refit_data_transform=do_refit,
                     verbose=False,
                     **self._fit_kwargs,
@@ -579,8 +687,16 @@ class InlineExecutor(TrainerExecutor):
                 # Capture the latent-space validation NLL for monitoring (None
                 # if the fit produced no validation history).
                 val_loss = getattr(history, "validation_loss", None)
-                if val_loss is not None and len(val_loss):
-                    self._latest_val_nll = float(val_loss[-1])
+                val_nll = (
+                    float(val_loss[-1])
+                    if (val_loss is not None and len(val_loss))
+                    else None
+                )
+                if val_nll is not None:
+                    self._latest_val_nll = val_nll
+                self._latest_history = history
+                self._round_versions.append(self._trained_version)
+                self._round_val_nlls.append(val_nll)
                 # Stash a self-contained snapshot ({"net", "data_transform"}).
                 # get_snapshot() already deep-copies the transform; only the net
                 # dict can reference the clone's live torch parameters, so copy
@@ -589,6 +705,58 @@ class InlineExecutor(TrainerExecutor):
                 snapshot = self._flow.get_snapshot()
                 snapshot["net"] = copy.deepcopy(snapshot["net"])
                 self._latest = (self._trained_version, snapshot)
+
+                # Checkpoint the latest fit.  A save failure is a real failure
+                # (silently losing persistence is worse than a crash) but keeps
+                # the deferred-surfacing contract: recorded here, raised from
+                # the next poll/submit — matching how a worker-side save
+                # failure reaches the parent of a ProcessExecutor.
+                if (
+                    self._save_path is not None
+                    and self._trained_version % self._save_every == 0
+                ):
+                    try:
+                        _diagnostics.save_checkpoint(
+                            self._flow,
+                            self._save_path,
+                            self._trained_version,
+                            val_nll,
+                        )
+                    except BaseException as exc:  # noqa: BLE001
+                        self._error = exc
+
+                # Diagnostics plots are best-effort: warn, never interrupt
+                # training.
+                if (
+                    self._diagnostics_dir is not None
+                    and self._trained_version % self._diagnostics_every == 0
+                ):
+                    try:
+                        _diagnostics.save_loss_plot(
+                            history,
+                            self._diagnostics_dir,
+                            self._trained_version,
+                            val_nll,
+                        )
+                        _diagnostics.save_val_nll_trend(
+                            self._round_versions,
+                            self._round_val_nlls,
+                            self._diagnostics_dir,
+                        )
+                        if self._plot_corner:
+                            _diagnostics.save_corner_plot(
+                                train_data,
+                                self._flow,
+                                self._diagnostics_dir,
+                                self._trained_version,
+                                self._corner_max_samples,
+                            )
+                    except Exception:
+                        warnings.warn(
+                            "flow diagnostics plotting failed:\n"
+                            + traceback.format_exc(),
+                            RuntimeWarning,
+                        )
 
         return True
 
@@ -624,6 +792,11 @@ class InlineExecutor(TrainerExecutor):
     def latest_val_nll(self):
         """Latent-space validation NLL of the most recent fit (``None`` if none yet)."""
         return self._latest_val_nll
+
+    @property
+    def latest_history(self):
+        """:class:`~eryn.flows.base.FlowHistory` of the most recent fit (or ``None``)."""
+        return self._latest_history
 
     def shutdown(self, timeout: float = 10.0) -> None:
         """Mark the executor shut down (idempotent).
@@ -673,6 +846,21 @@ class WorkerConfig:
         transform once on the first training round and freezes it; an integer
         ``K`` re-fits it every ``K``-th round.  Mirrors
         :class:`InlineExecutor`'s knob of the same name.
+    save_path : str or None, optional
+        HDF5 checkpoint path for the latest fit, written atomically by the
+        worker every ``save_every``-th version.  Default is ``None``.
+    save_every : int, optional
+        Checkpoint cadence in trained versions.  Default is ``1``.
+    diagnostics_dir : str or None, optional
+        Directory for the worker's per-round diagnostic PNGs.  Default is
+        ``None``.
+    diagnostics_every : int, optional
+        Plot cadence in trained versions.  Default is ``1``.
+    plot_corner : bool, optional
+        Also write per-condition corner plots (training buffer vs flow draws)
+        on each diagnostics round.  Default is ``False``.
+    corner_max_samples : int, optional
+        Cap on points per data set in each corner plot.  Default is ``5000``.
     """
 
     epochs_per_round: int = 20
@@ -682,6 +870,12 @@ class WorkerConfig:
     seed: int = 1234
     fit_kwargs: dict = field(default_factory=dict)
     refit_transform_every: int | None = None
+    save_path: str | None = None
+    save_every: int = 1
+    diagnostics_dir: str | None = None
+    diagnostics_every: int = 1
+    plot_corner: bool = False
+    corner_max_samples: int = 5000
 
 
 def _trainer_worker(spec, cfg, sample_q, weights_q, stop_event):
@@ -694,12 +888,21 @@ def _trainer_worker(spec, cfg, sample_q, weights_q, stop_event):
     data transform is fitted on the FIRST training round and frozen thereafter
     (``cfg.refit_transform_every=K`` re-fits it every K rounds).  Each
     successful fit bumps an internal version and pushes
-    ``("weights", version, snapshot, val_nll)`` onto the bounded ``weights_q``,
-    dropping the oldest queued item if the parent has not drained it.  The
-    ``snapshot`` is a self-contained ``{"net", "data_transform"}`` dict (the
-    fitted transform travels with the net so the parent installs a matched pair)
-    and ``val_nll`` is the final-epoch latent-space validation loss for
-    monitoring.
+    ``("weights", version, snapshot, val_nll, history)`` onto the bounded
+    ``weights_q``, dropping the oldest queued item if the parent has not
+    drained it.  The ``snapshot`` is a self-contained
+    ``{"net", "data_transform"}`` dict (the fitted transform travels with the
+    net so the parent installs a matched pair), ``val_nll`` is the final-epoch
+    latent-space validation loss, and ``history`` is the round's full
+    :class:`~eryn.flows.base.FlowHistory` for monitoring.
+
+    When ``cfg.save_path`` is set, every ``cfg.save_every``-th version is also
+    checkpointed to HDF5 (atomic overwrite; a save failure is surfaced to the
+    parent as a :class:`TrainerError` like any other worker failure).  When
+    ``cfg.diagnostics_dir`` is set, per-round loss-curve / val-NLL-trend PNGs
+    (and, with ``cfg.plot_corner``, per-condition corner plots of the training
+    buffer vs flow draws) are written best-effort — plot failures warn and
+    never interrupt training.
 
     Shutdown is driven by EITHER mechanism: a ``None`` sentinel on ``sample_q``
     (a clean wake from a blocked ``get``) or ``stop_event`` being set (works
@@ -723,6 +926,13 @@ def _trainer_worker(spec, cfg, sample_q, weights_q, stop_event):
         torch.set_num_threads(cfg.torch_num_threads)
         torch.manual_seed(cfg.seed)
         np.random.seed(cfg.seed % (2 ** 32))
+
+        if cfg.diagnostics_dir is not None:
+            # Force the non-interactive backend BEFORE anything (e.g. corner)
+            # pulls in pyplot: the spawned child has no display.
+            import matplotlib
+
+            matplotlib.use("Agg")
 
         flow = spec.build()
 
@@ -760,6 +970,9 @@ def _trainer_worker(spec, cfg, sample_q, weights_q, stop_event):
         version = 0
         round_count = 0
         transform_fitted = False
+        # Per-round (version, val_nll) record feeding the trend plot.
+        round_versions: list = []
+        round_val_nlls: list = []
         while not stop_event.is_set():
             try:
                 item = sample_q.get(timeout=0.5)
@@ -793,8 +1006,9 @@ def _trainer_worker(spec, cfg, sample_q, weights_q, stop_event):
                 cfg.refit_transform_every is not None
                 and next_round % cfg.refit_transform_every == 0
             )
+            train_data = _assemble()
             history = flow.fit(
-                _assemble(),
+                train_data,
                 n_epochs=cfg.epochs_per_round,
                 refit_data_transform=do_refit,
                 verbose=False,
@@ -809,11 +1023,50 @@ def _trainer_worker(spec, cfg, sample_q, weights_q, stop_event):
                 if (val_loss is not None and len(val_loss))
                 else None
             )
+            round_versions.append(version)
+            round_val_nlls.append(val_nll)
+
+            # Checkpoint the latest fit.  Deliberately OUTSIDE any local
+            # try/except: a save failure propagates to the outer handler and
+            # reaches the parent as ("error", tb) → TrainerError.  Silently
+            # losing persistence is worse than a crash.
+            if cfg.save_path is not None and version % cfg.save_every == 0:
+                _diagnostics.save_checkpoint(flow, cfg.save_path, version, val_nll)
+
+            # Diagnostics plots are best-effort: warn on the child's stderr,
+            # never interrupt training.
+            if (
+                cfg.diagnostics_dir is not None
+                and version % cfg.diagnostics_every == 0
+            ):
+                try:
+                    _diagnostics.save_loss_plot(
+                        history, cfg.diagnostics_dir, version, val_nll
+                    )
+                    _diagnostics.save_val_nll_trend(
+                        round_versions, round_val_nlls, cfg.diagnostics_dir
+                    )
+                    if cfg.plot_corner:
+                        _diagnostics.save_corner_plot(
+                            train_data,
+                            flow,
+                            cfg.diagnostics_dir,
+                            version,
+                            cfg.corner_max_samples,
+                        )
+                except Exception:
+                    warnings.warn(
+                        "flow diagnostics plotting failed in trainer worker:\n"
+                        + traceback.format_exc(),
+                        RuntimeWarning,
+                    )
+
             # Ship a self-contained snapshot carrying the fitted transform with
-            # the net (picklable: CPU net tensors + picklable transform).
+            # the net (picklable: CPU net tensors + picklable transform), plus
+            # the round's FlowHistory (plain lists of floats).
             _put_drop_oldest(
                 weights_q,
-                ("weights", version, flow.get_snapshot(), val_nll),
+                ("weights", version, flow.get_snapshot(), val_nll, history),
             )
     except Exception:  # noqa: BLE001 — surface ANY failure to the parent.
         _put_drop_oldest(weights_q, ("error", traceback.format_exc()))
@@ -949,6 +1202,32 @@ class ProcessExecutor(TrainerExecutor):
         ``torch.set_num_threads`` in the worker.  Default is ``2``.
     seed : int, optional
         Seed for the worker's torch/numpy RNGs.  Default is ``1234``.
+    save_path : str or None, optional
+        HDF5 checkpoint of the latest fit, written by the WORKER (where the
+        trained flow lives) every ``save_every``-th version — atomic
+        overwrite, so the file always holds the newest fit and round-trips a
+        fully usable flow via ``FlowClass.load(save_path)`` (fitted transform
+        included; ``version`` / ``val_nll`` stored as root attrs).  A save
+        failure fails the worker loudly (:class:`TrainerError` on the next
+        poll).  Default is ``None`` (no checkpointing).
+    save_every : int, optional
+        Checkpoint cadence in trained versions.  Default is ``1``.
+    diagnostics_dir : str or None, optional
+        Directory for per-round diagnostic PNGs written by the worker:
+        per-round loss curves (``flow_loss_v####.png``) and a running
+        validation-NLL trend (``flow_val_nll_trend.png``).  Plot failures are
+        best-effort (warning on the child's stderr), never fatal.  Default is
+        ``None`` (no plots).
+    diagnostics_every : int, optional
+        Plot cadence in trained versions.  Default is ``1``.
+    plot_corner : bool, optional
+        When ``True`` (requires ``diagnostics_dir`` and the optional
+        ``corner`` package), each diagnostics round also writes one corner
+        plot per condition overlaying that round's training buffer with an
+        equal number of draws from the freshly trained flow
+        (``flow_corner_v####_cond#.png``).  Default is ``False``.
+    corner_max_samples : int, optional
+        Cap on points per data set in each corner plot.  Default is ``5000``.
     start : bool, optional
         Start the worker process in ``__init__``.  Default is ``True``.  See the
         degenerate ``start=False`` state above.
@@ -976,6 +1255,12 @@ class ProcessExecutor(TrainerExecutor):
         drop_policy: str = "oldest",
         torch_num_threads: int = 2,
         seed: int = 1234,
+        save_path: str | None = None,
+        save_every: int = 1,
+        diagnostics_dir: str | None = None,
+        diagnostics_every: int = 1,
+        plot_corner: bool = False,
+        corner_max_samples: int = 5000,
         start: bool = True,
     ):
         fit_kwargs = dict(fit_kwargs) if fit_kwargs else {}
@@ -992,6 +1277,11 @@ class ProcessExecutor(TrainerExecutor):
             raise ValueError(
                 f"drop_policy must be 'oldest' or 'newest', got {drop_policy!r}."
             )
+
+        # Fail-fast in the parent (missing corner/matplotlib, plot_corner
+        # without diagnostics_dir) rather than deep inside the worker spawn;
+        # also pre-creates the output directories.
+        _validate_monitoring_args(save_path, diagnostics_dir, plot_corner)
 
         # Snapshot the flow NOW (in the parent) so picklability fails fast here,
         # not deep inside a spawn. The transform may be unfitted; the worker
@@ -1010,6 +1300,14 @@ class ProcessExecutor(TrainerExecutor):
                 if refit_transform_every is not None
                 else None
             ),
+            save_path=str(save_path) if save_path is not None else None,
+            save_every=int(save_every),
+            diagnostics_dir=(
+                str(diagnostics_dir) if diagnostics_dir is not None else None
+            ),
+            diagnostics_every=int(diagnostics_every),
+            plot_corner=bool(plot_corner),
+            corner_max_samples=int(corner_max_samples),
         )
         self._drop_policy = drop_policy
 
@@ -1026,6 +1324,7 @@ class ProcessExecutor(TrainerExecutor):
         self._error: BaseException | None = None
         self._latest: tuple[int, dict] | None = None
         self._latest_val_nll: float | None = None
+        self._latest_history = None
         self._seen_version = 0
         self._exitcode: int | None = None
 
@@ -1133,9 +1432,10 @@ class ProcessExecutor(TrainerExecutor):
 
         Non-blocking: pulls every pending item with ``get_nowait``, keeping the
         newest ``"weights"`` item seen.  Each ``"weights"`` item is
-        ``("weights", version, snapshot, val_nll)`` where ``snapshot`` is a
-        self-contained ``{"net", "data_transform"}`` dict; the latest item's
-        ``val_nll`` updates :attr:`latest_val_nll`.  If an ``"error"`` item
+        ``("weights", version, snapshot, val_nll, history)`` where ``snapshot``
+        is a self-contained ``{"net", "data_transform"}`` dict; the latest
+        item's ``val_nll`` / ``history`` update :attr:`latest_val_nll` /
+        :attr:`latest_history`.  If an ``"error"`` item
         appears the failure is recorded and :class:`TrainerError` (carrying the
         child traceback) is raised.  If — after draining — the executor has not
         already failed and the (non-shutdown) worker process has died with a
@@ -1167,6 +1467,7 @@ class ProcessExecutor(TrainerExecutor):
 
         newest: tuple[int, dict] | None = None
         newest_val_nll: float | None = None
+        newest_history = None
         while True:
             try:
                 kind, *rest = self._weights_q.get_nowait()
@@ -1179,10 +1480,11 @@ class ProcessExecutor(TrainerExecutor):
                 )
                 raise self._error
             elif kind == "weights":
-                version, snapshot, val_nll = rest
+                version, snapshot, val_nll, history = rest
                 if newest is None or version > newest[0]:
                     newest = (version, snapshot)
                     newest_val_nll = val_nll
+                    newest_history = history
 
         if newest is not None:
             # Only keep it if it is strictly newer than what we already stashed
@@ -1190,6 +1492,7 @@ class ProcessExecutor(TrainerExecutor):
             if self._latest is None or newest[0] > self._latest[0]:
                 self._latest = newest
                 self._latest_val_nll = newest_val_nll
+                self._latest_history = newest_history
 
         # Silent-death detection: the worker has died with a bad exit code →
         # surface as a failure rather than freezing forever on stale weights.
@@ -1234,7 +1537,17 @@ class ProcessExecutor(TrainerExecutor):
         drained, so poll that first to refresh it.
         """
         return self._latest_val_nll
-    
+
+    @property
+    def latest_history(self):
+        """:class:`~eryn.flows.base.FlowHistory` of the newest observed version.
+
+        Ships with each weights item, so — like :attr:`latest_val_nll` — it is
+        refreshed by :meth:`latest_weights`; poll that first.  ``None`` before
+        any version has been observed.
+        """
+        return self._latest_history
+
     @property
     def worker_device(self) -> str:
         """Device the worker builds the flow on (``"cpu"`` by default)."""

@@ -479,8 +479,14 @@ def test_flowmove_harvest_every_honored():
     assert len(ex.submits) == 2
 
 
-def test_flowmove_harvest_flattens_cold_chain():
-    """Harvested samples are the cold-chain coords flattened to (-1, ndim)."""
+def test_flowmove_harvest_submits_cold_chain_per_leaf():
+    """Harvest submits one (nwalkers, ndim) cold-chain block per leaf id.
+
+    Since the per-leaf conditioning redesign, ``FlowMove.submit`` keys the
+    training batch by LEAF index (the flow's condition id) rather than pooling
+    all leaves under ``active_condition`` — each leaf trains its own
+    conditional slice of the flow.
+    """
     pytest.importorskip("torch")
     flow = _make_flow(seed=0)
     ex = _StubExecutor(canned=None)
@@ -492,11 +498,12 @@ def test_flowmove_harvest_flattens_cold_chain():
 
     assert len(ex.submits) == 1
     submitted = ex.submits[0]
-    assert set(submitted.keys()) == {move.active_condition}
-    arr = submitted[move.active_condition]
-    # cold chain (temp 0): nwalkers * nleaves rows, ndim columns
-    assert arr.shape == (nwalkers * nleaves, ndim)
-    np.testing.assert_array_equal(arr, branches["x"][0].reshape(-1, ndim))
+    assert set(submitted.keys()) == set(range(nleaves))
+    for leaf in range(nleaves):
+        arr = submitted[leaf]
+        # cold chain (temp 0) of this leaf: nwalkers rows, ndim columns
+        assert arr.shape == (nwalkers, ndim)
+        np.testing.assert_array_equal(arr, branches["x"][0][:, leaf, :])
 
 
 def test_flowmove_hot_reload_advances_loaded_version_and_changes_outputs():

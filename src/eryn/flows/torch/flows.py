@@ -589,6 +589,78 @@ class ZukoFlow(BaseTorchFlow):
         return (log_flow.cpu().numpy() + logdet).astype(np.float64)
 
     # ------------------------------------------------------------------
+    # log_prob_and_grad
+    # ------------------------------------------------------------------
+
+    def log_prob_and_grad(self, x, context=None) -> tuple:
+        """Return the coords-space log density and its gradient at ``x``.
+
+        Same density as :meth:`log_prob` (identical ops, so the returned
+        ``log_prob`` is bit-identical), but evaluated **in-graph** so torch
+        autograd can differentiate through the data transform, the flow
+        network, and the log-det term.  Used by gradient-based proposals
+        (:class:`eryn.moves.FlowNUTSMove`).
+
+        The data transform runs on CPU/float64 by contract; only the network
+        forward/backward runs on ``self.device``.  ``IdentityTransform`` is
+        special-cased (its numpy ``forward`` cannot carry a grad tensor); any
+        other transform must be torch-native end-to-end (as
+        :class:`~eryn.flows.torch.transforms.WhiteningTransform` is) or a
+        :exc:`NotImplementedError` is raised.
+
+        Parameters
+        ----------
+        x : array-like, shape (N, dims)
+            Sample points in coords space.
+        context : None, int, or array-like, optional
+            Context following the class-level contract.
+
+        Returns
+        -------
+        log_prob : np.ndarray, shape (N,), dtype float64
+        grad : np.ndarray, shape (N, dims), dtype float64
+            ``d log_prob / dx`` per row.
+        """
+        x = self._validate_x(x)
+        if x.shape[0] == 0:
+            return (
+                np.empty((0,), dtype=np.float64),
+                np.empty((0, self.dims), dtype=np.float64),
+            )
+        ctx, condition = self._resolve(context)
+
+        x_t = torch.tensor(x, dtype=torch.float64, requires_grad=True)
+
+        if isinstance(self.data_transform, IdentityTransform):
+            # IdentityTransform.forward is numpy (np.asarray) and would sever
+            # the graph (and raise on a requires_grad tensor); the identity map
+            # needs no transform pass and has zero log-det.
+            z = x_t
+            logdet = torch.zeros(x.shape[0], dtype=torch.float64)
+        else:
+            z = self.data_transform.forward(x_t, condition)
+            if not (isinstance(z, torch.Tensor) and z.grad_fn is not None):
+                raise NotImplementedError(
+                    f"log_prob_and_grad requires a torch-differentiable "
+                    f"data_transform; {type(self.data_transform).__name__}."
+                    f"forward did not return a graph-connected tensor."
+                )
+            logdet = self.data_transform.log_abs_det_jacobian(x_t, z, condition)
+
+        dist = self._get_dist(ctx)
+        # The float64 -> float32 cast is differentiable and matches log_prob's
+        # precision exactly, so the two methods return bit-identical densities.
+        log_flow = dist.log_prob(z.to(device=self.device, dtype=torch.float32))
+
+        total = log_flow.double().cpu() + logdet
+        (grad,) = torch.autograd.grad(total.sum(), x_t)
+
+        return (
+            total.detach().numpy().astype(np.float64),
+            grad.detach().numpy().astype(np.float64),
+        )
+
+    # ------------------------------------------------------------------
     # sample
     # ------------------------------------------------------------------
 

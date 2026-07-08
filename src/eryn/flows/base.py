@@ -209,6 +209,41 @@ class Flow(ABC):
             Log density evaluated at each row of ``x``.
         """
 
+    def log_prob_and_grad(self, x, context=None) -> tuple:
+        """Return the coords-space log density and its gradient at ``x``.
+
+        Optional capability: gradient-based proposals (e.g.
+        :class:`eryn.moves.FlowNUTSMove`) need :math:`\\nabla_x \\log q(x)` in
+        **coords space**, i.e. differentiated through :attr:`data_transform`
+        (including its log-det term) as well as the flow network.  Backends
+        built on an autodiff framework (torch, JAX) should override this with
+        a native implementation; the log density returned here must agree with
+        :meth:`log_prob` so that MCMC correction factors and gradient dynamics
+        see one consistent density.
+
+        This default raises: a backend that does not override it cannot be
+        used with gradient-based moves.
+
+        Parameters
+        ----------
+        x : array-like, shape (N, dims)
+            Sample points in coords space.
+        context : None, int, or array-like, optional
+            Context following the class-level context contract.
+
+        Returns
+        -------
+        log_prob : np.ndarray, shape (N,)
+            Log density evaluated at each row of ``x``.
+        grad : np.ndarray, shape (N, dims)
+            Gradient of the log density with respect to ``x``.
+        """
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement log_prob_and_grad; "
+            "gradient-based moves (e.g. FlowNUTSMove) require a differentiable "
+            "backend that overrides this method."
+        )
+
     @abstractmethod
     def sample(self, n: int, context=None) -> np.ndarray:
         """Draw ``n`` samples from the flow in coords space.

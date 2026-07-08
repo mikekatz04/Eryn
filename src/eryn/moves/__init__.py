@@ -9,6 +9,7 @@ from .de import DEMove, DESnookerMove
 from .infomatrix import InfoMatrixMove
 from .independentmh import IndependentProposalMove
 from .flow import FlowMove
+from .flownuts import FlowNUTSMove
 
 # from .kde import KDEMove
 # from .walk import WalkMove
@@ -50,4 +51,5 @@ __all__ = [
     "NUTSSampler",
     "IndependentProposalMove",
     "FlowMove",
+    "FlowNUTSMove",
 ]
