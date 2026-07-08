@@ -196,6 +196,11 @@ Flow Moves
     :show-inheritance:
     :inherited-members:
 
+.. autoclass:: eryn.moves.FlowNUTSMove
+    :members:
+    :show-inheritance:
+    :inherited-members:
+
 .. autoclass:: eryn.moves.IndependentProposalMove
     :members:
     :show-inheritance:

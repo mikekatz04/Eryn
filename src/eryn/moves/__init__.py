@@ -10,6 +10,9 @@ from .red_blue import RedBlueMove
 from .stretch import StretchMove
 from .de import DEMove, DESnookerMove
 from .infomatrix import InfoMatrixMove
+from .independentmh import IndependentProposalMove
+from .flow import FlowMove
+from .flownuts import FlowNUTSMove
 
 # from .kde import KDEMove
 # from .walk import WalkMove
@@ -27,8 +30,6 @@ from .combine import CombineMove
 from .mtdistgen import MTDistGenMove
 from .mtdistgenrj import MTDistGenMoveRJ
 from .multipletry import MultipleTryMove
-from .independentmh import IndependentProposalMove
-from .flow import FlowMove
 
 # from .walk import WalkMove
 from .nuts import NUTSMove, NUTSSampler
@@ -63,4 +64,5 @@ __all__ = [
     "NUTSSampler",
     "IndependentProposalMove",
     "FlowMove",
+    "FlowNUTSMove",
 ]
