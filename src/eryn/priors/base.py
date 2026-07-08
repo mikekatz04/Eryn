@@ -16,6 +16,11 @@ import numpy as np
 from numpy.typing import ArrayLike
 from ..utils.utility import NDArrayLike
 
+try:
+    import cupy as _CUPY  # type: ignore[import]
+except ImportError:
+    _CUPY = None
+
 
 class PriorException(Exception):
     """General base class for all prior exceptions"""
@@ -36,19 +41,22 @@ class AbstractPrior:
     """
 
     def __init__(self, use_cupy: bool = False, return_gpu: bool = False):
+        if use_cupy and _CUPY is None:
+            raise ImportError("use_cupy is True, but CuPy is not installed.")
         self.use_cupy = use_cupy
         self.return_gpu = return_gpu
 
-        if self.use_cupy:
-            try:
-                import cupy as cp # type: ignore[import]
-                self.xp = cp
-            except ImportError:
-                raise ImportError("use_cupy is True, but CuPy is not installed.")
-        else:
-            self.xp = np
-
         self._infer_dependencies()
+
+    @property
+    def xp(self):
+        """numpy or cupy, resolved from ``use_cupy`` (kept as a flag so the
+        prior remains deepcopy/pickle-safe -- storing the module directly
+        as an instance attribute breaks copy.deepcopy of settings trees
+        that contain priors). The module is imported once at import time
+        and cached in a module-level global, so this is a cheap lookup.
+        """
+        return _CUPY if self.use_cupy else np
 
     def _infer_dependencies(self):
         """Automatically infer dependencies from subclass signatures.
