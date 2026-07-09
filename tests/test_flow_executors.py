@@ -1120,13 +1120,13 @@ def test_process_context_manager_joins_child():
 
 
 # ---------------------------------------------------------------------------
-# 8. FlowMove end-to-end smoke with ProcessExecutor.
+# 8. ConditionalFlowMove end-to-end smoke with ProcessExecutor.
 # ---------------------------------------------------------------------------
 
 def test_process_flowmove_end_to_end_smoke():
     pytest.importorskip("torch")
     from eryn.ensemble import EnsembleSampler
-    from eryn.moves import FlowMove
+    from eryn.moves import ConditionalFlowMove
     from eryn.prior import ProbDistContainer, uniform_dist
     from eryn.state import State
 
@@ -1134,7 +1134,7 @@ def test_process_flowmove_end_to_end_smoke():
     flow = _make_tiny_zuko_flow(seed=0)
     ex = ProcessExecutor(flow, epochs_per_round=2, min_train_samples=50, seed=11)
     try:
-        move = FlowMove(flow, branch_name="x", executor=ex, harvest_every=2)
+        move = ConditionalFlowMove(flow, branch_name="x", executor=ex, harvest_every=2)
         move.active_condition = 0
 
         priors = {"x": ProbDistContainer(

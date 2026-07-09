@@ -21,7 +21,7 @@ See [examples notebook](https://github.com/lisa-analysis-tools/Eryn/blob/main/ex
 
 ### Normalizing-flow proposals
 
-Eryn ships an optional `eryn.flows` subpackage for normalizing-flow MCMC proposals: a flow is trained on samples that approximate the target (offline from a prior run, or online by harvesting the live cold chain) and is then used as an independence proposal with the exact log-density needed for a valid Metropolis-Hastings correction. The proposals themselves are `FlowMove` and `IndependentProposalMove` in `eryn.moves`.
+Eryn ships an optional `eryn.flows` subpackage for normalizing-flow MCMC proposals: a flow is trained on samples that approximate the target (offline from a prior run, or online by harvesting the live cold chain) and is then used as an independence proposal with the exact log-density needed for a valid Metropolis-Hastings correction. The proposals themselves are `ConditionalFlowMove` and `IndependentProposalMove` in `eryn.moves`.
 
 The PyTorch backend (`ZukoFlow`, backed by [zuko](https://github.com/probabilists/zuko)) requires the optional `flow` extra:
 

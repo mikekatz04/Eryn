@@ -48,7 +48,7 @@ The subpackage is organised around a small set of seams:
   sampler process, while :class:`~eryn.flows.ProcessExecutor` trains a clone of
   the flow in a spawned worker process so sampling is never blocked.
 - **Moves.**  The proposals themselves live in ``eryn.moves``:
-  :class:`~eryn.moves.FlowMove` (online or offline flow proposal) and
+  :class:`~eryn.moves.ConditionalFlowMove` (online or offline flow proposal) and
   :class:`~eryn.moves.IndependentProposalMove` (a generic independence proposal
   used as a baseline, e.g. with a GMM).
 
@@ -59,12 +59,12 @@ Quickstart
 
     import numpy as np
     from eryn.flows import ZukoFlow
-    from eryn.moves import FlowMove
+    from eryn.moves import ConditionalFlowMove
 
     flow = ZukoFlow(dims=4, device="cpu", seed=0)
     flow.fit({0: training_samples}, n_epochs=100, batch_size=512)
 
-    fmove = FlowMove(flow, branch_name="x")
+    fmove = ConditionalFlowMove(flow, branch_name="x")
     fmove.active_condition = 0
     # pass fmove into EnsembleSampler(..., moves=[(fmove, weight), ...])
 
@@ -72,13 +72,13 @@ Quickstart
 weights as they land::
 
     from eryn.flows import ProcessExecutor
-    from eryn.moves import FlowMove, StretchMove
+    from eryn.moves import ConditionalFlowMove, StretchMove
 
     with ProcessExecutor(flow, epochs_per_round=15, min_train_samples=2000) as ex:
-        flow_move = FlowMove(flow, "x", executor=ex, harvest_every=5)
+        flow_move = ConditionalFlowMove(flow, "x", executor=ex, harvest_every=5)
         # mix with StretchMove to stay ergodic while the flow learns:
         # moves = [(StretchMove(), 0.7), (flow_move, 0.3)]
-        # run the sampler inside the `with` block; FlowMove harvests the cold
+        # run the sampler inside the `with` block; ConditionalFlowMove harvests the cold
         # chain into the executor and polls for new versioned weights.
 
 Examples
@@ -191,7 +191,7 @@ Trainer Executors
 Flow Moves
 ~~~~~~~~~~
 
-.. autoclass:: eryn.moves.FlowMove
+.. autoclass:: eryn.moves.ConditionalFlowMove
     :members:
     :show-inheritance:
     :inherited-members:

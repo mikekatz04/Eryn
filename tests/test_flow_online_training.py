@@ -9,7 +9,7 @@ that test froze a trained flow and checked detailed balance, this one drives the
           ^                                            |
           |  hot-load versioned weights (poll)  <------/
 
-A :class:`FlowMove` (mixed 30/70 with a plain :class:`StretchMove`, so the chain
+A :class:`ConditionalFlowMove` (mixed 30/70 with a plain :class:`StretchMove`, so the chain
 stays ergodic while the flow learns) harvests the cold chain into a spawned
 :class:`ProcessExecutor`, which trains a clone in a *second process* and hands
 back versioned weights that the move hot-loads mid-run.  The single test asserts
@@ -46,7 +46,7 @@ pytest.importorskip("zuko")
 import torch  # noqa: E402
 
 from eryn.ensemble import EnsembleSampler  # noqa: E402
-from eryn.moves import FlowMove, StretchMove  # noqa: E402
+from eryn.moves import ConditionalFlowMove, StretchMove  # noqa: E402
 from eryn.prior import ProbDistContainer, uniform_dist  # noqa: E402
 from eryn.state import State  # noqa: E402
 from eryn.utils import PeriodicContainer  # noqa: E402
@@ -193,7 +193,7 @@ def test_online_training_full_loop():
             torch_num_threads=2,
             seed=SEED,
         ) as ex:
-            flow_move = FlowMove(
+            flow_move = ConditionalFlowMove(
                 flow, "x", executor=ex, harvest_every=HARVEST_EVERY
             )
             sampler = _build_sampler(
@@ -230,7 +230,7 @@ def test_online_training_full_loop():
                 sampler.get_last_sample(), 30, burn=0, progress=False
             )
             assert flow_move.loaded_version >= 2, (
-                f"FlowMove hot-load lagged: loaded_version="
+                f"ConditionalFlowMove hot-load lagged: loaded_version="
                 f"{flow_move.loaded_version}, executor version={ex.version}."
             )
 
@@ -298,15 +298,15 @@ def test_online_training_lazy_no_prefit():
     before CT2 (``FlowSpec.from_flow`` asserted ``is_fitted``).  The harvested
     cold chain trains the clone in the worker; the first trained snapshot ships
     the *fitted* transform back, and the live flow hot-loads it via
-    ``set_weights`` (the same call :meth:`FlowMove.setup` makes).  The core new
+    ``set_weights`` (the same call :meth:`ConditionalFlowMove.setup` makes).  The core new
     guarantee asserted here is that the LIVE flow's transform goes False -> True
     via that handoff — it was NEVER fitted locally.
 
-    Bootstrapping note (see also the module finding): a :class:`FlowMove` cannot
+    Bootstrapping note (see also the module finding): a :class:`ConditionalFlowMove` cannot
     *propose* from a flow whose transform is still unfitted — ``get_proposal``
     samples the flow, which raises ``RuntimeError`` on an unfitted transform.  So
     the live flow must reach version 1 BEFORE a mixed Stretch/Flow run lets the
-    FlowMove fire.  We seed that first version exactly the way a production
+    ConditionalFlowMove fire.  We seed that first version exactly the way a production
     harness does: submit the warmup samples (already in hand) to the executor and
     poll the first snapshot into the live flow — no local fit, the worker does it.
     Once usable, the mixed run continues harvesting and advancing versions.
@@ -392,7 +392,7 @@ def test_online_training_lazy_no_prefit():
             # ----------------------------------------------------------------
             # BOOTSTRAP version 1 from the worker WITHOUT a local fit: submit the
             # warmup samples and wait (bounded) for the first snapshot, then
-            # install it with the very same set_weights() call FlowMove.setup
+            # install it with the very same set_weights() call ConditionalFlowMove.setup
             # makes.  This is what turns the unfitted flow usable.
             # ----------------------------------------------------------------
             ex.submit({0: warmup})
@@ -412,7 +412,7 @@ def test_online_training_lazy_no_prefit():
             # (a) THE core new guarantee: the LIVE flow's transform was UNFITTED,
             # and installing the worker's snapshot makes it fitted — never a local
             # fit.  The snapshot carries {"net", "data_transform"}; set_weights
-            # installs the matched pair atomically (exactly FlowMove.setup's call).
+            # installs the matched pair atomically (exactly ConditionalFlowMove.setup's call).
             assert flow.data_transform.is_fitted is False
             flow.set_weights(snapshot)
             assert flow.data_transform.is_fitted is True, (
@@ -436,12 +436,12 @@ def test_online_training_lazy_no_prefit():
 
             # ----------------------------------------------------------------
             # Now the flow is usable, run the realistic mixed Stretch/Flow loop.
-            # FlowMove harvests its cold chain into the SAME executor and
+            # ConditionalFlowMove harvests its cold chain into the SAME executor and
             # hot-loads newer snapshots as they land — proving the online story
             # past the bootstrap.  The move starts at loaded_version 0 (its own
             # bookkeeping), so it re-loads version 1 (or newer) on its first poll.
             # ----------------------------------------------------------------
-            flow_move = FlowMove(
+            flow_move = ConditionalFlowMove(
                 flow, "x", executor=ex, harvest_every=HARVEST_EVERY
             )
             sampler = _build_sampler(
@@ -466,7 +466,7 @@ def test_online_training_lazy_no_prefit():
             # (b) versions advanced + the move hot-loaded a trained snapshot.
             assert ex.version >= 1
             assert flow_move.loaded_version >= 1, (
-                f"FlowMove hot-load lagged: loaded_version="
+                f"ConditionalFlowMove hot-load lagged: loaded_version="
                 f"{flow_move.loaded_version}, executor version={ex.version}."
             )
             # transform stays fitted across the mixed run (live flow is the same

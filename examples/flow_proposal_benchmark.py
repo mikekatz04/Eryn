@@ -32,7 +32,7 @@ import argparse
 import numpy as np
 
 from eryn.ensemble import EnsembleSampler
-from eryn.moves import FlowMove, IndependentProposalMove, StretchMove
+from eryn.moves import ConditionalFlowMove, IndependentProposalMove, StretchMove
 from eryn.prior import ProbDistContainer, uniform_dist
 from eryn.state import State
 from eryn.utils import PeriodicContainer
@@ -193,7 +193,7 @@ def main():
     # seed+2). Identical seeds across arms is not required for fairness (the
     # arms run different move types); reproducibility run-to-run is what the
     # gate needs.
-    fmove = FlowMove(flow, branch_name="x")
+    fmove = ConditionalFlowMove(flow, branch_name="x")
     fmove.active_condition = 0
     _, ess, nev, acc = _run(fmove, log_prob, ndim, periodic, bounds, train_samples, seed=args.seed, **runargs)
     results.append(BenchmarkResult("flow", float(ess.min()), float(ess.min()) / nev, nev, acc))
@@ -236,7 +236,7 @@ def main():
         f"**Flow ESS/eval vs GMM:** {win_vs_gmm:.2f}x", "",
         f"## VERDICT: {'GO' if decisive else 'NO-GO / MARGINAL'}",
         "",
-        "- GO       -> proceed to P1 (in-process FlowMove integration via InlineExecutor).",
+        "- GO       -> proceed to P1 (in-process ConditionalFlowMove integration via InlineExecutor).",
         "- MARGINAL (beats stretch, ~GMM) -> a cheap GMM proposal may suffice; reconsider the flow.",
         "- NO-GO (no win over stretch) -> stop; the flow proposal is not worth building here.",
     ]

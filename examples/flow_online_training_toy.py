@@ -33,7 +33,7 @@ What to look for in the report:
   - is_fitted goes False (at construction) -> True (after the worker's snapshot
     is installed): the transform was fitted by the worker, never locally;
   - the executor reached version >= 1 (the trainer actually fit at least once);
-  - FlowMove.loaded_version tracked it (weights were hot-loaded mid-run);
+  - ConditionalFlowMove.loaded_version tracked it (weights were hot-loaded mid-run);
   - per-dim posterior moments of the ONLINE run match the ground-truth empirical
     moments about as well as a pure stretch reference does.
 """
@@ -45,7 +45,7 @@ import time
 import numpy as np
 
 from eryn.ensemble import EnsembleSampler
-from eryn.moves import FlowMove, StretchMove
+from eryn.moves import ConditionalFlowMove, StretchMove
 from eryn.prior import ProbDistContainer, uniform_dist
 from eryn.state import State
 from eryn.utils import PeriodicContainer
@@ -197,11 +197,11 @@ def main():
           f"(is_fitted={is_fitted_before}); no warm fit — the worker fits it.")
 
     # ========================================================================
-    # 3) ONLINE run: StretchMove (70%) + FlowMove (30%) with a ProcessExecutor.
+    # 3) ONLINE run: StretchMove (70%) + ConditionalFlowMove (30%) with a ProcessExecutor.
     #    The executor trains a CLONE of the flow in a spawned process and ships
     #    back self-contained {"net", "data_transform"} snapshots.
     #
-    #    Bootstrap: a FlowMove cannot propose from a flow whose transform is
+    #    Bootstrap: a ConditionalFlowMove cannot propose from a flow whose transform is
     #    still unfitted (sampling it would raise), so we first seed version 1 the
     #    way a production harness does — submit the warmup samples we already
     #    have and install the first snapshot the worker returns.  THAT is what
@@ -236,7 +236,7 @@ def main():
               f"is_fitted={is_fitted_after} (fitted by the WORKER).")
 
         # --- now usable: realistic mixed Stretch/Flow run ---
-        flow_move = FlowMove(
+        flow_move = ConditionalFlowMove(
             flow, "x", executor=ex, harvest_every=args.harvest_every
         )
         online_sampler = _make_sampler(
@@ -251,7 +251,7 @@ def main():
             start_online, args.nsteps, burn=args.burn, progress=False
         )
 
-        # The spawned trainer keeps producing newer versions while the FlowMove
+        # The spawned trainer keeps producing newer versions while the ConditionalFlowMove
         # harvests its cold chain; keep stepping in small segments (each one
         # harvests + polls) on a wall-clock deadline so the online story (a hot
         # reload past the bootstrap) is visible in the report.
@@ -310,8 +310,8 @@ def main():
           f"{is_fitted_after} (after)  "
           f"[fitted by the WORKER via the snapshot, not locally]")
     print(f"executor version  : {ex_version}  (trainer fit rounds completed)")
-    print(f"loaded_version    : {loaded_version}  (weights hot-loaded into FlowMove)")
-    print(f"FlowMove accept   : {flow_acc:.3f}")
+    print(f"loaded_version    : {loaded_version}  (weights hot-loaded into ConditionalFlowMove)")
+    print(f"ConditionalFlowMove accept   : {flow_acc:.3f}")
     print(f"Stretch accept    : {stretch_acc:.3f}")
     print(f"trainer exitcode  : {proc.exitcode}  (0 == graceful), "
           f"alive={proc.is_alive()}")
