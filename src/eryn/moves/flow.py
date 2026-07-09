@@ -11,6 +11,7 @@ This module is intentionally torch-free at import time: ``eryn.flows.base``
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -21,10 +22,10 @@ if TYPE_CHECKING:
     # Only for static type-checkers; never executed at runtime.
     from eryn.flows.base import Flow, FlowProposalDistribution  # noqa: F401
 
-__all__ = ["FlowMove"]
+__all__ = ["ConditionalFlowMove"]
+logger = logging.getLogger(__name__)
 
-
-class FlowMove(MHMove):
+class ConditionalFlowMove(MHMove):
     """Independent-Metropolis proposal drawing from a conditional normalizing flow.
 
     Proposes new coordinates for a single named branch by sampling from a
@@ -103,13 +104,13 @@ class FlowMove(MHMove):
 
     Examples
     --------
-    >>> move = FlowMove(my_flow, branch_name="x")
+    >>> move = ConditionalFlowMove(my_flow, branch_name="x")
     >>> move.active_condition = 2   # switch to condition 2 before sampling
 
     >>> # With online training:
     >>> from eryn.flows import InlineExecutor
     >>> ex = InlineExecutor(my_flow, min_train_samples=1000)
-    >>> move = FlowMove(my_flow, branch_name="x", executor=ex, harvest_every=10)
+    >>> move = ConditionalFlowMove(my_flow, branch_name="x", executor=ex, harvest_every=10)
     """
 
     def __init__(
@@ -246,7 +247,21 @@ class FlowMove(MHMove):
                 # atomically, so this flow never disagrees with the trainer on
                 # the coords-latent map.
                 self.flow.set_weights(snapshot)
+                logger.debug(
+                    f"{type(self).__name__}: hot-loaded new flow weights version"
+                    f" {version} (previously {self._loaded_version})."
+                )
                 self._loaded_version = version
+            else:
+                logger.debug(
+                    f"{type(self).__name__}: no new flow weights (latest version"
+                    f" {version}, previously loaded {self._loaded_version})."
+                )
+        else:
+            logger.debug(
+                f"{type(self).__name__}: executor has no trained weights yet"
+                f" (previously loaded {self._loaded_version})."
+            )
 
     def submit(self, branches_coords: dict):
         """
@@ -350,7 +365,7 @@ class FlowMove(MHMove):
             q[name] = coords.copy()
 
             if name != self.branch_name:
-                continue  # FlowMove only proposes for its own branch
+                continue  # ConditionalFlowMove only proposes for its own branch
 
             where = np.where(branches_inds[name])
             old_points = coords[where]

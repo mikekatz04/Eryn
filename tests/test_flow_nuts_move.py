@@ -45,7 +45,7 @@ from eryn.flows import (  # noqa: E402
 )
 from eryn.flows.base import Flow  # noqa: E402
 from eryn.flows.transforms import IdentityTransform  # noqa: E402
-from eryn.moves import FlowMove, FlowNUTSMove  # noqa: E402
+from eryn.moves import ConditionalFlowMove, FlowNUTSMove  # noqa: E402
 
 PERIOD = 2 * np.pi
 
@@ -189,7 +189,7 @@ def test_prefit_identity_passthrough_and_type_guard():
     samples = _corr_gauss_samples(100, seed=7)
     flow = _make_flow(samples, seed=7, fit_transform=False)
     move = FlowNUTSMove(flow, "x")
-    assert isinstance(move, FlowMove)
+    assert isinstance(move, ConditionalFlowMove)
 
     coords = np.random.default_rng(7).standard_normal((2, 5, 1, 2))
     q, factors = move.get_proposal({"x": coords}, np.random.RandomState(7))

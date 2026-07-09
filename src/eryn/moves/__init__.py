@@ -8,7 +8,7 @@ from .stretch import StretchMove
 from .de import DEMove, DESnookerMove
 from .infomatrix import InfoMatrixMove
 from .independentmh import IndependentProposalMove
-from .flow import FlowMove
+from .flow import ConditionalFlowMove
 from .flownuts import FlowNUTSMove
 
 # from .kde import KDEMove
@@ -50,6 +50,6 @@ __all__ = [
     "NUTSMove",
     "NUTSSampler",
     "IndependentProposalMove",
-    "FlowMove",
+    "ConditionalFlowMove",
     "FlowNUTSMove",
 ]

@@ -111,8 +111,9 @@ class CircularShiftTransform(torch.distributions.Transform):
     Parameters
     ----------
     shift : torch.Tensor
-        Scalar tensor; the circular mean of the component, in the same units
-        as the input.
+        Scalar tensor; the angle mapped to zero, in the same units as the
+        input.  The wrap cut (the discontinuity of the forward map) sits at
+        ``shift ± period / 2``.
     period : float
         Full period of the circular variable (e.g. ``2 * pi``).
     """
@@ -153,7 +154,7 @@ class CircularShiftTransform(torch.distributions.Transform):
         # few nats at the wrap boundary.  No choice of output window for this
         # inverse removes that gap (the forward modulo is the obstruction), and
         # dropping the modulo here would break the periodicity of log_prob and
-        # bias the FlowMove Hastings factor far more severely -- so the canonical
+        # bias the ConditionalFlowMove Hastings factor far more severely -- so the canonical
         # [0, T) representative is kept deliberately.  See
         # test_circular_shift_round_trip_consistency for the pinned invariants.
         return (y + self.shift) % self.period
@@ -204,9 +205,9 @@ class WhiteningTransform(DataTransform):
 
     Builds a per-condition (per-leaf) sequence of invertible transforms from
     training samples via :meth:`fit`.  Periodic components are circular-shifted
-    to their circular mean before centering and block-diagonal whitening
-    (Cholesky whitening for the non-periodic block, marginal-std scaling for
-    the periodic block).
+    so that the wrap cut lands in a low-density region (see ``periodic_cut``)
+    before centering and block-diagonal whitening (Cholesky whitening for the
+    non-periodic block, marginal-std scaling for the periodic block).
 
     The forward pass operates in float64 internally (CPU) and returns a
     float32 tensor; the log-absolute-determinant Jacobian is returned as a
@@ -233,6 +234,19 @@ class WhiteningTransform(DataTransform):
         when a condition is first seen *after* fitting (e.g. an RJ run where
         leaves are added/removed) — an unseen condition reuses the shared map
         instead of raising.
+    periodic_cut : str, optional
+        Where :meth:`fit` places the wrap cut (the discontinuity of the
+        circular shift) of each periodic component.
+
+        * ``"antimode"`` (default): at the minimum of a smoothed circular
+          histogram of the training samples — the empirically emptiest
+          region.  For a unimodal angle this coincides with the antipode of
+          the bulk (the legacy behaviour); for **multimodal** angles (e.g.
+          antipodal sky-position modes) it lands between the modes, whereas
+          the circular mean of antipodal modes is noise-dominated and can put
+          the cut *on* a mode, splitting it across the latent boundary.
+        * ``"circular_mean"``: legacy behaviour — the cut sits at the
+          antipode of the circular mean of the samples.
 
     Notes
     -----
@@ -260,10 +274,17 @@ class WhiteningTransform(DataTransform):
         ndim: int,
         periodic: dict[int, tuple[float, float]] | None = None,
         shared: bool = False,
+        periodic_cut: str = "antimode",
     ):
         self.ndim = ndim
         self.periodic = periodic or {}
         self.shared = bool(shared)
+        if periodic_cut not in ("antimode", "circular_mean"):
+            raise ValueError(
+                f"periodic_cut must be 'antimode' or 'circular_mean', "
+                f"got {periodic_cut!r}."
+            )
+        self.periodic_cut = periodic_cut
         self._set_indices()
         self._transforms: dict[int, ComposeTransform] | None = None
 
@@ -571,8 +592,76 @@ class WhiteningTransform(DataTransform):
 
         return matrix
 
+    @staticmethod
+    def _antimode_cut_shift(
+        values: np.ndarray, lo: float, period: float, nbins: int = 64
+    ) -> float:
+        """Return the circular shift placing the wrap cut at the empirical antimode.
+
+        A circular histogram of the samples is smoothed with a short
+        triangular kernel (so a single noisy empty bin inside a mode cannot
+        win) and the cut is placed at the midpoint of the **longest circular
+        run of minimal-count bins** — the middle of the emptiest arc.  (A bare
+        argmin would pick the first empty bin, i.e. the *edge* of a wide empty
+        arc; the midpoint reproduces the antipode for a unimodal angle.)  The
+        returned shift is the angle mapped to zero by
+        :class:`CircularShiftTransform`, whose cut sits at
+        ``shift + period / 2``.
+
+        Parameters
+        ----------
+        values : np.ndarray, shape (N,)
+            Samples of one periodic component (any real values; wrapped
+            internally).
+        lo : float
+            Left boundary of the periodic component.
+        period : float
+            Full period of the component.
+        nbins : int, optional
+            Maximum number of histogram bins; reduced for small sample
+            counts.  Default is ``64``.
+
+        Returns
+        -------
+        float
+            Shift, in the same units as the input.
+        """
+        v = (np.asarray(values, dtype=np.float64) - lo) % period
+        nbins = int(min(nbins, max(8, v.size // 10)))
+        counts, edges = np.histogram(v, bins=nbins, range=(0.0, period))
+        kernel = np.array([1.0, 2.0, 3.0, 2.0, 1.0])
+        kernel /= kernel.sum()
+        smooth = sum(
+            w * np.roll(counts.astype(np.float64), k)
+            for k, w in zip(range(-2, 3), kernel)
+        )
+
+        # Midpoint of the longest circular run of minimal bins.  The doubled
+        # array makes wrap-around runs contiguous; runs are capped at nbins
+        # and must start in the first copy so no run is counted twice.
+        is_min = smooth <= smooth.min() + 1e-12
+        best_idx = int(np.argmin(smooth))
+        best_len = 0
+        run = 0
+        for j, flag in enumerate(np.concatenate([is_min, is_min])):
+            if not flag:
+                run = 0
+                continue
+            run += 1
+            start = j - run + 1
+            length = min(run, nbins)
+            if start < nbins and length > best_len:
+                best_len = length
+                best_idx = (start + (length - 1) // 2) % nbins
+
+        cut = lo + edges[best_idx] + 0.5 * period / nbins
+        return cut - 0.5 * period
+
     def _build_periodic_transform(self, samples: np.ndarray) -> ComposeTransform:
         """Build a circular-shift transform for all periodic components.
+
+        The shift determines where the wrap cut lands; see the class-level
+        ``periodic_cut`` parameter for the two placement strategies.
 
         Parameters
         ----------
@@ -585,18 +674,30 @@ class WhiteningTransform(DataTransform):
             Composed :class:`PartialTransform` wrappers, one per periodic
             component.
         """
+        # getattr: transforms pickled before periodic_cut existed lack the
+        # attribute; they only reach this method if re-fit, so default them
+        # to the current default rather than crashing.
+        cut_mode = getattr(self, "periodic_cut", "antimode")
+
         periodic_transforms = []
         for i, bounds in self.periodic.items():
             period = bounds[1] - bounds[0]
-            # Compute circular mean to find the bulk
-            # Scale to 2*pi for exact trig functions
-            phase = torch.tensor(samples[:, i], dtype=torch.float64) * (
-                2 * np.pi / period
-            )
-            mean_phase = torch.atan2(
-                torch.mean(torch.sin(phase)), torch.mean(torch.cos(phase))
-            )
-            shift = mean_phase * (period / (2 * np.pi))
+
+            if cut_mode == "antimode":
+                shift = torch.tensor(
+                    self._antimode_cut_shift(samples[:, i], bounds[0], period),
+                    dtype=torch.float64,
+                )
+            else:
+                # Legacy: circular mean of the bulk (cut at its antipode).
+                # Scale to 2*pi for exact trig functions.
+                phase = torch.tensor(samples[:, i], dtype=torch.float64) * (
+                    2 * np.pi / period
+                )
+                mean_phase = torch.atan2(
+                    torch.mean(torch.sin(phase)), torch.mean(torch.cos(phase))
+                )
+                shift = mean_phase * (period / (2 * np.pi))
 
             circular_shift = CircularShiftTransform(shift, period)
             periodic_transforms.append(PartialTransform(circular_shift, dimensions=[i]))

@@ -1,5 +1,5 @@
 # tests/test_flow_move.py
-"""Tests for FlowMove and IndependentProposalMove.
+"""Tests for ConditionalFlowMove and IndependentProposalMove.
 
 Test layout
 -----------
@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 
 from eryn.flows.executors import TrainerError, TrainerExecutor
-from eryn.moves import FlowMove, IndependentProposalMove
+from eryn.moves import ConditionalFlowMove, IndependentProposalMove
 
 
 # ---------------------------------------------------------------------------
@@ -141,11 +141,11 @@ def test_independent_proposal_non_target_branch_unchanged():
 
 
 # ---------------------------------------------------------------------------
-# FlowMove — factor identity (requires torch)
+# ConditionalFlowMove — factor identity (requires torch)
 # ---------------------------------------------------------------------------
 
 def test_flow_move_factor_identity():
-    """factors == log q(old) - log q(new) for FlowMove (recomputed via flow.log_prob)."""
+    """factors == log q(old) - log q(new) for ConditionalFlowMove (recomputed via flow.log_prob)."""
     torch = pytest.importorskip("torch")
     flow = _make_flow(seed=0)
 
@@ -154,7 +154,7 @@ def test_flow_move_factor_identity():
     coords = rng.standard_normal((ntemps, nwalkers, nleaves, ndim))
     branches = {"x": coords}
 
-    move = FlowMove(flow, branch_name="x")
+    move = ConditionalFlowMove(flow, branch_name="x")
     move.active_condition = 0
 
     q, factors = move.get_proposal(branches, rng)
@@ -170,11 +170,11 @@ def test_flow_move_factor_identity():
     expected = logq_old - logq_new
 
     np.testing.assert_allclose(factors, expected, atol=1e-5,
-                               err_msg="FlowMove factors != log q(old) - log q(new)")
+                               err_msg="ConditionalFlowMove factors != log q(old) - log q(new)")
 
 
 def test_flow_move_unfitted_transform_is_identity_noop():
-    """A FlowMove over a flow whose WhiteningTransform is UNFITTED must not raise:
+    """A ConditionalFlowMove over a flow whose WhiteningTransform is UNFITTED must not raise:
     it proposes an identity move (old coords, zero factors) until the transform
     is fitted (e.g. by the trainer's first snapshot).  This is what lets the move
     be mixed in from step 0 of a lazy/no-pre-fit online run."""
@@ -188,7 +188,7 @@ def test_flow_move_unfitted_transform_is_identity_noop():
         conditioning=OneHotLeafConditioning(1), seed=0,
         flow_class="NSF", transforms=2, hidden_features=(16,), bins=3,
     )
-    move = FlowMove(flow, branch_name="x")
+    move = ConditionalFlowMove(flow, branch_name="x")
     move.active_condition = 0
 
     ntemps, nwalkers, nleaves, ndim = 1, 6, 1, 2
@@ -215,7 +215,7 @@ def test_flow_move_multileaf_accumulates_factors():
     coords = rng.standard_normal((ntemps, nwalkers, nleaves, ndim))
     branches = {"x": coords}
 
-    move = FlowMove(flow, branch_name="x")
+    move = ConditionalFlowMove(flow, branch_name="x")
     move.active_condition = 0
 
     q, factors = move.get_proposal(branches, rng)
@@ -230,11 +230,11 @@ def test_flow_move_multileaf_accumulates_factors():
         expected += logq_old - logq_new
 
     np.testing.assert_allclose(factors, expected, atol=1e-5,
-                               err_msg="Multi-leaf FlowMove factors not summed correctly")
+                               err_msg="Multi-leaf ConditionalFlowMove factors not summed correctly")
 
 
 # ---------------------------------------------------------------------------
-# FlowMove sampler smoke test (requires torch)
+# ConditionalFlowMove sampler smoke test (requires torch)
 # ---------------------------------------------------------------------------
 
 def _log_like_gauss_vectorized(x):
@@ -244,7 +244,7 @@ def _log_like_gauss_vectorized(x):
 
 
 def test_flow_move_sampler_smoke():
-    """50-step EnsembleSampler smoke test with FlowMove on a 2-D Gaussian target.
+    """50-step EnsembleSampler smoke test with ConditionalFlowMove on a 2-D Gaussian target.
 
     The flow is frozen (not trained); acceptance fraction > 0 just means the
     move is wired correctly — detailed balance is validated by the factor-identity
@@ -261,7 +261,7 @@ def test_flow_move_sampler_smoke():
     nwalkers = 16
 
     flow = _make_flow(seed=0)
-    move = FlowMove(flow, branch_name="x")
+    move = ConditionalFlowMove(flow, branch_name="x")
     move.active_condition = 0
 
     priors = {
@@ -321,7 +321,7 @@ def test_independent_proposal_missing_branch_raises():
 
 
 def test_flow_move_missing_branch_raises():
-    """FlowMove.get_proposal raises KeyError when branch_name is not in branches_coords."""
+    """ConditionalFlowMove.get_proposal raises KeyError when branch_name is not in branches_coords."""
     pytest.importorskip("torch")
     flow = _make_flow(seed=0)
 
@@ -330,14 +330,14 @@ def test_flow_move_missing_branch_raises():
     coords = rng.standard_normal((1, 4, 1, ndim))
     branches = {"x": coords}
 
-    move = FlowMove(flow, branch_name="typo_branch")
+    move = ConditionalFlowMove(flow, branch_name="typo_branch")
 
     with pytest.raises(KeyError, match="typo_branch"):
         move.get_proposal(branches, rng)
 
 
 # ---------------------------------------------------------------------------
-# active_condition routing — FlowMove (requires torch)
+# active_condition routing — ConditionalFlowMove (requires torch)
 # ---------------------------------------------------------------------------
 
 def _make_flow_two_conditions(seed: int = 0):
@@ -396,12 +396,12 @@ def test_flow_move_active_condition_routing():
     coords = rng.standard_normal((ntemps, nwalkers, nleaves, ndim))
     branches = {"x": coords}
 
-    move0 = FlowMove(flow, branch_name="x")
+    move0 = ConditionalFlowMove(flow, branch_name="x")
     move0.active_condition = 0
     _, factors0 = move0.get_proposal(branches, rng)
 
     # Fresh move with identical coords but condition=1
-    move1 = FlowMove(flow, branch_name="x")
+    move1 = ConditionalFlowMove(flow, branch_name="x")
     move1.active_condition = 1
     _, factors1 = move1.get_proposal(branches, np.random.default_rng(7))
 
@@ -412,7 +412,7 @@ def test_flow_move_active_condition_routing():
 
 
 # ---------------------------------------------------------------------------
-# FlowMove online-training hooks (setup) — stub executor (numpy only)
+# ConditionalFlowMove online-training hooks (setup) — stub executor (numpy only)
 # ---------------------------------------------------------------------------
 
 class _StubExecutor(TrainerExecutor):
@@ -458,7 +458,7 @@ def test_flowmove_executor_none_setup_is_noop():
     """executor=None: setup does nothing, raises nothing, loaded_version stays 0."""
     pytest.importorskip("torch")
     flow = _make_flow(seed=0)
-    move = FlowMove(flow, branch_name="x")  # no executor
+    move = ConditionalFlowMove(flow, branch_name="x")  # no executor
     branches = _setup_branches()
     move.setup(branches)  # must be a pure no-op
     assert move.loaded_version == 0
@@ -469,7 +469,7 @@ def test_flowmove_harvest_every_honored():
     pytest.importorskip("torch")
     flow = _make_flow(seed=0)
     ex = _StubExecutor(canned=None)
-    move = FlowMove(flow, branch_name="x", executor=ex, harvest_every=3)
+    move = ConditionalFlowMove(flow, branch_name="x", executor=ex, harvest_every=3)
     branches = _setup_branches()
 
     for _ in range(6):
@@ -482,7 +482,7 @@ def test_flowmove_harvest_every_honored():
 def test_flowmove_harvest_submits_cold_chain_per_leaf():
     """Harvest submits one (nwalkers, ndim) cold-chain block per leaf id.
 
-    Since the per-leaf conditioning redesign, ``FlowMove.submit`` keys the
+    Since the per-leaf conditioning redesign, ``ConditionalFlowMove.submit`` keys the
     training batch by LEAF index (the flow's condition id) rather than pooling
     all leaves under ``active_condition`` — each leaf trains its own
     conditional slice of the flow.
@@ -490,7 +490,7 @@ def test_flowmove_harvest_submits_cold_chain_per_leaf():
     pytest.importorskip("torch")
     flow = _make_flow(seed=0)
     ex = _StubExecutor(canned=None)
-    move = FlowMove(flow, branch_name="x", executor=ex, harvest_every=1)
+    move = ConditionalFlowMove(flow, branch_name="x", executor=ex, harvest_every=1)
     ntemps, nwalkers, nleaves, ndim = 3, 5, 2, 2
     branches = _setup_branches(ntemps, nwalkers, nleaves, ndim)
 
@@ -514,7 +514,7 @@ def test_flowmove_hot_reload_advances_loaded_version_and_changes_outputs():
     new_weights = other.get_weights()
 
     ex = _StubExecutor(canned=None)
-    move = FlowMove(flow, branch_name="x", executor=ex, harvest_every=1)
+    move = ConditionalFlowMove(flow, branch_name="x", executor=ex, harvest_every=1)
     branches = _setup_branches(ndim=2)
 
     x = np.full((4, 2), 0.5)
@@ -542,7 +542,7 @@ def test_flowmove_executor_swap_resets_version_and_applies_new_weights():
     """Swapping in a NEW executor resets loaded_version so its restarted counter is honoured.
 
     Regression for I1: the per-executor ``version`` counter restarts at 1 for a
-    replacement executor.  FlowMove gates reload on ``version > loaded_version``,
+    replacement executor.  ConditionalFlowMove gates reload on ``version > loaded_version``,
     so without a reset, executor B's version 1 would be ignored against the
     remembered version 3 from executor A — silently freezing hot-reload.  The
     ``executor`` setter resets ``loaded_version`` (and the harvest counter)
@@ -560,7 +560,7 @@ def test_flowmove_executor_swap_resets_version_and_applies_new_weights():
 
     # Executor A serves version 3 → loaded_version advances to 3.
     ex_a = _StubExecutor(canned=(3, weights_a))
-    move = FlowMove(flow, branch_name="x", executor=ex_a, harvest_every=1)
+    move = ConditionalFlowMove(flow, branch_name="x", executor=ex_a, harvest_every=1)
     move.setup(branches)
     assert move.loaded_version == 3
     after_a = flow.log_prob(x, context=0).copy()
@@ -591,7 +591,7 @@ def test_flowmove_trainer_error_propagates_from_setup():
     pytest.importorskip("torch")
     flow = _make_flow(seed=0)
     ex = _StubExecutor(raise_on_poll=True)
-    move = FlowMove(flow, branch_name="x", executor=ex, harvest_every=1)
+    move = ConditionalFlowMove(flow, branch_name="x", executor=ex, harvest_every=1)
     branches = _setup_branches()
 
     with pytest.raises(TrainerError, match="stub trainer died"):
@@ -603,7 +603,7 @@ def test_flowmove_setup_missing_branch_raises():
     pytest.importorskip("torch")
     flow = _make_flow(seed=0)
     ex = _StubExecutor(canned=None)
-    move = FlowMove(flow, branch_name="typo_branch", executor=ex)
+    move = ConditionalFlowMove(flow, branch_name="typo_branch", executor=ex)
     branches = _setup_branches()
 
     with pytest.raises(KeyError, match="typo_branch"):
@@ -611,7 +611,7 @@ def test_flowmove_setup_missing_branch_raises():
 
 
 def test_flowmove_inline_executor_end_to_end_sampler():
-    """Smoke test: FlowMove + real InlineExecutor through a short EnsembleSampler run."""
+    """Smoke test: ConditionalFlowMove + real InlineExecutor through a short EnsembleSampler run."""
     pytest.importorskip("torch")
 
     from eryn.ensemble import EnsembleSampler
@@ -626,7 +626,7 @@ def test_flowmove_inline_executor_end_to_end_sampler():
     flow = _make_flow(seed=0)
     ex = InlineExecutor(flow, fit_kwargs=dict(n_epochs=1), min_train_samples=0,
                         train_every=5)
-    move = FlowMove(flow, branch_name="x", executor=ex, harvest_every=2)
+    move = ConditionalFlowMove(flow, branch_name="x", executor=ex, harvest_every=2)
     move.active_condition = 0
 
     priors = {

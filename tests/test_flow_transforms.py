@@ -284,7 +284,7 @@ def test_circular_shift_inverse_in_canonical_bounds():
 
     The canonical representative keeps log_prob a proper (periodic) density on
     the circle; dropping it would make log_prob(theta) != log_prob(theta + T)
-    and bias the FlowMove Hastings factor.  This pins the [0, T) convention.
+    and bias the ConditionalFlowMove Hastings factor.  This pins the [0, T) convention.
     """
     period = 2 * np.pi
     t = CircularShiftTransform(torch.tensor(1.3, dtype=torch.float64), period)
@@ -435,3 +435,96 @@ def test_non_shared_still_raises_unseen_condition():
     x = np.zeros((4, 3))
     with pytest.raises(ValueError, match="[Cc]ondition"):
         wt.forward(x, condition=99)
+
+
+# ---------------------------------------------------------------------------
+# periodic_cut: wrap-cut placement
+# ---------------------------------------------------------------------------
+
+PERIOD = 2 * np.pi
+
+
+def _fitted_cut(wt, dim: int, condition: int = 0) -> float:
+    """Extract the wrap-cut position of periodic dim ``dim`` from a fitted transform.
+
+    The fitted per-condition ComposeTransform is
+    [ComposeTransform(PartialTransform(CircularShiftTransform), ...), Affine, Linear];
+    the cut of a CircularShiftTransform sits at ``shift + period / 2``.
+    """
+    for part in wt.transforms[condition].parts[0].parts:
+        if part.dimensions == [dim]:
+            cs = part.transform
+            return (float(cs.shift) + cs.period / 2.0) % cs.period
+    raise AssertionError(f"no circular shift found for dim {dim}")
+
+
+def _circ_dist(a: float, b: float, period: float = PERIOD) -> float:
+    return abs((a - b + period / 2.0) % period - period / 2.0)
+
+
+def test_periodic_cut_antimode_avoids_antipodal_modes():
+    """With two antipodal angle modes the cut must land BETWEEN them.
+
+    The legacy circular-mean placement is noise-dominated here (the resultant
+    vector of antipodal modes is ~0) and can put the cut on a mode; the
+    antimode placement must keep it away from both bulks.
+    """
+    rng = np.random.default_rng(0)
+    m1, m2, std = 1.0, 1.0 + np.pi, 0.3
+    ang = np.concatenate([
+        rng.normal(m1, std, 3000), rng.normal(m2, std, 3000)
+    ]) % PERIOD
+    samples = np.column_stack([rng.standard_normal(6000), ang])
+
+    wt = WhiteningTransform(ndim=2, periodic={1: (0.0, PERIOD)})
+    wt.fit({0: samples})
+    cut = _fitted_cut(wt, dim=1)
+
+    # antipodal modes leave two gaps at m1 +/- pi/2; the cut must sit in one,
+    # i.e. well clear (>4 sigma) of both mode centres
+    assert _circ_dist(cut, m1) > 4 * std, f"cut {cut} on mode 1"
+    assert _circ_dist(cut, m2) > 4 * std, f"cut {cut} on mode 2"
+
+
+def test_periodic_cut_antimode_matches_antipode_when_unimodal():
+    """For a unimodal angle the antimode cut reproduces the legacy placement."""
+    rng = np.random.default_rng(1)
+    bulk = 2.5
+    ang = rng.normal(bulk, 0.5, 5000) % PERIOD
+    samples = np.column_stack([rng.standard_normal(5000), ang])
+
+    wt_new = WhiteningTransform(ndim=2, periodic={1: (0.0, PERIOD)})
+    wt_new.fit({0: samples})
+    wt_old = WhiteningTransform(
+        ndim=2, periodic={1: (0.0, PERIOD)}, periodic_cut="circular_mean"
+    )
+    wt_old.fit({0: samples})
+
+    cut_new = _fitted_cut(wt_new, dim=1)
+    cut_old = _fitted_cut(wt_old, dim=1)
+    assert _circ_dist(cut_old, (bulk + np.pi) % PERIOD) < 0.1  # sanity: legacy = antipode
+    assert _circ_dist(cut_new, cut_old) < 0.4  # antimode agrees within histogram noise
+
+
+def test_periodic_cut_roundtrip_and_logdet_unchanged():
+    """Antimode placement keeps the forward/inverse round-trip and (N,) log-det."""
+    rng = np.random.default_rng(2)
+    ang = np.concatenate([
+        rng.normal(1.0, 0.3, 1000), rng.normal(1.0 + np.pi, 0.3, 1000)
+    ]) % PERIOD
+    samples = np.column_stack([rng.standard_normal(2000), ang])
+    wt = WhiteningTransform(ndim=2, periodic={1: (0.0, PERIOD)})
+    wt.fit({0: samples})
+
+    x = samples[:64]
+    z = wt.forward(x, 0)
+    x_back = wt.inverse(z, 0)
+    np.testing.assert_allclose(x_back[:, 0], x[:, 0], atol=1e-6)
+    dphi = np.abs((x_back[:, 1] - x[:, 1] + np.pi) % PERIOD - np.pi)
+    np.testing.assert_allclose(dphi, 0.0, atol=1e-6)
+    assert wt.log_abs_det_jacobian(x, z, 0).shape == (64,)
+
+
+def test_periodic_cut_invalid_value_raises():
+    with pytest.raises(ValueError, match="periodic_cut"):
+        WhiteningTransform(ndim=2, periodic={1: (0.0, PERIOD)}, periodic_cut="foo")

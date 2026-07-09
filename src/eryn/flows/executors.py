@@ -306,7 +306,7 @@ class TrainerExecutor(ABC):
         consumer that remembers the highest version it has loaded and compares
         future versions against it MUST reset that memory when it swaps in a new
         executor, or it will silently ignore the replacement's hot-reloads
-        forever.  :class:`~eryn.moves.flow.FlowMove` does this automatically: its
+        forever.  :class:`~eryn.moves.flow.ConditionalFlowMove` does this automatically: its
         ``executor`` setter resets ``loaded_version`` on a real executor swap.
         """
 
@@ -1135,7 +1135,7 @@ class ProcessExecutor(TrainerExecutor):
     This is the production executor behind the :class:`TrainerExecutor` seam; it
     honours exactly the ABC contract that :class:`InlineExecutor` does
     (poll-advanced :attr:`version`, non-aliased snapshots, empty-submit →
-    ``False``, deferred failure surfacing) so :class:`~eryn.moves.flow.FlowMove`
+    ``False``, deferred failure surfacing) so :class:`~eryn.moves.flow.ConditionalFlowMove`
     works unchanged against either.
 
     Why ``spawn`` (always)
@@ -1152,7 +1152,7 @@ class ProcessExecutor(TrainerExecutor):
     An executor instance is **single-use**: once :meth:`shutdown` has run, the
     executor is permanently torn down — :meth:`start` afterwards is a no-op and
     a stopped worker cannot be restarted.  To resume online training, create a
-    NEW :class:`ProcessExecutor` (and, if a :class:`~eryn.moves.flow.FlowMove`
+    NEW :class:`ProcessExecutor` (and, if a :class:`~eryn.moves.flow.ConditionalFlowMove`
     holds it, assign it through ``move.executor =`` so the per-executor version
     counter reset is applied — see :attr:`TrainerExecutor.version`).
 

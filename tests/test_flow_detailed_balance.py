@@ -1,12 +1,12 @@
 # tests/test_flow_detailed_balance.py
-"""End-to-end detailed-balance gate for FlowMove.
+"""End-to-end detailed-balance gate for ConditionalFlowMove.
 
 A frozen trained flow used as the ONLY proposal must leave a known target
 invariant, including a periodic dimension.  If the periodic Jacobian or the
 Hastings factor sign were wrong, the recovered periodic marginal would be
 biased.  This is the third and strongest correctness gate on the coords-space
 Hastings factor: it exercises the whole stack (ZukoFlow + WhiteningTransform +
-OneHotLeafConditioning + FlowMove) through eryn's EnsembleSampler end to end.
+OneHotLeafConditioning + ConditionalFlowMove) through eryn's EnsembleSampler end to end.
 
 Ported from ``LISAanalysistools/tests/test_ml_detailed_balance.py`` (branch
 feat/flow-proposal-p0).  The assertions and tolerances are carried over
@@ -36,7 +36,7 @@ from eryn.utils import PeriodicContainer  # noqa: E402
 from eryn.state import State  # noqa: E402
 
 from eryn.flows import ZukoFlow, WhiteningTransform, OneHotLeafConditioning  # noqa: E402
-from eryn.moves import FlowMove  # noqa: E402
+from eryn.moves import ConditionalFlowMove  # noqa: E402
 
 PERIOD = 2 * np.pi
 
@@ -136,7 +136,7 @@ def test_flowmove_recovers_periodic_target():
         priors = {"x": ProbDistContainer({0: uniform_dist(-5.0, 7.0), 1: uniform_dist(0.0, PERIOD)})}
         periodic = PeriodicContainer({"x": {1: PERIOD}})
 
-        move = FlowMove(fm, branch_name="x")
+        move = ConditionalFlowMove(fm, branch_name="x")
         move.active_condition = 0  # select the single one-hot condition (nleaves_max=1)
 
         sampler = EnsembleSampler(
