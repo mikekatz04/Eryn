@@ -238,8 +238,10 @@ def test_whitening_mass_matrix():
     move._maybe_refresh_metric()
     mass = move._nuts._mass_matrix
     # z = (x - mu) @ M with M = chol(cov)^{-T}  =>  mass = M M^T = cov^{-1}
+    # (regularization is relative: eps * var_i added per dimension)
+    cov = np.cov(samples.T)
     expected = np.linalg.inv(
-        np.cov(samples.T) + flow.data_transform.eps * np.eye(2)
+        cov + flow.data_transform.eps * np.diag(np.diag(cov))
     )
     np.testing.assert_allclose(mass, expected, rtol=1e-8, atol=1e-12)
 
@@ -255,7 +257,8 @@ def test_whitening_mass_matrix():
     wt2.fit({0: samples2})
     flow.set_weights({"net": flow.get_weights(), "data_transform": wt2})
     move._maybe_refresh_metric()
-    expected2 = np.linalg.inv(np.cov(samples2.T) + wt2.eps * np.eye(2))
+    cov2 = np.cov(samples2.T)
+    expected2 = np.linalg.inv(cov2 + wt2.eps * np.diag(np.diag(cov2)))
     np.testing.assert_allclose(move._nuts._mass_matrix, expected2, rtol=1e-8)
 
 
