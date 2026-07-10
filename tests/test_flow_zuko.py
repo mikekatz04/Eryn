@@ -609,3 +609,61 @@ def test_multi_condition_log_prob_differs_across_conditions():
         "log_prob(x, context=0) and log_prob(x, context=1) are unexpectedly equal; "
         "the multi-condition whitening is not being applied."
     )
+
+
+# ---------------------------------------------------------------------------
+# fit(): val_split="temporal" and train_noise
+# ---------------------------------------------------------------------------
+
+def test_fit_invalid_val_split_and_noise_raise():
+    flow, samples = _make_flow()
+    with pytest.raises(ValueError, match="val_split"):
+        flow.fit(samples[:100], n_epochs=1, val_split="foo")
+    with pytest.raises(ValueError, match="train_noise"):
+        flow.fit(samples[:100], n_epochs=1, train_noise=-0.1)
+
+
+def test_fit_temporal_split_holds_out_newest_rows():
+    """Temporal split validates on the NEWEST rows.
+
+    Buffer whose newest 30% come from a far-shifted distribution: the
+    temporal-split validation loss must be dominated by those outliers,
+    while a random split (val ~ same mix as train) reports a much lower
+    value. This is the property that lets early stopping detect a flow
+    that no longer covers fresh chain positions.
+    """
+    from eryn.flows import ZukoFlow
+
+    rng = np.random.default_rng(0)
+    old = rng.standard_normal((700, 3))
+    new = rng.standard_normal((300, 3)) + 12.0  # newest rows, far away
+    buf = np.concatenate([old, new], axis=0)  # temporal order: old -> new
+
+    def _flow():
+        torch.manual_seed(1)
+        return ZukoFlow(
+            dims=3, device="cpu", data_transform=None, conditioning=None,
+            seed=1, flow_class="NSF", transforms=2,
+            hidden_features=(32, 32), bins=4,
+        )
+
+    h_rand = _flow().fit(buf, n_epochs=3, seed=0, validation_fraction=0.3,
+                         val_split="random")
+    h_temp = _flow().fit(buf, n_epochs=3, seed=0, validation_fraction=0.3,
+                         val_split="temporal")
+    # identical nets/data; only the val membership differs. The temporal val
+    # set is pure outliers -> much larger NLL than the mixed random val set.
+    assert h_temp.validation_loss[-1] > h_rand.validation_loss[-1] + 5.0
+
+
+def test_fit_train_noise_trains_and_smooths():
+    """train_noise > 0 still trains, and both losses stay finite."""
+    flow, samples = _make_flow(seed=3)
+    history = flow.fit(
+        samples[:400], n_epochs=4, seed=3, train_noise=0.2,
+        val_split="temporal", validation_fraction=0.25,
+    )
+    assert np.isfinite(history.training_loss).all()
+    assert np.isfinite(history.validation_loss).all()
+    # training still reduces the loss despite the jitter
+    assert history.training_loss[-1] < history.training_loss[0]

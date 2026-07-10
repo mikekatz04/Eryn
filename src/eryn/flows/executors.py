@@ -314,10 +314,11 @@ class TrainerExecutor(ABC):
     def latest_val_nll(self):
         """Most recent latent-space validation NLL, or ``None`` before any fit.
 
-        After each trained version a concrete executor captures the final-epoch
-        validation loss (``history.validation_loss[-1]``) — the flow's negative
-        log-likelihood in *latent* space — so a user can watch training progress
-        without touching the critical path.  Returns the value from the most
+        After each trained version a concrete executor captures the **best**
+        validation loss (``min(history.validation_loss)``) — the flow's negative
+        log-likelihood in *latent* space for the weights that actually ship,
+        since ``fit`` restores the best-val state before returning — so a user
+        can watch training progress without touching the critical path.  Returns the value from the most
         recent completed fit, or ``None`` if no fit has finished yet.  This is a
         concrete default returning ``None`` so a minimal executor that does not
         track the metric need not override it.
@@ -687,8 +688,11 @@ class InlineExecutor(TrainerExecutor):
                 # Capture the latent-space validation NLL for monitoring (None
                 # if the fit produced no validation history).
                 val_loss = getattr(history, "validation_loss", None)
+                # min, not [-1]: fit restores the best-val state, so the
+                # shipped weights score min(val_loss); the last epoch is
+                # best + patience-worth of overfit tail.
                 val_nll = (
-                    float(val_loss[-1])
+                    float(min(val_loss))
                     if (val_loss is not None and len(val_loss))
                     else None
                 )
@@ -1018,8 +1022,9 @@ def _trainer_worker(spec, cfg, sample_q, weights_q, stop_event):
             round_count = next_round
             version += 1
             val_loss = getattr(history, "validation_loss", None)
+            # min, not [-1]: shipped weights = best-val state (see fit()).
             val_nll = (
-                float(val_loss[-1])
+                float(min(val_loss))
                 if (val_loss is not None and len(val_loss))
                 else None
             )

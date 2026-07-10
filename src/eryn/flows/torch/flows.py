@@ -745,6 +745,8 @@ class ZukoFlow(BaseTorchFlow):
         lr: float = 1e-3,
         batch_size: int = 512,
         validation_fraction: float = 0.2,
+        val_split: str = "random",
+        train_noise: float = 0.0,
         clip_grad: float | None = None,
         optimizer: str | Any = "adam",
         optimizer_kwargs: dict | None = None,
@@ -778,6 +780,24 @@ class ZukoFlow(BaseTorchFlow):
         validation_fraction : float, optional
             Fraction of assembled samples held out as a validation set.
             Default is ``0.2``.
+        val_split : {"random", "temporal"}, optional
+            How the validation rows are chosen.  ``"random"`` (default)
+            shuffles all rows globally before splitting.  ``"temporal"``
+            holds out the **newest** ``validation_fraction`` of rows *per
+            condition* (assembly preserves buffer order, oldest first).  Use
+            temporal for online training on correlated chain buffers: a
+            random split places near/exact duplicates of training rows in the
+            validation set, so early stopping rewards memorization of the
+            chain tracks; the temporal holdout instead measures the NLL of
+            fresh points — the same quantity an independence-proposal MH
+            factor depends on.
+        train_noise : float, optional
+            Standard deviation of Gaussian jitter added to the *training*
+            latents, in units of the per-dimension std of the training set,
+            redrawn every batch.  Acts as KDE-style smoothing that suppresses
+            sub-posterior-scale structure (e.g. memorization of correlated
+            walker tracks); validation rows stay clean.  ``0.0`` (default)
+            disables it.
         clip_grad : float or None, optional
             If not ``None``, ``torch.nn.utils.clip_grad_norm_`` is applied with
             this max-norm before each optimizer step.  Default is ``None``.
@@ -826,7 +846,9 @@ class ZukoFlow(BaseTorchFlow):
         Raises
         ------
         ValueError
-            If ``validation_fraction`` is not strictly within ``(0.0, 1.0)``.
+            If ``validation_fraction`` is not strictly within ``(0.0, 1.0)``,
+            ``val_split`` is not ``"random"`` or ``"temporal"``, or
+            ``train_noise`` is negative.
         ValueError
             If the total assembled sample count is less than 2 (cannot split).
         ValueError
@@ -868,6 +890,12 @@ class ZukoFlow(BaseTorchFlow):
                 "validation_fraction must lie strictly in the open interval "
                 f"(0.0, 1.0), got {validation_fraction}."
             )
+        if val_split not in ("random", "temporal"):
+            raise ValueError(
+                f'val_split must be "random" or "temporal", got {val_split!r}.'
+            )
+        if train_noise < 0.0:
+            raise ValueError(f"train_noise must be >= 0, got {train_noise}.")
 
         # ------------------------------------------------------------------
         # 1. Normalise samples to dict[int, np.ndarray]
@@ -947,23 +975,49 @@ class ZukoFlow(BaseTorchFlow):
         gen = torch.Generator()
         gen.manual_seed(rng_seed)
 
-        # Global shuffle
-        perm = torch.randperm(M, generator=gen)
-        z = z[perm]
-        if ctx is not None:
-            ctx = ctx[perm]
+        if val_split == "temporal":
+            # Hold out the NEWEST rows per condition (assembly preserves the
+            # buffer's temporal order, oldest first). No pre-shuffle: the
+            # DataLoader shuffles training batches per epoch anyway.
+            tr_z, va_z, tr_c, va_c = [], [], [], []
+            for k, z_c in enumerate(z_list):
+                n_c = z_c.shape[0]
+                n_val_c = min(max(1, int(n_c * validation_fraction)), n_c - 1)
+                if n_c < 2:
+                    n_val_c = 0  # single-row condition: keep it trainable
+                tr_z.append(z_c[: n_c - n_val_c])
+                va_z.append(z_c[n_c - n_val_c:])
+                if ctx_list:
+                    tr_c.append(ctx_list[k][: n_c - n_val_c])
+                    va_c.append(ctx_list[k][n_c - n_val_c:])
+            z_train = torch.cat(tr_z, dim=0)
+            z_val = torch.cat(va_z, dim=0)
+            ctx_train = torch.cat(tr_c, dim=0) if ctx_list else None
+            ctx_val = torch.cat(va_c, dim=0) if ctx_list else None
+            if z_val.shape[0] < 1 or z_train.shape[0] < 1:
+                raise ValueError(
+                    f"Temporal split produced train={z_train.shape[0]}, "
+                    f"val={z_val.shape[0]} rows (M={M}).  Supply more samples "
+                    "or reduce validation_fraction."
+                )
+        else:
+            # Global shuffle
+            perm = torch.randperm(M, generator=gen)
+            z = z[perm]
+            if ctx is not None:
+                ctx = ctx[perm]
 
-        n_val = max(1, int(M * validation_fraction))
-        n_train = M - n_val
-        if n_train < 1:
-            raise ValueError(
-                f"Training set is empty after val split (M={M}, n_val={n_val}).  "
-                "Reduce validation_fraction or supply more samples."
-            )
+            n_val = max(1, int(M * validation_fraction))
+            n_train = M - n_val
+            if n_train < 1:
+                raise ValueError(
+                    f"Training set is empty after val split (M={M}, n_val={n_val}).  "
+                    "Reduce validation_fraction or supply more samples."
+                )
 
-        z_train, z_val = z[:n_train], z[n_train:]
-        ctx_train = ctx[:n_train] if ctx is not None else None
-        ctx_val = ctx[n_train:] if ctx is not None else None
+            z_train, z_val = z[:n_train], z[n_train:]
+            ctx_train = ctx[:n_train] if ctx is not None else None
+            ctx_val = ctx[n_train:] if ctx is not None else None
 
         # ------------------------------------------------------------------
         # 6. Move to device ONCE; build DataLoaders
@@ -1018,6 +1072,16 @@ class ZukoFlow(BaseTorchFlow):
         best_state = copy.deepcopy(self._flow.state_dict())
         best_epoch = 0
 
+        # Per-batch Gaussian jitter on the training latents (KDE smoothing;
+        # validation stays clean). Scaled by per-dim training std so constant
+        # dims get zero noise; correction=0 keeps n_train=1 finite.
+        noise_scale = None
+        noise_gen = None
+        if train_noise > 0.0:
+            noise_scale = train_noise * z_train.std(dim=0, keepdim=True, correction=0)
+            noise_gen = torch.Generator(device=z_train.device)
+            noise_gen.manual_seed(rng_seed + 1)
+
         for epoch in range(n_epochs):
             # --- train ---
             self._flow.train()
@@ -1026,9 +1090,19 @@ class ZukoFlow(BaseTorchFlow):
                 optimizer.zero_grad()
                 if ctx_train is not None:
                     z_b, ctx_b = batch
-                    loss = -self._flow(ctx_b).log_prob(z_b).mean()
                 else:
                     (z_b,) = batch
+                    ctx_b = None
+                if noise_scale is not None:
+                    z_b = z_b + noise_scale * torch.randn(
+                        z_b.shape,
+                        generator=noise_gen,
+                        device=z_b.device,
+                        dtype=z_b.dtype,
+                    )
+                if ctx_b is not None:
+                    loss = -self._flow(ctx_b).log_prob(z_b).mean()
+                else:
                     loss = -self._flow().log_prob(z_b).mean()
                 loss.backward()
                 if clip_grad is not None:

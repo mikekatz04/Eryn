@@ -301,7 +301,17 @@ class WhiteningTransform(DataTransform):
 
     @property
     def eps(self) -> float:
-        """Regularization added to the covariance matrix for Cholesky stability.
+        """Relative regularization strength for the whitening matrix fit.
+
+        Each dimension's variance is inflated by a factor ``(1 + eps)``
+        (i.e. ``eps * var_i`` is added to the covariance diagonal) before the
+        Cholesky factorization. Regularizing *relative* to each dimension's
+        own variance keeps tightly-constrained parameters whitening to unit
+        std: an absolute floor (the previous behaviour) dominated any
+        dimension whose variance fell below it — e.g. an EMRI eccentricity
+        with std ~3e-5 (variance ~1e-9 < 1e-8) whitened to z-std ~0.04
+        instead of 1, compressing the data into a sliver of the flow's
+        spline domain.
 
         Returns
         -------
@@ -573,11 +583,29 @@ class WhiteningTransform(DataTransform):
 
         matrix = torch.zeros(n, n, dtype=torch.float64)
 
-        # Cholesky whitening for the non-periodic block
+        # Cholesky whitening for the non-periodic block. Regularization is
+        # RELATIVE per dimension (eps * var_i on the diagonal): parameter
+        # scales in physical units span many orders of magnitude, and any
+        # absolute floor silently under-whitens the dimensions whose variance
+        # falls below it (see the ``eps`` property). Zero-variance (constant)
+        # dimensions fall back to the smallest positive variance so the
+        # Cholesky stays defined.
         if len(np_idx) > 0:
             np_samples = centered_samples[:, np_idx]
             cov_np = torch.cov(np_samples.T)
-            cov_reg = cov_np + self.eps * torch.eye(len(np_idx), dtype=torch.float64)
+            if cov_np.ndim == 0:  # single non-periodic dim
+                cov_np = cov_np.reshape(1, 1)
+            diag = torch.diagonal(cov_np)
+            positive = diag > 0
+            fallback = (
+                diag[positive].min()
+                if bool(positive.any())
+                else torch.tensor(1.0, dtype=torch.float64)
+            )
+            reg = self.eps * torch.where(positive, diag, fallback)
+            # a fully zero-variance dim needs more than eps*fallback to invert
+            reg = torch.where(positive, reg, fallback)
+            cov_reg = cov_np + torch.diag(reg)
             lower = torch.linalg.cholesky(cov_reg)
             inv_np = torch.linalg.inv(lower).T  # upper triangular whitening matrix
             for i, row in enumerate(np_idx):
@@ -585,10 +613,15 @@ class WhiteningTransform(DataTransform):
                     matrix[row, col] = inv_np[i, j]
 
         # Marginal std scaling for periodic components — avoids Cholesky
-        # amplification when the posterior is bimodal across the period boundary
+        # amplification when the posterior is bimodal across the period
+        # boundary. Same relative-regularization convention as above; a
+        # constant angle column falls back to unit scaling.
         for i in p_idx:
             std_i = centered_samples[:, i].std()
-            matrix[i, i] = 1.0 / (std_i + self.eps)
+            if float(std_i) > 0.0:
+                matrix[i, i] = 1.0 / (std_i * (1.0 + self.eps))
+            else:
+                matrix[i, i] = 1.0
 
         return matrix
 

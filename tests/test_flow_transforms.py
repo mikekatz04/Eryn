@@ -528,3 +528,44 @@ def test_periodic_cut_roundtrip_and_logdet_unchanged():
 def test_periodic_cut_invalid_value_raises():
     with pytest.raises(ValueError, match="periodic_cut"):
         WhiteningTransform(ndim=2, periodic={1: (0.0, PERIOD)}, periodic_cut="foo")
+
+
+# ---------------------------------------------------------------------------
+# Relative eps regularization (multi-scale whitening)
+# ---------------------------------------------------------------------------
+
+def test_whitening_unit_std_across_scales():
+    """Dims whose variance is below the old absolute eps floor still whiten to ~1.
+
+    Regression for the EMRI case: eccentricity std ~3e-5 (variance ~1e-9)
+    was swamped by the previous absolute ``eps=1e-8`` covariance floor and
+    whitened to z-std ~0.04 instead of 1.
+    """
+    rng = np.random.default_rng(3)
+    n = 20_000
+    stds = np.array([3e-5, 1e-4, 1.0, 5e3])
+    samples = rng.standard_normal((n, 4)) * stds
+    # add a periodic angle with tiny spread as well
+    ang = rng.normal(1.0, 5e-5, size=n) % (2 * np.pi)
+    samples = np.column_stack([samples, ang])
+
+    wt = WhiteningTransform(ndim=5, periodic={4: (0.0, 2 * np.pi)})
+    wt.fit({0: samples})
+    z = np.asarray(wt.forward(samples, 0))
+    np.testing.assert_allclose(z.std(axis=0), 1.0, rtol=0.05)
+
+
+def test_whitening_constant_dim_does_not_crash():
+    """A zero-variance (constant) column must not break the Cholesky."""
+    rng = np.random.default_rng(4)
+    samples = np.column_stack([
+        rng.standard_normal(500),
+        np.full(500, 3.7),                      # constant non-periodic dim
+        np.full(500, 1.2) % (2 * np.pi),        # constant periodic dim
+    ])
+    wt = WhiteningTransform(ndim=3, periodic={2: (0.0, 2 * np.pi)})
+    wt.fit({0: samples})
+    z = np.asarray(wt.forward(samples, 0))
+    assert np.isfinite(z).all()
+    x_back = np.asarray(wt.inverse(z, 0))
+    np.testing.assert_allclose(x_back[:, 0], samples[:, 0], atol=1e-6)
