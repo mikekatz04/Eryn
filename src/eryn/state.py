@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import warnings
 from copy import deepcopy
 
 try:
@@ -336,6 +337,12 @@ class Branch(object):
     that allows for different models to be considered simultaneously
     within an MCMC run.
 
+    When running many independent samplers at once (``nsamplers > 1``), the
+    sampler axis is FOLDED into the temperature axis: arrays keep their 4D/3D
+    shapes with leading axis ``nsamplers * ntemps_per_sampler``. ``self.ntemps``
+    is always the folded axis-0 size. Use the ``*_grouped`` properties to view
+    the arrays with the sampler axis unfolded.
+
     Args:
         coords (4D double np.ndarray[ntemps, nwalkers, nleaves_max, ndim]): The coordinates
             in parameter space of all walkers.
@@ -346,17 +353,28 @@ class Branch(object):
             related to unused leaves at that step. If None, inds will fill with all True values.
             (default: ``None``)
         branch_supplemental (object): :class:`BranchSupplemental` object specific to this branch. (default: ``None``)
+        nsamplers (int, optional): Number of independent samplers folded into
+            the leading axis. (default: ``1``)
 
     Raises:
         ValueError: ``inds`` has wrong shape or number of leaves is less than zero.
 
     """
 
-    def __init__(self, coords, inds=None, branch_supplemental=None):
+    # class-level default so unpickled/legacy Branch objects still work
+    nsamplers = 1
+
+    def __init__(self, coords, inds=None, branch_supplemental=None, nsamplers=1):
         # store branch info
         self.coords = coords
         self.ntemps, self.nwalkers, self.nleaves_max, self.ndim = coords.shape
         self.shape = coords.shape
+
+        self.nsamplers = int(nsamplers)
+        if self.ntemps % self.nsamplers != 0:
+            raise ValueError(
+                f"Leading (folded) axis size {self.ntemps} is not divisible by nsamplers={self.nsamplers}."
+            )
 
         # make sure inds is correct
         if inds is None:
@@ -384,6 +402,25 @@ class Branch(object):
         # get number of leaves in each walker by summing inds along last axis
         nleaves = np.sum(self.inds, axis=-1)
         return nleaves
+
+    @property
+    def ntemps_per_sampler(self):
+        """Number of temperatures per independent sampler (folded axis-0 = nsamplers * ntemps_per_sampler)."""
+        return self.ntemps // self.nsamplers
+
+    @property
+    def coords_grouped(self):
+        """View of ``coords`` with the sampler axis unfolded: shape ``(nsamplers, ntemps_per_sampler, nwalkers, nleaves_max, ndim)``."""
+        return self.coords.reshape(
+            (self.nsamplers, self.ntemps_per_sampler) + self.coords.shape[1:]
+        )
+
+    @property
+    def inds_grouped(self):
+        """View of ``inds`` with the sampler axis unfolded: shape ``(nsamplers, ntemps_per_sampler, nwalkers, nleaves_max)``."""
+        return self.inds.reshape(
+            (self.nsamplers, self.ntemps_per_sampler) + self.inds.shape[1:]
+        )
 
 
 class State(object):
@@ -420,6 +457,17 @@ class State(object):
             Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
             (default: ``None``)
         copy (bool, optional): If True, copy the the arrays in the former :class:`.State` obhect.
+        nsamplers (int, optional): Number of independent samplers. Internally, the sampler
+            axis is FOLDED into the temperature axis (leading axis size
+            ``nsamplers * ntemps_per_sampler``); 5D coordinate input
+            ``(nsamplers, ntemps, nwalkers, nleaves_max, ndim)`` is folded automatically
+            (similarly 4D ``inds``, 3D ``log_like``/``log_prior``, 2D ``betas``, 4D ``blobs``).
+            Use the ``*_grouped`` properties to view arrays with the sampler axis unfolded.
+            If ``None``, inferred from 5D input or set to 1. (default: ``None``)
+        samplers_running (bool np.ndarray[nsamplers], optional): Mask of which independent
+            samplers are actively running. Inactive samplers are skipped in
+            likelihood/prior evaluation and tempering by the sampler. If ``None``, all
+            samplers run. (default: ``None``)
 
     Raises:
         ValueError: Dimensions of inputs or input types are incorrect.
@@ -448,6 +496,8 @@ class State(object):
         blobs=None,
         random_state=None,
         copy=False,
+        nsamplers=None,
+        samplers_running=None,
     ):
         # decide if copying input info
         dc = deepcopy if copy else return_x
@@ -461,6 +511,22 @@ class State(object):
             self.betas = dc(coords.betas)
             self.supplemental = dc(coords.supplemental)
             self.random_state = dc(coords.random_state)
+
+            # carry the independent-samplers information; getattr protects
+            # against legacy/unpickled State objects
+            nsamplers_in = getattr(coords, "nsamplers", 1)
+            if nsamplers is not None and int(nsamplers) != nsamplers_in:
+                raise ValueError(
+                    f"nsamplers kwarg ({nsamplers}) conflicts with input state's nsamplers ({nsamplers_in})."
+                )
+            self.nsamplers = nsamplers_in
+            if samplers_running is None:
+                samplers_running = getattr(coords, "samplers_running", None)
+            self.samplers_running = (
+                dc(np.atleast_1d(samplers_running))
+                if samplers_running is not None
+                else None
+            )
             return
 
         # protect against simplifying settings
@@ -471,6 +537,9 @@ class State(object):
                 "Input coords need to be np.ndarray, dict, or State object."
             )
 
+        # 5D coordinates carry an explicit leading samplers axis; it is FOLDED
+        # into the temperature axis for internal storage
+        nsamplers_inferred = None
         for name in coords:
             if coords[name].ndim == 2:
                 coords[name] = coords[name][None, :, None, :]
@@ -479,10 +548,32 @@ class State(object):
             if coords[name].ndim == 3:
                 coords[name] = coords[name][:, :, None, :]
 
-            elif coords[name].ndim < 2 or coords[name].ndim > 4:
+            elif coords[name].ndim == 5:
+                nsamplers_here = coords[name].shape[0]
+                if nsamplers_inferred is None:
+                    nsamplers_inferred = nsamplers_here
+                elif nsamplers_inferred != nsamplers_here:
+                    raise ValueError(
+                        "All 5D branch coordinates must share the same leading (nsamplers) axis size. "
+                        f"Found {nsamplers_here} for branch {name} vs {nsamplers_inferred}."
+                    )
+                coords[name] = coords[name].reshape((-1,) + coords[name].shape[2:])
+
+            elif coords[name].ndim < 2 or coords[name].ndim > 5:
                 raise ValueError(
-                    f"Dimension off coordinates must be between 2 and 4. coords dimension is {coords.ndim}."
+                    f"Dimension of coordinates must be between 2 and 5. coords dimension is {coords[name].ndim}."
                 )
+
+        if nsamplers is not None and nsamplers_inferred is not None:
+            if int(nsamplers) != nsamplers_inferred:
+                raise ValueError(
+                    f"nsamplers kwarg ({nsamplers}) conflicts with leading axis of 5D coords ({nsamplers_inferred})."
+                )
+        self.nsamplers = int(
+            nsamplers
+            if nsamplers is not None
+            else (nsamplers_inferred if nsamplers_inferred is not None else 1)
+        )
 
         # if no inds given, make sure this is clear for all Branch objects
         if inds is None:
@@ -490,9 +581,34 @@ class State(object):
         elif not isinstance(inds, dict):
             raise ValueError("inds must be None or dict.")
 
+        # fold a leading samplers axis out of the remaining inputs if present
+        if self.nsamplers > 1:
+            inds = {
+                key: (
+                    value.reshape((-1,) + value.shape[2:])
+                    if value is not None
+                    and value.ndim == 4
+                    and value.shape[0] == self.nsamplers
+                    else value
+                )
+                for key, value in inds.items()
+            }
+            if log_like is not None and np.asarray(log_like).ndim == 3:
+                log_like = np.asarray(log_like).reshape(-1, log_like.shape[-1])
+            if log_prior is not None and np.asarray(log_prior).ndim == 3:
+                log_prior = np.asarray(log_prior).reshape(-1, log_prior.shape[-1])
+            if betas is not None and np.asarray(betas).ndim == 2:
+                betas = np.asarray(betas).reshape(-1)
+            if (
+                blobs is not None
+                and np.asarray(blobs).ndim >= 4
+                and np.asarray(blobs).shape[0] == self.nsamplers
+            ):
+                blobs = np.asarray(blobs).reshape((-1,) + np.asarray(blobs).shape[2:])
+
         if branch_supplemental is None:
             branch_supplemental = {key: None for key in coords}
-        elif isinstance(branch_supplemental, dict): # case where not all branches have supp 
+        elif isinstance(branch_supplemental, dict): # case where not all branches have supp
             for key in coords.keys() - branch_supplemental.keys():
                 branch_supplemental[key] = None
         elif not isinstance(branch_supplemental, dict):
@@ -504,6 +620,7 @@ class State(object):
                 dc(temp_coords),
                 inds=inds[key],
                 branch_supplemental=branch_supplemental[key],
+                nsamplers=self.nsamplers,
             )
             for key, temp_coords in coords.items()
         }
@@ -513,6 +630,16 @@ class State(object):
         self.betas = dc(np.atleast_1d(betas)) if betas is not None else None
         self.supplemental = dc(supplemental)
         self.random_state = dc(random_state)
+
+        if samplers_running is not None:
+            samplers_running = np.atleast_1d(samplers_running)
+            if samplers_running.shape != (self.nsamplers,):
+                raise ValueError(
+                    f"samplers_running must have shape ({self.nsamplers},); got {samplers_running.shape}."
+                )
+            self.samplers_running = dc(samplers_running.astype(bool))
+        else:
+            self.samplers_running = None
 
     @property
     def branches_inds(self):
@@ -536,6 +663,43 @@ class State(object):
         """Get the branch names in this state."""
         return list(self.branches.keys())
 
+    @property
+    def ntemps_per_sampler(self):
+        """Number of temperatures per independent sampler (folded axis-0 = nsamplers * ntemps_per_sampler)."""
+        first_branch = self.branches[list(self.branches.keys())[0]]
+        return first_branch.ntemps // self.nsamplers
+
+    @property
+    def log_like_grouped(self):
+        """View of ``log_like`` with the sampler axis unfolded: shape ``(nsamplers, ntemps_per_sampler, nwalkers)``."""
+        if self.log_like is None:
+            return None
+        return self.log_like.reshape((self.nsamplers, -1) + self.log_like.shape[1:])
+
+    @property
+    def log_prior_grouped(self):
+        """View of ``log_prior`` with the sampler axis unfolded: shape ``(nsamplers, ntemps_per_sampler, nwalkers)``."""
+        if self.log_prior is None:
+            return None
+        return self.log_prior.reshape((self.nsamplers, -1) + self.log_prior.shape[1:])
+
+    @property
+    def betas_grouped(self):
+        """View of ``betas`` with the sampler axis unfolded: shape ``(nsamplers, ntemps_per_sampler)``."""
+        if self.betas is None:
+            return None
+        return self.betas.reshape(self.nsamplers, -1)
+
+    @property
+    def blobs_grouped(self):
+        """View of ``blobs`` with the sampler axis unfolded: shape ``(nsamplers, ntemps_per_sampler, nwalkers, ...)``."""
+        if self.blobs is None:
+            return None
+        return self.blobs.reshape(
+            (self.nsamplers, self.blobs.shape[0] // self.nsamplers)
+            + self.blobs.shape[1:]
+        )
+
     def copy_into_self(self, state_to_copy):
         for name in state_to_copy.__slots__:
             setattr(self, name, getattr(state_to_copy, name))
@@ -557,7 +721,7 @@ class State(object):
         else:
             betas = np.ones_like(self.betas)
 
-        return betas * self.log_like + self.log_prior
+        return betas[:, None] * self.log_like + self.log_prior
 
     """
     # TODO
@@ -645,6 +809,12 @@ class ParaState(object):
         random_state=None,
         copy=False,
     ):
+        warnings.warn(
+            "ParaState is deprecated; use eryn.state.State with the nsamplers/"
+            "samplers_running arguments instead. It will be removed in a future release.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         # decide if copying input info
         dc = deepcopy if copy else return_x
 
