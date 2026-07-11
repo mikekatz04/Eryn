@@ -421,6 +421,12 @@ class Move(object):
         """Acceptance fraction for this move."""
         return self.accepted / self.num_proposals
 
+    # independent-samplers defaults (overwritten when a sampler-aware
+    # TemperatureControl is attached, or set directly by EnsembleSampler)
+    nsamplers = 1
+    ntemps_per_sampler = None
+    sampler_id_rows = None
+
     @property
     def temperature_control(self):
         """Temperature controller"""
@@ -439,10 +445,19 @@ class Move(object):
                 self.temperature_control.compute_log_posterior_tempered
             )
 
-            self.ntemps = self.temperature_control.ntemps
+            # self.ntemps is the folded axis-0 size (nsamplers * ntemps per sampler):
+            # proposals treat independent samplers as extra temperatures
+            self.ntemps = getattr(
+                temperature_control, "ntemps_eff", temperature_control.ntemps
+            )
+            self.nsamplers = getattr(temperature_control, "nsamplers", 1)
+            self.ntemps_per_sampler = temperature_control.ntemps
+            self.sampler_id_rows = np.repeat(
+                np.arange(self.nsamplers), self.ntemps_per_sampler
+            )
 
     def compute_log_posterior_basic(self, logl, logp):
-        """Compute the log of posterior
+        r"""Compute the log of posterior
 
         :math:`\log{P} = \log{L} + \log{p}`
 

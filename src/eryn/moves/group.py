@@ -50,6 +50,17 @@ class GroupMove(Move, ABC):
     def find_friends(self, name, s, s_inds=None, branch_supps=None):
         """Function for finding friends.
 
+        **Independent-samplers contract:** when the sampler runs with
+        ``nsamplers > 1``, the arrays received here are FOLDED — axis 0 has size
+        ``nsamplers * ntemps_per_sampler`` and row ``r`` belongs to independent
+        sampler ``r // ntemps_per_sampler`` (see ``self.sampler_id_rows``,
+        ``self.nsamplers``, ``self.ntemps_per_sampler``). Friends for a walker
+        MUST be drawn only from rows belonging to the same sampler; anything
+        else silently correlates the supposedly independent ensembles.
+        Selecting friends row-by-row (per axis-0 row) is automatically safe;
+        the hazard is pooling coordinates across rows (e.g. a global friends
+        catalog built from all temperatures).
+
         Args:
             name (str): Branch name for proposal coordinates.
             s (np.ndarray): Coordinates array for the points to be moved.
@@ -76,6 +87,12 @@ class GroupMove(Move, ABC):
 
     def setup_friends(self, branches):
         """Setup anything for finding friends.
+
+        **Independent-samplers contract:** with ``nsamplers > 1`` the branch
+        arrays are folded (axis 0 = ``nsamplers * ntemps_per_sampler``) and any
+        stationary friends catalog built here must be kept separate per sampler
+        (use ``branch.coords_grouped`` / ``self.sampler_id_rows``). See
+        :func:`find_friends` for the full contract.
 
         Args:
             branches (dict): Dictionary with all the current branches in the sampler.

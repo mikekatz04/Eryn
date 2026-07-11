@@ -237,7 +237,17 @@ class TemperatureControl(object):
             swaps. (default: ``True``)
         skip_swap_supp_names (list, optional): List of strings that indicate supplemental keys that are not to be swapped.
             (default: ``[]``)
+        nsamplers (int, optional): Number of independent samplers run simultaneously.
+            Each sampler carries its own temperature ladder; the ladders are FOLDED
+            into ``self.betas``, a flat array of length ``nsamplers * ntemps``
+            (see ``betas_grouped``). Swaps only occur within a sampler's own ladder
+            and each ladder adapts independently. (default: 1)
 
+    Attributes:
+        betas (np.ndarray[ntemps * nsamplers]): Flat (folded) inverse-temperature array.
+            Row ``s * ntemps + t`` of the folded sampler arrays is temperature ``t``
+            of independent sampler ``s``. For ``nsamplers == 1`` this is the usual
+            ``(ntemps,)`` ladder.
 
     """
 
@@ -254,7 +264,8 @@ class TemperatureControl(object):
         stop_adaptation=-1,
         permute=True,
         skip_swap_supp_names=[],
-        skip_swap_branches=[]
+        skip_swap_branches=[],
+        nsamplers=1,
     ):
 
         if betas is None:
@@ -269,8 +280,25 @@ class TemperatureControl(object):
 
         # store information
         self.nwalkers = nwalkers
-        self.betas = betas
-        self.ntemps = ntemps = len(betas)
+        self.nsamplers = int(nsamplers)
+
+        # normalize betas input into the flat, folded representation:
+        # 1D input is one per-sampler ladder (tiled across samplers);
+        # 2D input (nsamplers, ntemps) provides per-sampler ladders directly
+        betas = np.asarray(betas)
+        if betas.ndim == 2:
+            if betas.shape[0] != self.nsamplers:
+                raise ValueError(
+                    f"2D betas must have shape (nsamplers, ntemps); got {betas.shape} with nsamplers={self.nsamplers}."
+                )
+            self.ntemps = ntemps = betas.shape[1]
+            self.betas = betas.reshape(-1).copy()
+        else:
+            self.ntemps = ntemps = len(betas)
+            self.betas = (
+                np.tile(betas, self.nsamplers) if self.nsamplers > 1 else betas
+            )
+
         self.permute = permute
         self.skip_swap_supp_names = skip_swap_supp_names
         self.skip_swap_branches = skip_swap_branches
@@ -284,7 +312,25 @@ class TemperatureControl(object):
         self.adaptation_time, self.adaptation_lag = adaptation_time, adaptation_lag
         self.stop_adaptation = stop_adaptation
 
-        self.swaps_proposed = np.full(self.ntemps - 1, self.nwalkers)
+        if self.nsamplers == 1:
+            self.swaps_proposed = np.full(self.ntemps - 1, self.nwalkers)
+        else:
+            self.swaps_proposed = np.full(
+                (self.nsamplers, self.ntemps - 1), self.nwalkers
+            )
+
+    @property
+    def ntemps_eff(self):
+        """Size of the folded leading axis: ``nsamplers * ntemps``."""
+        return self.nsamplers * self.ntemps
+
+    @property
+    def betas_grouped(self):
+        """View of ``betas`` with the sampler axis unfolded: shape ``(nsamplers, ntemps)``.
+
+        This is a reshape view: in-place writes update the flat ``betas`` array.
+        """
+        return self.betas.reshape(self.nsamplers, self.ntemps)
 
     def compute_log_posterior_tempered(self, logl, logp, betas=None):
         """Compute the log of the tempered posterior
@@ -494,13 +540,90 @@ class TemperatureControl(object):
 
         return (x, logP, logl, logp, inds, blobs, supps, branch_supps)
 
+    def _apply_swaps_vectorized(
+        self,
+        idx_i,
+        idx_i1,
+        dbeta_sel,
+        x,
+        logP,
+        logl,
+        logp,
+        inds=None,
+        blobs=None,
+        supps=None,
+        branch_supps=None,
+    ):
+        """Swap accepted ``(row, walker)`` pairs between two rungs, vectorized.
+
+        ``idx_i`` / ``idx_i1`` are matching ``(rows, walkers)`` fancy-index tuples
+        for the higher / lower rung of each accepted pair. Because the two rungs
+        occupy different rows of the folded axis, the two index sets are disjoint.
+        ``dbeta_sel`` is the per-pair inverse-temperature difference.
+        """
+        # coordinates, inds, and branch supplementals
+        for name in x:
+            if name in self.skip_swap_branches:
+                continue
+
+            x_tmp = x[name][idx_i].copy()
+            x[name][idx_i] = x[name][idx_i1]
+            x[name][idx_i1] = x_tmp
+
+            if inds is not None and inds[name] is not None:
+                inds_tmp = inds[name][idx_i].copy()
+                inds[name][idx_i] = inds[name][idx_i1]
+                inds[name][idx_i1] = inds_tmp
+
+            if branch_supps is not None and branch_supps[name] is not None:
+                # fancy indexing returns copies, so these are safe to cross-assign
+                bs_i = branch_supps[name][idx_i]
+                bs_i1 = branch_supps[name][idx_i1]
+                for key in self.skip_swap_supp_names:
+                    bs_i.pop(key, None)
+                    bs_i1.pop(key, None)
+                branch_supps[name][idx_i] = bs_i1
+                branch_supps[name][idx_i1] = bs_i
+
+        # scalar per-walker quantities
+        logl_tmp = logl[idx_i].copy()
+        logp_tmp = logp[idx_i].copy()
+        logP_tmp = logP[idx_i].copy()
+
+        logl[idx_i] = logl[idx_i1]
+        logp[idx_i] = logp[idx_i1]
+        # idx_i1 rows are still unmodified here (disjoint from idx_i)
+        logP[idx_i] = logP[idx_i1] - dbeta_sel * logl[idx_i1]
+
+        logl[idx_i1] = logl_tmp
+        logp[idx_i1] = logp_tmp
+        logP[idx_i1] = logP_tmp + dbeta_sel * logl_tmp
+
+        if blobs is not None:
+            blobs_tmp = blobs[idx_i].copy()
+            blobs[idx_i] = blobs[idx_i1]
+            blobs[idx_i1] = blobs_tmp
+
+        if supps is not None:
+            s_i = supps[idx_i]
+            s_i1 = supps[idx_i1]
+            for key in self.skip_swap_supp_names:
+                s_i.pop(key, None)
+                s_i1.pop(key, None)
+            supps[idx_i] = s_i1
+            supps[idx_i1] = s_i
+
+        return (x, logP, logl, logp, inds, blobs, supps, branch_supps)
+
     def temperature_swaps(
-        self, x, logP, logl, logp, inds=None, blobs=None, supps=None, branch_supps=None, compute_log_like=None, compute_log_prior=None, fancy_swap=False, permute_here=None
+        self, x, logP, logl, logp, inds=None, blobs=None, supps=None, branch_supps=None, compute_log_like=None, compute_log_prior=None, fancy_swap=False, permute_here=None, samplers_running=None
     ):
         """Perform parallel-tempering temperature swaps
 
         This function performs the swapping between neighboring temperatures. It cascades from
-        high temperature down to low temperature.
+        high temperature down to low temperature. When ``nsamplers > 1``, swaps only occur
+        within each independent sampler's own ladder (rows ``s * ntemps + t`` of the folded
+        leading axis) and are vectorized across samplers.
 
         Args:
             x (dict): Dictionary with keys as branch names and values as coordinate arrays.
@@ -513,6 +636,12 @@ class TemperatureControl(object):
             supps (object, optional): :class:`eryn.state.BranchSupplemental` object. (default: ``None``)
             branch_supps (dict, optional): Dictionary with keys as branch names and values as
                 :class:`eryn.state.BranchSupplemental` objects for each branch (can be ``None`` for some branches). (default: ``None``)
+            samplers_running (np.ndarray[nsamplers], optional): Boolean mask of actively
+                running samplers. Swaps are only proposed within running samplers. This
+                masking is required for correctness: frozen samplers carry fill values
+                (``-1e300``) in ``logl`` on every rung, so an unmasked swap would always
+                accept (``paccept = 0``) and permute frozen coordinates.
+                (default: ``None``)
 
         Returns:
             tuple: All of the information that was input now swapped (output in the same order as input).
@@ -523,53 +652,89 @@ class TemperatureControl(object):
         else:
             assert isinstance(permute_here, bool)
 
-        ntemps, nwalkers = self.ntemps, self.nwalkers
+        ntemps, nwalkers, nsamplers = self.ntemps, self.nwalkers, self.nsamplers
+
+        if fancy_swap and nsamplers > 1:
+            raise NotImplementedError(
+                "fancy_swap is not implemented for nsamplers > 1."
+            )
+
+        # active sampler indices
+        if samplers_running is None:
+            act = np.arange(nsamplers)
+        else:
+            act = np.arange(nsamplers)[np.asarray(samplers_running, dtype=bool)]
+        nact = len(act)
 
         # prepare information on how many swaps are accepted this time
-        self.swaps_accepted = np.empty(ntemps - 1)
+        if nsamplers == 1:
+            self.swaps_accepted = np.zeros(ntemps - 1)
+        else:
+            self.swaps_accepted = np.zeros((nsamplers, ntemps - 1))
+
+        if nact == 0:
+            return (x, logP, logl, logp, inds, blobs, supps, branch_supps)
+
+        betas_grouped = self.betas_grouped
 
         # iterate from highest to lowest temperatures
         for i in range(ntemps - 1, 0, -1):
 
-            # get both temperature rungs
-            bi = self.betas[i]
-            bi1 = self.betas[i - 1]
+            # per-sampler difference in inverse temps at this rung
+            dbeta = betas_grouped[act, i - 1] - betas_grouped[act, i]  # (nact,)
 
-            # difference in inverse temps
-            dbeta = bi1 - bi
+            # folded row indices of the two rungs for each active sampler
+            rows_i = act * ntemps + i
+            rows_i1 = act * ntemps + (i - 1)
 
             # permute the indices for the walkers in each temperature to randomize swap positions
+            # NOTE: the per-sampler loop preserves the historical RNG stream for nsamplers == 1
             if permute_here:
-                iperm = np.random.permutation(nwalkers)
-                i1perm = np.random.permutation(nwalkers)
+                iperm = np.array([np.random.permutation(nwalkers) for _ in range(nact)])
+                i1perm = np.array([np.random.permutation(nwalkers) for _ in range(nact)])
 
             # do not permute if desired
             else:
-                iperm = np.arange(nwalkers)
-                i1perm = np.arange(nwalkers)
+                iperm = np.tile(np.arange(nwalkers), (nact, 1))
+                i1perm = np.tile(np.arange(nwalkers), (nact, 1))
 
             # random draw that produces log of the acceptance fraction
-            raccept = np.log(np.random.uniform(size=nwalkers))
+            raccept = np.log(np.random.uniform(size=(nact, nwalkers)))
 
             # log of the detailed balance fraction
             if not fancy_swap:
-                paccept = dbeta * (logl[i, iperm] - logl[i - 1, i1perm])
-            else:
-                paccept = self.perform_fancy_swap_acceptance_fraction(
-                    dbeta, i, iperm, i1perm,
-                    x, logl, inds=inds, blobs=blobs, supps=supps, branch_supps=branch_supps, compute_log_like=compute_log_like
+                paccept = dbeta[:, None] * (
+                    logl[rows_i[:, None], iperm] - logl[rows_i1[:, None], i1perm]
                 )
+            else:
+                # nsamplers == 1 only (guarded above)
+                paccept = self.perform_fancy_swap_acceptance_fraction(
+                    dbeta[0], i, iperm[0], i1perm[0],
+                    x, logl, inds=inds, blobs=blobs, supps=supps, branch_supps=branch_supps, compute_log_like=compute_log_like
+                ).reshape(1, -1)
 
             # How many swaps were accepted
-            sel = paccept > raccept
-            self.swaps_accepted[i - 1] = np.sum(sel)
+            sel = paccept > raccept  # (nact, nwalkers)
+            if nsamplers == 1:
+                self.swaps_accepted[i - 1] = np.sum(sel)
+            else:
+                self.swaps_accepted[act, i - 1] = np.sum(sel, axis=-1)
+
+            # build matching (row, walker) fancy-index tuples for the accepted pairs
+            sel_flat = sel.reshape(-1)
+            rows_i_mat = np.repeat(rows_i[:, None], nwalkers, axis=1).reshape(-1)
+            rows_i1_mat = np.repeat(rows_i1[:, None], nwalkers, axis=1).reshape(-1)
+            dbeta_mat = np.repeat(dbeta[:, None], nwalkers, axis=1).reshape(-1)
+
+            idx_i = (rows_i_mat[sel_flat], iperm.reshape(-1)[sel_flat])
+            idx_i1 = (rows_i1_mat[sel_flat], i1perm.reshape(-1)[sel_flat])
+            dbeta_sel = dbeta_mat[sel_flat]
 
             (x, logP, logl, logp, inds, blobs, supps, branch_supps) = (
-                self.do_swaps_indexing(
-                    i,
-                    iperm[sel],
-                    i1perm[sel],
-                    dbeta,
+                self._apply_swaps_vectorized(
+                    idx_i,
+                    idx_i1,
+                    dbeta_sel,
                     x,
                     logP,
                     logl,
@@ -588,7 +753,7 @@ class TemperatureControl(object):
 
                 assert compute_log_like is not None
                 logl = compute_log_like(x, inds=inds, supps=supps, branch_supps=branch_supps, logp=logp)[0]
-                
+
                 logP = self.compute_log_posterior_tempered(logl, logp)
 
         return (x, logP, logl, logp, inds, blobs, supps, branch_supps)
@@ -664,6 +829,9 @@ class TemperatureControl(object):
         """
         Execute temperature adjustment according to dynamics outlined in
         `arXiv:1501.05823 <http://arxiv.org/abs/1501.05823>`_.
+
+        Axis-aware: accepts a 1D ladder ``(ntemps,)`` or stacked per-sampler
+        ladders ``(nsamplers, ntemps)``; the temperature axis is always last.
         """
         betas = betas0.copy()
 
@@ -672,25 +840,46 @@ class TemperatureControl(object):
         kappa = decay / self.adaptation_time
 
         # Construct temperature adjustments.
-        dSs = kappa * (ratios[:-1] - ratios[1:])
+        dSs = kappa * (ratios[..., :-1] - ratios[..., 1:])
 
         # Compute new ladder (hottest and coldest chains don't move).
-        deltaTs = np.diff(1 / betas[:-1])
+        deltaTs = np.diff(1 / betas[..., :-1], axis=-1)
         deltaTs *= np.exp(dSs)
-        betas[1:-1] = 1 / (np.cumsum(deltaTs) + 1 / betas[0])
+        betas[..., 1:-1] = 1 / (
+            np.cumsum(deltaTs, axis=-1) + 1 / betas[..., 0][..., None]
+        )
 
         # Don't mutate the ladder here; let the client code do that.
         return betas - betas0
 
-    def adapt_temps(self):
+    def adapt_temps(self, samplers_running=None):
+        """Adapt the temperature ladder(s) from the last round of swaps.
+
+        Args:
+            samplers_running (np.ndarray[nsamplers], optional): Boolean mask of
+                actively running samplers. Only running samplers' ladders adapt.
+                (default: ``None``)
+
+        """
         # determine ratios of swaps accepted to swaps proposed (the ladder is fixed)
         ratios = self.swaps_accepted / self.swaps_proposed
 
         # adapt if desired
         if self.adaptive and self.ntemps > 1:
             if self.stop_adaptation < 0 or self.time < self.stop_adaptation:
-                dbetas = self._get_ladder_adjustment(self.time, self.betas, ratios)
-                self.betas += dbetas
+                if self.nsamplers == 1:
+                    dbetas = self._get_ladder_adjustment(self.time, self.betas, ratios)
+                    self.betas = self.betas + dbetas
+                else:
+                    ratios_grouped = ratios.reshape(self.nsamplers, self.ntemps - 1)
+                    dbetas = self._get_ladder_adjustment(
+                        self.time, self.betas_grouped, ratios_grouped
+                    )
+                    if samplers_running is not None:
+                        dbetas = dbetas * np.asarray(samplers_running, dtype=bool)[
+                            :, None
+                        ]
+                    self.betas = self.betas + dbetas.reshape(-1)
 
             # only increase time if it is adaptive.
             self.time += 1
@@ -714,6 +903,10 @@ class TemperatureControl(object):
         logl = state.log_like
         logp = state.log_prior
 
+        # independent-samplers information carried on the state
+        nsamplers = getattr(state, "nsamplers", 1)
+        samplers_running = getattr(state, "samplers_running", None)
+
         # do posterior just for the hell of it
         logP = self.compute_log_posterior_tempered(logl, logp)
 
@@ -727,10 +920,11 @@ class TemperatureControl(object):
             blobs=state.blobs,
             supps=state.supplemental,
             branch_supps=state.branches_supplemental,
+            samplers_running=samplers_running,
         )
 
         if adapt and self.adaptive and self.ntemps > 1:
-            self.adapt_temps()
+            self.adapt_temps(samplers_running=samplers_running)
 
         # create a new state out of the swapped information
         # TODO: make this more memory efficient?
@@ -744,6 +938,8 @@ class TemperatureControl(object):
             supplemental=supps,
             branch_supplemental=branch_supps,
             random_state=state.random_state,
+            nsamplers=nsamplers,
+            samplers_running=samplers_running,
         )
 
         return new_state
