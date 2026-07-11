@@ -188,6 +188,7 @@ class HDFBackend(Backend):
         rj=False,
         moves=None,
         key_order=None,
+        nsamplers=1,
         **info,
     ):
         """Clear the state of the chain and empty the backend
@@ -212,8 +213,13 @@ class HDFBackend(Backend):
             moves (list, optional): List of all of the move classes input into the sampler.
                 (default: ``None``)
             key_order (dict, optional): Keys are ``branch_names`` and values are lists of key ordering for each
-                branch. For example, ``{"model_0": ["x1", "x2", "x3"]}``. 
+                branch. For example, ``{"model_0": ["x1", "x2", "x3"]}``.
                 (default: ``None``)
+            nsamplers (int, optional): Number of independent samplers run simultaneously.
+                New files always store datasets with a sampler axis directly after the
+                step axis; getters squeeze it when ``nsamplers == 1``. Files written
+                before this axis existed (no ``nsamplers`` attr) are read and written
+                in the legacy layout. (default: ``1``)
             **info (dict, optional): Any other key-value pairs to be added
                 as attributes to the backend. These are also added to the HDF5 file.
 
@@ -283,6 +289,7 @@ class HDFBackend(Backend):
             g.attrs["branch_names"] = branch_names
             g.attrs["ntemps"] = ntemps
             g.attrs["nwalkers"] = nwalkers
+            g.attrs["nsamplers"] = nsamplers
             g.attrs["has_blobs"] = False
             g.attrs["rj"] = rj
             g.attrs["iteration"] = 0
@@ -304,17 +311,19 @@ class HDFBackend(Backend):
                 g["nleaves_max"].attrs[key] = value
 
             # prepare all the data sets
+            # all step-indexed datasets carry the sampler axis directly after
+            # the step axis; cumulative counters carry it as the leading axis
 
             g.create_dataset(
                 "accepted",
-                data=np.zeros((ntemps, nwalkers)),
+                data=np.zeros((nsamplers, ntemps, nwalkers)),
                 compression=self.compression,
                 compression_opts=self.compression_opts,
             )
 
             g.create_dataset(
                 "swaps_accepted",
-                data=np.zeros((ntemps - 1,)),
+                data=np.zeros((nsamplers, ntemps - 1)),
                 compression=self.compression,
                 compression_opts=self.compression_opts,
             )
@@ -322,15 +331,15 @@ class HDFBackend(Backend):
             if self.rj:
                 g.create_dataset(
                     "rj_accepted",
-                    data=np.zeros((ntemps, nwalkers)),
+                    data=np.zeros((nsamplers, ntemps, nwalkers)),
                     compression=self.compression,
                     compression_opts=self.compression_opts,
                 )
 
             g.create_dataset(
                 "log_like",
-                (0, ntemps, nwalkers),
-                maxshape=(None, ntemps, nwalkers),
+                (0, nsamplers, ntemps, nwalkers),
+                maxshape=(None, nsamplers, ntemps, nwalkers),
                 dtype=self.dtype,
                 compression=self.compression,
                 compression_opts=self.compression_opts,
@@ -338,8 +347,8 @@ class HDFBackend(Backend):
 
             g.create_dataset(
                 "log_prior",
-                (0, ntemps, nwalkers),
-                maxshape=(None, ntemps, nwalkers),
+                (0, nsamplers, ntemps, nwalkers),
+                maxshape=(None, nsamplers, ntemps, nwalkers),
                 dtype=self.dtype,
                 compression=self.compression,
                 compression_opts=self.compression_opts,
@@ -347,9 +356,18 @@ class HDFBackend(Backend):
 
             g.create_dataset(
                 "betas",
-                (0, ntemps),
-                maxshape=(None, ntemps),
+                (0, nsamplers, ntemps),
+                maxshape=(None, nsamplers, ntemps),
                 dtype=self.dtype,
+                compression=self.compression,
+                compression_opts=self.compression_opts,
+            )
+
+            g.create_dataset(
+                "samplers_running",
+                (0, nsamplers),
+                maxshape=(None, nsamplers),
+                dtype=bool,
                 compression=self.compression,
                 compression_opts=self.compression_opts,
             )
@@ -365,8 +383,8 @@ class HDFBackend(Backend):
                 ndim = self.ndims[name]
                 chain.create_dataset(
                     name,
-                    (0, ntemps, nwalkers, nleaves, ndim),
-                    maxshape=(None, ntemps, nwalkers, nleaves, ndim),
+                    (0, nsamplers, ntemps, nwalkers, nleaves, ndim),
+                    maxshape=(None, nsamplers, ntemps, nwalkers, nleaves, ndim),
                     dtype=self.dtype,
                     compression=self.compression,
                     compression_opts=self.compression_opts,
@@ -374,15 +392,15 @@ class HDFBackend(Backend):
 
                 inds.create_dataset(
                     name,
-                    (0, ntemps, nwalkers, nleaves),
-                    maxshape=(None, ntemps, nwalkers, nleaves),
+                    (0, nsamplers, ntemps, nwalkers, nleaves),
+                    maxshape=(None, nsamplers, ntemps, nwalkers, nleaves),
                     dtype=bool,
                     compression=self.compression,
                     compression_opts=self.compression_opts,
                 )
 
                 if key_order is not None:
-                    k_o_g.attrs[name] = key_order[name] 
+                    k_o_g.attrs[name] = key_order[name]
 
             # store move specific information
             if moves is not None:
@@ -393,10 +411,12 @@ class HDFBackend(Backend):
                     single_move = move_group.create_group(full_move_name)
 
                     # prepare information dictionary
+                    # stored FOLDED (nsamplers * ntemps, nwalkers): identical to
+                    # the legacy layout when nsamplers == 1
                     single_move.create_dataset(
                         "acceptance_fraction",
-                        (ntemps, nwalkers),
-                        maxshape=(ntemps, nwalkers),
+                        (nsamplers * ntemps, nwalkers),
+                        maxshape=(nsamplers * ntemps, nwalkers),
                         dtype=self.dtype,
                         compression=self.compression,
                         compression_opts=self.compression_opts,
@@ -424,6 +444,18 @@ class HDFBackend(Backend):
         """Get ntemps from h5 file."""
         with self.open() as f:
             return f[self.name].attrs["ntemps"]
+
+    @property
+    def nsamplers(self):
+        """Get nsamplers from h5 file (1 for legacy files without the attr)."""
+        with self.open() as f:
+            return int(f[self.name].attrs.get("nsamplers", 1))
+
+    @property
+    def _has_sampler_axis(self):
+        """Whether the file's datasets carry the sampler axis (False for legacy files)."""
+        with self.open() as f:
+            return "nsamplers" in f[self.name].attrs
 
     @property
     def rj(self):
@@ -482,6 +514,7 @@ class HDFBackend(Backend):
             rj=self.rj,
             moves=self.moves,
             key_order=self.key_order,
+            nsamplers=self.nsamplers,
         )
 
     def has_blobs(self):
@@ -489,7 +522,7 @@ class HDFBackend(Backend):
         with self.open() as f:
             return f[self.name].attrs["has_blobs"]
 
-    def get_value(self, name, thin=1, discard=0, slice_vals=None, temp_index=None, branch_names=None):
+    def get_value(self, name, thin=1, discard=0, slice_vals=None, temp_index=None, sampler_index=None, branch_names=None):
         """Returns a requested value to user.
 
         This function helps to streamline the backend for both
@@ -508,8 +541,11 @@ class HDFBackend(Backend):
                 (default: ``None``)
             temp_index (int, optional): Integer for the desired temperature index.
                 If ``None``, will return all temperatures. (default: ``None``)
+            sampler_index (int, optional): Integer for the desired independent-sampler
+                index. If ``None``, returns all samplers (the sampler axis is squeezed
+                away entirely when ``nsamplers == 1``). (default: ``None``)
             branch_names (str or list, optional): Specific branch names requested. (default: ``None``)
-            
+
         Returns:
             dict or np.ndarray: Values requested.
 
@@ -535,6 +571,10 @@ class HDFBackend(Backend):
 
         branch_names_in = self.branch_names if branch_names is None else branch_names
 
+        # legacy files (no sampler axis in the datasets) keep the original
+        # indexing path; new files go through the sampler-aware indexer
+        has_sampler_axis = self._has_sampler_axis
+
         successful = False
         num_try = 0
         while not successful and num_try < 100:
@@ -551,34 +591,67 @@ class HDFBackend(Backend):
                             "results"
                         )
 
-                    if temp_index is None:
-                        temp_index = np.arange(self.ntemps)
-                    else:
-                        assert isinstance(temp_index, int)
+                    if has_sampler_axis:
+                        indexer = self._step_indexer(
+                            slice_vals, temp_index, sampler_index
+                        )
 
-                    if name == "chain":
-                        v_all = {key: g["chain"][key][slice_vals, temp_index] for key in branch_names_in}
+                        if name == "chain":
+                            v_all = {key: g["chain"][key][indexer] for key in branch_names_in}
 
-                    elif name == "inds":
-                        v_all = {key: g["inds"][key][slice_vals, temp_index] for key in branch_names_in}
-                    
-                    elif name == "blobs" and not g.attrs["has_blobs"]:
-                        v_all = None
-                        
+                        elif name == "inds":
+                            v_all = {key: g["inds"][key][indexer] for key in branch_names_in}
+
+                        elif name == "blobs" and not g.attrs["has_blobs"]:
+                            v_all = None
+
+                        elif name == "samplers_running":
+                            indexer = self._step_indexer(
+                                slice_vals, temp_index, sampler_index, has_temp_axis=False
+                            )
+                            v_all = g["samplers_running"][indexer]
+
+                        else:
+                            v_all = g[name][indexer]
+
                     else:
-                        v_all = g[name][slice_vals, temp_index]
+                        if sampler_index is not None:
+                            raise ValueError(
+                                "sampler_index is not available for legacy files without the sampler axis."
+                            )
+                        if name == "samplers_running":
+                            raise KeyError(
+                                "samplers_running is not stored in legacy files."
+                            )
+
+                        if temp_index is None:
+                            temp_index = np.arange(self.ntemps)
+                        else:
+                            assert isinstance(temp_index, int)
+
+                        if name == "chain":
+                            v_all = {key: g["chain"][key][slice_vals, temp_index] for key in branch_names_in}
+
+                        elif name == "inds":
+                            v_all = {key: g["inds"][key][slice_vals, temp_index] for key in branch_names_in}
+
+                        elif name == "blobs" and not g.attrs["has_blobs"]:
+                            v_all = None
+
+                        else:
+                            v_all = g[name][slice_vals, temp_index]
 
                     successful = True
-            
+
             except OSError:
                 num_try += 1
                 print(f"Unable to read h5 file {num_try} times.")
                 time.sleep(20.0)
-            
+
 
         if not successful:
             raise OSError("Attempted to open file max try number of times. Likely cannot read data.")
-                
+
         return v_all
 
     def get_move_info(self):
@@ -610,14 +683,18 @@ class HDFBackend(Backend):
         Returns:
             dict: Shape of samples
                 Keys are ``branch_names`` and values are tuples with
-                shapes of individual branches: (ntemps, nwalkers, nleaves_max, ndim).
+                shapes of individual branches: (ntemps, nwalkers, nleaves_max, ndim),
+                or (nsamplers, ntemps, nwalkers, nleaves_max, ndim) when ``nsamplers > 1``.
 
         """
         # open file wrapped in with
         with self.open() as f:
             g = f[self.name]
+            nsamplers = int(g.attrs.get("nsamplers", 1))
+            lead = (nsamplers,) if nsamplers > 1 else ()
             return {
-                key: (
+                key: lead
+                + (
                     g.attrs["ntemps"],
                     g.attrs["nwalkers"],
                     self.nleaves_max[key],
@@ -636,19 +713,28 @@ class HDFBackend(Backend):
     def accepted(self):
         """Number of accepted moves per walker."""
         with self.open() as f:
-            return f[self.name]["accepted"][...]
+            out = f[self.name]["accepted"][...]
+            if "nsamplers" in f[self.name].attrs and f[self.name].attrs["nsamplers"] == 1:
+                out = out[0]
+            return out
 
     @property
     def rj_accepted(self):
         """Number of accepted rj moves per walker."""
         with self.open() as f:
-            return f[self.name]["rj_accepted"][...]
+            out = f[self.name]["rj_accepted"][...]
+            if "nsamplers" in f[self.name].attrs and f[self.name].attrs["nsamplers"] == 1:
+                out = out[0]
+            return out
 
     @property
     def swaps_accepted(self):
         """Number of accepted swaps."""
         with self.open() as f:
-            return f[self.name]["swaps_accepted"][...]
+            out = f[self.name]["swaps_accepted"][...]
+            if "nsamplers" in f[self.name].attrs and f[self.name].attrs["nsamplers"] == 1:
+                out = out[0]
+            return out
 
     @property
     def random_state(self):
@@ -676,6 +762,9 @@ class HDFBackend(Backend):
         with self.open("a") as f:
             g = f[self.name]
 
+            has_sampler_axis = "nsamplers" in g.attrs
+            nsamplers = int(g.attrs.get("nsamplers", 1))
+
             # resize all the arrays accordingly
 
             ntot = g.attrs["iteration"] + ngrow
@@ -686,18 +775,26 @@ class HDFBackend(Backend):
             g["log_like"].resize(ntot, axis=0)
             g["log_prior"].resize(ntot, axis=0)
             g["betas"].resize(ntot, axis=0)
+            if has_sampler_axis:
+                g["samplers_running"].resize(ntot, axis=0)
 
             # deal with blobs
             if blobs is not None:
                 has_blobs = g.attrs["has_blobs"]
+                nwalkers = g.attrs["nwalkers"]
+                ntemps = g.attrs["ntemps"]
                 # if blobs have not been added yet
                 if not has_blobs:
-                    nwalkers = g.attrs["nwalkers"]
-                    ntemps = g.attrs["ntemps"]
+                    # incoming blobs are folded: (nsamplers * ntemps, nwalkers, nblobs)
+                    blobs_shape = (
+                        (ntot, nsamplers, ntemps, nwalkers, blobs.shape[-1])
+                        if has_sampler_axis
+                        else (ntot, ntemps, nwalkers, blobs.shape[-1])
+                    )
                     g.create_dataset(
                         "blobs",
-                        (ntot, ntemps, nwalkers, blobs.shape[-1]),
-                        maxshape=(None, ntemps, nwalkers, blobs.shape[-1]),
+                        blobs_shape,
+                        maxshape=(None,) + blobs_shape[1:],
                         dtype=self.dtype,
                         compression=self.compression,
                         compression_opts=self.compression_opts,
@@ -705,11 +802,16 @@ class HDFBackend(Backend):
                 else:
                     # resize the blobs if they have been there
                     g["blobs"].resize(ntot, axis=0)
-                    if g["blobs"].shape[1:] != blobs.shape:
+                    blobs_shape_check = (
+                        (nsamplers, ntemps) + blobs.shape[1:]
+                        if has_sampler_axis
+                        else blobs.shape
+                    )
+                    if g["blobs"].shape[1:] != blobs_shape_check:
                         raise ValueError(
                             "Existing blobs have shape {} but new blobs "
                             "requested with shape {}".format(
-                                g["blobs"].shape[1:], blobs.shape
+                                g["blobs"].shape[1:], blobs_shape_check
                             )
                         )
                 g.attrs["has_blobs"] = True
@@ -752,6 +854,10 @@ class HDFBackend(Backend):
                     # get the iteration left off on
                     iteration = g.attrs["iteration"]
 
+                    has_sampler_axis = "nsamplers" in g.attrs
+                    nsamplers = int(g.attrs.get("nsamplers", 1))
+                    ntemps = int(g.attrs["ntemps"])
+
                     # make sure the backend has all the information needed to store everything
                     for key in [
                         "rj",
@@ -772,9 +878,19 @@ class HDFBackend(Backend):
                         swaps_accepted=swaps_accepted,
                     )
 
+                    # incoming state arrays are FOLDED; new-layout files store
+                    # with the sampler axis (unfold via reshape at this write
+                    # boundary), legacy files keep the original layout
+                    def unfold(arr):
+                        if not has_sampler_axis:
+                            return arr
+                        return np.reshape(
+                            arr, (nsamplers, ntemps) + np.shape(arr)[1:]
+                        )
+
                     # branch-specific
                     for name, model in state.branches.items():
-                        g["inds"][name][iteration] = model.inds
+                        g["inds"][name][iteration] = unfold(model.inds)
                         # use self.store_missing_leaves to set value for missing leaves
                         # state retains old coordinates
                         coords_in = model.coords * model.inds[:, :, :, None]
@@ -782,20 +898,36 @@ class HDFBackend(Backend):
                             model.inds, coords_in.shape[-1], axis=-1
                         ).reshape(model.inds.shape + (coords_in.shape[-1],))
                         coords_in[~inds_all] = self.store_missing_leaves
-                        g["chain"][name][self.iteration] = coords_in
+                        g["chain"][name][self.iteration] = unfold(coords_in)
 
                     # store everything else in the file
-                    g["log_like"][iteration, :] = state.log_like
-                    g["log_prior"][iteration, :] = state.log_prior
+                    g["log_like"][iteration] = unfold(state.log_like)
+                    g["log_prior"][iteration] = unfold(state.log_prior)
                     if state.blobs is not None:
-                        g["blobs"][iteration, :] = state.blobs
+                        g["blobs"][iteration] = unfold(state.blobs)
                     if state.betas is not None:
-                        g["betas"][self.iteration, :] = state.betas
-                    g["accepted"][:] += accepted
+                        if has_sampler_axis:
+                            g["betas"][self.iteration] = np.reshape(
+                                state.betas, (nsamplers, ntemps)
+                            )
+                        else:
+                            g["betas"][self.iteration, :] = state.betas
+                    if has_sampler_axis:
+                        samplers_running = getattr(state, "samplers_running", None)
+                        g["samplers_running"][iteration] = (
+                            samplers_running
+                            if samplers_running is not None
+                            else np.ones(nsamplers, dtype=bool)
+                        )
+                    g["accepted"][:] += np.reshape(accepted, g["accepted"].shape)
                     if swaps_accepted is not None:
-                        g["swaps_accepted"][:] += swaps_accepted
+                        g["swaps_accepted"][:] += np.reshape(
+                            swaps_accepted, g["swaps_accepted"].shape
+                        )
                     if self.rj:
-                        g["rj_accepted"][:] += rj_accepted
+                        g["rj_accepted"][:] += np.reshape(
+                            rj_accepted, g["rj_accepted"].shape
+                        )
 
                     for i, v in enumerate(state.random_state):
                         g.attrs[f"random_state_{i}"] = v
