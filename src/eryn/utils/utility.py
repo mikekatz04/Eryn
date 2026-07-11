@@ -207,9 +207,10 @@ def thermodynamic_integration_log_evidence(betas, logls):
         betas2 = np.concatenate((betas0[:-1:2], [0.0]))
         logls2 = np.concatenate((logls[:-1:2], [logls[-1]]))
 
-    # integrate by trapz
-    logZ = -np.trapz(logls, betas)
-    logZ2 = -np.trapz(logls2, betas2)
+    # integrate by trapezoid rule (np.trapz was removed in numpy 2.0)
+    trapezoid = getattr(np, "trapezoid", None) or np.trapz
+    logZ = -trapezoid(logls, betas)
+    logZ2 = -trapezoid(logls2, betas2)
     return logZ, np.abs(logZ - logZ2)
 
 
