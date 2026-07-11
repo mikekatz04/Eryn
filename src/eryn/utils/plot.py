@@ -1333,6 +1333,12 @@ class PlotContainer:
             None
         """
 
+        if getattr(self.backend, "nsamplers", 1) > 1:
+            raise NotImplementedError(
+                "PlotContainer does not support nsamplers > 1; plot per sampler "
+                "with get_chain(sampler_index=...)."
+            )
+
         if self.backend.iteration > self.stop:
             return
 

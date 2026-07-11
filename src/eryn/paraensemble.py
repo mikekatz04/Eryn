@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import warnings
 from copy import deepcopy
 from itertools import count
 from typing import Callable
@@ -144,6 +145,15 @@ class ParaEnsembleSampler(EnsembleSampler):
         provide_supplemental: bool = False,
         gibbs_sampling_setup=None,
     ):
+        warnings.warn(
+            "ParaEnsembleSampler is deprecated; use "
+            "EnsembleSampler(nsamplers=...) instead (it batches all samplers' "
+            "likelihood evaluations the same way and supports samplers_running "
+            "and prior_transform_fn). ParaEnsembleSampler will be removed in a "
+            "future release.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if nwalkers % 2 != 0:
             raise ValueError(
                 f"nwalkers must be even for the stretch proposal split. Got {nwalkers}."

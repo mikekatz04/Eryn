@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import warnings
+
 import numpy as np
 
 from ..state import ParaState
@@ -61,6 +63,13 @@ class ParaBackend(object):
     """
 
     def __init__(self, store_missing_leaves=np.nan, dtype=None):
+        warnings.warn(
+            "ParaBackend is deprecated; use eryn.backends.Backend with "
+            "reset(..., nsamplers=...) instead (storage always carries the "
+            "sampler axis). It will be removed in a future release.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.initialized = False
         if dtype is None:
             dtype = np.float64
