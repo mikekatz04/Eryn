@@ -8,7 +8,13 @@ import numpy as np
 
 from .backends import Backend, HDFBackend
 from .model import Model
-from .moves import DistributionGenerateRJ, GaussianMove, StretchMove, TemperatureControl
+from .moves import (
+    DistributionGenerateRJ,
+    GaussianMove,
+    MultipleTryMove,
+    StretchMove,
+    TemperatureControl,
+)
 from .pbar import get_progress_bar
 from .prior import ProbDistContainer
 from .state import State
@@ -192,6 +198,27 @@ class EnsembleSampler(object):
             state from the previous backend. **Warning**: If the order of moves of the same move class
             is changed, the check may not catch it, so the tracking may mix move acceptance fractions together.
             (default: ``True'')
+        nsamplers (int, optional): Number of fully independent samplers (ensembles) to run
+            simultaneously. All samplers' likelihood evaluations are batched into single
+            calls (useful for GPU likelihoods). Each sampler carries its own temperature
+            ladder; temperature swaps and ladder adaptation are per sampler. Initial
+            coordinates then take shape ``(nsamplers, ntemps, nwalkers, nleaves_max, ndim)``
+            and stored/returned quantities gain a leading ``nsamplers`` axis (after the
+            step axis). With the default of 1, nothing changes anywhere user-facing.
+            Internally the sampler axis is folded into the temperature axis, so proposals
+            simply see ``nsamplers * ntemps`` "temperatures". Use
+            ``State.samplers_running`` (bool array of shape ``(nsamplers,)``) to freeze
+            converged samplers: frozen samplers are skipped in likelihood/prior evaluation
+            and tempering. (default: ``1``)
+        prior_transform_fn (object or dict, optional): Per-sampler prior-basis transform,
+            replacing ``ParaEnsembleSampler.prior_transform_fn``. A dict maps branch names
+            to objects implementing ``transform_to_prior_basis(coords, samplers_running_idx)``
+            (in-place map of ``(num_running, ntemps, nwalkers, ndim)`` coordinates to the
+            basis in which ``priors`` is defined) and ``adjust_logp(logp, samplers_running_idx)``
+            (in-place Jacobian adjustment). Useful for per-sampler prior bounds (e.g.
+            per-band frequency limits). Requires ``nleaves_max == 1`` for the transformed
+            branch and is incompatible with reversible jump, multiple-try moves,
+            ``provide_groups``, and ``all_models_together`` priors. (default: ``None``)
         info (dict, optional): Key and value pairs reprenting any information
             the user wants to add to the backend if the user is not inputing
             their own backend.
@@ -236,10 +263,20 @@ class EnsembleSampler(object):
         num_repeats_in_model=1,
         num_repeats_rj=1,
         track_moves=True,
+        nsamplers=1,
+        prior_transform_fn=None,
         info={},
     ):
         # store priors
         self.priors = priors
+
+        # number of independent samplers run simultaneously; the sampler axis
+        # is FOLDED into the temperature axis everywhere internally
+        # (leading axis size nsamplers * ntemps), so proposals treat the
+        # independent samplers as extra temperatures
+        self.nsamplers = int(nsamplers)
+        if self.nsamplers < 1:
+            raise ValueError(f"nsamplers must be >= 1; got {nsamplers}.")
 
         # store some kwargs
         self.provide_groups = provide_groups
@@ -320,9 +357,12 @@ class EnsembleSampler(object):
             for key in self.branch_names:
                 total_ndim += self.nleaves_max[key] * self.ndims[key]
             self.temperature_control = TemperatureControl(
-                total_ndim, nwalkers, **tempering_kwargs
+                total_ndim, nwalkers, nsamplers=self.nsamplers, **tempering_kwargs
             )
             self.ntemps = self.temperature_control.ntemps
+
+        # folded leading-axis size: independent samplers x temperatures
+        self.ntemps_eff = self.nsamplers * self.ntemps
 
         # set basic variables for sampling settings
         self.nwalkers = nwalkers
@@ -531,13 +571,34 @@ class EnsembleSampler(object):
         # store
         self.periodic = periodic
 
+        # give every move the independent-samplers structure (also set by the
+        # temperature_control setter, but needed for untempered runs and
+        # user-constructed moves); guard against mismatched user-provided
+        # temperature controls
+        all_moves_for_setup = list(self.moves) + (
+            list(self.rj_moves) if self.has_reversible_jump else []
+        )
+        for move in all_moves_for_setup:
+            if (
+                move.temperature_control is not None
+                and getattr(move.temperature_control, "nsamplers", 1) != self.nsamplers
+            ):
+                raise ValueError(
+                    f"Move {move.__class__.__name__} carries a TemperatureControl with "
+                    f"nsamplers={getattr(move.temperature_control, 'nsamplers', 1)}, but the "
+                    f"sampler was built with nsamplers={self.nsamplers}."
+                )
+            move.nsamplers = self.nsamplers
+            move.ntemps_per_sampler = self.ntemps
+            move.sampler_id_rows = np.repeat(np.arange(self.nsamplers), self.ntemps)
+
         # prepare the per proposal accepted values that are held as attributes in the specific classes
         for move in self.moves:
-            move.accepted = np.zeros((self.ntemps, self.nwalkers))
+            move.accepted = np.zeros((self.ntemps_eff, self.nwalkers))
 
         if self.has_reversible_jump:
             for move in self.rj_moves:
-                move.accepted = np.zeros((self.ntemps, self.nwalkers))
+                move.accepted = np.zeros((self.ntemps_eff, self.nwalkers))
 
         # setup backend if not provided or initialized
         if backend is None:
@@ -595,6 +656,7 @@ class EnsembleSampler(object):
                 rj=self.has_reversible_jump,
                 moves=move_keys,
                 key_order=self.key_order,
+                nsamplers=self.nsamplers,
                 **info,
             )
             state = np.random.get_state()
@@ -615,10 +677,19 @@ class EnsembleSampler(object):
 
             if self.key_order != self.backend.key_order:
                 raise ValueError("Input key order from priors does not match backend.")
-            
+
+            # legacy files / backends have no sampler axis and only support nsamplers == 1
+            if getattr(self.backend, "nsamplers", 1) != self.nsamplers:
+                raise ValueError(
+                    f"Backend was initialized with nsamplers={getattr(self.backend, 'nsamplers', 1)}, "
+                    f"but the sampler was built with nsamplers={self.nsamplers}. "
+                    "Restarting with a different nsamplers (including from a legacy file "
+                    "without the sampler axis) is not supported."
+                )
+
             # Check the backend shape
             for i, (name, shape) in enumerate(self.backend.shape.items()):
-                test_shape = (
+                test_shape = ((self.nsamplers,) if self.nsamplers > 1 else ()) + (
                     self.ntemps,
                     self.nwalkers,
                     self.nleaves_max[name],
@@ -651,11 +722,58 @@ class EnsembleSampler(object):
         # ``args`` and ``kwargs`` pickleable.
         self.log_like_fn = _FunctionWrapper(log_like_fn, args, kwargs)
 
-        self.all_walkers = self.nwalkers * self.ntemps
+        self.all_walkers = self.nwalkers * self.ntemps_eff
 
         # prepare plotting
         # TODO: adjust plotting maybe?
         self.plot_iterations = plot_iterations
+
+        if self.nsamplers > 1 and plot_iterations > 0:
+            raise ValueError(
+                "Runtime plotting (plot_iterations > 0) is not supported for nsamplers > 1."
+            )
+
+        # per-sampler prior-basis transform (para parity):
+        # dict of branch_name -> object with in-place
+        # transform_to_prior_basis(coords, samplers_running_idx) and
+        # adjust_logp(logp, samplers_running_idx) methods
+        if prior_transform_fn is not None:
+            if not isinstance(prior_transform_fn, dict):
+                if len(self.branch_names) != 1:
+                    raise ValueError(
+                        "With multiple branches, prior_transform_fn must be a dict keyed by branch name."
+                    )
+                prior_transform_fn = {self.branch_names[0]: prior_transform_fn}
+
+            if self.has_reversible_jump:
+                raise ValueError(
+                    "prior_transform_fn is not compatible with reversible jump: RJ moves "
+                    "evaluate the priors directly on sampling-basis coordinates."
+                )
+            if self.provide_groups:
+                raise ValueError(
+                    "prior_transform_fn is not compatible with provide_groups=True."
+                )
+            if "all_models_together" in self.priors:
+                raise ValueError(
+                    "prior_transform_fn is not compatible with 'all_models_together' priors."
+                )
+            for name in prior_transform_fn:
+                if name not in self.branch_names:
+                    raise ValueError(
+                        f"prior_transform_fn key {name} is not a branch name: {self.branch_names}."
+                    )
+                if self.nleaves_max[name] > 1:
+                    raise ValueError(
+                        "prior_transform_fn requires nleaves_max == 1 for the transformed branch."
+                    )
+            for move in all_moves_for_setup:
+                if isinstance(move, MultipleTryMove):
+                    raise ValueError(
+                        "prior_transform_fn is not compatible with multiple-try moves: they "
+                        "evaluate the priors directly on sampling-basis coordinates."
+                    )
+        self.prior_transform_fn = prior_transform_fn
 
         if plot_generator is None and self.plot_iterations > 0:
             # set to default if not provided
@@ -762,6 +880,7 @@ class EnsembleSampler(object):
             **info (dict, optional): information to pass to backend reset method.
 
         """
+        kwargs.setdefault("nsamplers", self.nsamplers)
         self.backend.reset(self.nwalkers, self.ndims, **kwargs)
 
     def __getstate__(self):
@@ -856,6 +975,40 @@ class EnsembleSampler(object):
 
         # Interpret the input as a walker state and check the dimensions.
 
+        # convenience for nsamplers > 1: accept para-style 4D array input
+        # (nsamplers, ntemps, nwalkers, ndim) by inserting the leaf axis; only
+        # applied when the shape matches the sampler configuration exactly and
+        # cannot be confused with the folded 4D layout
+        if self.nsamplers > 1 and not hasattr(initial_state, "branches"):
+            initial_state_in = initial_state
+            if isinstance(initial_state_in, np.ndarray):
+                initial_state_in = {self.branch_names[0]: initial_state_in}
+            if isinstance(initial_state_in, dict):
+                new_coords = {}
+                for name, arr in initial_state_in.items():
+                    if (
+                        isinstance(arr, np.ndarray)
+                        and arr.ndim == 4
+                        and self.nleaves_max[name] == 1
+                        and arr.shape
+                        == (
+                            self.nsamplers,
+                            self.ntemps,
+                            self.nwalkers,
+                            self.ndims[name],
+                        )
+                        and arr.shape
+                        != (
+                            self.ntemps_eff,
+                            self.nwalkers,
+                            self.nleaves_max[name],
+                            self.ndims[name],
+                        )
+                    ):
+                        arr = arr[:, :, :, None, :]
+                    new_coords[name] = arr
+                initial_state = new_coords
+
         # initial_state.__class__ rather than State in case it is a subclass
         # of State
         if (
@@ -864,19 +1017,41 @@ class EnsembleSampler(object):
             and not isinstance(initial_state.__class__, State)
         ):
             state = initial_state.__class__(initial_state, copy=True)
+            if getattr(state, "nsamplers", 1) != self.nsamplers:
+                raise ValueError(
+                    f"Input state has nsamplers={getattr(state, 'nsamplers', 1)}, but the "
+                    f"sampler was built with nsamplers={self.nsamplers}. Build the State "
+                    "with the nsamplers kwarg or pass 5D coordinates "
+                    "(nsamplers, ntemps, nwalkers, nleaves_max, ndim)."
+                )
         else:
-            state = State(initial_state, copy=True)
+            state = State(initial_state, copy=True, nsamplers=self.nsamplers)
+
+        # source of truth for which independent samplers are running; the
+        # array object is shared by reference through the whole iteration, so
+        # in-place edits (e.g. from update_fn) propagate
+        self._samplers_running = getattr(state, "samplers_running", None)
 
         # Check the backend shape
         for i, (name, branch) in enumerate(state.branches.items()):
             ntemps_, nwalkers_, nleaves_, ndim_ = branch.shape
             if (ntemps_, nwalkers_, nleaves_, ndim_) != (
-                self.ntemps,
+                self.ntemps_eff,
                 self.nwalkers,
                 self.nleaves_max[name],
                 self.ndims[name],
             ):
-                raise ValueError("incompatible input dimensions")
+                raise ValueError(
+                    f"incompatible input dimensions for branch {name}: folded shape "
+                    f"{branch.shape} vs expected "
+                    f"{(self.ntemps_eff, self.nwalkers, self.nleaves_max[name], self.ndims[name])}"
+                    + (
+                        " (for nsamplers > 1, provide coordinates with shape "
+                        f"({self.nsamplers}, {self.ntemps}, {self.nwalkers}, nleaves_max, ndim))"
+                        if self.nsamplers > 1
+                        else ""
+                    )
+                )
 
         # do an initial state check if is requested and we are not using reversible jump
         if (not skip_initial_state_check) and (
@@ -907,7 +1082,7 @@ class EnsembleSampler(object):
 
         # get betas out of state object if they are there
         if state.betas is not None:
-            if state.betas.shape[0] != self.ntemps:
+            if state.betas.shape[0] != self.ntemps_eff:
                 raise ValueError(
                     "Input state has inverse temperatures (betas), but not the correct number of temperatures according to sampler inputs."
                 )
@@ -920,23 +1095,31 @@ class EnsembleSampler(object):
             ):
                 state.betas = self.temperature_control.betas.copy()
 
-        if np.shape(state.log_like) != (self.ntemps, self.nwalkers):
+        if np.shape(state.log_like) != (self.ntemps_eff, self.nwalkers):
             raise ValueError("incompatible input dimensions")
-        if np.shape(state.log_prior) != (self.ntemps, self.nwalkers):
+        if np.shape(state.log_prior) != (self.ntemps_eff, self.nwalkers):
             raise ValueError("incompatible input dimensions")
 
         # Check to make sure that the probability function didn't return
-        # ``np.nan``.
-        if np.any(np.isnan(state.log_like)):
+        # ``np.nan``. Rows of non-running samplers hold fill values, so only
+        # check the running rows.
+        if self._samplers_running is None:
+            check_rows = slice(None)
+        else:
+            check_rows = np.repeat(
+                np.asarray(self._samplers_running, dtype=bool), self.ntemps
+            )
+
+        if np.any(np.isnan(state.log_like[check_rows])):
             raise ValueError("The initial log_like was NaN")
 
-        if np.any(np.isinf(state.log_like)):
+        if np.any(np.isinf(state.log_like[check_rows])):
             raise ValueError("The initial log_like was +/- infinite")
 
-        if np.any(np.isnan(state.log_prior)):
+        if np.any(np.isnan(state.log_prior[check_rows])):
             raise ValueError("The initial log_prior was NaN")
 
-        if np.any(np.isinf(state.log_prior)):
+        if np.any(np.isinf(state.log_prior[check_rows])):
             raise ValueError("The initial log_prior was +/- infinite")
 
         # Check that the thin keyword is reasonable.
@@ -960,8 +1143,12 @@ class EnsembleSampler(object):
             i = 0
             for _ in count() if iterations is None else range(iterations):
                 for _ in range(self.yield_step):
+                    # re-sync the running mask (update_fn may replace the array
+                    # on the state between iterations)
+                    self._samplers_running = getattr(state, "samplers_running", None)
+
                     # in model moves
-                    accepted = np.zeros((self.ntemps, self.nwalkers))
+                    accepted = np.zeros((self.ntemps_eff, self.nwalkers))
                     for repeat in range(self.num_repeats_in_model):
                         # Choose a random move
                         move = self._random.choice(self.moves, p=self.weights)
@@ -983,7 +1170,7 @@ class EnsembleSampler(object):
                             move.tune(state, accepted_out)
 
                     if self.has_reversible_jump:
-                        rj_accepted = np.zeros((self.ntemps, self.nwalkers))
+                        rj_accepted = np.zeros((self.ntemps_eff, self.nwalkers))
                         for repeat in range(self.num_repeats_rj):
                             rj_move = self._random.choice(
                                 self.rj_moves, p=self.rj_weights
@@ -1145,6 +1332,16 @@ class EnsembleSampler(object):
         # get number of temperature and walkers
         ntemps, nwalkers, _, _ = coords[list(coords.keys())[0]].shape
 
+        # independent-samplers row mask on the folded leading axis; only
+        # applied when the input carries the full folded layout (some moves,
+        # e.g. multiple-try internals, call this wrapper with other shapes)
+        samplers_running = getattr(self, "_samplers_running", None)
+        row_mask = None
+        if samplers_running is not None and ntemps == self.ntemps_eff:
+            running = np.asarray(samplers_running, dtype=bool)
+            if not running.all():
+                row_mask = np.repeat(running, self.ntemps)
+
         if inds is None:
             # default use all sources
             inds = {
@@ -1163,8 +1360,10 @@ class EnsembleSampler(object):
             assert prior_out.shape == (ntemps, nwalkers)
 
         elif self.provide_groups:
-            # get group information from the inds dict
-            groups = groups_from_inds(inds)
+            # get leaf-group information from the inds dict
+            # ("leaf groups" = leaf-groupings per likelihood call; unrelated to
+            # the independent-samplers axis)
+            leaf_groups = groups_from_inds(inds)
 
             # get the coordinates that are used
             for i, (name, coords_i) in enumerate(coords.items()):
@@ -1175,44 +1374,84 @@ class EnsembleSampler(object):
                 # get prior for individual binaries
                 prior_out_temp = self.priors[name].logpdf(x_in[name])
 
-                # arrange prior values by groups
+                # arrange prior values by leaf groups
                 # TODO: vectorize this?
-                for i in np.unique(groups[name]):
-                    # which members are in the group i
-                    inds_temp = np.where(groups[name] == i)[0]
+                for i in np.unique(leaf_groups[name]):
+                    # which members are in the leaf group i
+                    inds_temp = np.where(leaf_groups[name] == i)[0]
                     # num_in_group = len(inds_temp)
 
-                    # add to the prior for this group
+                    # add to the prior for this leaf group
                     prior_out[i] += prior_out_temp[inds_temp].sum()
 
             # reshape
             prior_out = prior_out.reshape(ntemps, nwalkers)
 
         else:
-            # flatten coordinate arrays
-            for i, (name, coords_i) in enumerate(coords.items()):
+            prior_out = np.zeros((ntemps, nwalkers))
+            for name, coords_i in coords.items():
                 ntemps, nwalkers, nleaves_max, ndim = coords_i.shape
 
-                x_in[name] = coords_i.reshape(-1, ndim)
+                if (
+                    self.prior_transform_fn is not None
+                    and name in self.prior_transform_fn
+                    and ntemps == self.ntemps_eff
+                ):
+                    # per-sampler prior-basis transform (para parity):
+                    # slice to the running samplers, transform in place,
+                    # evaluate, Jacobian-adjust in place, scatter back with
+                    # -inf on non-running samplers (nleaves_max == 1 enforced
+                    # at initialization)
+                    running = (
+                        np.full(self.nsamplers, True)
+                        if samplers_running is None
+                        else np.asarray(samplers_running, dtype=bool)
+                    )
+                    running_idx = np.arange(self.nsamplers)[running]
 
-            prior_out = np.zeros((ntemps, nwalkers))
-            for name in x_in:
-                ntemps, nwalkers, nleaves_max, ndim = coords[name].shape
-                prior_out_temp = (
-                    self.priors[name]
-                    .logpdf(x_in[name])
-                    .reshape(ntemps, nwalkers, nleaves_max)
-                )
+                    coords_buffer = coords_i.reshape(
+                        self.nsamplers, self.ntemps, nwalkers, ndim
+                    )[running_idx].copy()
+                    self.prior_transform_fn[name].transform_to_prior_basis(
+                        coords_buffer, running_idx
+                    )
 
-                # fix any infs / nans from binaries that are not being used (inds == False)
-                prior_out_temp[~inds[name]] = 0.0
+                    logp_tmp = (
+                        self.priors[name]
+                        .logpdf(coords_buffer.reshape(-1, ndim))
+                        .reshape(len(running_idx), self.ntemps, nwalkers)
+                    )
+                    self.prior_transform_fn[name].adjust_logp(logp_tmp, running_idx)
 
-                # vectorized because everything is rectangular (no groups to indicate model difference)
-                prior_out += prior_out_temp.sum(axis=-1)
+                    prior_out_branch = np.full(
+                        (self.nsamplers, self.ntemps, nwalkers), -np.inf
+                    )
+                    prior_out_branch[running_idx] = logp_tmp
+                    prior_out += prior_out_branch.reshape(ntemps, nwalkers)
+
+                else:
+                    # flatten coordinate arrays
+                    x_in[name] = coords_i.reshape(-1, ndim)
+                    prior_out_temp = (
+                        self.priors[name]
+                        .logpdf(x_in[name])
+                        .reshape(ntemps, nwalkers, nleaves_max)
+                    )
+
+                    # fix any infs / nans from binaries that are not being used (inds == False)
+                    prior_out_temp[~inds[name]] = 0.0
+
+                    # vectorized because everything is rectangular (no groups to indicate model difference)
+                    prior_out += prior_out_temp.sum(axis=-1)
+
+        # rows of non-running samplers get -inf: proposals there always reject
+        # and the likelihood wrapper skips them entirely
+        if row_mask is not None:
+            prior_out[~row_mask] = -np.inf
 
         if np.any(np.isnan(prior_out)):
             raise ValueError("The prior function is returning Nan.")
-        
+
         return prior_out
 
     def compute_log_like(
@@ -1301,21 +1540,23 @@ class EnsembleSampler(object):
             if branch_supps is not None:
                 branch_supps_in = {}
 
-        # determine groupings from inds
-        groups = groups_from_inds(inds_copy)
+        # determine leaf groupings from inds
+        # ("leaf groups" = which leaves feed each individual likelihood call;
+        # unrelated to the independent-samplers (nsamplers) axis)
+        leaf_groups = groups_from_inds(inds_copy)
 
         # need to map group inds properly
         # this is the unique group indexes
         unique_groups = np.unique(
-            np.concatenate([groups_i for groups_i in groups.values()])
+            np.concatenate([groups_i for groups_i in leaf_groups.values()])
         )
 
         # this is the map to those indexes that are used in the likelihood
         groups_map = np.arange(len(unique_groups))
 
         # get the indices with groups_map for the Likelihood
-        ll_groups = {}
-        for key, group in groups.items():
+        ll_leaf_groups = {}
+        for key, group in leaf_groups.items():
             # get unique groups in this sub-group (or branch)
             temp_unique_groups, inverse = np.unique(group, return_inverse=True)
 
@@ -1323,7 +1564,7 @@ class EnsembleSampler(object):
             keep_groups = groups_map[np.isin(unique_groups, temp_unique_groups)]
 
             # fill group information for Likelihood
-            ll_groups[key] = keep_groups[inverse]
+            ll_leaf_groups[key] = keep_groups[inverse]
 
         for i, (name, coords_i) in enumerate(coords.items()):
             ntemps, nwalkers, nleaves_max, ndim = coords_i.shape
@@ -1357,7 +1598,7 @@ class EnsembleSampler(object):
 
         # prepare group information
         # this gets the group_map indexing into a list
-        groups_in = list(ll_groups.values())
+        groups_in = list(ll_leaf_groups.values())
 
         # if only one branch, take the group array out of the list
         if len(groups_in) == 1:
