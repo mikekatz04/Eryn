@@ -46,6 +46,8 @@ __all__ = [
     "ConditioningStrategy",
     "OneHotLeafConditioning",
     "LeafModeConditioning",
+    "ModeState",
+    "estimate_modes",
     "get_flow_wrapper",
     "ZukoFlow",
     "WhiteningTransform",
@@ -64,6 +66,7 @@ __all__ = [
 from .base import Flow, FlowHistory, FlowProposalDistribution  # noqa: E402
 from .transforms import DataTransform, IdentityTransform  # noqa: E402
 from .conditioning import ConditioningStrategy, OneHotLeafConditioning, LeafModeConditioning  # noqa: E402
+from .modes import ModeState, estimate_modes  # noqa: E402
 
 # ---- lazy names — resolved by __getattr__ on first attribute access ----
 # ZukoFlow/WhiteningTransform live in the optional torch subpackage; accessing
