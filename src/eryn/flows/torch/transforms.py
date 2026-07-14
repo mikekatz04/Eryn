@@ -206,8 +206,10 @@ class WhiteningTransform(DataTransform):
     Builds a per-condition (per-leaf) sequence of invertible transforms from
     training samples via :meth:`fit`.  Periodic components are circular-shifted
     so that the wrap cut lands in a low-density region (see ``periodic_cut``)
-    before centering and block-diagonal whitening (Cholesky whitening for the
-    non-periodic block, marginal-std scaling for the periodic block).
+    before centering and whitening.  Two whitening schemes are available (see
+    ``periodic_in_cholesky``): the default block-diagonal scheme (Cholesky
+    whitening for the non-periodic block, marginal-std scaling for the
+    periodic block) or a single full-covariance Cholesky over all dims.
 
     The forward pass operates in float64 internally (CPU) and returns a
     float32 tensor; the log-absolute-determinant Jacobian is returned as a
@@ -247,6 +249,25 @@ class WhiteningTransform(DataTransform):
           the cut *on* a mode, splitting it across the latent boundary.
         * ``"circular_mean"``: legacy behaviour — the cut sits at the
           antipode of the circular mean of the samples.
+    periodic_in_cholesky : bool, optional
+        Whitening scheme for the periodic block.  ``False`` (default,
+        back-compat): block-diagonal scheme — full Cholesky for the
+        non-periodic dims, marginal-std scaling for the (shifted) periodic
+        dims.  Cross-correlations between periodic and non-periodic dims
+        survive whitening and are left for the flow to learn raw.  ``True``:
+        after the ``CircularShift`` step, the shifted periodic dims are
+        folded into the SAME full-covariance Cholesky as the non-periodic
+        dims (one joint mean + covariance + Cholesky over all ``ndim`` dims),
+        decorrelating periodic/non-periodic cross terms at the transform
+        level.  This is sound because the post-shift periodic data is
+        continuous around its mean (the wrap cut sits in a low-density
+        region); only rare draws that cross the wrap cut are treated as if
+        linear, which is the same accepted approximation the block-diagonal
+        scheme already makes for the marginal periodic scaling (see the
+        ``CircularShiftTransform._inverse`` docstring for the pinned
+        wrap-aliasing contract). Changing this flag changes the fitted
+        whitening statistics and therefore the flow-space latents; it must
+        match between training and any checkpoint reused later.
 
     Notes
     -----
@@ -275,6 +296,7 @@ class WhiteningTransform(DataTransform):
         periodic: dict[int, tuple[float, float]] | None = None,
         shared: bool = False,
         periodic_cut: str = "antimode",
+        periodic_in_cholesky: bool = False,
     ):
         self.ndim = ndim
         self.periodic = periodic or {}
@@ -285,6 +307,7 @@ class WhiteningTransform(DataTransform):
                 f"got {periodic_cut!r}."
             )
         self.periodic_cut = periodic_cut
+        self.periodic_in_cholesky = bool(periodic_in_cholesky)
         self._set_indices()
         self._transforms: dict[int, ComposeTransform] | None = None
 
@@ -441,12 +464,15 @@ class WhiteningTransform(DataTransform):
 
         centered_samples = samples_unwrapped - mean
 
-        # 2. Block-diagonal whitening: joint Cholesky for non-periodic
-        # components, marginal-std scaling for periodic components.
-        # Periodic posteriors are often bimodal (due to symmetries), so
-        # including them in the joint Cholesky inflates the conditional
-        # variance of the periodic block, producing large (~±10) latent
-        # values.  The flow learns any remaining cross-correlations.
+        # 2. Whitening.  Default (periodic_in_cholesky=False): block-diagonal
+        # -- joint Cholesky for non-periodic components, marginal-std scaling
+        # for periodic components.  Periodic posteriors are often bimodal (due
+        # to symmetries), so including them in the joint Cholesky inflates the
+        # conditional variance of the periodic block, producing large (~±10)
+        # latent values; the flow then learns any remaining cross-correlations.
+        # periodic_in_cholesky=True instead folds the (shifted) periodic
+        # components into the SAME joint Cholesky, decorrelating them from the
+        # non-periodic block at the transform level -- see the class docstring.
         matrix = self._build_whitening_matrix(centered_samples)
         matrix_transform = LinearMatrixTransform(matrix)
         transforms_list.append(matrix_transform)
@@ -561,16 +587,56 @@ class WhiteningTransform(DataTransform):
     # Private construction helpers
     # ------------------------------------------------------------------
 
-    def _build_whitening_matrix(self, centered_samples: torch.Tensor) -> torch.Tensor:
-        """Build block-diagonal whitening matrix.
+    def _cholesky_whitening_matrix(self, samples_block: torch.Tensor) -> torch.Tensor:
+        """Cholesky-whitening matrix for one block of (centred) samples.
 
-        Cholesky whitening for the non-periodic block; marginal-std scaling for
-        the periodic block.
+        Regularization is RELATIVE per dimension (``eps * var_i`` on the
+        diagonal): parameter scales in physical units span many orders of
+        magnitude, and any absolute floor silently under-whitens the
+        dimensions whose variance falls below it (see the ``eps`` property).
+        Zero-variance (constant) dimensions fall back to the smallest positive
+        variance so the Cholesky stays defined.
+
+        Parameters
+        ----------
+        samples_block : torch.Tensor, shape (N, k), dtype float64
+            Mean-centred training samples restricted to the block's dims.
+
+        Returns
+        -------
+        torch.Tensor, shape (k, k), dtype float64
+            Upper-triangular whitening matrix for the block.
+        """
+        cov = torch.cov(samples_block.T)
+        if cov.ndim == 0:  # single dim in the block
+            cov = cov.reshape(1, 1)
+        diag = torch.diagonal(cov)
+        positive = diag > 0
+        fallback = (
+            diag[positive].min()
+            if bool(positive.any())
+            else torch.tensor(1.0, dtype=torch.float64)
+        )
+        reg = self.eps * torch.where(positive, diag, fallback)
+        # a fully zero-variance dim needs more than eps*fallback to invert
+        reg = torch.where(positive, reg, fallback)
+        cov_reg = cov + torch.diag(reg)
+        lower = torch.linalg.cholesky(cov_reg)
+        return torch.linalg.inv(lower).T  # upper triangular whitening matrix
+
+    def _build_whitening_matrix(self, centered_samples: torch.Tensor) -> torch.Tensor:
+        """Build the whitening matrix.
+
+        ``periodic_in_cholesky=False`` (default, back-compat): block-diagonal
+        -- Cholesky whitening for the non-periodic block, marginal-std scaling
+        for the periodic block.  ``periodic_in_cholesky=True``: a single joint
+        Cholesky over ALL dims (shifted periodic dims included).
 
         Parameters
         ----------
         centered_samples : torch.Tensor, shape (N, ndim), dtype float64
-            Mean-centred training samples.
+            Mean-centred training samples (periodic dims already
+            circular-shifted).
 
         Returns
         -------
@@ -578,36 +644,27 @@ class WhiteningTransform(DataTransform):
             Whitening matrix.
         """
         n = centered_samples.shape[1]
+        matrix = torch.zeros(n, n, dtype=torch.float64)
+
+        # getattr: transforms pickled before periodic_in_cholesky existed lack
+        # the attribute; they only reach this method if re-fit, so default
+        # them to False (the back-compat contract) rather than crashing.
+        periodic_in_cholesky = getattr(self, "periodic_in_cholesky", False)
+
+        if periodic_in_cholesky:
+            # Single full-covariance Cholesky over all dims -- decorrelates
+            # the shifted periodic dims from the non-periodic ones (see the
+            # class docstring). centered_samples columns are already in
+            # natural dim order, so the block matches the full index range.
+            matrix[:, :] = self._cholesky_whitening_matrix(centered_samples)
+            return matrix
+
         np_idx = self.non_periodic_indices
         p_idx = self.periodic_indices
 
-        matrix = torch.zeros(n, n, dtype=torch.float64)
-
-        # Cholesky whitening for the non-periodic block. Regularization is
-        # RELATIVE per dimension (eps * var_i on the diagonal): parameter
-        # scales in physical units span many orders of magnitude, and any
-        # absolute floor silently under-whitens the dimensions whose variance
-        # falls below it (see the ``eps`` property). Zero-variance (constant)
-        # dimensions fall back to the smallest positive variance so the
-        # Cholesky stays defined.
+        # Cholesky whitening for the non-periodic block.
         if len(np_idx) > 0:
-            np_samples = centered_samples[:, np_idx]
-            cov_np = torch.cov(np_samples.T)
-            if cov_np.ndim == 0:  # single non-periodic dim
-                cov_np = cov_np.reshape(1, 1)
-            diag = torch.diagonal(cov_np)
-            positive = diag > 0
-            fallback = (
-                diag[positive].min()
-                if bool(positive.any())
-                else torch.tensor(1.0, dtype=torch.float64)
-            )
-            reg = self.eps * torch.where(positive, diag, fallback)
-            # a fully zero-variance dim needs more than eps*fallback to invert
-            reg = torch.where(positive, reg, fallback)
-            cov_reg = cov_np + torch.diag(reg)
-            lower = torch.linalg.cholesky(cov_reg)
-            inv_np = torch.linalg.inv(lower).T  # upper triangular whitening matrix
+            inv_np = self._cholesky_whitening_matrix(centered_samples[:, np_idx])
             for i, row in enumerate(np_idx):
                 for j, col in enumerate(np_idx):
                     matrix[row, col] = inv_np[i, j]
