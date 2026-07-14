@@ -21,6 +21,7 @@ EXPECTED_ALL = sorted([
     "estimate_modes",
     "get_flow_wrapper",
     "ZukoFlow",
+    "ModeMixtureFlow",
     "WhiteningTransform",
     "TrainerError",
     "FlowSpec",
