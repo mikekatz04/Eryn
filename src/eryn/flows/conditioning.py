@@ -12,7 +12,7 @@ from typing import Protocol, runtime_checkable
 
 import numpy as np
 
-__all__ = ["ConditioningStrategy", "OneHotLeafConditioning"]
+__all__ = ["ConditioningStrategy", "OneHotLeafConditioning", "LeafModeConditioning"]
 
 
 @runtime_checkable
@@ -157,3 +157,39 @@ class OneHotLeafConditioning:
             self._centroids - np.asarray(coords_summary)[None, :], axis=1
         )
         return int(np.argmin(d))
+
+
+class LeafModeConditioning:
+    """Composite (leaf, mode-slot) one-hot conditioning.
+
+    Condition ids are composite integers ``cid = leaf * kmax + slot`` with
+    ``leaf in [0, nleaves_max)`` and ``slot in [0, kmax)``.  ``encode``
+    returns the concatenation of the leaf one-hot (length ``nleaves_max``)
+    and the mode-slot one-hot (length ``kmax``).  Used by
+    :class:`eryn.flows.torch.mixture.ModeMixtureFlow`, which estimates the
+    mode slots from the training buffer each round.
+    """
+
+    def __init__(self, nleaves_max: int, kmax: int):
+        self.nleaves_max = int(nleaves_max)
+        self.kmax = int(kmax)
+        self.context_dim = self.nleaves_max + self.kmax
+
+    def encode(self, condition_id: int) -> np.ndarray:
+        cid = int(condition_id)
+        leaf, slot = divmod(cid, self.kmax)
+        if not (0 <= leaf < self.nleaves_max) or cid < 0:
+            raise ValueError(
+                f"composite condition_id {cid} out of range "
+                f"[0, {self.nleaves_max * self.kmax})"
+            )
+        vec = np.zeros(self.context_dim, dtype=np.float32)
+        vec[leaf] = 1.0
+        vec[self.nleaves_max + slot] = 1.0
+        return vec
+
+    def assign(self, coords_summary: np.ndarray) -> int:
+        raise NotImplementedError(
+            "LeafModeConditioning.assign is not used: ModeMixtureFlow "
+            "marginalizes over mode slots instead of assigning points."
+        )

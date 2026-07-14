@@ -45,6 +45,7 @@ __all__ = [
     "IdentityTransform",
     "ConditioningStrategy",
     "OneHotLeafConditioning",
+    "LeafModeConditioning",
     "get_flow_wrapper",
     "ZukoFlow",
     "WhiteningTransform",
@@ -62,7 +63,7 @@ __all__ = [
 # ---- always-available (torch-free) names imported eagerly ----
 from .base import Flow, FlowHistory, FlowProposalDistribution  # noqa: E402
 from .transforms import DataTransform, IdentityTransform  # noqa: E402
-from .conditioning import ConditioningStrategy, OneHotLeafConditioning  # noqa: E402
+from .conditioning import ConditioningStrategy, OneHotLeafConditioning, LeafModeConditioning  # noqa: E402
 
 # ---- lazy names — resolved by __getattr__ on first attribute access ----
 # ZukoFlow/WhiteningTransform live in the optional torch subpackage; accessing
