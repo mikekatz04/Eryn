@@ -7,10 +7,9 @@ so that a single flow can represent a multimodal per-leaf posterior as an
 explicit mixture over ``(leaf, mode-slot)`` composite conditions, instead of
 one flow having to bridge disjoint islands under a single leaf condition.
 
-This module implements the fit path, snapshot, and HDF5 persistence.  Mixture
-sampling and density evaluation (marginalizing over mode slots) are added in
-a follow-up task; see the module docstring of ``ModeMixtureFlow`` for the
-current state.
+This module implements the fit path, snapshot, and HDF5 persistence, plus
+mixture sampling and density evaluation (marginalizing over mode slots) — see
+the module docstring of ``ModeMixtureFlow`` for details.
 
 Requires the ``flow`` optional extra (``pip install eryn[flow]``), which
 installs ``torch`` and ``zuko`` — but only indirectly, through
@@ -25,6 +24,7 @@ import pickle
 
 import h5py
 import numpy as np
+from scipy.special import logsumexp
 
 from eryn.flows.conditioning import LeafModeConditioning
 from eryn.flows.modes import ModeState, estimate_modes
@@ -46,8 +46,8 @@ class ModeMixtureFlow(ZukoFlow):
     :class:`~eryn.flows.conditioning.LeafModeConditioning`, that gets its own
     per-slot ``data_transform`` island.
 
-    MH exactness never depends on the clustering: the mixture density (added
-    in a follow-up task) marginalizes over the slots the flow was trained on
+    MH exactness never depends on the clustering: the mixture density
+    (:meth:`log_prob`) marginalizes over the slots the flow was trained on
     via ``logsumexp_m [log w_m + logq(x | cid(leaf, m))]``, which is exact for
     any clustering choice — clustering quality only affects proposal
     efficiency, never validity.
@@ -197,6 +197,108 @@ class ModeMixtureFlow(ZukoFlow):
                 composite[self._cid(leaf, slot)] = rows[st.labels == slot]
 
         return super().fit(composite, **fit_kwargs)
+
+    # ------------------------------------------------------------------
+    # Mixture sampling / density
+    # ------------------------------------------------------------------
+
+    def log_prob(self, x, context=None, base_scale: float | None = None) -> np.ndarray:
+        """Return the exact per-leaf mixture log density at ``x``.
+
+        Marginalizes over the leaf's mode slots::
+
+            log q(x | leaf) = logsumexp_s [ log w_s + logq(x | cid(leaf, s)) ]
+
+        where the inner ``logq`` is the plain :class:`~eryn.flows.torch.flows.ZukoFlow`
+        component density (``super().log_prob``) evaluated at the composite
+        condition id for each populated slot.  This is the SAME code path used
+        for both proposed and current points in an MH step (see
+        :meth:`sample_and_log_prob`), which is what makes the move's factors
+        exact regardless of clustering quality.
+
+        Parameters
+        ----------
+        x : array-like, shape (N, dims)
+            Points in coords space.
+        context : int
+            Bare leaf id (NOT a composite condition id).
+        base_scale : float or None, optional
+            Forwarded unchanged to every component's
+            :meth:`~eryn.flows.torch.flows.ZukoFlow.log_prob` call; see that
+            method for the temperature-scaled-base semantics.  ``None``
+            (default) is bit-identical to the pre-``base_scale`` behaviour.
+
+        Returns
+        -------
+        log_prob : np.ndarray, shape (N,), dtype float64
+
+        Raises
+        ------
+        RuntimeError
+            If ``context`` names a leaf with no fitted :attr:`mode_state`
+            (i.e. :meth:`fit` has not been called for it yet).
+        """
+        leaf = int(context)
+        st = self.mode_state.get(leaf)
+        if st is None:
+            raise RuntimeError(f"ModeMixtureFlow: no mode_state for leaf {leaf}; fit first.")
+        comps = np.stack([
+            np.log(st.weights[s])
+            + super(ModeMixtureFlow, self).log_prob(x, context=self._cid(leaf, s),
+                                                    base_scale=base_scale)
+            for s in st.slots
+        ])                                   # (K, N)
+        return logsumexp(comps, axis=0)
+
+    def sample_and_log_prob(self, n: int, context=None, base_scale: float | None = None) -> tuple:
+        """Draw ``n`` samples from the per-leaf mixture and return their mixture density.
+
+        Draws component counts from ``Multinomial(n, [weights[s] for s in slots])``
+        via :attr:`_rng`, samples each populated slot's component from the
+        underlying :class:`~eryn.flows.torch.flows.ZukoFlow`
+        (``super().sample_and_log_prob``) at its composite condition id, then
+        concatenates and shuffles the rows.
+
+        The shuffle is mandatory: :class:`~eryn.moves.ConditionalFlowMove` maps
+        returned rows positionally onto (temperature, walker) slots, so
+        component-grouped (unshuffled) draws would correlate mode with
+        temperature.
+
+        The returned log density is **not** the per-component value from the
+        inner sampling call — it is :meth:`log_prob` (the full mixture
+        density) evaluated on the shuffled draws, so that proposed-point and
+        current-point densities in an MH step come from the identical code
+        path.  Within a component these differ only on rare wrap-cut crossers
+        (the pinned wrap-cut contract).
+
+        Parameters
+        ----------
+        n : int
+            Number of samples to draw.
+        context : int
+            Bare leaf id (NOT a composite condition id).
+        base_scale : float or None, optional
+            Forwarded unchanged to every component's
+            :meth:`~eryn.flows.torch.flows.ZukoFlow.sample_and_log_prob` call
+            (and to the :meth:`log_prob` re-evaluation). ``None`` (default) is
+            bit-identical to the pre-``base_scale`` behaviour.
+
+        Returns
+        -------
+        x : np.ndarray, shape (n, dims), dtype float64
+            Samples in coords space, shuffled across components.
+        log_prob : np.ndarray, shape (n,), dtype float64
+            Mixture log density at each returned sample (see :meth:`log_prob`).
+        """
+        leaf = int(context)
+        st = self.mode_state[leaf]           # same guard as log_prob
+        counts = self._rng.multinomial(n, [st.weights[s] for s in st.slots])
+        xs = [super(ModeMixtureFlow, self).sample_and_log_prob(
+                  int(c), context=self._cid(leaf, s), base_scale=base_scale)[0]
+              for s, c in zip(st.slots, counts) if c > 0]
+        x = np.concatenate(xs, axis=0)
+        x = x[self._rng.permutation(n)]      # break component<->row-position correlation
+        return x, self.log_prob(x, context=leaf, base_scale=base_scale)
 
     # ------------------------------------------------------------------
     # Snapshot / weight hand-off
