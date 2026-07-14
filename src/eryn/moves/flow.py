@@ -67,6 +67,21 @@ class ConditionalFlowMove(MHMove):
     than a crash; graceful degradation is a future scheduler policy, not the
     move's job.
 
+    **Temperature-scaled proposals (optional, via** :attr:`active_betas` **)**
+
+    The flow is trained on cold-chain (``beta=1``) samples only, but this move
+    proposes for walker rows at every temperature.  A hot row's target is
+    ``propto L(theta)**beta * pi(theta)`` — roughly the cold posterior broadened
+    by ``1/sqrt(beta)`` — so without correction, hot rows are proposed from deep
+    in the cold flow's tails and are almost always rejected.  Setting
+    :attr:`active_betas` (typically done once per leaf by the outer move) fixes
+    this: :meth:`get_proposal` groups rows by temperature and re-proposes each
+    group from the SAME trained flow but with its base distribution scaled by
+    ``s = beta_t**-0.5`` (see ``base_scale`` on :meth:`Flow.sample_and_log_prob`
+    / :meth:`Flow.log_prob`) — an exact affine reparameterisation of the base,
+    so the Hastings bookkeeping stays exact.  ``active_betas=None`` (the
+    default) reproduces the original unscaled behaviour exactly.
+
     Parameters
     ----------
     flow : eryn.flows.Flow
@@ -98,6 +113,18 @@ class ConditionalFlowMove(MHMove):
     active_condition : int
         Condition id passed to the flow on every ``get_proposal`` call.
         Readable and writable; the setter coerces the value to ``int``.
+    active_betas : np.ndarray or None
+        Per-temperature inverse-temperature ladder, shape ``(ntemps,)``,
+        matching the leading axis of the branch coords seen by
+        :meth:`get_proposal`.  ``None`` (the default) reproduces today's
+        behaviour exactly: every row is proposed from the flow's native
+        (unscaled) base.  When set (typically by the outer move, once per
+        leaf, to that leaf's current temperature ladder), :meth:`get_proposal`
+        groups rows by temperature ``t`` and proposes each group with
+        ``base_scale = active_betas[t] ** -0.5`` — broadening the flow's base
+        for hot chains so they are no longer proposed from deep in the cold
+        flow's tails (see the module/class docstring for the statistical
+        motivation).  Plain attribute, not a property: set it directly.
     loaded_version : int
         Version of the most recently hot-loaded weights (``0`` if none have been
         loaded).  Read-only.
@@ -126,6 +153,11 @@ class ConditionalFlowMove(MHMove):
         self.flow = flow
         self.branch_name = branch_name
         self._active_condition: int = 0
+        # Per-temperature beta ladder for this move's branch, shape (ntemps,).
+        # None (default): get_proposal is unscaled, exactly as before this
+        # attribute existed.  Set externally, per leaf, by the outer move
+        # (e.g. ResidualAddOneRemoveOneMove) — see the class docstring.
+        self.active_betas = None
         self.harvest_every = int(harvest_every) if harvest_every is not None else None
         self.harvest_temp_index = int(harvest_temp_index)
         self._setup_calls = 0
@@ -323,6 +355,18 @@ class ConditionalFlowMove(MHMove):
         factors : np.ndarray, shape (ntemps, nwalkers)
             Hastings log-factors: ``+log q(x_old) - log q(x_new)`` accumulated
             with :func:`numpy.add.at` over all active leaves of ``branch_name``.
+
+        Notes
+        -----
+        When :attr:`active_betas` is ``None`` (the default), every active row
+        of ``branch_name`` is proposed from the flow's native base in a single
+        ``sample_and_log_prob`` / ``logpdf`` pair — exactly as before this
+        attribute existed.  When :attr:`active_betas` is set, rows are grouped
+        by temperature (the leading axis of ``branches_coords[branch_name]``)
+        and each temperature ``t`` is proposed with
+        ``base_scale = active_betas[t] ** -0.5``, using its own
+        ``sample_and_log_prob`` / ``log_prob`` pair (both draws and both logq
+        terms of that row's Hastings factor use the same scale).
         """
         # Lazy import: FlowProposalDistribution is pure NumPy (no torch), but
         # importing it here guarantees that even if eryn.flows.base were ever
@@ -373,22 +417,54 @@ class ConditionalFlowMove(MHMove):
             if num == 0:
                 continue
 
-            # + log q(old): np.add.at so multi-leaf duplicate (temp, walker) indices
-            # accumulate instead of last-write-wins on repeated fancy-index +=.
-            # NaN logq values (e.g. from out-of-support old points) propagate into
-            # lnpdiff.  NaN comparisons are always False, so such proposals are
-            # unconditionally rejected — the "no-bias" claim in the class docstring
-            # relies on this IEEE-754 property rather than on an explicit NaN guard.
-            np.add.at(factors, where[:2], dist.logpdf(old_points))
+            if self.active_betas is None:
+                # + log q(old): np.add.at so multi-leaf duplicate (temp, walker) indices
+                # accumulate instead of last-write-wins on repeated fancy-index +=.
+                # NaN logq values (e.g. from out-of-support old points) propagate into
+                # lnpdiff.  NaN comparisons are always False, so such proposals are
+                # unconditionally rejected — the "no-bias" claim in the class docstring
+                # relies on this IEEE-754 property rather than on an explicit NaN guard.
+                np.add.at(factors, where[:2], dist.logpdf(old_points))
 
-            # Draw and - log q(new): sample_and_log_prob avoids a second forward
-            # pass — the log-prob returned during sampling is reused directly.
-            # Same NaN-rejection applies if the flow returns NaN for new points.
-            new_points, logq_new = self.flow.sample_and_log_prob(
-                num, context=self.active_condition
-            )
-            np.add.at(factors, where[:2], -logq_new)
+                # Draw and - log q(new): sample_and_log_prob avoids a second forward
+                # pass — the log-prob returned during sampling is reused directly.
+                # Same NaN-rejection applies if the flow returns NaN for new points.
+                new_points, logq_new = self.flow.sample_and_log_prob(
+                    num, context=self.active_condition
+                )
+                np.add.at(factors, where[:2], -logq_new)
 
-            q[name][where] = new_points
+                q[name][where] = new_points
+            else:
+                # Temperature-scaled proposals: group rows by temperature (the
+                # first axis of `coords`, per the class docstring) and, per
+                # temperature t, propose from the SAME flow with
+                # base_scale = active_betas[t]**-0.5 — one sample call + one
+                # log_prob call per temperature (ntemps is small, <= a few).
+                # `mask` sub-selects `where`/`old_points` while preserving row
+                # order, so the final scatter below is identical in shape and
+                # ordering to the active_betas=None path above.
+                temp_of_row = where[0]
+                new_points = np.empty_like(old_points)
+                for t in range(coords.shape[0]):
+                    mask = temp_of_row == t
+                    num_t = int(mask.sum())
+                    if num_t == 0:
+                        continue
+                    s = float(self.active_betas[t]) ** -0.5
+                    idx_t = tuple(w[mask] for w in where[:2])
+
+                    logq_old_t = self.flow.log_prob(
+                        old_points[mask], context=self.active_condition, base_scale=s
+                    )
+                    np.add.at(factors, idx_t, logq_old_t)
+
+                    new_points_t, logq_new_t = self.flow.sample_and_log_prob(
+                        num_t, context=self.active_condition, base_scale=s
+                    )
+                    np.add.at(factors, idx_t, -logq_new_t)
+                    new_points[mask] = new_points_t
+
+                q[name][where] = new_points
 
         return q, factors
