@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import copy
 import json
+import math
 import os
 import pickle
 from typing import Any
@@ -547,7 +548,7 @@ class ZukoFlow(BaseTorchFlow):
     # log_prob
     # ------------------------------------------------------------------
 
-    def log_prob(self, x, context=None) -> np.ndarray:
+    def log_prob(self, x, context=None, base_scale: float | None = None) -> np.ndarray:
         """Return the coords-space log density at ``x``.
 
         Implements the correctness contract::
@@ -561,6 +562,17 @@ class ZukoFlow(BaseTorchFlow):
             Sample points in coords space.
         context : None, int, or array-like, optional
             Context following the class-level contract.
+        base_scale : float or None, optional
+            Temperature-scaling factor for the flow's base distribution.
+            ``None`` (default) evaluates the density under the flow's native
+            base — bit-identical to the pre-``base_scale`` behaviour.  A
+            float ``s`` evaluates the density as if the base were scaled by
+            ``s`` (e.g. ``N(0, s**2 * I)`` for the usual standard-normal
+            base) instead, via the exact change-of-variables identity (see
+            :meth:`_scaled_base_log_prob`); all transform log-dets (network
+            + ``data_transform``) are unaffected.  Used by
+            :class:`eryn.moves.ConditionalFlowMove` to propose at
+            ``s = beta**-0.5`` for hot chains from the SAME cold-trained flow.
 
         Returns
         -------
@@ -569,6 +581,8 @@ class ZukoFlow(BaseTorchFlow):
         x = self._validate_x(x)
         if x.shape[0] == 0:
             return np.empty((0,), dtype=np.float64)
+        if base_scale is not None and not (base_scale > 0.0):
+            raise ValueError(f"base_scale must be > 0, got {base_scale}")
         ctx, condition = self._resolve(context)
 
         # Apply data transform: coords → flow space
@@ -577,7 +591,10 @@ class ZukoFlow(BaseTorchFlow):
 
         with torch.no_grad():
             dist = self._get_dist(ctx)
-            log_flow = dist.log_prob(z_t)  # shape (N,)
+            if base_scale is None:
+                log_flow = dist.log_prob(z_t)  # shape (N,)
+            else:
+                log_flow = self._scaled_base_log_prob(dist, z_t, float(base_scale))
 
         # Per-point log-det: correct for any data_transform (including
         # non-constant-Jacobian transforms such as LogTransform).  The cost
@@ -685,7 +702,7 @@ class ZukoFlow(BaseTorchFlow):
     # sample_and_log_prob
     # ------------------------------------------------------------------
 
-    def sample_and_log_prob(self, n: int, context=None) -> tuple:
+    def sample_and_log_prob(self, n: int, context=None, base_scale: float | None = None) -> tuple:
         """Draw ``n`` samples and return their coords-space log densities.
 
         Uses zuko's ``rsample_and_log_prob`` for a single forward pass.
@@ -696,6 +713,16 @@ class ZukoFlow(BaseTorchFlow):
             Number of samples.
         context : None, int, or array-like, optional
             Context.
+        base_scale : float or None, optional
+            Temperature-scaling factor for the flow's base distribution.
+            ``None`` (default): draws from the flow's native base —
+            bit-identical to the pre-``base_scale`` behaviour.  A float ``s``
+            draws the base latent scaled by ``s`` (e.g. ``N(0, s**2 * I)``
+            for the usual standard-normal base) instead (see
+            :meth:`_scaled_base_rsample_and_log_prob`) and reports the
+            matching density; all transform log-dets are unaffected.  Used by
+            :class:`eryn.moves.ConditionalFlowMove` to propose at
+            ``s = beta**-0.5`` for hot chains from the SAME cold-trained flow.
 
         Returns
         -------
@@ -709,10 +736,15 @@ class ZukoFlow(BaseTorchFlow):
             raise ValueError(f"n must be non-negative, got {n}")
         if n == 0:
             return np.empty((0, self.dims), dtype=np.float64), np.empty((0,), dtype=np.float64)
+        if base_scale is not None and not (base_scale > 0.0):
+            raise ValueError(f"base_scale must be > 0, got {base_scale}")
         ctx, condition = self._resolve(context)
         with torch.no_grad():
             dist = self._get_dist(ctx)
-            z_t, log_flow = dist.rsample_and_log_prob((n,))
+            if base_scale is None:
+                z_t, log_flow = dist.rsample_and_log_prob((n,))
+            else:
+                z_t, log_flow = self._scaled_base_rsample_and_log_prob(dist, n, float(base_scale))
 
         z_t = z_t.reshape(n, self.dims)
         log_flow = log_flow.reshape(n)
@@ -1182,10 +1214,107 @@ class ZukoFlow(BaseTorchFlow):
         # shaped samples instead of (n, dims).
         return self._flow(ctx)
 
+    # ------------------------------------------------------------------
+    # Temperature-scaled base distribution (base_scale)
+    # ------------------------------------------------------------------
+
+    def _scaled_base_log_prob(self, dist, z: torch.Tensor, s: float) -> torch.Tensor:
+        """Evaluate ``dist``'s log-density at flow-space ``z`` under a rescaled base.
+
+        Mirrors zuko's ``NormalizingFlow.log_prob`` exactly (same transform
+        forward pass and log-det bookkeeping — see ``zuko.distributions.
+        NormalizingFlow.log_prob``) but replaces the base term with the
+        density of the base distribution scaled by ``s``.  This is exact for
+        ANY base density (Gaussian or otherwise): for the linear
+        reparameterisation :math:`V = s U`, the change-of-variables formula
+        gives ``log q_s(v) = log p(v / s) - dims * log(s)``.  The flow's own
+        transform log-det is untouched — it does not depend on the base at
+        all, only on the network + ``data_transform``.
+
+        Parameters
+        ----------
+        dist : zuko.distributions.NormalizingFlow
+            The (unscaled) flow distribution for the current context, as
+            returned by :meth:`_get_dist`.
+        z : torch.Tensor, shape (N, dims)
+            Flow-space points (post ``data_transform``, pre-network base).
+        s : float
+            Base standard-deviation scale factor (``> 0``).
+
+        Returns
+        -------
+        torch.Tensor, shape (N,)
+        """
+        u, ladj = dist.transform.call_and_ladj(z)
+        ladj = _sum_rightmost(ladj, dist.reinterpreted)
+        base_log_prob = dist.base.log_prob(u / s) - self.dims * math.log(s)
+        return base_log_prob + ladj
+
+    def _scaled_base_rsample_and_log_prob(self, dist, n: int, s: float) -> tuple:
+        """Draw ``n`` samples from ``dist`` with an ``s``-scaled base, and their log-density.
+
+        Mirrors zuko's ``NormalizingFlow.rsample_and_log_prob`` exactly (same
+        inverse-transform pass and log-det bookkeeping) but draws the base
+        latent from the ``s``-scaled base and reports the matching density —
+        see :meth:`_scaled_base_log_prob` for the exact identity used.
+
+        Parameters
+        ----------
+        dist : zuko.distributions.NormalizingFlow
+            The (unscaled) flow distribution for the current context, as
+            returned by :meth:`_get_dist`.
+        n : int
+            Number of samples to draw.
+        s : float
+            Base standard-deviation scale factor (``> 0``).
+
+        Returns
+        -------
+        z : torch.Tensor, shape (n, dims)
+            Flow-space samples (post ``data_transform`` space, pre-inverse
+            transform of the coords-space map).
+        log_prob : torch.Tensor, shape (n,)
+        """
+        if dist.base.has_rsample:
+            u0 = dist.base.rsample((n,))
+        else:
+            u0 = dist.base.sample((n,))
+        u_s = s * u0
+        z, ladj = dist.transform.inv.call_and_ladj(u_s)
+        ladj = _sum_rightmost(ladj, dist.reinterpreted)
+        base_log_prob = dist.base.log_prob(u0) - self.dims * math.log(s)
+        return z, base_log_prob - ladj
+
 
 # ---------------------------------------------------------------------------
 # Utility helpers
 # ---------------------------------------------------------------------------
+
+def _sum_rightmost(value: torch.Tensor, dim: int) -> torch.Tensor:
+    """Sum out the rightmost ``dim`` dimensions of ``value``.
+
+    Local copy of zuko's internal ``zuko.distributions._sum_rightmost`` (a
+    private helper) so :class:`ZukoFlow`'s base-scale machinery does not
+    depend on zuko's private API surface.  ``dim == 0`` is a no-op — this is
+    the common case, where the flow's transform codomain event-dim already
+    equals the base distribution's event-dim (e.g. NSF/MAF with a
+    ``DiagNormal`` base): no reinterpreted dims remain to sum.
+
+    Parameters
+    ----------
+    value : torch.Tensor
+    dim : int
+        Number of rightmost dimensions to sum out.
+
+    Returns
+    -------
+    torch.Tensor
+    """
+    if dim == 0:
+        return value
+    required_shape = value.shape[:-dim] + (-1,)
+    return value.reshape(required_shape).sum(-1)
+
 
 def _resolve_flow_class(flow_class):
     """Resolve a flow class from a string name or callable.
