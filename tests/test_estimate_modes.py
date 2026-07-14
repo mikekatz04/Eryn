@@ -64,3 +64,39 @@ def test_tiny_components_are_dissolved():
     x = np.concatenate([x, [[20.0, 1.0]] * 3])   # 3-row spur, below min_rows
     st = estimate_modes(x, PER, kmax=8, min_rows=25, seed=0)
     assert len(st.slots) == 3                    # spur absorbed, not a slot
+
+
+def _two_islands_same_angle(rng, n=900, half_sep=5.0, spread=0.2, angle_noise=0.05):
+    """2 tight islands sharing the SAME periodic value, separated only in the
+    linear dim -- the pancake geometry that over-merges if the c-separation
+    criterion measures spread from a greedily-grown label group's empirical
+    std instead of each original GMM component's own covariance (MED-1).
+    angle_noise matches `_three_islands`'s angular jitter (0.05)."""
+    c = [(-half_sep, 1.0), (half_sep, 1.0)]
+    xs = []
+    for a, b in c:
+        x = np.column_stack([
+            a + spread * rng.standard_normal(n // 2),
+            (b + angle_noise * rng.standard_normal(n // 2)) % (2 * np.pi),
+        ])
+        xs.append(x)
+    return np.concatenate(xs), np.repeat([0, 1], n // 2)
+
+
+def test_same_angle_islands_separated_in_linear_dim_stay_split():
+    # Regression for MED-1: seeds 10-19 reliably over-merged to K=1 (4/10
+    # failures) under the empirical-blob c-separation criterion -- each
+    # island's own angle-noise-driven BIC oversplit grew a "blob" whose
+    # empirical std, projected toward the other island, was fat enough with
+    # inter-fragment nuisance-angle spread to chain a merge across islands
+    # despite ~25-sigma true linear separation. The original-GMM-covariance,
+    # single-linkage-over-original-components criterion must keep every seed
+    # at K=2.
+    for seed in range(10, 20):
+        rng = np.random.default_rng(seed)
+        x, true = _two_islands_same_angle(rng)
+        st = estimate_modes(x, PER, kmax=8, seed=seed)
+        assert len(st.slots) == 2, f"seed={seed}: expected K=2, got {len(st.slots)}"
+        for t in range(2):
+            lab = st.labels[true == t]
+            assert (lab == lab[0]).mean() > 0.99

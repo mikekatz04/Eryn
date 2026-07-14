@@ -46,6 +46,18 @@ _REG_COVAR = 1e-3
 # {1e-6, 1e-3, 1e-2, 1e-1} crossed with sigmas in {3, 4, 5} -- 0
 # misclassifications in every combination tried.  Do not remove without
 # re-running that sweep.
+#
+# That sweep covered distinct-angle multi-island and unimodal fixtures only.
+# A later geometry -- two tight islands sharing the SAME periodic value,
+# separated only in a linear dim -- found a real over-merge: measuring spread
+# from a greedily-grown label group's empirical std let a group's own
+# inter-component-mean spread (from absorbing several angle-noise fragments
+# of one island) chain a merge into a distant, unrelated island. Fixed by
+# measuring spread from each ORIGINAL fitted GMM component's own covariance
+# (never an empirically-grown group's), combined via single linkage over a
+# group's constituent original components (see the merge loop below). Do not
+# reintroduce empirical-blob spread without re-running the same-periodic-value
+# regression in tests/test_estimate_modes.py.
 _SEPARATION_SIGMAS = 4.0
 
 
@@ -90,9 +102,48 @@ def estimate_modes(
     floor: float = 0.02,
     min_rows: int = 25,
     seed: int = 0,
+    separation_sigmas: float = _SEPARATION_SIGMAS,
+    reg_covar: float = _REG_COVAR,
 ) -> ModeState:
+    """Cluster one leaf's training buffer into K <= kmax GMM components.
+
+    Parameters
+    ----------
+    x : (N, ndim) array
+        Raw (unembedded) buffer rows.
+    periodic : dict
+        ``{dim: (low, high)}`` for periodic columns; see `embed`.
+    kmax : int
+        Upper bound on the number of components considered by the BIC scan.
+    prev : ModeState, optional
+        Previous round's state, used to warm-start the BIC scan at the
+        previous K and to keep slot ids stable across rounds.
+    floor : float
+        Minimum post-normalization slot weight.
+    min_rows : int
+        Components with fewer than this many assigned rows are dissolved
+        into their nearest surviving neighbor (see the dissolve loop below).
+    seed : int
+        Random seed for the GMM fit(s).
+    separation_sigmas : float
+        c-separation threshold used by the post-BIC merge loop (see
+        `_SEPARATION_SIGMAS` above for the tuning-sweep rationale). Defaults
+        to the module constant; override only for experimentation, the
+        module constant is the validated single source of truth for
+        production use.
+    reg_covar : float
+        Covariance floor passed to `GaussianMixture` (see `_REG_COVAR`
+        above). Defaults to the module constant, same caveat as
+        `separation_sigmas`.
+
+    Returns
+    -------
+    ModeState
+    """
     try:
-        from scipy.optimize import linear_sum_assignment  # lazy — scipy is optional
+        from scipy.optimize import linear_sum_assignment  # lazy — satisfies the
+        # module-level import-hygiene guard (eryn.flows must not pull scipy in
+        # at import time); scipy itself is a declared hard eryn dependency.
         from sklearn.mixture import GaussianMixture  # lazy — sklearn is optional
     except ImportError as exc:
         raise ImportError(
@@ -109,7 +160,7 @@ def estimate_modes(
     for k in range(1, int(kmax) + 1):
         kwargs = dict(
             n_components=k, covariance_type="full",
-            reg_covar=_REG_COVAR, random_state=seed,
+            reg_covar=reg_covar, random_state=seed,
         )
         if prev is not None and k == len(prev.slots):
             prev_c = np.stack([prev.centers[s] for s in prev.slots])
@@ -123,36 +174,68 @@ def estimate_modes(
     labels = gm.predict(z)
 
     # --- merge components that are not meaningfully separated (c-separation) ---
-    # Separation is measured along the axis connecting the two centers (not the
+    # Separation is measured along the axis connecting two centers (not the
     # isotropic/total spread of each component): a pair of components can have
     # large spread in a direction unrelated to what separates them (e.g. a wide
     # nuisance angle) without that spread saying anything about whether the two
     # centers are actually distinct modes.  Projecting onto the connecting axis
     # keeps the criterion sensitive to genuine separation regardless of spread in
     # orthogonal directions.
+    #
+    # Critically, the spread half of the ratio is taken from each ORIGINAL
+    # fitted GMM component's own (reg_covar-regularized) covariance -- never
+    # recomputed as the empirical std of a label GROUP that earlier iterations
+    # of this loop have already grown by merging.  An empirically-grown blob's
+    # raw-row std along a tilted axis mixes in the *inter-component mean*
+    # spread of whatever original components it has absorbed (e.g. several
+    # angle-noise fragments of one island that differ slightly in angle);
+    # against a distant, unrelated island that inflates the denominator and can
+    # walk the ratio below threshold even at ~100-sigma true separation,
+    # chaining a merge across islands. Fixed original-component covariances
+    # cannot be inflated by prior merges, so the denominator stays honest no
+    # matter how large a group has grown.
+    #
+    # Two label groups are merged via single linkage over their constituent
+    # original components: the ratio for a candidate GROUP pair is the BEST
+    # (least separated) ratio among all original-component pairs drawn one
+    # from each group -- this is what lets a genuinely unimodal buffer that
+    # BIC over-split into a *chain* of adjacent slices along its one true
+    # axis of spread walk back together one adjacent link at a time. It does
+    # not reintroduce the blob-std bug: unlike the empirical-std denominator,
+    # each pairwise ratio here uses only the two ORIGINAL components' own
+    # tight covariances, so a genuinely distant island pair stays far (large
+    # ratio) under every original-component pairing, not just in aggregate.
+    orig_means = gm.means_
+    orig_covs = gm.covariances_
+
+    def _pair_ratio(i: int, j: int) -> float:
+        delta = orig_means[j] - orig_means[i]
+        d = np.linalg.norm(delta)
+        if d < 1e-12:
+            return 0.0
+        axis = delta / d
+        s_i = float(np.sqrt(max(axis @ orig_covs[i] @ axis, 0.0)))
+        s_j = float(np.sqrt(max(axis @ orig_covs[j] @ axis, 0.0)))
+        return d / max(s_i, s_j, 1e-6)
+
+    groups = {c: {c} for c in sorted(np.unique(labels))}
     while True:
-        comps = sorted(np.unique(labels))
+        comps = sorted(groups)
         if len(comps) <= 1:
             break
-        centers_now = {c: z[labels == c].mean(axis=0) for c in comps}
         pair, ratio = None, None
         for i, c1 in enumerate(comps):
             for c2 in comps[i + 1:]:
-                delta = centers_now[c2] - centers_now[c1]
-                d = np.linalg.norm(delta)
-                if d < 1e-12:
-                    r = 0.0
-                else:
-                    axis = delta / d
-                    p1 = (z[labels == c1] - centers_now[c1]) @ axis
-                    p2 = (z[labels == c2] - centers_now[c2]) @ axis
-                    s1 = float(np.std(p1)) if (labels == c1).sum() > 1 else 0.0
-                    s2 = float(np.std(p2)) if (labels == c2).sum() > 1 else 0.0
-                    r = d / max(s1, s2, 1e-6)
+                r = min(
+                    _pair_ratio(a, b) for a in groups[c1] for b in groups[c2]
+                )
                 if ratio is None or r < ratio:
                     ratio, pair = r, (c1, c2)
-        if ratio is not None and ratio < _SEPARATION_SIGMAS:
-            labels[labels == pair[1]] = pair[0]
+        if ratio is not None and ratio < separation_sigmas:
+            c1, c2 = pair
+            labels[labels == c2] = c1
+            groups[c1] |= groups[c2]
+            del groups[c2]
         else:
             break
 
