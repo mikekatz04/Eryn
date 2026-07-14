@@ -52,6 +52,26 @@ class ModeMixtureFlow(ZukoFlow):
     any clustering choice — clustering quality only affects proposal
     efficiency, never validity.
 
+    Executor coupling (``refit_transform_every`` requirement)
+    -----------------------------------------------------------
+    When trained behind a :class:`~eryn.flows.executors.TrainerExecutor`
+    (e.g. :class:`~eryn.flows.torch.executors.InlineExecutor` /
+    ``ProcessExecutor``), :meth:`fit` re-clusters every leaf from scratch on
+    every call, so a leaf can grow a brand-new mode slot on any round. The
+    executor's default contract fits the data transform once and then
+    freezes it (``refit_data_transform=False`` thereafter). With a
+    per-condition :class:`~eryn.flows.torch.transforms.WhiteningTransform`
+    (``shared=False``) frozen that way, a newly-appearing composite
+    ``(leaf, slot)`` condition has no transform map, and
+    ``WhiteningTransform.forward`` raises ``ValueError`` **inside the
+    worker** — surfaced to the parent as a loud
+    :class:`~eryn.flows.executors.TrainerError` that kills the run; it is
+    never a silently-wrong snapshot. Avoiding this requires either
+    ``refit_transform_every=1`` (re-fit, and thus re-discover every
+    condition, on every round) or a shared (``shared=True``) whitening
+    transform (one pooled map serves any condition id, so new slots never
+    raise). Production settings use ``refit_transform_every=1``.
+
     Parameters
     ----------
     dims : int
@@ -179,6 +199,19 @@ class ModeMixtureFlow(ZukoFlow):
         cluster label into the composite dict ``{cid(leaf, slot): rows}``,
         preserving each leaf's row order within its slot (boolean masking
         preserves order) — ``val_split="temporal"`` depends on this.
+
+        Every call re-clusters from scratch, so a leaf can produce a
+        brand-new mode slot on any round.  When this flow is driven by a
+        :class:`~eryn.flows.executors.TrainerExecutor`, that executor's
+        lazily-fit-then-freeze data transform means a newly-appearing
+        composite condition can hit a per-condition
+        :class:`~eryn.flows.torch.transforms.WhiteningTransform`
+        (``shared=False``) that has no map for it, raising ``ValueError``
+        inside the worker (surfaced to the parent as a loud
+        :class:`~eryn.flows.executors.TrainerError`, not a bad snapshot) — see
+        the class docstring's "Executor coupling" section.
+        ``refit_transform_every=1`` (the production setting) or
+        ``shared=True`` whitening avoids this.
         """
         composite: dict[int, np.ndarray] = {}
         for leaf, rows in samples.items():
@@ -250,6 +283,37 @@ class ModeMixtureFlow(ZukoFlow):
         ])                                   # (K, N)
         return logsumexp(comps, axis=0)
 
+    def log_prob_and_grad(self, x, context=None) -> tuple:
+        """Not supported: raises unconditionally.
+
+        The inherited :meth:`~eryn.flows.torch.flows.ZukoFlow.log_prob_and_grad`
+        resolves ``context`` through the plain per-condition path — it does
+        not know about mode-slot marginalization, so a bare leaf id passed
+        straight through would be silently mis-decoded by
+        :class:`~eryn.flows.conditioning.LeafModeConditioning.encode` as a
+        composite condition id (``divmod(leaf, kmax)``) instead of being
+        expanded into the mixture over that leaf's slots, and could return a
+        density for the wrong component without ever raising.
+
+        Only :class:`~eryn.moves.FlowNUTSMove` calls ``log_prob_and_grad``,
+        and it is not used with :class:`ModeMixtureFlow`.  Use :meth:`log_prob`
+        for the supported (exact, mixture-marginalized) density entry point.
+
+        Raises
+        ------
+        NotImplementedError
+            Always.
+        """
+        raise NotImplementedError(
+            "ModeMixtureFlow does not support gradient evaluation "
+            "(log_prob_and_grad): the inherited ZukoFlow implementation "
+            "would silently mis-resolve a bare leaf context to a composite "
+            "condition instead of marginalizing over mode slots, which can "
+            "return the wrong density rather than raising. Use log_prob "
+            "as the supported density entry point; ModeMixtureFlow is not "
+            "usable with gradient-based moves (e.g. FlowNUTSMove)."
+        )
+
     def sample_and_log_prob(self, n: int, context=None, base_scale: float | None = None) -> tuple:
         """Draw ``n`` samples from the per-leaf mixture and return their mixture density.
 
@@ -291,7 +355,9 @@ class ModeMixtureFlow(ZukoFlow):
             Mixture log density at each returned sample (see :meth:`log_prob`).
         """
         leaf = int(context)
-        st = self.mode_state[leaf]           # same guard as log_prob
+        st = self.mode_state.get(leaf)
+        if st is None:
+            raise RuntimeError(f"ModeMixtureFlow: no mode_state for leaf {leaf}; fit first.")
         counts = self._rng.multinomial(n, [st.weights[s] for s in st.slots])
         xs = [super(ModeMixtureFlow, self).sample_and_log_prob(
                   int(c), context=self._cid(leaf, s), base_scale=base_scale)[0]
