@@ -119,7 +119,11 @@ def estimate_modes(
         Previous round's state, used to warm-start the BIC scan at the
         previous K and to keep slot ids stable across rounds.
     floor : float
-        Minimum post-normalization slot weight.
+        Weight floor applied to raw slot fractions *before* the
+        renormalization to sum to 1 — not a guaranteed post-normalization
+        minimum.  A floored slot's final weight can end up below ``floor``
+        itself if another slot's raw fraction dominates the post-floor sum;
+        worst case ``~floor / (1 + K * floor)`` for ``K`` slots.
     min_rows : int
         Components with fewer than this many assigned rows are dissolved
         into their nearest surviving neighbor (see the dissolve loop below).
