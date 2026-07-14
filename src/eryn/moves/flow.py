@@ -74,13 +74,16 @@ class ConditionalFlowMove(MHMove):
     ``propto L(theta)**beta * pi(theta)`` — roughly the cold posterior broadened
     by ``1/sqrt(beta)`` — so without correction, hot rows are proposed from deep
     in the cold flow's tails and are almost always rejected.  Setting
-    :attr:`active_betas` (typically done once per leaf by the outer move) fixes
-    this: :meth:`get_proposal` groups rows by temperature and re-proposes each
-    group from the SAME trained flow but with its base distribution scaled by
-    ``s = beta_t**-0.5`` (see ``base_scale`` on :meth:`Flow.sample_and_log_prob`
-    / :meth:`Flow.log_prob`) — an exact affine reparameterisation of the base,
-    so the Hastings bookkeeping stays exact.  ``active_betas=None`` (the
-    default) reproduces the original unscaled behaviour exactly.
+    :attr:`active_betas` (typically done by the outer move on every repeat for
+    the current leaf) fixes this: :meth:`get_proposal` groups rows by temperature
+    and re-proposes each group from the SAME trained flow but with its base
+    distribution scaled by ``s = beta_t**-0.5`` using the ``base_scale`` keyword
+    argument — an exact affine reparameterisation of the base, so the Hastings
+    bookkeeping stays exact.  This requires a flow whose ``sample_and_log_prob``
+    and ``log_prob`` methods accept the optional ``base_scale`` keyword (e.g.
+    :class:`eryn.flows.ZukoFlow`); flows without this keyword will raise
+    :exc:`TypeError`.  ``active_betas=None`` (the default) reproduces the
+    original unscaled behaviour exactly.
 
     Parameters
     ----------
@@ -118,13 +121,16 @@ class ConditionalFlowMove(MHMove):
         matching the leading axis of the branch coords seen by
         :meth:`get_proposal`.  ``None`` (the default) reproduces today's
         behaviour exactly: every row is proposed from the flow's native
-        (unscaled) base.  When set (typically by the outer move, once per
-        leaf, to that leaf's current temperature ladder), :meth:`get_proposal`
-        groups rows by temperature ``t`` and proposes each group with
-        ``base_scale = active_betas[t] ** -0.5`` — broadening the flow's base
-        for hot chains so they are no longer proposed from deep in the cold
-        flow's tails (see the module/class docstring for the statistical
-        motivation).  Plain attribute, not a property: set it directly.
+        (unscaled) base.  When set (typically by the outer move, re-assigned on
+        every repeat for the current leaf, to that leaf's current temperature
+        ladder), :meth:`get_proposal` groups rows by temperature ``t`` and
+        proposes each group with ``base_scale = active_betas[t] ** -0.5`` via
+        the ``base_scale`` keyword argument — broadening the flow's base for hot
+        chains so they are no longer proposed from deep in the cold flow's tails
+        (see the module/class docstring for the statistical motivation).  This
+        requires a flow whose ``sample_and_log_prob`` and ``log_prob`` methods
+        accept the optional ``base_scale`` keyword; flows without it will raise
+        :exc:`TypeError`.  Plain attribute, not a property: set it directly.
     loaded_version : int
         Version of the most recently hot-loaded weights (``0`` if none have been
         loaded).  Read-only.

@@ -1293,12 +1293,12 @@ class ZukoFlow(BaseTorchFlow):
 def _sum_rightmost(value: torch.Tensor, dim: int) -> torch.Tensor:
     """Sum out the rightmost ``dim`` dimensions of ``value``.
 
-    Local copy of zuko's internal ``zuko.distributions._sum_rightmost`` (a
-    private helper) so :class:`ZukoFlow`'s base-scale machinery does not
-    depend on zuko's private API surface.  ``dim == 0`` is a no-op — this is
-    the common case, where the flow's transform codomain event-dim already
-    equals the base distribution's event-dim (e.g. NSF/MAF with a
-    ``DiagNormal`` base): no reinterpreted dims remain to sum.
+    Local copy of ``torch.distributions.utils._sum_rightmost`` (zuko imports
+    this utility from torch.distributions) so :class:`ZukoFlow`'s base-scale
+    machinery does not depend on zuko's private API surface.  ``dim == 0`` is
+    a no-op — this is the common case, where the flow's transform codomain
+    event-dim already equals the base distribution's event-dim (e.g. NSF/MAF
+    with a ``DiagNormal`` base): no reinterpreted dims remain to sum.
 
     Parameters
     ----------
