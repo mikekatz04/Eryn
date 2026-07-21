@@ -889,6 +889,94 @@ class ErynTest(unittest.TestCase):
             rtol=1e-13,
         )
 
+    def test_transform_per_leaf_fill(self):
+        # per-leaf fill_dict: a VGB-style setup with fixed f0/sin_delta per leaf
+        # (sampling-units fills whose registered transforms run on the filled columns)
+        nleaves_max = 4
+        rng = np.random.default_rng(42)
+        f0_per_leaf = rng.uniform(1.0, 10.0, nleaves_max)  # mHz
+        sin_delta_per_leaf = rng.uniform(-1.0, 1.0, nleaves_max)
+
+        per_leaf_fill = [
+            {"fddot": 0.0, "f0": f0_per_leaf[i], "sin_delta": sin_delta_per_leaf[i]}
+            for i in range(nleaves_max)
+        ]
+        tc = TransformContainer(
+            input_basis=["lnA", "fdot", "phi0"],
+            output_basis=["A", "f0", "fdot", "fddot", "phi0", "delta"],
+            parameter_transforms={
+                "lnA": np.exp,
+                "f0": lambda f: f / 1e3,
+                "phi0": lambda x: -x,
+                "sin_delta": np.arcsin,
+            },
+            fill_dict=per_leaf_fill,
+            key_map={"lnA": "A", "sin_delta": "delta"},
+            inverse_parameter_transforms={
+                "lnA": np.log,
+                "f0": lambda f: f * 1e3,
+                "phi0": lambda x: -x,
+                "sin_delta": np.sin,
+            },
+        )
+        self.assertEqual(tc.n_leaf_fills, nleaves_max)
+        self.assertEqual(tc.fill_dict["fill_values"].shape, (nleaves_max, 3))
+
+        n = 12
+        x = rng.uniform(0.1, 0.9, size=(n, 3))
+        leaf_inds = rng.integers(0, nleaves_max, size=n)
+
+        full = tc.both_transforms(x, leaf_inds=leaf_inds)
+        self.assertEqual(full.shape, (n, 6))
+
+        # per-row fills landed by leaf index AND their transforms ran:
+        # f0 fill (mHz) -> Hz, sin_delta fill -> delta = arcsin(sin_delta)
+        np.testing.assert_allclose(full[:, 1], f0_per_leaf[leaf_inds] / 1e3, rtol=1e-14)
+        np.testing.assert_allclose(full[:, 3], 0.0)
+        np.testing.assert_allclose(
+            full[:, 5], np.arcsin(sin_delta_per_leaf[leaf_inds]), rtol=1e-14
+        )
+        # sampled columns transformed as usual
+        np.testing.assert_allclose(full[:, 0], np.exp(x[:, 0]), rtol=1e-14)
+        np.testing.assert_allclose(full[:, 4], -x[:, 2], rtol=1e-14)
+
+        # inverse round trip recovers the sampling-basis points (unfill drops fills)
+        np.testing.assert_allclose(tc.both_inverse_transforms(full), x, rtol=1e-13)
+
+        # per-leaf container without leaf_inds -> error
+        with self.assertRaises(ValueError):
+            tc.both_transforms(x)
+        # mismatched leaf_inds length -> error
+        with self.assertRaises(ValueError):
+            tc.both_transforms(x, leaf_inds=leaf_inds[:-1])
+
+        # mismatched keys across leaves -> error at construction
+        with self.assertRaises(ValueError):
+            TransformContainer(
+                input_basis=["a"],
+                output_basis=["a", "b"],
+                fill_dict=[{"b": 0.0}, {"a": 1.0}],
+            )
+        # empty list -> error
+        with self.assertRaises(ValueError):
+            TransformContainer(
+                input_basis=["a"], output_basis=["a", "b"], fill_dict=[]
+            )
+
+        # scalar-fill containers ignore leaf_inds and behave identically
+        tc_scalar = TransformContainer(
+            input_basis=["lnA", "fdot", "phi0"],
+            output_basis=["A", "f0", "fdot", "fddot", "phi0", "delta"],
+            parameter_transforms={"lnA": np.exp, "sin_delta": np.arcsin},
+            fill_dict={"fddot": 0.0, "f0": 2.5e-3, "sin_delta": 0.3},
+            key_map={"lnA": "A", "sin_delta": "delta"},
+        )
+        self.assertIsNone(tc_scalar.n_leaf_fills)
+        np.testing.assert_allclose(
+            tc_scalar.both_transforms(x, leaf_inds=leaf_inds),
+            tc_scalar.both_transforms(x),
+        )
+
     def test_group_stretch(self):
 
         from eryn.moves import GroupStretchMove
