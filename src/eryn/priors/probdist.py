@@ -55,16 +55,32 @@ class ProbDistContainer:
         self.name_to_idx: Dict[int | str, int] = {}
         self.key_order: list[int] | list[str] = []
 
-        self.use_cupy: bool = use_cupy
         self.return_gpu: bool = return_gpu
-
-        for prior in self.priors_in.values():
-            if hasattr(prior, "use_cupy"):
-                prior.use_cupy = use_cupy
-                prior.return_gpu = True
+        # Propagate the array backend RECURSIVELY: a child that is itself a
+        # ProbDistContainer (a nested joint prior) forwards ``use_cupy`` only to
+        # ITS direct children, so without recursion a grandchild distribution
+        # keeps its original backend -- and a numpy grandchild fed cupy values
+        # raises "Implicit conversion to a NumPy array is not allowed".
+        self._set_use_cupy(use_cupy)
 
         self._parse_priors()
         self._build_signatures()
+
+    def _set_use_cupy(self, use_cupy: bool) -> None:
+        """Set ``use_cupy`` on this container and all nested priors/containers.
+
+        ``use_cupy`` is a flag (``xp`` is derived from it) so this is safe to
+        call post-construction as well; nested :class:`ProbDistContainer`
+        children recurse so arbitrarily deep joints switch backend together.
+        """
+        self.use_cupy = bool(use_cupy)
+        for prior in self.priors_in.values():
+            if isinstance(prior, ProbDistContainer):
+                prior._set_use_cupy(use_cupy)
+                prior.return_gpu = True
+            elif hasattr(prior, "use_cupy"):
+                prior.use_cupy = use_cupy
+                prior.return_gpu = True
 
     def _parse_priors(self) -> None:
         """Parse input keys, assert uniformity, and determine array shapes."""
