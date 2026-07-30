@@ -45,12 +45,8 @@ __all__ = [
     "IdentityTransform",
     "ConditioningStrategy",
     "OneHotLeafConditioning",
-    "LeafModeConditioning",
-    "ModeState",
-    "estimate_modes",
     "get_flow_wrapper",
     "ZukoFlow",
-    "ModeMixtureFlow",
     "WhiteningTransform",
     "TrainerError",
     "FlowSpec",
@@ -66,14 +62,13 @@ __all__ = [
 # ---- always-available (torch-free) names imported eagerly ----
 from .base import Flow, FlowHistory, FlowProposalDistribution  # noqa: E402
 from .transforms import DataTransform, IdentityTransform  # noqa: E402
-from .conditioning import ConditioningStrategy, OneHotLeafConditioning, LeafModeConditioning  # noqa: E402
-from .modes import ModeState, estimate_modes  # noqa: E402
+from .conditioning import ConditioningStrategy, OneHotLeafConditioning  # noqa: E402
 
 # ---- lazy names — resolved by __getattr__ on first attribute access ----
-# ZukoFlow/ModeMixtureFlow/WhiteningTransform live in the optional torch
-# subpackage; accessing them without torch raises AttributeError (hasattr-safe),
-# with the install hint chained as cause.
-_TORCH_NAMES = {"ZukoFlow", "ModeMixtureFlow", "WhiteningTransform"}
+# ZukoFlow/WhiteningTransform live in the optional torch subpackage; accessing
+# them without torch raises AttributeError (hasattr-safe), with the install
+# hint chained as cause.
+_TORCH_NAMES = {"ZukoFlow", "WhiteningTransform"}
 
 # Executor names live in the torch-free eryn.flows.executors module.  They are
 # always importable (no optional backend), but resolved lazily for consistency.
@@ -149,9 +144,6 @@ def __getattr__(name: str):
             if name == "ZukoFlow":
                 from .torch.flows import ZukoFlow
                 return ZukoFlow
-            elif name == "ModeMixtureFlow":
-                from .torch.mixture import ModeMixtureFlow
-                return ModeMixtureFlow
             elif name == "WhiteningTransform":
                 from .torch.transforms import WhiteningTransform
                 return WhiteningTransform
