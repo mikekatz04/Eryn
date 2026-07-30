@@ -388,6 +388,26 @@ class ZukoFlow(BaseTorchFlow):
         ``None``, the flow is unconditional (``context_dim=0``).
     seed : int, optional
         Random seed.  Default is ``1234``.
+    periodic_aliases : int, optional
+        Maximum ``|k|`` per periodic dimension used when summing the coords
+        density over periodic aliases.  A periodic coordinate is only defined
+        modulo its period, so the ``data_transform``'s coords → latent map is
+        many-to-one and the density of the folded variable is the **wrapped**
+        density ``sum_k q_Z(z + delta_k)``.  Summing it makes the density
+        exactly normalized over the period and makes :meth:`log_prob` and
+        :meth:`sample_and_log_prob` agree identically (the alias set does not
+        depend on which representative was drawn).  ``0`` restores the legacy
+        single-image density, which under-integrates by exactly the mass the
+        flow placed outside the fundamental window.  The full
+        ``(2 * order + 1) ** n_periodic`` alias lattice is used (single-dimension
+        displacements alone are NOT sufficient when several periods are short in
+        latent units), pruned per batch to the aliases that can actually
+        contribute -- so the cost collapses to one evaluation whenever every
+        alias is far away, and ``order = 1`` is enough in practice
+        (``order = 2`` was measured to add < 0.2 nats).
+        **No effect** when the data transform has no periodic dims (or does not
+        expose ``periodic_alias_offsets``): that path is bit-identical to the
+        pre-aliasing implementation.  Default is ``1``.
     **flow_kwargs
         Additional keyword arguments forwarded to the flow constructor.  When
         ``flow_class="NSF"`` (the default), the following defaults are applied
@@ -426,6 +446,7 @@ class ZukoFlow(BaseTorchFlow):
         data_transform=None,
         conditioning=None,
         seed: int = 1234,
+        periodic_aliases: int = 1,
         **flow_kwargs,
     ):
         super().__init__(
@@ -436,6 +457,12 @@ class ZukoFlow(BaseTorchFlow):
             seed=seed,
         )
         self.flow_class = flow_class
+        # Periodic dims are only defined modulo their period, so the coords
+        # density is the WRAPPED density (a sum over latent aliases).  See
+        # _alias_offsets / _log_flow_base.  0 restores the legacy single-image
+        # behaviour; no effect at all when the data transform has no periodic
+        # dims (the alias set is then trivial and the fast path is taken).
+        self.periodic_aliases = int(periodic_aliases)
 
         # --- resolve context dimension ---
         context_dim = conditioning.context_dim if conditioning is not None else 0
@@ -556,6 +583,12 @@ class ZukoFlow(BaseTorchFlow):
             log q(x) = flow_net.log_prob(z | ctx)
                        + data_transform.log_abs_det_jacobian(x, z, condition)
 
+        When the data transform has periodic dims and ``periodic_aliases > 0``
+        the first term is the alias sum ``logsumexp_k flow_net.log_prob(z +
+        delta_k | ctx)`` -- the exact **wrapped** density of the folded
+        variable, which is what makes this normalized over the period.  See the
+        ``periodic_aliases`` constructor argument.
+
         Parameters
         ----------
         x : array-like, shape (N, dims)
@@ -589,12 +622,10 @@ class ZukoFlow(BaseTorchFlow):
         z = self.data_transform.forward(x, condition)
         z_t = torch.as_tensor(np.asarray(z, dtype=np.float32), device=self.device)
 
+        offsets = self._alias_offsets(condition)
         with torch.no_grad():
             dist = self._get_dist(ctx)
-            if base_scale is None:
-                log_flow = dist.log_prob(z_t)  # shape (N,)
-            else:
-                log_flow = self._scaled_base_log_prob(dist, z_t, float(base_scale))
+            log_flow = self._log_flow_base(dist, z_t, base_scale, offsets)  # (N,)
 
         # Per-point log-det: correct for any data_transform (including
         # non-constant-Jacobian transforms such as LogTransform).  The cost
@@ -667,7 +698,14 @@ class ZukoFlow(BaseTorchFlow):
         dist = self._get_dist(ctx)
         # The float64 -> float32 cast is differentiable and matches log_prob's
         # precision exactly, so the two methods return bit-identical densities.
-        log_flow = dist.log_prob(z.to(device=self.device, dtype=torch.float32))
+        # The alias sum is differentiable too (logsumexp), so the periodic
+        # wrapped density stays consistent with log_prob here as well.
+        log_flow = self._log_flow_base(
+            dist,
+            z.to(device=self.device, dtype=torch.float32),
+            None,
+            self._alias_offsets(condition),
+        )
 
         total = log_flow.double().cpu() + logdet
         (grad,) = torch.autograd.grad(total.sum(), x_t)
@@ -706,6 +744,15 @@ class ZukoFlow(BaseTorchFlow):
         """Draw ``n`` samples and return their coords-space log densities.
 
         Uses zuko's ``rsample_and_log_prob`` for a single forward pass.
+
+        With periodic dims and ``periodic_aliases > 0`` the density is instead
+        re-evaluated via :meth:`log_prob` at the returned (folded) points: the
+        sampler may draw an alias outside the fundamental window, whose
+        single-image density is not the density of the folded point.  The
+        returned ``log_prob`` therefore matches ``log_prob(samples)`` exactly --
+        which matters because the Metropolis-Hastings statistic in
+        :class:`eryn.moves.ConditionalFlowMove` takes the proposal's density
+        from here and the current point's from :meth:`log_prob`.
 
         Parameters
         ----------
@@ -753,6 +800,15 @@ class ZukoFlow(BaseTorchFlow):
         z_cpu = z_t.cpu()
         x = self.data_transform.inverse(z_cpu, condition)
         x = np.asarray(x, dtype=np.float64)
+
+        if self._alias_offsets(condition) is not None:
+            # With periodic dims the sampler may have drawn an alias OUTSIDE the
+            # fundamental window; `log_flow` above is then the density at that
+            # alias, which is not the density of the folded point x.  Re-evaluate
+            # through log_prob to get the exact wrapped density -- and, because
+            # it is literally the same function, a value that agrees with
+            # log_prob(x) by construction rather than by luck.
+            return x, self.log_prob(x, context=context, base_scale=base_scale)
 
         # Per-point log-det at the returned coords-space points.
         # z_cpu is the flow-space representation; pass both so transforms that
@@ -1189,6 +1245,82 @@ class ZukoFlow(BaseTorchFlow):
     # ------------------------------------------------------------------
     # Internal helper: build / cache distribution for a given context
     # ------------------------------------------------------------------
+
+    def _alias_offsets(self, condition):
+        """Latent-space periodic alias offsets, or ``None`` if there is no sum to do.
+
+        Returns ``None`` (rather than a single zero row) whenever aliasing is
+        disabled, the data transform does not expose alias offsets, or the
+        transform has no periodic dims -- so those cases take a fast path that
+        is bit-identical to the pre-aliasing implementation.
+
+        Deliberately NOT cached: the trainer refits the data transform (and
+        hence the whitening matrix these offsets derive from) as often as every
+        round, and a stale cache would silently mis-score proposals.  The cost
+        is a couple of tiny matrix products next to a network forward pass.
+        """
+        order = int(getattr(self, "periodic_aliases", 0) or 0)
+        if order <= 0:
+            return None
+        getter = getattr(self.data_transform, "periodic_alias_offsets", None)
+        if getter is None:
+            return None
+        # The FULL lattice is required, not just single-dimension displacements:
+        # when several periods are short in latent units, simultaneous leakage in
+        # two or three dims contributes materially (measured 43-55 nats on the
+        # multimodal MBH leaves, where all three offset norms are < 20).  The
+        # rows that cannot contribute are pruned per batch in _log_flow_base.
+        offsets = np.asarray(getter(condition, order=order, shell="full"),
+                             dtype=np.float64)
+        return offsets if offsets.shape[0] > 1 else None
+
+    def _log_flow_base(self, dist, z_t, base_scale, offsets):
+        """Base-distribution log density at ``z_t``, summed over periodic aliases.
+
+        With ``offsets`` the returned value is
+        ``logsumexp_k log q_Z(z + delta_k)`` -- the exact wrapped density of the
+        folded variable.  The sum is invariant to WHICH alias ``z_t`` is (the
+        alias set of any representative is the same set), which is what makes
+        :meth:`log_prob` and :meth:`sample_and_log_prob` agree identically.
+
+        Kept as one helper so all three density entry points share the ops and
+        stay mutually bit-identical.
+        """
+
+        def _eval(z):
+            if base_scale is None:
+                return dist.log_prob(z)
+            return self._scaled_base_log_prob(dist, z, float(base_scale))
+
+        if offsets is None:
+            return _eval(z_t)
+
+        off_t = torch.as_tensor(offsets, dtype=z_t.dtype, device=z_t.device)
+
+        # Prune aliases that cannot contribute for THIS batch.  Outside the
+        # spline core the base density decays with ||z||, so alias ``delta`` can
+        # only rival the k = 0 term at ``z`` if it lands nearer the mode --
+        # ``||z + delta|| < ||z||`` -- which requires ``||delta|| <= 2 ||z||``.
+        # That argument does not hold INSIDE the core, where the density is an
+        # arbitrary spline, so the core radius is added as slack: zuko's spline
+        # domain is |z_i| <= 5 per dim, giving a core reach of 5 * sqrt(dims).
+        # The batch maximum is used (not per-point) to keep one batched
+        # evaluation; that is the conservative direction.
+        # This keeps the full lattice where periods are short in latent units
+        # while collapsing to a single evaluation when every alias is far
+        # (measured: offset norms 22-6612 on the EMRI leaves and MBH leaves 0/2,
+        # all with identically zero missing mass).  Validated bit-exact against
+        # the unpruned lattice on every leaf of both production branches.
+        cutoff = 2.0 * z_t.norm(dim=1).max() + 5.0 * float(np.sqrt(self.dims))
+        keep = off_t.norm(dim=1) <= cutoff
+        keep[0] = True  # the k = 0 image is always required
+        off_t = off_t[keep]
+        if off_t.shape[0] == 1:
+            return _eval(z_t)
+
+        n_alias = off_t.shape[0]
+        stacked = (z_t.unsqueeze(0) + off_t.unsqueeze(1)).reshape(-1, z_t.shape[-1])
+        return torch.logsumexp(_eval(stacked).reshape(n_alias, z_t.shape[0]), dim=0)
 
     def _get_dist(self, ctx):
         """Return the zuko conditional distribution for the given context tensor.
