@@ -146,17 +146,29 @@ class CircularShiftTransform(torch.distributions.Transform):
         #
         # The second identity is the crux of the periodic sample/log_prob
         # contract.  After the downstream affine whitening the flow models the
-        # periodic latent as an UNBOUNDED real coordinate, so it places a small
-        # amount of mass outside scale * [-T/2, T/2).  For such a draw the
-        # coords-space density is the WRAPPED density (a sum over the latent
-        # aliases z + k * scale * T); the single-image value reported by
-        # rsample_and_log_prob can differ from log_prob(inverse(z)) by up to a
-        # few nats at the wrap boundary.  No choice of output window for this
-        # inverse removes that gap (the forward modulo is the obstruction), and
-        # dropping the modulo here would break the periodicity of log_prob and
-        # bias the ConditionalFlowMove Hastings factor far more severely -- so the canonical
-        # [0, T) representative is kept deliberately.  See
-        # test_circular_shift_round_trip_consistency for the pinned invariants.
+        # periodic latent as an UNBOUNDED real coordinate, so it places some
+        # mass outside scale * [-T/2, T/2).  For such a draw the coords-space
+        # density is the WRAPPED density (a sum over the latent aliases
+        # z + k * scale * T), NOT the single-image value that
+        # rsample_and_log_prob reports.
+        #
+        # No choice of output window for this inverse closes that gap (the
+        # forward modulo is the obstruction), and dropping the modulo here would
+        # break the periodicity of log_prob and bias the ConditionalFlowMove
+        # Hastings factor far more severely -- so the canonical [0, T)
+        # representative is kept deliberately.  The gap is instead closed on the
+        # DENSITY side: ZukoFlow sums over the aliases (see its
+        # ``periodic_aliases`` argument and
+        # :meth:`WhiteningTransform.periodic_alias_offsets`), which both
+        # normalizes the density over the period and makes log_prob and
+        # sample_and_log_prob agree identically.
+        #
+        # NB an earlier version of this comment estimated the discrepancy at "a
+        # few nats"; measured on production checkpoints it reaches 590 nats
+        # (on the leaves whose periods span only ~4-19 latent sigma), so the
+        # single-image density is not a benign approximation.  See
+        # test_circular_shift_round_trip_consistency for the pinned invariants
+        # of this method and test_flow_periodic_aliases.py for the density side.
         return (y + self.shift) % self.period
 
     def log_abs_det_jacobian(self, x, y):
@@ -582,6 +594,112 @@ class WhiteningTransform(DataTransform):
         x = torch.as_tensor(x, dtype=torch.float64)
         z = torch.as_tensor(z, dtype=torch.float64)
         return self._transform_for(condition).log_abs_det_jacobian(x, z)
+
+    def periodic_alias_offsets(
+        self,
+        condition: int = 0,
+        order: int = 1,
+        shell: str = "axis",
+    ) -> np.ndarray:
+        """Latent-space offsets between aliases of the same periodic point.
+
+        A periodic coordinate is only defined modulo its period, so every
+        representative ``u + k * T`` is the SAME point.  :meth:`forward` maps
+        them all onto the ``k = 0`` representative, which makes it many-to-one
+        and means the density of the folded variable is the WRAPPED density --
+        a sum over aliases.  This method returns the latent-space displacement
+        of each alias, so a flow can perform that sum (see
+        :meth:`eryn.flows.torch.flows.ZukoFlow.log_prob`).
+
+        Everything downstream of the circular shift is affine, so shifting a
+        periodic coords dim by one full period displaces the latent by a
+        FIXED vector (independent of the point): the generator returned here.
+
+        Parameters
+        ----------
+        condition : int, optional
+            Condition id.  Default is ``0``.
+        order : int, optional
+            Maximum ``|k|`` per periodic dimension.  ``0`` returns only the
+            zero offset (i.e. legacy single-image behaviour).  Default is ``1``.
+        shell : str, optional
+            Which lattice points to include.
+
+            * ``"axis"`` (default): only aliases displaced along a single
+              periodic dimension (``2 * n_periodic * order + 1`` offsets).
+              Simultaneous leakage in two dimensions is second order (the
+              product of two individually small factors).
+            * ``"full"``: the complete product lattice
+              (``(2 * order + 1) ** n_periodic`` offsets).
+
+        Returns
+        -------
+        offsets : np.ndarray, shape (K, ndim)
+            Latent-space offsets; **row 0 is always zero** (the ``k = 0``
+            image).  Shape ``(1, ndim)`` when there is nothing to sum over.
+
+        Raises
+        ------
+        ValueError
+            If ``shell`` is unknown, or ``condition`` has no fitted transform.
+        """
+        if shell not in ("axis", "full"):
+            raise ValueError(f"shell must be 'axis' or 'full', got {shell!r}")
+
+        order = int(order)
+        if order <= 0 or not self.periodic:
+            return np.zeros((1, self.ndim), dtype=np.float64)
+
+        # Everything from the first AffineTransform onward is the affine tail
+        # (centering + whitening matrix); the parts before it are the circular
+        # shifts, whose modulo would swallow a whole-period displacement.
+        # Selecting by type keeps this correct regardless of whether
+        # ComposeTransform flattens nested compositions.
+        parts = list(self._transform_for(condition).parts)
+        first_affine = next(
+            (i for i, p in enumerate(parts) if isinstance(p, AffineTransform)), None
+        )
+        if first_affine is None:
+            raise ValueError(
+                "periodic_alias_offsets: no affine tail found in the fitted "
+                "transform; cannot derive latent-space alias offsets."
+            )
+
+        def _apply_tail(u: torch.Tensor) -> torch.Tensor:
+            for part in parts[first_affine:]:
+                u = part(u)
+            return u
+
+        indices = sorted(self.periodic)
+        base = torch.zeros(1, self.ndim, dtype=torch.float64)
+        z0 = _apply_tail(base)
+        generators = np.empty((len(indices), self.ndim), dtype=np.float64)
+        for row, i in enumerate(indices):
+            lo, hi = self.periodic[i]
+            shifted = base.clone()
+            shifted[0, i] = float(hi) - float(lo)
+            generators[row] = (_apply_tail(shifted) - z0)[0].numpy()
+
+        if shell == "axis":
+            combos = [
+                [sign * mag if col == row else 0 for col in range(len(indices))]
+                for row in range(len(indices))
+                for mag in range(1, order + 1)
+                for sign in (1, -1)
+            ]
+        else:
+            from itertools import product
+
+            combos = [
+                list(k)
+                for k in product(range(-order, order + 1), repeat=len(indices))
+                if any(k)
+            ]
+
+        offsets = np.zeros((1 + len(combos), self.ndim), dtype=np.float64)
+        if combos:
+            offsets[1:] = np.asarray(combos, dtype=np.float64) @ generators
+        return offsets
 
     # ------------------------------------------------------------------
     # Private construction helpers
