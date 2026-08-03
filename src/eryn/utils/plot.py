@@ -1048,7 +1048,7 @@ def plot_acceptance_fraction(steps: typing.Union[np.ndarray, list],
     plt.axhline(y=0.234, color='gray', linestyle='--', linewidth=1, alpha=0.7, label='0.234')
     plt.legend(fontsize=9)
     plt.xlabel('Sampler Iteration')
-    plt.ylabel(rate_label)
+    plt.ylabel(_tex_safe(rate_label))
     plt.title('Acceptance Fraction Over Time')
 
     save_or_show(fig, filename)

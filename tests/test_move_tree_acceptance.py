@@ -273,3 +273,19 @@ def test_plot_acceptance_fraction_still_accepts_no_moves(tmp_path):
     plot_acceptance_fraction(np.array([10]), np.full((1, 3, 4), 0.3), {},
                              filename=str(out))
     assert out.exists()
+
+
+def test_plot_acceptance_fraction_falls_back_to_shared_steps(tmp_path):
+    # the back-compat path: without moves_steps every path is plotted
+    # against the shared steps array, which requires matching lengths
+    steps = np.array([10, 20])
+    total = np.full((2, 3, 4), 0.3)
+    rates = {
+        "CombineMove": np.full((2, 3, 4), 0.3),
+        "CombineMove/LeafA": np.full((2, 3, 4), 0.25),
+    }
+    out = tmp_path / "fallback.png"
+
+    plot_acceptance_fraction(steps, total, rates, filename=str(out))
+
+    assert out.exists()
