@@ -201,3 +201,16 @@ def test_move_acceptance_fractions_property_is_cumulative(tmp_path):
     fractions = container.move_acceptance_fractions
     assert fractions["LeafA"].shape == (1, 2, 3)
     np.testing.assert_allclose(fractions["LeafA"][0], np.full((2, 3), 0.2))
+
+
+def test_move_counters_counts_a_shared_instance_once():
+    shared = _leaf_with_counters(4.0, 10)
+    outer = CombineMove([shared, CombineMove([shared])])
+    accepted, num_proposals = move_counters(outer)
+    np.testing.assert_allclose(accepted, np.full((2, 3), 4.0))
+    assert num_proposals == 10.0
+
+
+def test_move_counters_returns_none_when_no_child_has_counters():
+    combine = CombineMove([LeafA(), LeafA()])
+    assert move_counters(combine) is None

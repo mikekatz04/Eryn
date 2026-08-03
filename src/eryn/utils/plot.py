@@ -111,7 +111,7 @@ def move_acceptance_rates(accepted, num_proposals, mode="interval"):
     return np.where(drawn, counts / np.where(drawn, totals, 1.0), np.nan)
 
 
-def move_counters(move):
+def move_counters(move, _seen=None):
     """Cumulative ``(accepted, num_proposals)`` for one move, or ``None``.
 
     A move that keeps its own counters reports them directly. A wrapper that
@@ -119,10 +119,17 @@ def move_counters(move):
     overrides ``accepted`` to return its children's arrays (and its setter never
     stores ``_accepted``, so reading it raises), and never increments
     ``num_proposals``. Pooling sums counts rather than averaging fractions, so
-    children drawn at different rates are weighted correctly.
+    children drawn at different rates are weighted correctly. The same move
+    instance can appear more than once in a subtree (shared between a wrapper
+    and one of its own descendants), so pooling tracks visited ids and counts
+    each instance once, the same guard :func:`eryn.utils.utility.walk_moves`
+    keeps for the same reason.
 
     Args:
         move (:class:`eryn.moves.Move`): Move to read.
+        _seen (set, optional): ``id()`` values already pooled within this call's
+            subtree. Set during recursion; callers pass nothing. (default:
+            ``None``)
 
     Returns:
         tuple or None: ``(accepted, num_proposals)`` with ``accepted`` of shape
@@ -130,6 +137,12 @@ def move_counters(move):
             anywhere in this move's subtree.
 
     """
+    if _seen is None:
+        _seen = set()
+    if id(move) in _seen:
+        return None
+    _seen.add(id(move))
+
     try:
         accepted = np.asarray(move.accepted, dtype=float)
         num_proposals = float(move.num_proposals)
@@ -143,7 +156,7 @@ def move_counters(move):
     pooled = [
         counters
         for counters in (
-            move_counters(child) for child in getattr(move, "sub_moves", [])
+            move_counters(child, _seen) for child in getattr(move, "sub_moves", [])
         )
         if counters is not None
     ]
