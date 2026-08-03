@@ -69,6 +69,12 @@ def test_walk_moves_reports_a_shared_instance_once():
     assert "CombineMove/CombineMove/LeafA" not in paths
 
 
+def test_walk_moves_reports_a_repeated_sibling_once():
+    shared = LeafA()
+    paths = [path for path, _ in walk_moves([shared, shared])]
+    assert paths == ["LeafA"]
+
+
 def test_walk_moves_tolerates_a_move_without_the_hook():
     class NotAMove:
         pass
