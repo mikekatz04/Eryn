@@ -329,3 +329,62 @@ def psrf(C, ndims, per_walker=False):
     var_θ = (nn - 1) / nn * W + 1 / nn * B
     R̂ = np.sqrt(var_θ / W)
     return R̂
+
+
+def walk_moves(moves, prefix="", _seen=None):
+    """Walk a (possibly nested) collection of moves depth-first.
+
+    Wrapper moves such as :class:`eryn.moves.CombineMove` expose their
+    constituents through :attr:`eryn.moves.Move.sub_moves`. This yields every
+    move in that tree together with a ``/``-separated path built from class
+    names, so diagnostics can report each proposal's acceptance separately.
+
+    Moves of the same class at the same level are disambiguated with a ``_0`` /
+    ``_1`` suffix, matching the convention used by
+    :attr:`eryn.ensemble.EnsembleSampler.all_moves`. A class that appears once
+    at its level keeps its bare name.
+
+    Args:
+        moves (list): Moves to walk. Entries may be ``(move, weight)`` tuples.
+        prefix (str, optional): Path prefix for the current level. Set during
+            recursion; callers pass nothing. (default: ``""``)
+        _seen (set, optional): ``id()`` values already visited, so a move
+            instance appearing twice in the tree is reported once rather than
+            recursed into forever. Set during recursion; callers pass nothing.
+            (default: ``None``)
+
+    Yields:
+        tuple: ``(path, move)`` for every move in the tree.
+
+    """
+    if _seen is None:
+        _seen = set()
+
+    # unwrap (move, weight) tuples, then drop instances already visited, before
+    # counting names -- otherwise a shared instance would inflate the
+    # disambiguation suffixes of moves that are actually reported
+    moves = [move[0] if isinstance(move, tuple) else move for move in moves]
+    moves = [move for move in moves if id(move) not in _seen]
+    _seen.update(id(move) for move in moves)
+
+    name_counts = {}
+    for move in moves:
+        name = move.__class__.__name__
+        name_counts[name] = name_counts.get(name, 0) + 1
+
+    used_counts = {}
+    for move in moves:
+        name = move.__class__.__name__
+        if name_counts[name] > 1:
+            index = used_counts.get(name, 0)
+            used_counts[name] = index + 1
+            name = f"{name}_{index}"
+
+        path = prefix + name
+        yield path, move
+
+        # getattr rather than attribute access: a third-party move that does
+        # not inherit from Move still walks cleanly as a leaf
+        yield from walk_moves(
+            getattr(move, "sub_moves", []), prefix=path + "/", _seen=_seen
+        )
