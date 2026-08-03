@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from eryn.moves import CombineMove, Move
-from eryn.utils.plot import move_acceptance_rates
+from eryn.utils.plot import PlotContainer, move_acceptance_rates, move_counters
 from eryn.utils.utility import walk_moves
 
 
@@ -122,3 +122,82 @@ def test_no_divide_by_zero_warning_is_emitted():
 def test_unknown_mode_raises():
     with pytest.raises(ValueError, match="interval"):
         move_acceptance_rates(COUNTS, NUM_PROPOSALS, mode="sideways")
+
+
+def _leaf_with_counters(accepted_value, num_proposals):
+    move = LeafA()
+    move.accepted = np.full((2, 3), float(accepted_value))
+    move.num_proposals = num_proposals
+    return move
+
+
+def test_move_counters_reads_a_leafs_own_counters():
+    move = _leaf_with_counters(4.0, 10)
+    accepted, num_proposals = move_counters(move)
+    np.testing.assert_allclose(accepted, np.full((2, 3), 4.0))
+    assert num_proposals == 10.0
+
+
+def test_move_counters_returns_none_when_uninitialised():
+    assert move_counters(LeafA()) is None
+
+
+def test_move_counters_pools_a_combine_move_from_its_children():
+    # CombineMove.accepted raises AttributeError (its setter never stores
+    # _accepted) and its num_proposals is never incremented, so it must be
+    # pooled rather than read directly.
+    combine = CombineMove([_leaf_with_counters(4.0, 10), _leaf_with_counters(6.0, 30)])
+    accepted, num_proposals = move_counters(combine)
+    np.testing.assert_allclose(accepted, np.full((2, 3), 10.0))
+    assert num_proposals == 40.0
+
+
+def test_move_counters_pooling_weights_by_proposal_count():
+    # 4/10 and 6/30 pool to 10/40 = 0.25, not the mean of 0.4 and 0.2 = 0.3
+    combine = CombineMove([_leaf_with_counters(4.0, 10), _leaf_with_counters(6.0, 30)])
+    accepted, num_proposals = move_counters(combine)
+    assert accepted[0, 0] / num_proposals == pytest.approx(0.25)
+
+
+class _FakeBackend:
+    def __init__(self, iteration):
+        self.iteration = iteration
+
+
+def test_collect_move_acceptance_records_every_node(tmp_path):
+    leaf = _leaf_with_counters(2.0, 10)
+    combine = CombineMove([leaf])
+    container = PlotContainer(backend=_FakeBackend(100), parent_folder=str(tmp_path))
+
+    container._collect_move_acceptance([combine])
+
+    assert set(container.move_accepted) == {"CombineMove", "CombineMove/LeafA"}
+    assert container.move_steps["CombineMove/LeafA"] == [100]
+    assert container.move_num_proposals["CombineMove/LeafA"] == [10.0]
+
+
+def test_collect_move_acceptance_keeps_per_path_steps(tmp_path):
+    ready = _leaf_with_counters(2.0, 10)
+    late = LeafA()
+    container = PlotContainer(backend=_FakeBackend(100), parent_folder=str(tmp_path))
+
+    container._collect_move_acceptance([ready, late])
+    # the second node's counters only become valid on the next call
+    late.accepted = np.full((2, 3), 1.0)
+    late.num_proposals = 5
+    container.backend = _FakeBackend(200)
+    container._collect_move_acceptance([ready, late])
+
+    # the late starter must not be plotted against the earlier step
+    assert container.move_steps["LeafA_0"] == [100, 200]
+    assert container.move_steps["LeafA_1"] == [200]
+
+
+def test_move_acceptance_fractions_property_is_cumulative(tmp_path):
+    leaf = _leaf_with_counters(2.0, 10)
+    container = PlotContainer(backend=_FakeBackend(100), parent_folder=str(tmp_path))
+    container._collect_move_acceptance([leaf])
+
+    fractions = container.move_acceptance_fractions
+    assert fractions["LeafA"].shape == (1, 2, 3)
+    np.testing.assert_allclose(fractions["LeafA"][0], np.full((2, 3), 0.2))

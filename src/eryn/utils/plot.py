@@ -13,7 +13,7 @@ from matplotlib.colors import to_rgba
 from matplotlib.patches import Ellipse, Rectangle
 
 from eryn.utils.updates import UpdateStep
-from eryn.utils.utility import get_integrated_act, stepping_stone_log_evidence
+from eryn.utils.utility import get_integrated_act, stepping_stone_log_evidence, walk_moves
 
 DEFAULT_PALETTE = "icefire"
 
@@ -109,6 +109,51 @@ def move_acceptance_rates(accepted, num_proposals, mode="interval"):
     # np.where evaluates both branches, so the denominator is guarded too --
     # an unguarded division would still warn on the branch that is discarded
     return np.where(drawn, counts / np.where(drawn, totals, 1.0), np.nan)
+
+
+def move_counters(move):
+    """Cumulative ``(accepted, num_proposals)`` for one move, or ``None``.
+
+    A move that keeps its own counters reports them directly. A wrapper that
+    does not is pooled from its children instead: :class:`eryn.moves.CombineMove`
+    overrides ``accepted`` to return its children's arrays (and its setter never
+    stores ``_accepted``, so reading it raises), and never increments
+    ``num_proposals``. Pooling sums counts rather than averaging fractions, so
+    children drawn at different rates are weighted correctly.
+
+    Args:
+        move (:class:`eryn.moves.Move`): Move to read.
+
+    Returns:
+        tuple or None: ``(accepted, num_proposals)`` with ``accepted`` of shape
+            ``(ntemps, nwalkers)``, or ``None`` when no counters are available
+            anywhere in this move's subtree.
+
+    """
+    try:
+        accepted = np.asarray(move.accepted, dtype=float)
+        num_proposals = float(move.num_proposals)
+        if accepted.ndim == 2 and num_proposals > 0:
+            return accepted, num_proposals
+    except (AttributeError, ValueError, TypeError):
+        # counters not initialised, or an aggregating override such as
+        # CombineMove.accepted -- fall through to pooling
+        pass
+
+    pooled = [
+        counters
+        for counters in (
+            move_counters(child) for child in getattr(move, "sub_moves", [])
+        )
+        if counters is not None
+    ]
+    if not pooled:
+        return None
+
+    return (
+        np.sum([accepted for accepted, _ in pooled], axis=0),
+        float(np.sum([num_proposals for _, num_proposals in pooled])),
+    )
 
 
 def cov_ellipse(mean, cov, ax, n_std=1.0, **kwargs):
@@ -1299,6 +1344,9 @@ class PlotContainer:
         tempering_palette (str or list, optional): Seaborn color palette name or list of colors for tempering plots. If None, it defaults to `icefire`.
         parent_folder (str, optional): Folder to save the plots. Default is current directory.
         discard (float, optional): Number of initial samples to discard from the chain before plotting. If between 0 and 1, it is treated as fraction of total samples. Default is 0.
+        move_rate_mode (str, optional): ``'interval'`` plots each move's acceptance
+            within the interval since the previous plot, ``'cumulative'`` plots it
+            since the start of the run. Default is ``'interval'``.
         stop (int, optional): Maximum number of steps to generate plots for. Default is 10000.
     """
     
@@ -1311,7 +1359,8 @@ class PlotContainer:
                  tempering_palette: str = None,
                  parent_folder: str = '.',
                  discard: float = 0,
-                 stop: int = int(1e4), 
+                 move_rate_mode: str = "interval",
+                 stop: int = int(1e4),
                  ):
         """
         Initialize the PlotContainer.
@@ -1344,7 +1393,12 @@ class PlotContainer:
 
         self.steps = []
         self.total_acceptance_fraction = None
-        self.move_acceptance_fractions = {}
+        # counters, not ratios: storing accepted/num_proposals separately lets
+        # either a per-interval or a cumulative rate be produced at plot time
+        self.move_accepted = {}
+        self.move_num_proposals = {}
+        self.move_steps = {}
+        self.move_rate_mode = move_rate_mode
 
         self.stop = stop
 
@@ -1368,6 +1422,52 @@ class PlotContainer:
     @overlay_covariance.setter
     def overlay_covariance(self, value):
         self._overlay_covariance = value
+
+    def _rates_by_path(self, mode):
+        """Acceptance rates per move path in the requested mode."""
+        return {
+            path: move_acceptance_rates(
+                np.array(accepted),
+                np.array(self.move_num_proposals[path]),
+                mode=mode,
+            )
+            for path, accepted in self.move_accepted.items()
+        }
+
+    @property
+    def move_acceptance_fractions(self):
+        """Cumulative acceptance fraction per move path, derived from the counters."""
+        return self._rates_by_path("cumulative")
+
+    def move_rates(self):
+        """Acceptance rates and steps per move path, in ``self.move_rate_mode``.
+
+        Returns:
+            tuple: ``(rates, steps)``, both dicts keyed by move path. ``rates``
+                values have shape ``(nsteps, ntemps, nwalkers)``.
+
+        """
+        return (
+            self._rates_by_path(self.move_rate_mode),
+            {path: np.array(step) for path, step in self.move_steps.items()},
+        )
+
+    def _collect_move_acceptance(self, moves):
+        """Record the acceptance counters of every move in the tree.
+
+        Each path keeps its own step list. A move whose counters are not yet
+        initialised is skipped, so its history is shorter than ``self.steps``
+        and plotting it against that shared list would misalign it.
+        """
+        for path, move in walk_moves(moves):
+            counters = move_counters(move)
+            if counters is None:
+                continue
+
+            accepted, num_proposals = counters
+            self.move_accepted.setdefault(path, []).append(accepted)
+            self.move_num_proposals.setdefault(path, []).append(num_proposals)
+            self.move_steps.setdefault(path, []).append(self.backend.iteration)
 
     def produce_plots(self, sampler=None) -> None:
         """
@@ -1427,18 +1527,13 @@ class PlotContainer:
                 
                 if sampler is not None:
                     moves = sampler.moves
-                elif hasattr(self.backend, moves):
+                elif hasattr(self.backend, "moves"):
                     moves = self.backend.moves
                 else:
                     moves = None
 
                 if moves is not None:
-                    for move in moves:
-                        name = move.__class__.__name__
-                        if name not in self.move_acceptance_fractions:
-                            self.move_acceptance_fractions[name] = move.acceptance_fraction[np.newaxis, ...]
-                        else:
-                            self.move_acceptance_fractions[name] = np.vstack((self.move_acceptance_fractions[name], move.acceptance_fraction[np.newaxis, ...])) # shape (niterations, ntemps, nwalkers)
+                    self._collect_move_acceptance(moves)
 
                 full_chain = self.backend.get_chain(discard=0) if discard > 0 else chain
                 
