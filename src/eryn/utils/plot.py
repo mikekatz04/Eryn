@@ -56,7 +56,7 @@ class Backend:
 def save_or_show(fig, filename=None):
     """
     Save the figure to a file or show it.
-    
+
     Args:
         fig (matplotlib.figure.Figure): Figure to save or show.
         filename (str, optional): If provided, saves the figure to this filename.
@@ -66,6 +66,49 @@ def save_or_show(fig, filename=None):
         plt.close(fig)
     else:
         plt.show()
+
+
+def move_acceptance_rates(accepted, num_proposals, mode="interval"):
+    """Derive acceptance rates from cumulative acceptance counters.
+
+    Moves keep cumulative counters, so a plain ratio is the acceptance since
+    the start of the run. That view lags: a proposal that only starts working
+    late shows as a slow rise rather than a step. Storing the counters rather
+    than the ratio lets either view be produced here.
+
+    Args:
+        accepted (np.ndarray): Cumulative accepted counts, shape
+            ``(nsteps, ntemps, nwalkers)``.
+        num_proposals (np.ndarray): Cumulative proposal counts, shape
+            ``(nsteps,)``.
+        mode (str, optional): ``"interval"`` for the rate within each interval
+            between plot calls, ``"cumulative"`` for the rate since the start
+            of the run. (default: ``"interval"``)
+
+    Returns:
+        np.ndarray: Acceptance rates, shape ``(nsteps, ntemps, nwalkers)``.
+            Entries where the move was never drawn are ``np.nan``, so the line
+            breaks rather than reading as a genuine zero acceptance.
+
+    Raises:
+        ValueError: ``mode`` is neither ``"interval"`` nor ``"cumulative"``.
+
+    """
+    accepted = np.asarray(accepted, dtype=float)
+    num_proposals = np.asarray(num_proposals, dtype=float)
+
+    if mode == "cumulative":
+        counts, totals = accepted, num_proposals[:, None, None]
+    elif mode == "interval":
+        counts = np.diff(accepted, axis=0, prepend=0.0)
+        totals = np.diff(num_proposals, prepend=0.0)[:, None, None]
+    else:
+        raise ValueError(f"mode must be 'interval' or 'cumulative', got {mode!r}.")
+
+    drawn = totals > 0
+    # np.where evaluates both branches, so the denominator is guarded too --
+    # an unguarded division would still warn on the branch that is discarded
+    return np.where(drawn, counts / np.where(drawn, totals, 1.0), np.nan)
 
 
 def cov_ellipse(mean, cov, ax, n_std=1.0, **kwargs):
