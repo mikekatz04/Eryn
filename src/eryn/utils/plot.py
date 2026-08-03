@@ -56,7 +56,7 @@ class Backend:
 def save_or_show(fig, filename=None):
     """
     Save the figure to a file or show it.
-
+    
     Args:
         fig (matplotlib.figure.Figure): Figure to save or show.
         filename (str, optional): If provided, saves the figure to this filename.

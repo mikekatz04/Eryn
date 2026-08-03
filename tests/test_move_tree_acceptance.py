@@ -1,10 +1,13 @@
 """Tests for walking nested move trees and reporting per-move acceptance."""
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import pytest
 
 from eryn.moves import CombineMove, Move
+from eryn.utils.plot import move_acceptance_rates
 from eryn.utils.utility import walk_moves
 
 
@@ -82,11 +85,6 @@ def test_walk_moves_tolerates_a_move_without_the_hook():
     assert [path for path, _ in walk_moves([NotAMove()])] == ["NotAMove"]
 
 
-import warnings
-
-from eryn.utils.plot import move_acceptance_rates
-
-
 # cumulative counters over 4 plot calls, shape (nsteps, ntemps=1, nwalkers=2).
 # Between call 1 and 2 the move was never drawn: num_proposals does not move.
 COUNTS = np.array([[[1.0, 2.0]], [[3.0, 5.0]], [[3.0, 5.0]], [[7.0, 9.0]]])
@@ -102,7 +100,7 @@ def test_cumulative_rate_is_the_plain_ratio():
 def test_interval_rate_differences_the_counters():
     rates = move_acceptance_rates(COUNTS, NUM_PROPOSALS, mode="interval")
     # first row is measured from the start of the run; rows 1 and 3 are the
-    # increments (2/10, 4/10) and (4/20, 4/20)
+    # increments (2/10, 3/10) and (4/20, 4/20)
     np.testing.assert_allclose(rates[0], [[0.1, 0.2]])
     np.testing.assert_allclose(rates[1], [[0.2, 0.3]])
     np.testing.assert_allclose(rates[3], [[0.2, 0.2]])
