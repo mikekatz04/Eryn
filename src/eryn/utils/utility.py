@@ -362,10 +362,18 @@ def walk_moves(moves, prefix="", _seen=None):
 
     # unwrap (move, weight) tuples, then drop instances already visited, before
     # counting names -- otherwise a shared instance would inflate the
-    # disambiguation suffixes of moves that are actually reported
+    # disambiguation suffixes of moves that are actually reported. This has to
+    # check-and-add incrementally rather than filter-then-bulk-update _seen:
+    # a move repeated within this very sibling list must be caught by its
+    # second occurrence here, not only by an earlier call frame.
     moves = [move[0] if isinstance(move, tuple) else move for move in moves]
-    moves = [move for move in moves if id(move) not in _seen]
-    _seen.update(id(move) for move in moves)
+    unique = []
+    for move in moves:
+        if id(move) in _seen:
+            continue
+        _seen.add(id(move))
+        unique.append(move)
+    moves = unique
 
     name_counts = {}
     for move in moves:
