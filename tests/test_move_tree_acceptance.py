@@ -15,6 +15,7 @@ from eryn.utils.plot import (
     move_counters,
     move_tree_colors,
     plot_acceptance_fraction,
+    plot_move_tree_acceptance,
 )
 from eryn.utils.utility import walk_moves
 
@@ -289,3 +290,107 @@ def test_plot_acceptance_fraction_falls_back_to_shared_steps(tmp_path):
     plot_acceptance_fraction(steps, total, rates, filename=str(out))
 
     assert out.exists()
+
+
+NESTED_RATES = {
+    "CombineMove": np.full((2, 3, 4), 0.30),
+    "CombineMove/LeafA": np.full((2, 3, 4), 0.25),
+    "CombineMove/Residual": np.full((2, 3, 4), 0.20),
+    "CombineMove/Residual/StretchMove": np.full((2, 3, 4), 0.35),
+    "CombineMove/Residual/FlowMove": np.full((2, 3, 4), 0.05),
+}
+NESTED_STEPS = {path: np.array([10, 20]) for path in NESTED_RATES}
+
+
+def test_move_tree_plots_mirror_the_move_tree(tmp_path):
+    plot_move_tree_acceptance(NESTED_RATES, NESTED_STEPS, parent_folder=str(tmp_path))
+
+    assert (tmp_path / "moves" / "CombineMove" / "acceptance_fraction.png").exists()
+    assert (
+        tmp_path / "moves" / "CombineMove" / "Residual" / "acceptance_fraction.png"
+    ).exists()
+
+
+def test_move_tree_plots_skip_leaves(tmp_path):
+    plot_move_tree_acceptance(NESTED_RATES, NESTED_STEPS, parent_folder=str(tmp_path))
+
+    # LeafA and FlowMove have no children, so they get no figure of their own
+    assert not (tmp_path / "moves" / "CombineMove" / "LeafA").exists()
+    assert not (
+        tmp_path / "moves" / "CombineMove" / "Residual" / "FlowMove"
+    ).exists()
+
+
+def test_move_tree_plots_handle_a_flat_tree(tmp_path):
+    plot_move_tree_acceptance(
+        {"LeafA": np.full((2, 3, 4), 0.3)},
+        {"LeafA": np.array([10, 20])},
+        parent_folder=str(tmp_path),
+    )
+    assert not (tmp_path / "moves").exists()
+
+
+class _FakeAdvancedBackend:
+    """Minimal backend stand-in exercising the 'advanced' branch of
+    ``PlotContainer.produce_plots``.
+
+    Only the attributes/methods that branch actually touches are provided:
+    ``iteration``, ``key_order``, ``accepted``, ``moves``, and the three
+    unconditionally-called getters (``get_chain``, ``get_log_like``,
+    ``get_betas``); their return values are irrelevant to the acceptance-
+    fraction wiring under test, so they are kept as cheap stand-ins.
+    """
+
+    def __init__(self, iteration, moves):
+        self.iteration = iteration
+        self.moves = moves
+        self.key_order = []
+        self.accepted = np.full((2, 3), 0.3)
+
+    def get_chain(self, discard=0):
+        return {}
+
+    def get_log_like(self, discard=0):
+        return np.zeros((1, 2, 3))
+
+    def get_betas(self, discard=0):
+        return np.zeros((1, 2))
+
+
+def test_produce_plots_advanced_survives_a_late_starting_move(tmp_path):
+    """Regression test for the wiring this task closes.
+
+    Before this task, ``produce_advanced_plots`` called
+    ``plot_acceptance_fraction`` with the old 3-argument form (no
+    ``moves_steps``), which forces every move to be plotted against the
+    container's shared ``steps``. As of Task 3, a move whose counters are
+    not yet valid is skipped by ``_collect_move_acceptance``, so its own
+    step history is shorter than ``steps`` -- exactly what happens to
+    ``late`` here, which only gains valid counters on the second call. That
+    mismatch used to raise ``ValueError: x and y must have same first
+    dimension``. This drives ``PlotContainer`` end-to-end (two real
+    ``produce_plots`` calls) to prove the per-path steps now reach
+    ``plot_acceptance_fraction`` and ``plot_move_tree_acceptance`` intact.
+    """
+    ready = _leaf_with_counters(2.0, 10)
+    late = LeafA()
+    combine = CombineMove([ready, late])
+
+    backend = _FakeAdvancedBackend(iteration=100, moves=[combine])
+    container = PlotContainer(backend=backend, plots="advanced", parent_folder=str(tmp_path))
+
+    # first call: `late` has no counters yet and is skipped, so its history
+    # (empty) is already shorter than `ready`'s and the container's `steps`
+    container.produce_plots()
+
+    # `late` becomes valid only now, on the second recorded step
+    late.accepted = np.full((2, 3), 1.0)
+    late.num_proposals = 5
+    backend.iteration = 200
+
+    container.produce_plots()
+
+    assert (tmp_path / "advanced" / "acceptance_fraction.png").exists()
+    assert (
+        tmp_path / "advanced" / "moves" / "CombineMove" / "acceptance_fraction.png"
+    ).exists()
