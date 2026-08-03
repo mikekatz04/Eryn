@@ -3,11 +3,19 @@ from __future__ import annotations
 
 import warnings
 
+import matplotlib
 import numpy as np
 import pytest
 
 from eryn.moves import CombineMove, Move
-from eryn.utils.plot import PlotContainer, move_acceptance_rates, move_counters
+from eryn.utils.plot import (
+    PlotContainer,
+    _tex_safe,
+    move_acceptance_rates,
+    move_counters,
+    move_tree_colors,
+    plot_acceptance_fraction,
+)
 from eryn.utils.utility import walk_moves
 
 
@@ -214,3 +222,54 @@ def test_move_counters_counts_a_shared_instance_once():
 def test_move_counters_returns_none_when_no_child_has_counters():
     combine = CombineMove([LeafA(), LeafA()])
     assert move_counters(combine) is None
+
+
+def test_tex_safe_escapes_underscores_only_under_usetex():
+    original = matplotlib.rcParams["text.usetex"]
+    try:
+        matplotlib.rcParams["text.usetex"] = False
+        assert _tex_safe("MHMove_0") == "MHMove_0"
+        matplotlib.rcParams["text.usetex"] = True
+        assert _tex_safe("MHMove_0") == r"MHMove\_0"
+    finally:
+        matplotlib.rcParams["text.usetex"] = original
+
+
+def test_move_tree_colors_gives_each_root_its_own_hue():
+    colors = move_tree_colors(["A", "A/x", "B"])
+    assert colors["A"] != colors["B"]
+    # descendants stay in their parent's family, but are distinguishable
+    assert colors["A"] != colors["A/x"]
+
+
+def test_move_tree_colors_covers_every_path():
+    paths = ["A", "A/x", "A/x/y", "B", "B/z"]
+    assert set(move_tree_colors(paths)) == set(paths)
+
+
+def test_plot_acceptance_fraction_writes_a_file_for_a_nested_tree(tmp_path):
+    steps = np.array([10, 20])
+    total = np.full((2, 3, 4), 0.3)
+    rates = {
+        "CombineMove": np.full((2, 3, 4), 0.3),
+        "CombineMove/LeafA": np.full((2, 3, 4), 0.25),
+        "CombineMove/LeafA_0": np.full((1, 3, 4), 0.4),
+    }
+    move_steps = {
+        "CombineMove": steps,
+        "CombineMove/LeafA": steps,
+        "CombineMove/LeafA_0": np.array([20]),
+    }
+    out = tmp_path / "acceptance_fraction.png"
+
+    plot_acceptance_fraction(steps, total, rates, moves_steps=move_steps,
+                             filename=str(out))
+
+    assert out.exists()
+
+
+def test_plot_acceptance_fraction_still_accepts_no_moves(tmp_path):
+    out = tmp_path / "empty.png"
+    plot_acceptance_fraction(np.array([10]), np.full((1, 3, 4), 0.3), {},
+                             filename=str(out))
+    assert out.exists()

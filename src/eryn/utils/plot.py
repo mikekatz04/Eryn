@@ -169,6 +169,56 @@ def move_counters(move, _seen=None):
     )
 
 
+def _tex_safe(label):
+    """Escape characters that break LaTeX rendering when ``text.usetex`` is on.
+
+    Move paths contain underscores once a class is disambiguated
+    (``MHMove_0``), which LaTeX reads as a subscript and rejects outside math
+    mode.
+    """
+    if not mpl.rcParams.get("text.usetex", False):
+        return label
+    return label.replace("_", r"\_")
+
+
+def move_tree_colors(paths, palette=None):
+    """Assign one hue family per top-level move, lightening with depth.
+
+    Args:
+        paths (list): Move paths as produced by
+            :func:`eryn.utils.utility.walk_moves`.
+        palette (str or list, optional): Seaborn palette for the top-level
+            moves. Default is ``'tab10'``.
+
+    Returns:
+        dict: ``path -> RGB tuple`` for every path given.
+
+    """
+    roots = []
+    for path in paths:
+        root = path.split("/")[0]
+        if root not in roots:
+            roots.append(root)
+
+    base_colors = sns.color_palette(
+        palette if palette is not None else "tab10", max(len(roots), 1)
+    )
+
+    colors = {}
+    for root, base in zip(roots, base_colors):
+        family = sorted(
+            (path for path in paths if path.split("/")[0] == root),
+            key=lambda path: (path.count("/"), path),
+        )
+        # reverse=True runs dark -> light so the root keeps the base hue; the
+        # +2 keeps the deepest entries away from white
+        shades = sns.light_palette(base, n_colors=len(family) + 2, reverse=True)
+        for path, shade in zip(family, shades):
+            colors[path] = shade
+
+    return colors
+
+
 def cov_ellipse(mean, cov, ax, n_std=1.0, **kwargs):
     """
     Plot a covariance ellipse using eigendecomposition.
@@ -949,29 +999,56 @@ def plot_leaves_evolution(nleaves: np.ndarray,
     save_or_show(fig, filename)
 
 def plot_acceptance_fraction(steps: typing.Union[np.ndarray, list],
-                            total_acceptance_fraction: np.ndarray,
+                             total_acceptance_fraction: np.ndarray,
                              moves_acceptance_fraction: dict,
+                             moves_steps: dict = None,
+                             rate_label: str = 'Acceptance Fraction',
                              filename: str = None):
-    """
-    Plot the acceptance fraction for different moves over sampling steps.
+    """Plot the acceptance fraction of every move in the tree over sampling steps.
 
     Args:
+        steps (np.ndarray or list): Sampling steps for the total curve.
+        total_acceptance_fraction (np.ndarray): Total acceptance fraction,
+            shape ``(nsteps, ntemps, nwalkers)``.
+        moves_acceptance_fraction (dict): ``path -> (nsteps, ntemps, nwalkers)``
+            rates, keyed by the ``/``-separated paths from
+            :func:`eryn.utils.utility.walk_moves`. Nesting depth is styled with
+            the line style and a lighter shade of the top-level move's hue.
+        moves_steps (dict, optional): ``path -> (nsteps,)`` steps. Each path may
+            have its own history length, so it cannot share ``steps``. If
+            ``None``, ``steps`` is used for every path.
+        rate_label (str, optional): Y-axis label. Default ``'Acceptance Fraction'``.
+        filename (str, optional): If provided, saves the figure to this filename.
 
     """
-
     fig = plt.figure(figsize=(10, 6))
     # cold chain total acceptance fraction
-    plt.plot(steps, total_acceptance_fraction[:, 0].mean(axis=1), label='Total', color='black', linewidth=2)
-    
-    # skip if moves_acceptance_fraction is empty
+    plt.plot(steps, total_acceptance_fraction[:, 0].mean(axis=1), label='Total',
+             color='black', linewidth=2)
+
     if len(moves_acceptance_fraction) != 0:
-        for move, acc_fraction in moves_acceptance_fraction.items():
-            plt.plot(steps, acc_fraction[:, 0].mean(axis=1), marker='o', label=move)
+        paths = list(moves_acceptance_fraction)
+        colors = move_tree_colors(paths)
+        linestyles = ['-', '--', ':', '-.']
+
+        for path in paths:
+            depth = path.count('/')
+            x = steps if moves_steps is None else moves_steps[path]
+            label = '  ' * depth + ('- ' if depth else '') + path.split('/')[-1]
+
+            plt.plot(x,
+                     moves_acceptance_fraction[path][:, 0].mean(axis=1),
+                     marker='o',
+                     markersize=3,
+                     color=colors[path],
+                     linestyle=linestyles[depth % len(linestyles)],
+                     alpha=max(0.4, 1.0 - 0.15 * depth),
+                     label=_tex_safe(label))
 
     plt.axhline(y=0.234, color='gray', linestyle='--', linewidth=1, alpha=0.7, label='0.234')
-    plt.legend()
+    plt.legend(fontsize=9)
     plt.xlabel('Sampler Iteration')
-    plt.ylabel('Acceptance Fraction')  
+    plt.ylabel(rate_label)
     plt.title('Acceptance Fraction Over Time')
 
     save_or_show(fig, filename)
