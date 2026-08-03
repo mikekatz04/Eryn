@@ -1053,6 +1053,61 @@ def plot_acceptance_fraction(steps: typing.Union[np.ndarray, list],
 
     save_or_show(fig, filename)
 
+
+def plot_move_tree_acceptance(moves_acceptance_fraction: dict,
+                               moves_steps: dict,
+                               parent_folder: str = ".",
+                               rate_label: str = "Acceptance Fraction"):
+    """Write one acceptance figure per wrapper move, showing its direct children.
+
+    A path is a wrapper when another path starts with ``path + "/"``. Output
+    lands in ``<parent_folder>/moves/<path>/acceptance_fraction.png``, so the
+    folder tree mirrors the move tree and documents how the moves are nested.
+
+    Args:
+        moves_acceptance_fraction (dict): ``path -> (nsteps, ntemps, nwalkers)``
+            rates.
+        moves_steps (dict): ``path -> (nsteps,)`` steps.
+        parent_folder (str, optional): Folder to write into. Default is the
+            current directory.
+        rate_label (str, optional): Y-axis label.
+
+    """
+    paths = list(moves_acceptance_fraction)
+
+    for path in paths:
+        prefix = path + "/"
+        children = [
+            other for other in paths
+            if other.startswith(prefix) and "/" not in other[len(prefix):]
+        ]
+        if not children:
+            continue
+
+        folder = os.path.join(parent_folder, "moves", *path.split("/"))
+        os.makedirs(folder, exist_ok=True)
+
+        colors = move_tree_colors(children)
+
+        fig = plt.figure(figsize=(10, 6))
+        for child in children:
+            plt.plot(moves_steps[child],
+                     moves_acceptance_fraction[child][:, 0].mean(axis=1),
+                     marker="o",
+                     markersize=3,
+                     color=colors[child],
+                     label=_tex_safe(child.split("/")[-1]))
+
+        plt.axhline(y=0.234, color="gray", linestyle="--", linewidth=1, alpha=0.7,
+                    label="0.234")
+        plt.legend(fontsize=10)
+        plt.xlabel("Sampler Iteration")
+        plt.ylabel(_tex_safe(rate_label))
+        plt.title(_tex_safe("Acceptance Fraction - " + path.split("/")[-1]))
+
+        save_or_show(fig, os.path.join(folder, "acceptance_fraction.png"))
+
+
 def plot_tempered_acceptance_fraction(steps: typing.Union[np.ndarray, list],
                             total_acceptance_fraction: np.ndarray,
                             palette: str = None,
@@ -1336,22 +1391,27 @@ def produce_tempering_plots(chain: dict,
 def produce_advanced_plots(steps: typing.Union[np.ndarray, list],
                            total_acceptance_fraction: np.ndarray,
                            moves_acceptance_fraction: dict,
+                           moves_steps: dict = None,
+                           rate_label: str = 'Acceptance Fraction',
                            palette: str = None,
                            iteration: int = 0,
                            chain: dict = None,
                            parent_folder: str = '.'):
     """
     Produce advanced diagnostic plots. These include:
-        
-    * autocorrelation time evolution per parameter per branch in the cold chain, 
-    * the comparison of the maximum autocorrelation  time in each branch against the number of steps, 
-    * the acceptance fraction evolution over steps in the cold chain (both overall and per move), 
+
+    * autocorrelation time evolution per parameter per branch in the cold chain,
+    * the comparison of the maximum autocorrelation  time in each branch against the number of steps,
+    * the acceptance fraction evolution over steps in the cold chain (both overall and per move),
     * the overall acceptance fraction evolution over steps per temperature.
-    
+
     Args:
         steps (Union[np.ndarray, list]): Array or list of sampling steps.
         total_acceptance_fraction (np.ndarray): Total acceptance fraction array of shape (nsteps, ntemps, nwalkers).
         moves_acceptance_fraction (Dict): Dictionary of acceptance fractions for different moves.
+        moves_steps (Dict, optional): Per-move-path sampling steps. Each path can
+            have its own history length, so it cannot share ``steps``.
+        rate_label (str, optional): Y-axis label for the acceptance plots.
         parent_folder (str, optional): Folder to save the plots. Default is current directory.
     """
 
@@ -1359,7 +1419,16 @@ def produce_advanced_plots(steps: typing.Union[np.ndarray, list],
         steps,
         total_acceptance_fraction,
         moves_acceptance_fraction,
+        moves_steps=moves_steps,
+        rate_label=rate_label,
         filename=os.path.join(parent_folder, f'acceptance_fraction.png')
+    )
+
+    plot_move_tree_acceptance(
+        moves_acceptance_fraction,
+        moves_steps if moves_steps is not None else {},
+        parent_folder=parent_folder,
+        rate_label=rate_label,
     )
 
     plot_tempered_acceptance_fraction(
@@ -1626,10 +1695,19 @@ class PlotContainer:
                     self._collect_move_acceptance(moves)
 
                 full_chain = self.backend.get_chain(discard=0) if discard > 0 else chain
-                
+
+                move_rates, move_steps = self.move_rates()
+                rate_label = (
+                    'Acceptance Fraction (per interval)'
+                    if self.move_rate_mode == 'interval'
+                    else 'Acceptance Fraction (cumulative)'
+                )
+
                 produce_advanced_plots(steps=self.steps,
-                                        total_acceptance_fraction=self.total_acceptance_fraction,   
-                                        moves_acceptance_fraction=self.move_acceptance_fractions,
+                                        total_acceptance_fraction=self.total_acceptance_fraction,
+                                        moves_acceptance_fraction=move_rates,
+                                        moves_steps=move_steps,
+                                        rate_label=rate_label,
                                         palette=self.tempering_palette,
                                         iteration=self.backend.iteration,
                                         chain=full_chain,
