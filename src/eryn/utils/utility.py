@@ -340,9 +340,11 @@ def walk_moves(moves, prefix="", _seen=None):
     names, so diagnostics can report each proposal's acceptance separately.
 
     Moves of the same class at the same level are disambiguated with a ``_0`` /
-    ``_1`` suffix, matching the convention used by
-    :attr:`eryn.ensemble.EnsembleSampler.all_moves`. A class that appears once
-    at its level keeps its bare name.
+    ``_1`` suffix; a class that appears once at its level keeps its bare name.
+    This is *not* the same convention as :attr:`eryn.ensemble.EnsembleSampler.all_moves`,
+    which suffixes ``_N`` onto every top-level move unconditionally (so even a
+    uniquely-named move becomes e.g. ``Foo_0`` there). Paths yielded here
+    cannot be joined directly to ``backend.move_keys``.
 
     Args:
         moves (list): Moves to walk. Entries may be ``(move, weight)`` tuples.

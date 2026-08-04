@@ -4,10 +4,12 @@ from __future__ import annotations
 import warnings
 
 import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
 from eryn.moves import CombineMove, Move
+from eryn.utils import plot as plot_module
 from eryn.utils.plot import (
     PlotContainer,
     _tex_safe,
@@ -120,6 +122,24 @@ def test_interval_rate_is_nan_when_the_move_was_not_drawn():
     rates = move_acceptance_rates(COUNTS, NUM_PROPOSALS, mode="interval")
     # NaN, not 0.0 -- the line must break rather than read as a real collapse
     assert np.all(np.isnan(rates[2]))
+
+
+def test_interval_rate_is_nan_when_the_counter_decreases():
+    # a decreasing cumulative counter means something external reset it
+    # underneath us (e.g. a shared move re-owned by an EnsembleSampler that
+    # zeroed `accepted` in place); that interval must break the line rather
+    # than plot a negative acceptance rate.
+    counts = np.array([[[1.0, 2.0]], [[3.0, 5.0]], [[1.0, 1.0]], [[4.0, 3.0]]])
+    num_proposals = np.array([10.0, 20.0, 30.0, 40.0])
+
+    rates = move_acceptance_rates(counts, num_proposals, mode="interval")
+
+    # interval 2 (index 2) decreased from the previous cumulative value -> NaN
+    assert np.all(np.isnan(rates[2]))
+    # all other intervals are computed normally
+    np.testing.assert_allclose(rates[0], [[0.1, 0.2]])
+    np.testing.assert_allclose(rates[1], [[0.2, 0.3]])
+    np.testing.assert_allclose(rates[3], [[0.3, 0.2]])
 
 
 def test_no_divide_by_zero_warning_is_emitted():
@@ -291,6 +311,38 @@ def test_plot_acceptance_fraction_falls_back_to_shared_steps(tmp_path):
     plot_acceptance_fraction(steps, total, rates, filename=str(out))
 
     assert out.exists()
+
+
+def test_plot_acceptance_fraction_labels_distinguish_depth(monkeypatch):
+    # text.usetex collapses leading whitespace, so depth used to be encoded
+    # only via leading spaces and two different depths of the same leaf class
+    # rendered as byte-identical legend entries. Capture the figure instead
+    # of saving it so the legend labels can be inspected directly.
+    captured = {}
+
+    def fake_save_or_show(fig, filename=None):
+        captured["fig"] = fig
+
+    monkeypatch.setattr(plot_module, "save_or_show", fake_save_or_show)
+
+    steps = np.array([10])
+    rates = {
+        "CombineMove/StretchMove": np.full((1, 3, 4), 0.3),
+        "CombineMove/Residual/StretchMove": np.full((1, 3, 4), 0.3),
+    }
+    move_steps = {path: steps for path in rates}
+
+    plot_module.plot_acceptance_fraction(
+        steps, np.full((1, 3, 4), 0.3), rates, moves_steps=move_steps
+    )
+
+    try:
+        _, labels = captured["fig"].axes[0].get_legend_handles_labels()
+    finally:
+        plt.close(captured["fig"])
+
+    assert "- StretchMove" in labels
+    assert "- - StretchMove" in labels
 
 
 NESTED_RATES = {

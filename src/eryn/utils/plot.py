@@ -99,13 +99,21 @@ def move_acceptance_rates(accepted, num_proposals, mode="interval"):
 
     if mode == "cumulative":
         counts, totals = accepted, num_proposals[:, None, None]
+        drawn = totals > 0
     elif mode == "interval":
         counts = np.diff(accepted, axis=0, prepend=0.0)
         totals = np.diff(num_proposals, prepend=0.0)[:, None, None]
+        # Cumulative counters are monotonic by construction, so a negative
+        # increment here means something external reset them underneath us
+        # (e.g. the same move instance handed to an EnsembleSampler, which
+        # zeroes `accepted` in place while preserving its shape -- FIX 1
+        # guards the shape-changing case, this is its silent sibling). Treat
+        # that interval as not-drawn instead of plotting a false negative
+        # acceptance rate.
+        drawn = (totals > 0) & (counts >= 0)
     else:
         raise ValueError(f"mode must be 'interval' or 'cumulative', got {mode!r}.")
 
-    drawn = totals > 0
     # np.where evaluates both branches, so the denominator is guarded too --
     # an unguarded division would still warn on the branch that is discarded
     return np.where(drawn, counts / np.where(drawn, totals, 1.0), np.nan)
@@ -1040,7 +1048,11 @@ def plot_acceptance_fraction(steps: typing.Union[np.ndarray, list],
         for path in paths:
             depth = path.count('/')
             x = steps if moves_steps is None else moves_steps[path]
-            label = '  ' * depth + ('- ' if depth else '') + path.split('/')[-1]
+            # Leading spaces alone don't distinguish depths: text.usetex
+            # collapses them, so e.g. depth 1 and depth 2 would render as the
+            # same '- <name>' legend entry. Repeat the marker instead, which
+            # survives LaTeX rendering.
+            label = '- ' * depth + path.split('/')[-1]
 
             plt.plot(x,
                      moves_acceptance_fraction[path][:, 0].mean(axis=1),
