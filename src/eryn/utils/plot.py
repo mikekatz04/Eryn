@@ -134,7 +134,11 @@ def move_counters(move, _seen=None):
     Returns:
         tuple or None: ``(accepted, num_proposals)`` with ``accepted`` of shape
             ``(ntemps, nwalkers)``, or ``None`` when no counters are available
-            anywhere in this move's subtree.
+            anywhere in this move's subtree. ``accepted`` is always a snapshot,
+            never a view: moves mutate their counters in place (``self.accepted
+            += ...``), so returning a view would alias every recorded history
+            entry to the same live buffer and collapse the whole history to
+            the final value.
 
     """
     if _seen is None:
@@ -144,7 +148,9 @@ def move_counters(move, _seen=None):
     _seen.add(id(move))
 
     try:
-        accepted = np.asarray(move.accepted, dtype=float)
+        # np.array (not np.asarray) always copies, even when move.accepted is
+        # already a float64 ndarray -- see the snapshot note above.
+        accepted = np.array(move.accepted, dtype=float)
         num_proposals = float(move.num_proposals)
         if accepted.ndim == 2 and num_proposals > 0:
             return accepted, num_proposals

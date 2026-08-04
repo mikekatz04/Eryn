@@ -427,3 +427,60 @@ def test_produce_advanced_plots_without_moves_steps_falls_back_for_the_move_tree
     assert (
         tmp_path / "moves" / "CombineMove" / "acceptance_fraction.png"
     ).exists()
+
+
+def test_move_counters_returns_a_snapshot_not_a_view():
+    """Regression test for the counter-aliasing bug.
+
+    ``move_counters`` used to read a move's own counters with
+    ``np.asarray(move.accepted, dtype=float)``, which does not copy when
+    ``move.accepted`` is already a float64 ndarray -- it hands back the same
+    object. Moves accumulate their counters in place (``self.accepted +=
+    ...``), so every caller holding that "snapshot" was actually watching the
+    live buffer keep mutating underneath it.
+    """
+    move = _leaf_with_counters(2.0, 10)
+    snapshot, _ = move_counters(move)
+
+    assert snapshot is not move.accepted
+
+    move.accepted += 5.0
+
+    np.testing.assert_allclose(snapshot, np.full((2, 3), 2.0))
+
+
+def test_collect_move_acceptance_records_independent_snapshots_across_calls(tmp_path):
+    """Regression test through the real collection path.
+
+    Before the fix, every entry ``_collect_move_acceptance`` appended for a
+    leaf move was an alias of the same live ``move.accepted`` buffer, so the
+    whole recorded history collapsed to the final value. Differencing two
+    identical snapshots for an interval rate produced nonsense: an
+    impossible (>1) rate for the interval that swallowed the whole jump, and
+    exactly 0.0 for every interval after. This drives
+    ``_collect_move_acceptance`` and ``move_rates`` end-to-end the way a
+    sampler run would, to prove the two collected snapshots differ and that
+    the derived interval rates stay within the only physically valid range,
+    [0, 1].
+    """
+    leaf = _leaf_with_counters(2.0, 10)
+    container = PlotContainer(backend=_FakeBackend(100), parent_folder=str(tmp_path))
+
+    container._collect_move_acceptance([leaf])
+
+    # mutate in place, the way a sampler accumulates counters between plot
+    # calls
+    leaf.accepted += 48.0
+    leaf.num_proposals += 90
+    container.backend = _FakeBackend(200)
+    container._collect_move_acceptance([leaf])
+
+    history = container.move_accepted["LeafA"]
+    assert len(history) == 2
+    assert not np.allclose(history[0], history[1])
+
+    rates, _ = container.move_rates()
+    leaf_rates = rates["LeafA"]
+    valid = ~np.isnan(leaf_rates)
+    assert np.all(leaf_rates[valid] >= 0.0)
+    assert np.all(leaf_rates[valid] <= 1.0)
