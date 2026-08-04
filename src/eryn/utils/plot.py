@@ -1426,7 +1426,9 @@ def produce_advanced_plots(steps: typing.Union[np.ndarray, list],
 
     plot_move_tree_acceptance(
         moves_acceptance_fraction,
-        moves_steps if moves_steps is not None else {},
+        moves_steps
+        if moves_steps is not None
+        else {path: steps for path in moves_acceptance_fraction},
         parent_folder=parent_folder,
         rate_label=rate_label,
     )

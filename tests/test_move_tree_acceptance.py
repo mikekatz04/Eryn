@@ -16,6 +16,7 @@ from eryn.utils.plot import (
     move_tree_colors,
     plot_acceptance_fraction,
     plot_move_tree_acceptance,
+    produce_advanced_plots,
 )
 from eryn.utils.utility import walk_moves
 
@@ -393,4 +394,36 @@ def test_produce_plots_advanced_survives_a_late_starting_move(tmp_path):
     assert (tmp_path / "advanced" / "acceptance_fraction.png").exists()
     assert (
         tmp_path / "advanced" / "moves" / "CombineMove" / "acceptance_fraction.png"
+    ).exists()
+
+
+def test_produce_advanced_plots_without_moves_steps_falls_back_for_the_move_tree(tmp_path):
+    """Regression test: omitting ``moves_steps`` used to raise ``KeyError``.
+
+    ``plot_acceptance_fraction`` already falls back to the shared ``steps``
+    for every path when ``moves_steps`` is ``None``, but the
+    ``plot_move_tree_acceptance`` call was wired with a plain ``{}``
+    substitution, so it did an unconditional ``moves_steps[child]`` lookup
+    into an empty dict and raised ``KeyError`` for any wrapper with
+    children. ``produce_advanced_plots`` should give both calls the same
+    shared-steps fallback instead.
+    """
+    steps = np.array([10, 20])
+    total = np.full((2, 3, 4), 0.3)
+    rates = {
+        "CombineMove": np.full((2, 3, 4), 0.30),
+        "CombineMove/LeafA": np.full((2, 3, 4), 0.25),
+    }
+
+    produce_advanced_plots(
+        steps,
+        total,
+        rates,
+        iteration=20,
+        chain={},
+        parent_folder=str(tmp_path),
+    )
+
+    assert (
+        tmp_path / "moves" / "CombineMove" / "acceptance_fraction.png"
     ).exists()
