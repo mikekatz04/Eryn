@@ -212,7 +212,10 @@ class RidgeGibbsMove(Move):
             self._accumulate_accepted(accepted)
             return state, accepted
 
-        new_state = State(state, copy=True)
+        # type(state), not State: the LISA global-fit engine subclasses State
+        # (band_info / sub-state extras) and a plain-State rebuild would
+        # silently drop them.
+        new_state = type(state)(state, copy=True)
 
         acc_t = temp_inds[accept_leaf]
         acc_w = walker_inds[accept_leaf]
