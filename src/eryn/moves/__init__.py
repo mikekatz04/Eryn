@@ -21,6 +21,7 @@ from .multipletry import MultipleTryMove
 # from .walk import WalkMove
 from .nuts import NUTSMove, NUTSSampler
 from .red_blue import RedBlueMove
+from .ridgegibbs import RidgeGibbsMove
 from .rj import ReversibleJumpMove
 from .stretch import StretchMove
 from .tempering import TemperatureControl
@@ -38,6 +39,7 @@ __all__ = [
     "MultipleTryMove",
     "GroupMove",
     "GroupStretchMove",
+    "RidgeGibbsMove",
     "CombineMove",
     "NUTSMove",
     "NUTSSampler",
