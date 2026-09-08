@@ -5,6 +5,7 @@
 from .combine import CombineMove
 from .distgen import DistributionGenerate
 from .distgenrj import DistributionGenerateRJ
+from .eigenaxis import EigenAxisMove
 from .gaussian import GaussianMove
 from .group import GroupMove
 from .groupstretch import GroupStretchMove
@@ -29,6 +30,7 @@ from .tempering import TemperatureControl
 __all__ = [
     "Move",
     "MHMove",
+    "EigenAxisMove",
     "GaussianMove",
     "RedBlueMove",
     "StretchMove",
