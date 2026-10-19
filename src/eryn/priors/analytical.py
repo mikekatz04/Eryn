@@ -689,17 +689,12 @@ class GenericFunctionalDistribution(Prior):
         if self.clip:
             out = self.xp.clip(out, self.minimum, self.maximum)
 
-        if self.use_cupy and not self.return_gpu:
-            return out.get()
-
-        return out
+        return self._to_device(out)
 
     def pdf(self, x: ArrayLike, **kwargs) -> NDArrayLike:
         out = self.pdf_function(x)
-        if self.use_cupy and not self.return_gpu:
-            return out.get()
-
-        return out
+    
+        return self._to_device(out)
 
     def logpdf(self, x: ArrayLike, **kwargs) -> NDArrayLike:
         out = self.xp.zeros_like(x)
@@ -707,10 +702,8 @@ class GenericFunctionalDistribution(Prior):
             self.pdf_function(x[(x >= self.minimum) & (x <= self.maximum)])
         )
         out[(x < self.minimum) | (x > self.maximum)] = -np.inf
-        if self.use_cupy and not self.return_gpu:
-            return out.get()
 
-        return out
+        return self._to_device(out)
 
     def copy(self):
         return deepcopy(self)
