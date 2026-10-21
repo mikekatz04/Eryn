@@ -3,7 +3,9 @@
 This file provides guidance to Claude Code (claude.ai/code) when working
 with code in this repository.
 
-## Backend implementation hierarchy (sprint-wide rule)
+**LISA Analysis Tools–wide conventions:** [`../LISAanalysistools/docs/conventions.md`](../LISAanalysistools/docs/conventions.md) (canonical). **This repo's map:** [`docs/codebase-map.md`](docs/codebase-map.md).
+
+## Backend implementation hierarchy (LISA Analysis Tools–wide rule)
 
 When implementing or modifying an algorithm that exists across multiple
 backends (GPU C++ / CPU C++ / JAX), follow this hierarchy:

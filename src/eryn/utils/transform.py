@@ -1,11 +1,16 @@
+from __future__ import annotations
+
+from typing import Any, Callable, List, Dict, Tuple, TypeVar
+
 try:
-    import cupy as xp
+    import cupy as xp # type: ignore[import]
 
 except (ModuleNotFoundError, ImportError) as e:
     pass
 
 import numpy as np
 
+Element = TypeVar("Element", str, int)
 
 class TransformContainer:
     """Container for helpful transformations
@@ -24,11 +29,15 @@ class TransformContainer:
             are performed first. ``tuple`` of ``int`` indicates multiple
             parameter transforms. These are performed after single-parameter transforms. 
             (default: ``None``)
-        fill_dict (dict, optional): Keys must contain ``'ndim_full'``, ``'fill_inds'``,
-            and ``'fill_values'``. ``'ndim_full'`` is the full last dimension of the final
-            array after fill_values are added. 'fill_inds' and 'fill_values' are
-            np.ndarray[number of fill values] that contain the indexes and corresponding values
-            for filling. (default: ``None``)
+        fill_dict (dict or list of dict, optional): Fixed (non-sampled) output-basis
+            parameters. As a plain ``dict``, keys are output-basis names and values are
+            the scalars filled identically for every input row. As a ``list`` of such
+            dicts, the fills are **per leaf**: entry ``i`` holds the fill values for
+            leaf ``i`` (all entries must share exactly the same keys; the caller is
+            responsible for the list being ``nleaves_max`` long). Per-leaf containers
+            require the ``leaf_inds`` argument in :func:`fill_values` /
+            :func:`both_transforms` to know which leaf each input row belongs to.
+            (default: ``None``)
         inverse_parameter_transforms (dict, optional): Inverse transformations going
             from the output basis back to the input basis. Keyed identically to
             ``parameter_transforms`` (output-basis names / indexes, mapped through
@@ -44,16 +53,27 @@ class TransformContainer:
 
     """
 
-    def __init__(self, input_basis=None, output_basis=None, parameter_transforms=None, fill_dict=None, key_map={}, inverse_parameter_transforms=None):
+    def __init__(
+        self, 
+        input_basis: List[Element], 
+        output_basis: List[Element], 
+        parameter_transforms: Dict[Element | Tuple[Element, ...], Callable] | None = None, 
+        inverse_parameter_transforms: Dict[Element | Tuple[Element, ...], Callable] | None = None,
+        fill_dict: Dict[Element, float] | None = None,
+        key_map: Dict[Element, Element] | None = None,
+    ):
+        if key_map is None:
+            key_map = {}
 
+        if key_map is None:
+            key_map = {}
 
         # store originals
+        self.input_basis, self.output_basis = input_basis, output_basis
         self.original_parameter_transforms = parameter_transforms
         self.original_inverse_parameter_transforms = inverse_parameter_transforms
         self.ndim_full = len(output_basis)
         self.ndim = len(input_basis)
-
-        self.input_basis, self.output_basis = input_basis, output_basis
 
         test_inds = []
         for key in input_basis:
@@ -79,23 +99,48 @@ class TransformContainer:
 
         self.original_fill_dict = fill_dict
         if fill_dict is not None:
-            if not isinstance(fill_dict, dict):
-                raise ValueError("fill_dict must be a dictionary.")
+            if isinstance(fill_dict, list):
+                # per-leaf fills: one dict per leaf, identical keys across leaves
+                if len(fill_dict) == 0:
+                    raise ValueError("A per-leaf fill_dict list must not be empty.")
+                fill_keys = list(fill_dict[0].keys())
+                for i, leaf_fill in enumerate(fill_dict):
+                    if not isinstance(leaf_fill, dict):
+                        raise ValueError("Each entry of a per-leaf fill_dict list must be a dictionary.")
+                    if list(leaf_fill.keys()) != fill_keys:
+                        raise ValueError(
+                            "All per-leaf fill dicts must share identical keys (in the same order); "
+                            f"entry {i} has {list(leaf_fill.keys())} vs {fill_keys}."
+                        )
+                self.n_leaf_fills = len(fill_dict)
+                # stacked (nleaves, n_fill) values; rows selected by leaf_inds at call time
+                fill_values = np.asarray(
+                    [[leaf_fill[key] for key in fill_keys] for leaf_fill in fill_dict],
+                    dtype=float,
+                )
+            elif isinstance(fill_dict, dict):
+                self.n_leaf_fills = None
+                fill_keys = list(fill_dict.keys())
+                fill_values = np.asarray([fill_dict[key] for key in fill_keys], dtype=float)
+            else:
+                raise ValueError("fill_dict must be a dictionary or a list of dictionaries.")
 
             self.fill_dict = {}
-            self.fill_dict["fill_inds"] = []
-            self.fill_dict["fill_values"] = []
-            for key in fill_dict.keys():
-                self.fill_dict["fill_inds"].append(output_basis.index(key))
-                self.fill_dict["fill_values"].append(fill_dict[key])
-
-            # set up test_inds accordingly
             # dtype=int keeps an empty fill_dict ({}) usable as an index array
+            # (fill keys resolve through key_map like parameter_transforms keys)
+            self.fill_dict["fill_inds"] = np.asarray(
+                [
+                    output_basis.index(key if key not in key_map else key_map[key])
+                    for key in fill_keys
+                ],
+                dtype=int,
+            )
+            self.fill_dict["fill_values"] = fill_values
+            # set up test_inds accordingly
             self.fill_dict["test_inds"] = test_inds
-            self.fill_dict["fill_inds"] = np.asarray(self.fill_dict["fill_inds"], dtype=int)
-            self.fill_dict["fill_values"] = np.asarray(self.fill_dict["fill_values"], dtype=float)
 
         else:
+            self.n_leaf_fills = None
             self.fill_dict = None
 
     @staticmethod
@@ -164,7 +209,7 @@ class TransformContainer:
 
             # multi parameter transforms
             for inds, trans_fn in self.base_transforms["mult_param"].items():
-                temp = trans_fn(*[params_temp[i] for i in inds])
+                temp = trans_fn(*[params_temp[i].copy() for i in inds])
                 for j, i in enumerate(inds):
                     params_temp[i] = temp[j]
 
@@ -180,16 +225,22 @@ class TransformContainer:
             else:
                 return params
 
-    def fill_values(self, params, xp=None):
+    def fill_values(self, params, xp=None, leaf_inds=None):
         """fill fixed parameters
 
-        This also adjusts parameter order as needed between the two bases. 
+        This also adjusts parameter order as needed between the two bases.
 
         Args:
             params (np.ndarray[..., ndim]): Array with coordinates. This array is
                 filled with values according to the ``self.fill_dict`` dictionary.
             xp (object, optional): ``numpy`` or ``cupy``. If ``None``, use ``numpy``.
-                (default: ``None``) 
+                (default: ``None``)
+            leaf_inds (np.ndarray, optional): Leaf index of each input row, shape
+                ``params.shape[:-1]`` (1D of length ``n`` for 2D coords). Required
+                when the container was built with a per-leaf ``fill_dict`` list:
+                row ``j`` is filled with the fill values of leaf ``leaf_inds[j]``,
+                vectorized across rows. Ignored for scalar-fill containers.
+                (default: ``None``)
 
         Returns:
             np.ndarray[..., ndim_full]: Filled ``params`` array.
@@ -220,10 +271,27 @@ class TransformContainer:
                     fill_inds,
                 )
 
-                # add fill_values at fill_inds
-                params_filled[indexing_fill_inds] = xp.asarray(
-                    self.fill_dict["fill_values"]
-                )
+                if self.n_leaf_fills is not None:
+                    # per-leaf fills: select each row's fill values by its leaf index
+                    if leaf_inds is None:
+                        raise ValueError(
+                            "This TransformContainer holds per-leaf fill values; "
+                            "pass leaf_inds (shape params.shape[:-1]) to fill_values/both_transforms."
+                        )
+                    leaf_inds_in = xp.asarray(leaf_inds).astype(int)
+                    if leaf_inds_in.shape != shape[:-1]:
+                        raise ValueError(
+                            f"leaf_inds shape {leaf_inds_in.shape} must match the params "
+                            f"leading shape {shape[:-1]}."
+                        )
+                    params_filled[indexing_fill_inds] = xp.asarray(
+                        self.fill_dict["fill_values"]
+                    )[leaf_inds_in]
+                else:
+                    # add fill_values at fill_inds
+                    params_filled[indexing_fill_inds] = xp.asarray(
+                        self.fill_dict["fill_values"]
+                    )
 
             return params_filled
 
@@ -231,12 +299,12 @@ class TransformContainer:
             return params
 
     def both_transforms(
-        self, params, copy=True, return_transpose=False, xp=None
+        self, params, copy=True, return_transpose=False, xp=None, leaf_inds=None
     ):
         """Transform the parameters and fill fixed parameters
 
         This fills the fixed parameters and then transforms all of them. Therefore, the user
-        must be careful with the indexes input. 
+        must be careful with the indexes input.
 
         This is generally the direction recommended because fixed parameters may change
         non-fixed parameters during parameter transformations. This can be reversed
@@ -250,7 +318,10 @@ class TransformContainer:
             return_transpose (bool, optional): If ``True``, return the transpose of the
                 array. (default: ``False``)
             xp (object, optional): ``numpy`` or ``cupy``. If ``None``, use ``numpy``.
-                (default: ``None``) 
+                (default: ``None``)
+            leaf_inds (np.ndarray, optional): Per-row leaf indices, forwarded to
+                :func:`fill_values`. Required for containers built with a per-leaf
+                ``fill_dict`` list; ignored otherwise. (default: ``None``)
 
         Returns:
             np.ndarray[..., ndim]: Transformed and filleds ``params`` array.
@@ -261,7 +332,7 @@ class TransformContainer:
             xp = np
 
         # run transforms first
-        temp = self.fill_values(params, xp=xp)
+        temp = self.fill_values(params, xp=xp, leaf_inds=leaf_inds)
         temp = self.transform_base_parameters(
             temp, copy=copy, return_transpose=return_transpose, xp=xp
         )
@@ -343,7 +414,7 @@ class TransformContainer:
             for inds, trans_fn in reversed(
                 list(self.base_inverse_transforms["mult_param"].items())
             ):
-                temp = trans_fn(*[params_temp[i] for i in inds])
+                temp = trans_fn(*[params_temp[i].copy() for i in inds])
                 for j, i in enumerate(inds):
                     params_temp[i] = temp[j]
 

@@ -5,6 +5,7 @@ import typing
 
 import corner
 import numpy as np
+import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -16,12 +17,6 @@ from eryn.utils.updates import UpdateStep
 from eryn.utils.utility import get_integrated_act, stepping_stone_log_evidence, walk_moves
 
 DEFAULT_PALETTE = "icefire"
-
-try:
-    import scienceplots
-    plt.style.use(['science'])
-except (ImportError, ModuleNotFoundError, AttributeError):
-    pass
 
 class Backend:
     """A placeholder Backend class for type hinting."""
@@ -35,7 +30,7 @@ def setup_plotting():
         pass
 
     # increase default font size
-    mpl.rcParams.update({'font.size': 16})
+    # mpl.rcParams.update({'font.size': 16})
 
     if which("latex"):
         mpl.rcParams.update({
@@ -1657,6 +1652,12 @@ class PlotContainer:
         Returns:
             None
         """
+
+        if getattr(self.backend, "nsamplers", 1) > 1:
+            raise NotImplementedError(
+                "PlotContainer does not support nsamplers > 1; plot per sampler "
+                "with get_chain(sampler_index=...)."
+            )
 
         if self.backend.iteration > self.stop:
             return

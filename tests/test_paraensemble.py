@@ -1,4 +1,10 @@
+"""Tests for the DEPRECATED para stack (ParaEnsembleSampler / ParaState /
+ParaBackend). The replacement is ``EnsembleSampler(nsamplers=...)``; see
+tests/test_nsamplers.py. These tests stay green until the para classes are
+removed."""
+
 import unittest
+import warnings
 
 import numpy as np
 from gpubackendtools import has_backend
@@ -12,6 +18,13 @@ from eryn.paraensemble import (
 from eryn.prior import ProbDistContainer, uniform_dist
 from eryn.state import ParaState
 from eryn.utils import PeriodicContainer
+
+# the para stack warns on construction by design; keep its own tests quiet
+warnings.filterwarnings(
+    "ignore",
+    category=DeprecationWarning,
+    message=".*(ParaEnsembleSampler|ParaState|ParaBackend) is deprecated.*",
+)
 
 _CUDA_AVAILABLE = any(has_backend(name) for name in _CUDA_BACKEND_PRIORITY)
 

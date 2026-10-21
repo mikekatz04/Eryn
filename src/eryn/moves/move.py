@@ -421,6 +421,28 @@ class Move(object):
         """Acceptance fraction for this move."""
         return self.accepted / self.num_proposals
 
+    # independent-samplers defaults (overwritten when a sampler-aware
+    # TemperatureControl is attached, or set directly by EnsembleSampler)
+    nsamplers = 1
+    ntemps_per_sampler = None
+    sampler_id_rows = None
+
+    @property
+    def sub_moves(self):
+        """Moves wrapped by this move. Empty for leaf moves.
+
+        Overriding this advertises that the returned moves maintain the
+        standard ``accepted`` / ``num_proposals`` counters, so
+        ``acceptance_fraction`` is meaningful on each of them. Diagnostics such
+        as :class:`eryn.utils.PlotContainer` walk this to report the acceptance
+        of every proposal in a nested move tree.
+
+        Returns:
+            list: Constituent moves. Empty for a move that wraps none.
+
+        """
+        return []
+
     @property
     def sub_moves(self):
         """Moves wrapped by this move. Empty for leaf moves.
@@ -455,10 +477,19 @@ class Move(object):
                 self.temperature_control.compute_log_posterior_tempered
             )
 
-            self.ntemps = self.temperature_control.ntemps
+            # self.ntemps is the folded axis-0 size (nsamplers * ntemps per sampler):
+            # proposals treat independent samplers as extra temperatures
+            self.ntemps = getattr(
+                temperature_control, "ntemps_eff", temperature_control.ntemps
+            )
+            self.nsamplers = getattr(temperature_control, "nsamplers", 1)
+            self.ntemps_per_sampler = temperature_control.ntemps
+            self.sampler_id_rows = np.repeat(
+                np.arange(self.nsamplers), self.ntemps_per_sampler
+            )
 
     def compute_log_posterior_basic(self, logl, logp):
-        """Compute the log of posterior
+        r"""Compute the log of posterior
 
         :math:`\log{P} = \log{L} + \log{p}`
 
@@ -529,9 +560,12 @@ class Move(object):
         # new log likelihood
         old_log_likes = np.take_along_axis(old_state.log_like, subset, axis=1)
         new_log_likes = new_state.log_like
-        temp_change_log_like = new_log_likes * (accepted_temp) + old_log_likes * (
-            ~accepted_temp
-        )
+        # np.where, NOT an arithmetic blend: a REJECTED proposal with
+        # log_like = -inf gives (-inf) * False = NaN, which then poisons the
+        # walker's stored log_like (coordinates unchanged) and makes any later
+        # resume raise "The initial log_like was NaN". log_prior is already
+        # guarded below; log_like was not. (CD1-L MBH runs, 2026-09-12.)
+        temp_change_log_like = np.where(accepted_temp, new_log_likes, old_log_likes)
 
         np.put_along_axis(old_state.log_like, subset, temp_change_log_like, axis=1)
 

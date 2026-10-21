@@ -31,6 +31,11 @@ Implemented MH Moves
     :show-inheritance:
     :inherited-members:
 
+.. autoclass:: eryn.moves.EigenAxisMove
+    :members:
+    :show-inheritance:
+    :inherited-members:
+
 .. autoclass:: eryn.moves.DistributionGenerate
     :members:
     :show-inheritance:

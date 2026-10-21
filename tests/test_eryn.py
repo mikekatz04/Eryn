@@ -6,8 +6,8 @@
 
 from eryn.ensemble import EnsembleSampler
 from eryn.state import State
-from eryn.prior import ProbDistContainer, uniform_dist
-from eryn.utils import TransformContainer
+from eryn.priors import ProbDistContainer, UniformDistribution
+from eryn.utils import TransformContainer, PeriodicContainer
 from eryn.moves import (
     GaussianMove,
     StretchMove,
@@ -54,18 +54,6 @@ def log_like_fn_gauss_pulse(params, t, data, sigma):
     return ll
 
 
-def gaussian_pulse(x, a, b, c):
-    f_x = a * np.exp(-((x - b) ** 2) / (2 * c**2))
-    return f_x
-
-
-def combine_gaussians(t, params):
-    template = np.zeros_like(t)
-    for param in params:
-        template += gaussian_pulse(t, *param)  # *params -> a, b, c
-    return template
-
-
 def sine(x, a, b, c):
     f_x = a * np.sin(2 * np.pi * b * x + c)
     return f_x
@@ -105,7 +93,7 @@ class ErynTest(unittest.TestCase):
 
         lims = 5.0
         priors_in = {
-            f"x{i}": uniform_dist(-lims + means[i], lims + means[i]) for i in range(ndim)
+            f"x{i}": UniformDistribution(-lims + means[i], lims + means[i]) for i in range(ndim)
         }
         priors = ProbDistContainer(priors_in)
 
@@ -165,7 +153,7 @@ class ErynTest(unittest.TestCase):
 
         lims = 5.0
         priors_in = {
-             f"x{i}": uniform_dist(-lims + means[i], lims + means[i]) for i in range(ndim)
+             f"x{i}": UniformDistribution(-lims + means[i], lims + means[i]) for i in range(ndim)
         }
         priors = ProbDistContainer(priors_in)
 
@@ -265,9 +253,9 @@ class ErynTest(unittest.TestCase):
         # describes priors for all leaves independently
         priors = {
             "gauss": {
-                "amp": uniform_dist(2.5, 3.5),  # amplitude
-                "mean": uniform_dist(t.min(), t.max()),  # mean
-                "std": uniform_dist(0.01, 0.21),  # sigma
+                "amp": UniformDistribution(2.5, 3.5),  # amplitude
+                "mean": UniformDistribution(t.min(), t.max()),  # mean
+                "std": UniformDistribution(0.01, 0.21),  # sigma
             },
         }
 
@@ -415,14 +403,14 @@ class ErynTest(unittest.TestCase):
         # describes priors for all leaves independently
         priors = {
             "gauss": {
-                0: uniform_dist(2.5, 3.5),  # amplitude
-                1: uniform_dist(t.min(), t.max()),  # mean
-                2: uniform_dist(0.01, 0.21),  # sigma
+                0: UniformDistribution(2.5, 3.5),  # amplitude
+                1: UniformDistribution(t.min(), t.max()),  # mean
+                2: UniformDistribution(0.01, 0.21),  # sigma
             },
             "sine": {
-                0: uniform_dist(0.5, 1.5),  # amplitude
-                1: uniform_dist(1.0, 20.0),  # mean
-                2: uniform_dist(0.0, 2 * np.pi),  # sigma
+                0: UniformDistribution(0.5, 1.5),  # amplitude
+                1: UniformDistribution(1.0, 20.0),  # mean
+                2: UniformDistribution(0.0, 2 * np.pi),  # sigma
             },
         }
 
@@ -583,14 +571,14 @@ class ErynTest(unittest.TestCase):
         # describes priors for all leaves independently
         priors = {
             "gauss": {
-                0: uniform_dist(2.5, 3.5),  # amplitude
-                1: uniform_dist(t.min(), t.max()),  # mean
-                2: uniform_dist(0.01, 0.21),  # sigma
+                0: UniformDistribution(2.5, 3.5),  # amplitude
+                1: UniformDistribution(t.min(), t.max()),  # mean
+                2: UniformDistribution(0.01, 0.21),  # sigma
             },
             "sine": {
-                0: uniform_dist(0.5, 1.5),  # amplitude
-                1: uniform_dist(1.0, 20.0),  # mean
-                2: uniform_dist(0.0, 2 * np.pi),  # sigma
+                0: UniformDistribution(0.5, 1.5),  # amplitude
+                1: UniformDistribution(1.0, 20.0),  # mean
+                2: UniformDistribution(0.0, 2 * np.pi),  # sigma
             },
         }
 
@@ -769,7 +757,7 @@ class ErynTest(unittest.TestCase):
         # set prior limits
         lims = 50.0
         priors_in = {
-            i: uniform_dist(-lims + means[i], lims + means[i]) for i in range(ndim)
+            i: UniformDistribution(-lims + means[i], lims + means[i]) for i in range(ndim)
         }
         priors = ProbDistContainer(priors_in)
 
@@ -899,6 +887,94 @@ class ErynTest(unittest.TestCase):
             tc_empty_fill.both_inverse_transforms(tc_empty_fill.both_transforms(z)),
             z,
             rtol=1e-13,
+        )
+
+    def test_transform_per_leaf_fill(self):
+        # per-leaf fill_dict: a VGB-style setup with fixed f0/sin_delta per leaf
+        # (sampling-units fills whose registered transforms run on the filled columns)
+        nleaves_max = 4
+        rng = np.random.default_rng(42)
+        f0_per_leaf = rng.uniform(1.0, 10.0, nleaves_max)  # mHz
+        sin_delta_per_leaf = rng.uniform(-1.0, 1.0, nleaves_max)
+
+        per_leaf_fill = [
+            {"fddot": 0.0, "f0": f0_per_leaf[i], "sin_delta": sin_delta_per_leaf[i]}
+            for i in range(nleaves_max)
+        ]
+        tc = TransformContainer(
+            input_basis=["lnA", "fdot", "phi0"],
+            output_basis=["A", "f0", "fdot", "fddot", "phi0", "delta"],
+            parameter_transforms={
+                "lnA": np.exp,
+                "f0": lambda f: f / 1e3,
+                "phi0": lambda x: -x,
+                "sin_delta": np.arcsin,
+            },
+            fill_dict=per_leaf_fill,
+            key_map={"lnA": "A", "sin_delta": "delta"},
+            inverse_parameter_transforms={
+                "lnA": np.log,
+                "f0": lambda f: f * 1e3,
+                "phi0": lambda x: -x,
+                "sin_delta": np.sin,
+            },
+        )
+        self.assertEqual(tc.n_leaf_fills, nleaves_max)
+        self.assertEqual(tc.fill_dict["fill_values"].shape, (nleaves_max, 3))
+
+        n = 12
+        x = rng.uniform(0.1, 0.9, size=(n, 3))
+        leaf_inds = rng.integers(0, nleaves_max, size=n)
+
+        full = tc.both_transforms(x, leaf_inds=leaf_inds)
+        self.assertEqual(full.shape, (n, 6))
+
+        # per-row fills landed by leaf index AND their transforms ran:
+        # f0 fill (mHz) -> Hz, sin_delta fill -> delta = arcsin(sin_delta)
+        np.testing.assert_allclose(full[:, 1], f0_per_leaf[leaf_inds] / 1e3, rtol=1e-14)
+        np.testing.assert_allclose(full[:, 3], 0.0)
+        np.testing.assert_allclose(
+            full[:, 5], np.arcsin(sin_delta_per_leaf[leaf_inds]), rtol=1e-14
+        )
+        # sampled columns transformed as usual
+        np.testing.assert_allclose(full[:, 0], np.exp(x[:, 0]), rtol=1e-14)
+        np.testing.assert_allclose(full[:, 4], -x[:, 2], rtol=1e-14)
+
+        # inverse round trip recovers the sampling-basis points (unfill drops fills)
+        np.testing.assert_allclose(tc.both_inverse_transforms(full), x, rtol=1e-13)
+
+        # per-leaf container without leaf_inds -> error
+        with self.assertRaises(ValueError):
+            tc.both_transforms(x)
+        # mismatched leaf_inds length -> error
+        with self.assertRaises(ValueError):
+            tc.both_transforms(x, leaf_inds=leaf_inds[:-1])
+
+        # mismatched keys across leaves -> error at construction
+        with self.assertRaises(ValueError):
+            TransformContainer(
+                input_basis=["a"],
+                output_basis=["a", "b"],
+                fill_dict=[{"b": 0.0}, {"a": 1.0}],
+            )
+        # empty list -> error
+        with self.assertRaises(ValueError):
+            TransformContainer(
+                input_basis=["a"], output_basis=["a", "b"], fill_dict=[]
+            )
+
+        # scalar-fill containers ignore leaf_inds and behave identically
+        tc_scalar = TransformContainer(
+            input_basis=["lnA", "fdot", "phi0"],
+            output_basis=["A", "f0", "fdot", "fddot", "phi0", "delta"],
+            parameter_transforms={"lnA": np.exp, "sin_delta": np.arcsin},
+            fill_dict={"fddot": 0.0, "f0": 2.5e-3, "sin_delta": 0.3},
+            key_map={"lnA": "A", "sin_delta": "delta"},
+        )
+        self.assertIsNone(tc_scalar.n_leaf_fills)
+        np.testing.assert_allclose(
+            tc_scalar.both_transforms(x, leaf_inds=leaf_inds),
+            tc_scalar.both_transforms(x),
         )
 
     def test_group_stretch(self):
@@ -1076,9 +1152,9 @@ class ErynTest(unittest.TestCase):
         # describes priors for all leaves independently
         priors = {
             "gauss": {
-                0: uniform_dist(2.5, 3.5),  # amplitude
-                1: uniform_dist(t.min(), t.max()),  # mean
-                2: uniform_dist(0.01, 0.21),  # sigma
+                0: UniformDistribution(2.5, 3.5),  # amplitude
+                1: UniformDistribution(t.min(), t.max()),  # mean
+                2: UniformDistribution(0.01, 0.21),  # sigma
             },
         }
 
@@ -1158,7 +1234,7 @@ class ErynTest(unittest.TestCase):
         # set prior limits
         lims = 5.0
         priors_in = {
-            i: uniform_dist(-lims + means[i], lims + means[i]) for i in range(ndim)
+            i: UniformDistribution(-lims + means[i], lims + means[i]) for i in range(ndim)
         }
         priors = ProbDistContainer(priors_in)
 
@@ -1270,9 +1346,9 @@ class ErynTest(unittest.TestCase):
         priors = {
             "gauss": ProbDistContainer(
                 {
-                    0: uniform_dist(2.5, 3.5),  # amplitude
-                    1: uniform_dist(t.min(), t.max()),  # mean
-                    2: uniform_dist(0.01, 0.21),  # sigma
+                    0: UniformDistribution(2.5, 3.5),  # amplitude
+                    1: UniformDistribution(t.min(), t.max()),  # mean
+                    2: UniformDistribution(0.01, 0.21),  # sigma
                 }
             )
         }
@@ -1334,3 +1410,110 @@ class ErynTest(unittest.TestCase):
         priors_in = {(0, 1): multivariate_normal(cov=cov)}
         priors = ProbDistContainer(priors_in)
         prior_vals = priors.rvs(size=12)
+
+    def test_periodic_stretch(self):
+        from scipy import stats
+
+        # 1. Verify that calling get_new_points on periodic branch without _lift raises ValueError
+        P = 2 * np.pi
+        periodic = PeriodicContainer({"p": {"theta": P}}, key_order={"p": ("theta",)})
+        move = StretchMove(periodic=periodic)
+        s = np.zeros((1, 10, 1, 1))
+        c_temp = np.zeros((1, 10, 1, 1))
+        with self.assertRaises(ValueError) as ctx:
+            move.get_new_points("p", s, c_temp, 10, (1, 10, 1, 1), 0, np.random)
+        self.assertIn("requires lift setup in get_proposal", str(ctx.exception))
+
+        # 2. Detailed balance invariance test on periodic torus
+        rng = np.random.RandomState(42)
+        n_samples = 20000
+        x = rng.uniform(0, P, size=(1, n_samples, 1, 1))
+        c = rng.uniform(0, P, size=(1, n_samples, 1, 1))
+        newpos, factors = move.get_proposal({"p": x}, {"p": [c]}, rng)
+        y = newpos["p"]
+        self.assertTrue(np.all(y >= 0.0) and np.all(y < P))
+
+        # Flat prior -> alpha = min(1, exp(factors))
+        log_alpha = factors[0]
+        alpha = np.exp(np.clip(log_alpha, -500.0, 0.0))
+        u = rng.uniform(0, 1, size=n_samples)
+        accepted = u < alpha
+        final_pos = np.where(accepted[:, None, None], y[0], x[0]).squeeze()
+        ks_res = stats.kstest(final_pos, stats.uniform(loc=0.0, scale=P).cdf)
+        self.assertGreater(ks_res.pvalue, 0.01)
+
+        # 3. End-to-end MCMC sampling with EnsembleSampler on periodic parameters
+        def log_like(x):
+            return np.zeros(x.shape[0])
+
+        priors = {"model_0": {0: UniformDistribution(0.0, P)}}
+        periodic_mcmc = PeriodicContainer({"model_0": {0: P}})
+        coords = {"model_0": rng.uniform(0, P, size=(1, 12, 1, 1))}
+        sampler = EnsembleSampler(
+            12, 1, log_like, priors, periodic=periodic_mcmc, moves=StretchMove(periodic=periodic_mcmc)
+        )
+        sampler.run_mcmc(coords, 20, progress=False)
+        chain = sampler.get_chain()["model_0"]
+        self.assertTrue(np.all(chain >= 0.0) and np.all(chain < P))
+
+    def test_periodic_group_stretch(self):
+        from scipy import stats
+
+        P = 4.0
+        periodic = PeriodicContainer({"gb": {"phi": P}}, key_order={"gb": ("phi",)})
+        rng = np.random.RandomState(123)
+        n_pool = 100
+        friends_pool = rng.uniform(0, P, size=(n_pool, 1))
+
+        class ConcreteGroupStretch(GroupStretchMove):
+            def __init__(self, **kwargs):
+                super().__init__(**kwargs)
+
+            def find_friends(self, name, s, s_inds=None, branch_supps=None):
+                ntemps, nwalkers, nleaves, ndim = s.shape
+                idx = rng.randint(0, n_pool, size=(ntemps, nwalkers, nleaves))
+                res = friends_pool[idx]
+                if s_inds is not None:
+                    res = np.where(s_inds[:, :, :, None], res, -999.0)
+                return res
+
+        move = ConcreteGroupStretch(
+            periodic=periodic, nfriends=20, lift_scale=1.5, lift_kmax=6
+        )
+
+        # Verify proposal properties
+        s = rng.uniform(0, P, size=(1, 20, 1, 1))
+        newpos, factors = move.get_proposal({"gb": s}, rng)
+        self.assertIn("gb", newpos)
+        self.assertTrue(np.all(newpos["gb"] >= 0.0) and np.all(newpos["gb"] < P))
+        self.assertTrue(np.all(np.isfinite(factors)))
+        self.assertIsNone(move._lift)
+        self.assertIsNone(move._last_log_norm)
+
+        # Verify RJ inactive leaf masking
+        ntemps, nwalkers, nleaves = 2, 10, 4
+        s_rj = rng.uniform(0, P, size=(ntemps, nwalkers, nleaves, 1))
+        s_inds = rng.rand(ntemps, nwalkers, nleaves) > 0.5
+        s_inds[:, :, 0] = True  # Ensure at least one active leaf
+        newpos_rj, factors_rj = move.get_proposal(
+            {"gb": s_rj}, rng, s_inds_all={"gb": s_inds}
+        )
+        self.assertTrue(np.all(np.isfinite(factors_rj)))
+
+        # Invariance under uniform distribution on periodic torus
+        n_samples = 20000
+        x = rng.uniform(0, P, size=(1, n_samples, 1, 1))
+        newpos_inv, factors_inv = move.get_proposal({"gb": x}, rng)
+        y = newpos_inv["gb"]
+        log_alpha = factors_inv[0]
+        alpha = np.exp(np.clip(log_alpha, -500.0, 0.0))
+        u = rng.uniform(0, 1, size=n_samples)
+        accepted = u < alpha
+        final_pos = np.where(accepted[:, None, None], y[0], x[0]).squeeze()
+        ks_res = stats.kstest(final_pos, stats.uniform(loc=0.0, scale=P).cdf)
+        self.assertGreater(ks_res.pvalue, 0.01)
+
+
+if __name__ == "__main__":
+    unittest.main()
+

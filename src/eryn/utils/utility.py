@@ -207,9 +207,10 @@ def thermodynamic_integration_log_evidence(betas, logls):
         betas2 = np.concatenate((betas0[:-1:2], [0.0]))
         logls2 = np.concatenate((logls[:-1:2], [logls[-1]]))
 
-    # integrate by trapz
-    logZ = -np.trapz(logls, betas)
-    logZ2 = -np.trapz(logls2, betas2)
+    # integrate by trapezoid rule (np.trapz was removed in numpy 2.0)
+    trapezoid = getattr(np, "trapezoid", None) or np.trapz
+    logZ = -trapezoid(logls, betas)
+    logZ2 = -trapezoid(logls2, betas2)
     return logZ, np.abs(logZ - logZ2)
 
 
@@ -241,7 +242,8 @@ def stepping_stone_log_evidence(betas, logls, block_len=50, repeats=100):
         n_T = betas.shape[0]
         delta_betas = betas[1:] - betas[:-1]
         throwaways = np.any(~np.isfinite(logls), axis=1) # a safeguard against non-finite entries
-        log_ratio = logsumexp(delta_betas * logls[~throwaways, :-1], axis=0) - (n_T - 1.0)*np.log(n - np.sum(throwaways))
+        # each ratio is a mean over the retained samples: normalise each by log(n) once
+        log_ratio = logsumexp(delta_betas * logls[~throwaways, :-1], axis=0) - np.log(n - np.sum(throwaways))
         return np.sum(log_ratio), log_ratio
     
     # make sure they are the same length
@@ -254,7 +256,8 @@ def stepping_stone_log_evidence(betas, logls, block_len=50, repeats=100):
     order = np.argsort(betas)
     betas = betas[order]
     logls = logls[:, order, :]
-    logls = logls.reshape(-1, betas.shape[0])  # Get all samples per temperature
+    # Get all samples per temperature: (steps, ntemps, nwalkers) -> (steps * nwalkers, ntemps)
+    logls = np.moveaxis(logls, 1, -1).reshape(-1, betas.shape[0])
     steps = logls.shape[0]  # Get number of samples
 
     logZ, _ = calculate_stepping_stone(betas, logls)
@@ -330,7 +333,6 @@ def psrf(C, ndims, per_walker=False):
     R̂ = np.sqrt(var_θ / W)
     return R̂
 
-
 def walk_moves(moves, prefix="", _seen=None):
     """Walk a (possibly nested) collection of moves depth-first.
 
@@ -398,3 +400,16 @@ def walk_moves(moves, prefix="", _seen=None):
         yield from walk_moves(
             getattr(move, "sub_moves", []), prefix=path + "/", _seen=_seen
         )
+
+from typing import TYPE_CHECKING, TypeAlias, Union
+if TYPE_CHECKING:
+    # Strict typing context: Pylance will use this branch.
+    try:
+        import cupy as cp # type: ignore[import]
+        NDArrayLike: TypeAlias = Union[np.ndarray, cp.ndarray]
+    except ImportError:
+        NDArrayLike: TypeAlias = np.ndarray
+else:
+    # Runtime context: Python executes this branch without loading cupy.
+    # Set to np.ndarray so it evaluates as a valid Type at runtime without crashing.
+    NDArrayLike: TypeAlias = np.ndarray  

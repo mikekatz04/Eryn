@@ -18,6 +18,22 @@ from .tempering import TemperatureControl
 from .rj import ReversibleJumpMove
 from .distgen import DistributionGenerate
 from .distgenrj import DistributionGenerateRJ
+from .eigenaxis import EigenAxisMove
+from .gaussian import GaussianMove
+from .red_blue import RedBlueMove
+from .stretch import StretchMove
+from .de import DEMove, DESnookerMove
+from .infomatrix import InfoMatrixMove
+from .independentmh import IndependentProposalMove
+from .flow import ConditionalFlowMove
+from .flownuts import FlowNUTSMove
+
+# from .kde import KDEMove
+# from .walk import WalkMove
+from .tempering import TemperatureControl
+from .rj import ReversibleJumpMove
+from .distgen import DistributionGenerate
+from .distgenrj import DistributionGenerateRJ
 from .multipletry import MultipleTryMove
 from .group import GroupMove
 from .groupstretch import GroupStretchMove
@@ -27,10 +43,18 @@ from .combine import CombineMove
 # from .basicmodelswaprj import BasicSymmetricModelSwapRJMove
 from .mtdistgen import MTDistGenMove
 from .mtdistgenrj import MTDistGenMoveRJ
+# from .walk import WalkMove
+from .nuts import NUTSMove, NUTSSampler
+from .red_blue import RedBlueMove
+from .ridgegibbs import RidgeGibbsMove
+from .rj import ReversibleJumpMove
+from .stretch import StretchMove
+from .tempering import TemperatureControl
 
 __all__ = [
     "Move",
     "MHMove",
+    "EigenAxisMove",
     "GaussianMove",
     "RedBlueMove",
     "StretchMove",
@@ -46,6 +70,7 @@ __all__ = [
     "GroupStretchMove",
     "GroupDEMove",
     "GroupDESnookerMove",
+    "RidgeGibbsMove",
     "CombineMove",
     "NUTSMove",
     "NUTSSampler",

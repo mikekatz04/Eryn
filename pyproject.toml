@@ -50,6 +50,12 @@ dependencies = [
   "scipy",
   "tqdm",
   "wrapt",
+  "pytest>=9.1.1",
+]
+
+optional-dependencies.flow = [
+  "torch>=2.1",
+  "zuko>=1.1",
 ]
 
 optional-dependencies.flow = [

@@ -22,22 +22,32 @@ class Backend(object):
         dtype (dtype, optional): Dtype to use for data storage. If None,
             program uses np.float64. (default: ``None``)
 
+    Storage note: raw storage arrays ALWAYS carry an independent-samplers axis
+    directly after the step axis (size ``nsamplers``, default 1). The getters
+    (``get_chain``, ``get_log_like``, ...) and the ``accepted`` /
+    ``rj_accepted`` / ``swaps_accepted`` properties squeeze that axis away when
+    ``nsamplers == 1`` so return shapes match the layouts documented below.
+
     Attributes:
         accepted (2D int np.ndarray): Number of accepted steps for within-model moves.
             The shape is (ntemps, nwalkers).
         betas (2D double np.ndarray): Inverse temperature latter at each step.
             Shape is (nsteps, ntemps). This keeps track of adjustable temperatures.
+            (Raw storage: (nsteps, nsamplers, ntemps).)
         blobs (4D double np.ndarray): Stores extra blob information returned from
             likelihood function. Shape is (nsteps, ntemps, nwalkers, nblobs).
+            (Raw storage: (nsteps, nsamplers, ntemps, nwalkers, nblobs).)
         branch_names (list of str): List of branch names.
         chain (dict): Dictionary with branch_names as keys. The values are
             5D double np.ndarray arrays with shape (nsteps, ntemps, nwalkers, nleaves_max, ndim).
             These are the locations of walkers over the MCMC run.
+            (Raw storage: (nsteps, nsamplers, ntemps, nwalkers, nleaves_max, ndim).)
         dtype (dtype): Dtype to use for data storage.
         inds (dict): Keys are branch_names. Values are 4D bool np.ndarray
             of shape (nsteps, ntemps, nwalkers, nleaves_max). This array details which
             leaves are used in the current step. This is really only
             relevant for reversible jump.
+            (Raw storage: (nsteps, nsamplers, ntemps, nwalkers, nleaves_max).)
         initiailized (bool): If ``True``, backend object has been initialized.
         iteration (int): Current index within the data storage arrays.
         log_prior (3D double np.ndarray): Log of the prior values. Shape is
@@ -73,6 +83,9 @@ class Backend(object):
         """Allows for simple reset based on previous inputs"""
         self.reset(*self.reset_args, **self.reset_kwargs)
 
+    # class-level default so legacy/unpickled backends still work
+    nsamplers = 1
+
     def reset(
         self,
         nwalkers,
@@ -84,6 +97,7 @@ class Backend(object):
         rj=False,
         moves=None,
         key_order=None,
+        nsamplers=1,
         **info,
     ):
         """Clear the state of the chain and empty the backend
@@ -108,8 +122,13 @@ class Backend(object):
             moves (list, optional): List of all of the move classes input into the sampler.
                 (default: ``None``)
             key_order (dict, optional): Keys are ``branch_names`` and values are lists of key ordering for each
-                branch. For example, ``{"model_0": ["x1", "x2", "x3"]}``. 
+                branch. For example, ``{"model_0": ["x1", "x2", "x3"]}``.
                 (default: ``None``)
+            nsamplers (int, optional): Number of independent samplers run simultaneously.
+                Storage always carries a sampler axis directly after the step axis
+                (e.g. chain shape ``(nsteps, nsamplers, ntemps, nwalkers, nleaves_max, ndim)``);
+                getters squeeze that axis when ``nsamplers == 1`` so return shapes
+                match the single-sampler layout. (default: ``1``)
             **info (dict, optional): Any other key-value pairs to be added
                 as attributes to the backend.
 
@@ -123,6 +142,7 @@ class Backend(object):
             rj=rj,
             moves=moves,
             key_order=key_order,
+            nsamplers=nsamplers,
             info=info,
         )
 
@@ -133,6 +153,7 @@ class Backend(object):
         # store all information to guide data storage
         self.nwalkers = int(nwalkers)
         self.ntemps = int(ntemps)
+        self.nsamplers = int(nsamplers)
         self.rj = rj
 
         # turn things into lists/dicts if needed
@@ -194,19 +215,29 @@ class Backend(object):
         self.iteration = 0
 
         # setup all the holder arrays
-        self.accepted = np.zeros((self.ntemps, self.nwalkers), dtype=self.dtype)
-        self.swaps_accepted = np.zeros((self.ntemps - 1,), dtype=self.dtype)
+        # cumulative counters always carry the sampler axis; the public
+        # ``accepted`` / ``rj_accepted`` / ``swaps_accepted`` properties squeeze
+        # it when nsamplers == 1
+        self._accepted = np.zeros(
+            (self.nsamplers, self.ntemps, self.nwalkers), dtype=self.dtype
+        )
+        self._swaps_accepted = np.zeros(
+            (self.nsamplers, self.ntemps - 1), dtype=self.dtype
+        )
         if self.rj:
-            self.rj_accepted = np.zeros((self.ntemps, self.nwalkers), dtype=self.dtype)
+            self._rj_accepted = np.zeros(
+                (self.nsamplers, self.ntemps, self.nwalkers), dtype=self.dtype
+            )
 
         else:
-            self.rj_accepted = None
+            self._rj_accepted = None
 
         # chains are stored in dictionaries
         self.chain = {
             name: np.empty(
                 (
                     0,
+                    self.nsamplers,
                     self.ntemps,
                     self.nwalkers,
                     self.nleaves_max[name],
@@ -220,17 +251,25 @@ class Backend(object):
         # inds correspond to leaves used or not
         self.inds = {
             name: np.empty(
-                (0, self.ntemps, self.nwalkers, self.nleaves_max[name]), dtype=bool
+                (0, self.nsamplers, self.ntemps, self.nwalkers, self.nleaves_max[name]),
+                dtype=bool,
             )
             for name in self.branch_names
         }
 
         # log likelihood and prior
-        self.log_like = np.empty((0, self.ntemps, self.nwalkers), dtype=self.dtype)
-        self.log_prior = np.empty((0, self.ntemps, self.nwalkers), dtype=self.dtype)
+        self.log_like = np.empty(
+            (0, self.nsamplers, self.ntemps, self.nwalkers), dtype=self.dtype
+        )
+        self.log_prior = np.empty(
+            (0, self.nsamplers, self.ntemps, self.nwalkers), dtype=self.dtype
+        )
 
         # temperature ladder
-        self.betas = np.empty((0, self.ntemps), dtype=self.dtype)
+        self.betas = np.empty((0, self.nsamplers, self.ntemps), dtype=self.dtype)
+
+        # which independent samplers were running at each step
+        self.samplers_running = np.empty((0, self.nsamplers), dtype=bool)
 
         self.blobs = None
 
@@ -244,9 +283,12 @@ class Backend(object):
             self.move_keys = []
             for move in moves:
                 # prepare information dictionary
+                # stored FOLDED (nsamplers * ntemps, nwalkers): identical to the
+                # legacy layout when nsamplers == 1
                 self.move_info[move] = {
                     "acceptance_fraction": np.zeros(
-                        (self.ntemps, self.nwalkers), dtype=self.dtype
+                        (self.nsamplers * self.ntemps, self.nwalkers),
+                        dtype=self.dtype,
                     )
                 }
 
@@ -256,11 +298,52 @@ class Backend(object):
         else:
             self.move_info = None
 
+    @property
+    def accepted(self):
+        """Accepted counts; shape ``(ntemps, nwalkers)`` for ``nsamplers == 1``, else ``(nsamplers, ntemps, nwalkers)``."""
+        return self._accepted[0] if self.nsamplers == 1 else self._accepted
+
+    @property
+    def rj_accepted(self):
+        """RJ accepted counts; shape ``(ntemps, nwalkers)`` for ``nsamplers == 1``, else ``(nsamplers, ntemps, nwalkers)``."""
+        if self._rj_accepted is None:
+            return None
+        return self._rj_accepted[0] if self.nsamplers == 1 else self._rj_accepted
+
+    @property
+    def swaps_accepted(self):
+        """Accepted swap counts; shape ``(ntemps - 1,)`` for ``nsamplers == 1``, else ``(nsamplers, ntemps - 1)``."""
+        return self._swaps_accepted[0] if self.nsamplers == 1 else self._swaps_accepted
+
+    def _step_indexer(self, slice_vals, temp_index, sampler_index, has_temp_axis=True):
+        """Build the (step, sampler[, temp]) indexing tuple for stored arrays.
+
+        The sampler axis is squeezed (integer-indexed with 0) when
+        ``nsamplers == 1`` and no explicit ``sampler_index`` is given, so
+        return shapes match the legacy single-sampler layout.
+        """
+        if sampler_index is None:
+            sampler_sel = 0 if self.nsamplers == 1 else slice(None)
+        else:
+            assert isinstance(sampler_index, int)
+            sampler_sel = sampler_index
+
+        if not has_temp_axis:
+            return (slice_vals, sampler_sel)
+
+        if temp_index is None:
+            temp_sel = slice(None)
+        else:
+            assert isinstance(temp_index, int)
+            temp_sel = temp_index
+
+        return (slice_vals, sampler_sel, temp_sel)
+
     def has_blobs(self):
         """Returns ``True`` if the model includes blobs"""
         return self.blobs is not None
 
-    def get_value(self, name, thin=1, discard=0, slice_vals=None, temp_index=None, branch_names=None):
+    def get_value(self, name, thin=1, discard=0, slice_vals=None, temp_index=None, sampler_index=None, branch_names=None):
         """Returns a requested value to user.
 
         This function helps to streamline the backend for both
@@ -275,8 +358,11 @@ class Backend(object):
             slice_vals (indexing np.ndarray or slice, optional): Ignored for non-HDFBackend.
             temp_index (int, optional): Integer for the desired temperature index.
                 If ``None``, will return all temperatures. (default: ``None``)
+            sampler_index (int, optional): Integer for the desired independent-sampler
+                index. If ``None``, returns all samplers (the sampler axis is squeezed
+                away entirely when ``nsamplers == 1``). (default: ``None``)
             branch_names (str or list, optional): Specific branch names requested. (default: ``None``)
-            
+
         Returns:
             dict or np.ndarray: Values requested.
 
@@ -295,11 +381,9 @@ class Backend(object):
         if name == "blobs" and not self.has_blobs():
             return None
 
-        if temp_index is None:
-            temp_index = np.arange(self.ntemps)
-        else:
-            assert isinstance(temp_index, int)
-        
+        step_sel = slice(discard + thin - 1, self.iteration, thin)
+        indexer = self._step_indexer(step_sel, temp_index, sampler_index)
+
         # make sure branch_names input is a list
         if branch_names is not None:
             if isinstance(branch_names, str):
@@ -308,23 +392,24 @@ class Backend(object):
         branch_names_in = self.branch_names if branch_names is None else branch_names
         # prepare chain for output
         if name == "chain":
-            v_all = {
-                key: self.chain[key][discard + thin - 1 : self.iteration : thin, temp_index]
-                for key in branch_names_in
-            }
+            v_all = {key: self.chain[key][indexer] for key in branch_names_in}
             return v_all
 
         # prepare inds for output
         if name == "inds":
-            v_all = {
-                key: self.inds[key][discard + thin - 1 : self.iteration : thin, temp_index]
-                for key in branch_names_in
-            }
+            v_all = {key: self.inds[key][indexer] for key in branch_names_in}
             return v_all
+
+        # samplers_running has no temperature axis
+        if name == "samplers_running":
+            indexer = self._step_indexer(
+                step_sel, temp_index, sampler_index, has_temp_axis=False
+            )
+            return self.samplers_running[indexer]
 
         # all other requests can filter through array output
         # rather than the dictionary output used above
-        v = getattr(self, name)[discard + thin - 1 : self.iteration : thin, temp_index]
+        v = getattr(self, name)[indexer]
         return v
 
     def get_chain(self, **kwargs):
@@ -530,7 +615,8 @@ class Backend(object):
         log_like = self.get_log_like(**kwargs)
         log_prior = self.get_log_prior(**kwargs)
 
-        return betas[:, :, None] * log_like + log_prior
+        # betas is (nsteps, ntemps) for nsamplers == 1, (nsteps, nsamplers, ntemps) otherwise
+        return betas[..., None] * log_like + log_prior
 
     def get_betas(self, **kwargs):
         """Get the chain of inverse temperatures
@@ -554,6 +640,21 @@ class Backend(object):
 
         """
         return self.get_value("betas", **kwargs)
+
+    def get_samplers_running(self, **kwargs):
+        """Get the chain of ``samplers_running`` masks.
+
+        Returns:
+            bool np.ndarray or None: ``(nsteps, nsamplers)`` mask of running samplers
+            (``(nsteps,)`` when ``nsamplers == 1``), or ``None`` if not stored
+            (legacy backends).
+
+        """
+        try:
+            return self.get_value("samplers_running", **kwargs)
+        except KeyError:
+            # legacy backends/files have no samplers_running storage
+            return None
 
     def get_a_sample(self, it):
         """Access a sample in the chain
@@ -582,7 +683,17 @@ class Backend(object):
         if blobs is not None:
             blobs = blobs[0]
 
+        # the running mask for this step (nsamplers > 1 only)
+        if self.nsamplers > 1:
+            samplers_running = self.get_samplers_running(discard=discard, thin=thin)
+            if samplers_running is not None:
+                samplers_running = samplers_running[0]
+        else:
+            samplers_running = None
+
         # fill a State with quantities from the last sample in the chain
+        # for nsamplers > 1 the arrays come back with the sampler axis;
+        # State folds them back into the internal folded representation
         sample = State(
             {
                 name: temp[0]
@@ -594,9 +705,11 @@ class Backend(object):
                 name: temp[0]
                 for name, temp in self.get_inds(discard=discard, thin=thin).items()
             },
-            betas=self.get_betas(discard=discard, thin=thin).squeeze(),
+            betas=self.get_betas(discard=discard, thin=thin)[0],
             blobs=blobs,
             random_state=self.random_state,
+            nsamplers=self.nsamplers,
+            samplers_running=samplers_running,
         )
         return sample
 
@@ -650,6 +763,12 @@ class Backend(object):
                 "get_autocorr_time is not well-defined for number of temperatures > 1 or when using reversible jump."
             )
 
+        if self.nsamplers > 1:
+            raise ValueError(
+                "get_autocorr_time is not implemented for nsamplers > 1. "
+                "Compute it per sampler with get_chain(sampler_index=...)."
+            )
+
         # get chain
         x = self.get_chain(discard=discard, thin=thin)
         x = {name: value[:, :ind] for name, value in x.items()}
@@ -688,14 +807,36 @@ class Backend(object):
                 ``(logZ, dlogZ)``. Otherwise, just a double value of logZ.
 
         """
+        # per-sampler estimates when running independent samplers
+        if self.nsamplers > 1 and "sampler_index" not in ss_kwargs:
+            out = [
+                self.get_evidence_estimate(
+                    discard=discard,
+                    thin=thin,
+                    return_error=True,
+                    method=method,
+                    sampler_index=s,
+                    **ss_kwargs,
+                )
+                for s in range(self.nsamplers)
+            ]
+            logZ = np.asarray([tmp[0] for tmp in out])
+            dlogZ = np.asarray([tmp[1] for tmp in out])
+            return (logZ, dlogZ) if return_error else logZ
+
         # get all the likelihood and temperature values
-        logls_all = self.get_log_like(discard=discard, thin=thin)
-        betas_all = self.get_betas(discard=discard, thin=thin)
+        sampler_index = ss_kwargs.pop("sampler_index", None)
+        logls_all = self.get_log_like(
+            discard=discard, thin=thin, sampler_index=sampler_index
+        )
+        betas_all = self.get_betas(
+            discard=discard, thin=thin, sampler_index=sampler_index
+        )
 
         # make sure that the betas were fixed during sampling (after burn in)
         if not (betas_all == betas_all[0]).all():
             raise ValueError(
-                """Cannot compute evidence estimation if betas are allowed to vary. Use stop_adaptation 
+                """Cannot compute evidence estimation if betas are allowed to vary. Use stop_adaptation
                 kwarg in temperature settings."""
             )
 
@@ -765,6 +906,12 @@ class Backend(object):
                 per temperature, stored in a dictionary, per branch name.
 
         """
+        if self.nsamplers > 1:
+            raise NotImplementedError(
+                "get_gelman_rubin_convergence_diagnostic is not implemented for nsamplers > 1. "
+                "Compute it per sampler with get_chain(sampler_index=...)."
+            )
+
         Rhat_all_branches = dict()
         # Loop over the different models
         for branch in self.branch_names:
@@ -821,9 +968,21 @@ class Backend(object):
         Returns:
             dict: Shape of samples
                 Keys are ``branch_names`` and values are tuples with
-                shapes of individual branches: (ntemps, nwalkers, nleaves_max, ndim).
+                shapes of individual branches: (ntemps, nwalkers, nleaves_max, ndim),
+                or (nsamplers, ntemps, nwalkers, nleaves_max, ndim) when ``nsamplers > 1``.
 
         """
+        if self.nsamplers > 1:
+            return {
+                key: (
+                    self.nsamplers,
+                    self.ntemps,
+                    self.nwalkers,
+                    self.nleaves_max[key],
+                    self.ndims[key],
+                )
+                for key in self.branch_names
+            }
         return {
             key: (self.ntemps, self.nwalkers, self.nleaves_max[key], self.ndims[key])
             for key in self.branch_names
@@ -857,15 +1016,18 @@ class Backend(object):
 
         # determine the number of entries in the chains
         i = ngrow - (len(self.chain[list(self.chain.keys())[0]]) - self.iteration)
-        {
-            key: (self.ntemps, self.nwalkers, self.nleaves_max[key], self.ndims[key])
-            for key in self.branch_names
-        }
 
         # temperary addition to chains
         a = {
             key: np.empty(
-                (i, self.ntemps, self.nwalkers, self.nleaves_max[key], self.ndims[key]),
+                (
+                    i,
+                    self.nsamplers,
+                    self.ntemps,
+                    self.nwalkers,
+                    self.nleaves_max[key],
+                    self.ndims[key],
+                ),
                 dtype=self.dtype,
             )
             for key in self.branch_names
@@ -878,7 +1040,8 @@ class Backend(object):
         # temperorary addition to inds
         a = {
             key: np.empty(
-                (i, self.ntemps, self.nwalkers, self.nleaves_max[key]), dtype=bool
+                (i, self.nsamplers, self.ntemps, self.nwalkers, self.nleaves_max[key]),
+                dtype=bool,
             )
             for key in self.branch_names
         }
@@ -886,24 +1049,35 @@ class Backend(object):
         self.inds = {key: np.concatenate((self.inds[key], a[key]), axis=0) for key in a}
 
         # temperorary addition for log likelihood
-        a = np.empty((i, self.ntemps, self.nwalkers), dtype=self.dtype)
+        a = np.empty(
+            (i, self.nsamplers, self.ntemps, self.nwalkers), dtype=self.dtype
+        )
         # combine with original log likelihood
         self.log_like = np.concatenate((self.log_like, a), axis=0)
 
         # temperorary addition for log prior
-        a = np.empty((i, self.ntemps, self.nwalkers), dtype=self.dtype)
+        a = np.empty(
+            (i, self.nsamplers, self.ntemps, self.nwalkers), dtype=self.dtype
+        )
         # combine with original log prior
         self.log_prior = np.concatenate((self.log_prior, a), axis=0)
 
         # temperorary addition for betas
-        a = np.empty((i, self.ntemps), dtype=self.dtype)
+        a = np.empty((i, self.nsamplers, self.ntemps), dtype=self.dtype)
         # combine with original betas
         self.betas = np.concatenate((self.betas, a), axis=0)
 
+        # temperorary addition for samplers_running
+        a = np.empty((i, self.nsamplers), dtype=bool)
+        self.samplers_running = np.concatenate((self.samplers_running, a), axis=0)
+
         if blobs is not None:
+            # blobs come in folded: (nsamplers * ntemps, nwalkers, ...)
             dt = np.dtype((blobs.dtype, blobs.shape[2:]))
             # temperorary addition for blobs
-            a = np.empty((i, self.ntemps, self.nwalkers), dtype=dt)
+            a = np.empty(
+                (i, self.nsamplers, self.ntemps, self.nwalkers), dtype=dt
+            )
             # combine with original blobs
             if self.blobs is None:
                 self.blobs = a
@@ -917,27 +1091,32 @@ class Backend(object):
         rj_accepted=None,
         swaps_accepted=None,
     ):
-        """Check all the information going in is okay."""
+        """Check all the information going in is okay.
+
+        The incoming ``state`` and acceptance arrays are FOLDED: the leading
+        axis has size ``nsamplers * ntemps``.
+        """
         self._check_blobs(state.blobs)
         self._check_rj_accepted(rj_accepted)
 
-        shapes = self.shape
         has_blobs = self.has_blobs()
 
-        ntemps, nwalkers = self.ntemps, self.nwalkers
+        ntemps, nwalkers, nsamplers = self.ntemps, self.nwalkers, self.nsamplers
+        ntemps_eff = nsamplers * ntemps
 
         # make sure all of the coordinate and inds dimensions are okay
-        for key, shape in shapes.items():
+        for key in self.branch_names:
             ntemp1, nwalker1, nleaves1, ndim1 = state.branches[key].shape
-            ntemp2, nwalker2, nleaves2, ndim2 = shape
+            nleaves2 = self.nleaves_max[key]
+            ndim2 = self.ndims[key]
 
             if (ntemp1, nwalker1, ndim1) != (
-                ntemp2,
-                nwalker2,
+                ntemps_eff,
+                nwalkers,
                 ndim2,
             ) or nleaves1 > nleaves2:
                 raise ValueError(
-                    f"invalid coordinate dimensions for model {key} with shape {state.branches[key].shape}; expected {shape}"
+                    f"invalid coordinate dimensions for model {key} with shape {state.branches[key].shape}; expected {(ntemps_eff, nwalkers, nleaves2, ndim2)}"
                 )
 
             if (ntemp1, nwalker1, nleaves1) != state.branches[key].inds.shape:
@@ -947,50 +1126,56 @@ class Backend(object):
 
         # make sure log likelihood, log prior, blobs, accepted, rj_accepted, betas are okay
         if state.log_like.shape != (
-            ntemps,
+            ntemps_eff,
             nwalkers,
         ):
             raise ValueError(
-                f"invalid log probability size; expected {(ntemps, nwalkers)}"
+                f"invalid log probability size; expected {(ntemps_eff, nwalkers)}"
             )
         if state.log_prior.shape != (
-            ntemps,
+            ntemps_eff,
             nwalkers,
         ):
             raise ValueError(
-                f"invalid log prior size; expected {(ntemps, nwalkers)}"
+                f"invalid log prior size; expected {(ntemps_eff, nwalkers)}"
             )
         if state.blobs is not None and not has_blobs:
             raise ValueError("unexpected blobs")
         if state.blobs is None and has_blobs:
             raise ValueError("expected blobs, but none were given")
-        if state.blobs is not None and state.blobs.shape[:2] != (ntemps, nwalkers):
+        if state.blobs is not None and state.blobs.shape[:2] != (ntemps_eff, nwalkers):
             raise ValueError(
-                f"invalid blobs size; expected {(ntemps, nwalkers)}"
+                f"invalid blobs size; expected {(ntemps_eff, nwalkers)}"
             )
-        if accepted.shape != (
-            ntemps,
-            nwalkers,
-        ):
+        if accepted.shape not in [
+            (ntemps_eff, nwalkers),
+            (nsamplers, ntemps, nwalkers),
+        ]:
             raise ValueError(
-                f"invalid acceptance size; expected {(ntemps, nwalkers)}"
+                f"invalid acceptance size; expected {(ntemps_eff, nwalkers)}"
             )
 
-        if swaps_accepted is not None and swaps_accepted.shape != (ntemps - 1,):
+        if swaps_accepted is not None and swaps_accepted.shape not in [
+            (ntemps - 1,) if nsamplers == 1 else (nsamplers, ntemps - 1),
+            (nsamplers, ntemps - 1),
+        ]:
             raise ValueError(
-                f"invalid swaps_accepted size; expected {ntemps - 1}"
+                f"invalid swaps_accepted size; expected {(nsamplers, ntemps - 1)}"
             )
         if self.rj:
-            if rj_accepted.shape != (
-                ntemps,
-                nwalkers,
-            ):
+            if rj_accepted.shape not in [
+                (ntemps_eff, nwalkers),
+                (nsamplers, ntemps, nwalkers),
+            ]:
                 raise ValueError(
-                    f"invalid rj acceptance size; expected {(ntemps, nwalkers)}"
+                    f"invalid rj acceptance size; expected {(ntemps_eff, nwalkers)}"
                 )
 
-        if state.betas is not None and state.betas.shape != (ntemps,):
-            raise ValueError(f"invalid beta size; expected {ntemps}")
+        if state.betas is not None and state.betas.shape not in [
+            (ntemps_eff,),
+            (nsamplers, ntemps),
+        ]:
+            raise ValueError(f"invalid beta size; expected {ntemps_eff}")
 
     def get_move_info(self):
         """Get move information.
@@ -1035,9 +1220,15 @@ class Backend(object):
             swaps_accepted=swaps_accepted,
         )
 
+        # incoming state arrays are FOLDED; storage carries the sampler axis,
+        # so unfold with cheap reshapes at this write boundary
+        nsamplers, ntemps = self.nsamplers, self.ntemps
+
         # save the coordinates and inds
         for key, model in state.branches.items():
-            self.inds[key][self.iteration] = model.inds
+            self.inds[key][self.iteration] = model.inds.reshape(
+                (nsamplers, ntemps) + model.inds.shape[1:]
+            )
             # use self.store_missing_leaves to set value for missing leaves
             # state retains old coordinates
             coords_in = model.coords * model.inds[:, :, :, None]
@@ -1046,22 +1237,39 @@ class Backend(object):
                 model.inds.shape + (model.coords.shape[-1],)
             )
             coords_in[~inds_all] = self.store_missing_leaves
-            self.chain[key][self.iteration] = coords_in
+            self.chain[key][self.iteration] = coords_in.reshape(
+                (nsamplers, ntemps) + coords_in.shape[1:]
+            )
 
         # save higher level quantities
-        self.log_like[self.iteration, :, :] = state.log_like
-        self.log_prior[self.iteration, :, :] = state.log_prior
+        self.log_like[self.iteration] = state.log_like.reshape(
+            (nsamplers, ntemps) + state.log_like.shape[1:]
+        )
+        self.log_prior[self.iteration] = state.log_prior.reshape(
+            (nsamplers, ntemps) + state.log_prior.shape[1:]
+        )
         if state.blobs is not None:
-            self.blobs[self.iteration, :] = state.blobs
+            self.blobs[self.iteration] = state.blobs.reshape(
+                (nsamplers, ntemps) + state.blobs.shape[1:]
+            )
         if state.betas is not None:
-            self.betas[self.iteration, :] = state.betas
+            self.betas[self.iteration] = state.betas.reshape(nsamplers, ntemps)
 
-        self.accepted += accepted
+        samplers_running = getattr(state, "samplers_running", None)
+        self.samplers_running[self.iteration] = (
+            samplers_running
+            if samplers_running is not None
+            else np.ones(nsamplers, dtype=bool)
+        )
+
+        self._accepted += np.reshape(accepted, self._accepted.shape)
 
         if swaps_accepted is not None:
-            self.swaps_accepted += swaps_accepted
+            self._swaps_accepted += np.reshape(
+                swaps_accepted, self._swaps_accepted.shape
+            )
         if self.rj:
-            self.rj_accepted += rj_accepted
+            self._rj_accepted += np.reshape(rj_accepted, self._rj_accepted.shape)
 
         # moves
         if moves_accepted_fraction is not None:
@@ -1119,6 +1327,7 @@ class Backend(object):
 
         out_info["shapes"] = self.shape
         out_info["ntemps"] = self.ntemps
+        out_info["nsamplers"] = self.nsamplers
         out_info["nwalkers"] = self.nwalkers
         out_info["nbranches"] = self.nbranches
         out_info["branch names"] = self.branch_names
