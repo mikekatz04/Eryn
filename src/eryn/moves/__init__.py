@@ -42,6 +42,8 @@ __all__ = [
     "InfoMatrixMove",
     "DistributionGenerateRJ",
     "DistributionGenerate",
+    "MTDistGenMove",
+    "MTDistGenMoveRJ",
     "TemperatureControl",
     "ReversibleJumpMove",
     "MultipleTryMove",
