@@ -1,4 +1,26 @@
 # *-- coding: utf-8 --*
+"""Runtime diagnostic plots: :class:`PlotContainer` and the plotting functions behind it.
+
+:class:`PlotContainer` reads a backend and writes PNG files under ``parent_folder``, one
+sub-folder per plot group:
+
+- ``base``: :func:`produce_base_plots` (per-branch cold-chain corner and trace plots,
+  log-likelihood traces).
+- ``tempering``: :func:`produce_tempering_plots` (ridge plots across temperatures, swap
+  acceptance, ``<log L>`` against ``beta`` with a stepping-stone evidence, ``beta``
+  evolution).
+- ``advanced``: :func:`produce_advanced_plots` (acceptance-fraction history,
+  autocorrelation-time evolution).
+- ``rj``: :func:`produce_rj_plots` (histograms of the number of leaves).
+
+:class:`~eryn.ensemble.EnsembleSampler` builds a default container (``base`` and ``rj``,
+folder ``./runtime_plots``) when ``plot_iterations > 0`` and no ``plot_generator`` is
+given, and calls :meth:`PlotContainer.produce_plots` every ``plot_iterations`` steps.
+
+Importing this module (which :mod:`eryn.utils` and :mod:`eryn.ensemble` do) imports
+corner, matplotlib, pandas and seaborn, applies the ``scienceplots`` ``"science"`` style
+when that package is installed, and sets the global matplotlib font size to 16.
+"""
 import os
 from shutil import which
 import typing
@@ -31,6 +53,13 @@ class Backend:
     pass
 
 def setup_plotting():
+    """Set the global matplotlib style used by the diagnostic plots.
+
+    Applies the ``scienceplots`` ``"science"`` style when available, sets the font size to
+    16, and enables LaTeX text with a Palatino serif font when a ``latex`` executable is on
+    ``PATH``; otherwise prints a notice and disables ``text.usetex``. Called by
+    :class:`PlotContainer` on construction. Changes ``matplotlib.rcParams`` globally.
+    """
     try:
         import scienceplots
         plt.style.use(['science'])
@@ -54,12 +83,12 @@ def setup_plotting():
 
 
 def save_or_show(fig, filename=None):
-    """
-    Save the figure to a file or show it.
-    
+    """Save ``fig`` to ``filename`` (200 dpi, tight bounding box) and close it, or show it.
+
     Args:
         fig (matplotlib.figure.Figure): Figure to save or show.
-        filename (str, optional): If provided, saves the figure to this filename.
+        filename (str, optional): Output path. Default ``None``: call ``plt.show()``
+            instead (the figure is not closed).
     """
     if filename:
         fig.savefig(filename, dpi=200, bbox_inches='tight')
@@ -68,21 +97,20 @@ def save_or_show(fig, filename=None):
         plt.show()
 
 def cov_ellipse(mean, cov, ax, n_std=1.0, **kwargs):
-    """
-    Plot a covariance ellipse using eigendecomposition.
+    """Draw the ``n_std`` covariance ellipse of a 2-D Gaussian on ``ax``.
 
-    The ellipse axes are aligned with the eigenvectors of the covariance matrix,
-    and scaled by sqrt(eigenvalue) * n_std.
+    The ellipse axes follow the eigenvectors of ``cov``, with semi-axes
+    ``n_std * sqrt(eigenvalue)``.
 
     Args:
-        mean (array-like): Center of the ellipse (mean_x, mean_y).
+        mean (array_like): Centre ``(x, y)``.
         cov (np.ndarray): 2x2 covariance matrix.
-        ax (matplotlib.axes.Axes): Axes object on which to plot the ellipse.
-        n_std (float, optional): Number of standard deviations for ellipse radius. Default is 1.0.
-        **kwargs: Additional keyword arguments passed to matplotlib.patches.Ellipse.
+        ax (matplotlib.axes.Axes): Axes to draw on.
+        n_std (float, optional): Number of standard deviations. Default ``1.0``.
+        **kwargs: Forwarded to :class:`matplotlib.patches.Ellipse`.
 
     Returns:
-        matplotlib.patches.Ellipse: The covariance ellipse added to the axes.
+        matplotlib.patches.Ellipse: The patch added to ``ax``.
     """
     # Eigendecomposition: eigenvalues are variances along principal axes
     eigenvalues, eigenvectors = np.linalg.eigh(cov)
@@ -113,26 +141,34 @@ def overlay_fim_covariance(
     alpha=0.7,
     labels=None,
 ):
-    """
-    Overlay Fisher Information Matrix confidence contours on corner plot axes.
-    
-    For 2D subplots, draws elliptical contours at specified confidence levels.
-    For 1D diagonal plots, draws vertical lines at ±nσ from the mean.
-    
+    """Overlay Gaussian (e.g. Fisher-matrix) confidence contours on a corner plot.
+
+    The figure's axes are taken as an ``n_params x n_params`` corner grid. Off-diagonal
+    panels get one :func:`cov_ellipse` per sigma level; with ``plot_1d`` the diagonal panels
+    get vertical lines at ``mean +- n * sigma``.
+
     Args:
-        fig (matplotlib.figure.Figure): Figure object containing corner plot axes.
-        covariance (np.ndarray): Covariance matrix from Fisher analysis, shape (n_params, n_params).
-        means (np.ndarray, optional): Mean values for each parameter. If None, uses origin (0, 0, ...).
-        nsigmas (list, optional): List of sigma levels to plot (e.g., [1, 2, 3]). Default [1, 2, 3].
-        plot_1d (bool, optional): Whether to plot 1D contours on diagonal plots. Default is False.
-        colors (list, optional): Colors for each sigma level. If None, uses default color cycle.
-        linestyles (list, optional): Line styles for each sigma level. If None, uses solid lines.
-        linewidths (list, optional): Line widths for each sigma level. If None, uses default (1.5).
-        alpha (float, optional): Transparency of contours. Default 0.7.
-        labels (list, optional): Labels for legend entries. If None, uses "nσ FIM".
-    
+        fig (matplotlib.figure.Figure): Figure from ``corner.corner``.
+        covariance (np.ndarray): Covariance matrix, shape ``(n_params, n_params)``.
+        means (np.ndarray, optional): Centre of the contours, length ``n_params``. Default
+            ``None`` (zeros).
+        nsigmas (list, optional): Sigma levels. Default ``[1, 2, 3]``.
+        plot_1d (bool, optional): Also draw the 1-D lines on the diagonal. Default
+            ``False``.
+        colors (list or str, optional): One colour per level, or one colour for all.
+            Default ``None`` (``"C0"``, ``"C1"``, ...).
+        linestyles (list, optional): One line style per level. Default ``None`` (solid).
+        linewidths (list, optional): One line width per level. Default ``None`` (1.5).
+        alpha (float, optional): Contour transparency. Default ``0.7``.
+        labels (list, optional): One label per level. Default ``None`` (an "n sigma FIM"
+            LaTeX label per level). Only validated: no legend is drawn here.
+
     Returns:
-        matplotlib.figure.Figure: The figure with overlaid contours.
+        matplotlib.figure.Figure: ``fig``, with the contours added.
+
+    Raises:
+        ValueError: If ``covariance`` is not square or a per-level list (or ``means``) has
+            the wrong length.
     """
     
     # Convert axs to numpy array if it's a list
@@ -252,22 +288,31 @@ def overlay_fim_covariance(
     return fig
 
 def cornerplot(data, *args, means=None, overlay_covariance=None, legend_label='Samples', overlay_label='Information Matrix Covariance', filename=None, **kwargs):
-    """
-    Create a corner plot with optional Information Matrix covariance overlay. This is centered around the means if provided.
-    Wrapper around `corner.corner()` that adds Fisher Information Matrix covariance contours.
+    """Corner plot of samples, with optional truths and covariance-contour overlay.
+
+    Wraps ``corner.corner`` with default settings (1, 2 and 3 sigma 2-D levels, filled
+    contours, titles, density histograms, ``color="steelblue"``, ``truth_color="red"``),
+    which ``**kwargs`` override. A 2-D ``truths`` array (several truth points, e.g. one per
+    leaf of a reversible-jump branch) is drawn as lines on every panel instead of being
+    passed to corner. A legend (samples, truths, overlay) goes on the second axis, and the
+    figure is saved or shown with :func:`save_or_show`.
 
     Args:
-        data (array-like): Input data for corner plot (e.g., MCMC samples).
-        *args: Positional arguments passed to `corner.corner()`.
-        means (array-like, optional): Mean values for each parameter to center the overlay. If None, uses 'truths' from kwargs or mean of data.
-        overlay_covariance (np.ndarray, optional): Covariance matrix to overlay. If None, no overlay is added.
-        legend_label (str, optional): Label for the sample distribution in the legend. Default is 'Samples'.
-        overlay_label (str, optional): Label for the overlay covariance in the legend. Default is 'Information Matrix Covariance', assuming FIM.
-        filename (str, optional): If provided, saves the figure to this filename.
-        **kwargs: Keyword arguments passed to `corner.corner()`.
+        data (np.ndarray): Samples, shape ``(nsamples, ndim)`` with ``ndim >= 2``.
+        *args: Forwarded to ``corner.corner``.
+        means (array_like, optional): Centre of the overlay. Default ``None``: the
+            ``truths`` keyword, else the sample mean.
+        overlay_covariance (np.ndarray, optional): Covariance to overlay with
+            :func:`overlay_fim_covariance` (1, 2, 3 sigma, black). Default ``None`` (none).
+        legend_label (str, optional): Legend label of the samples. Default ``"Samples"``.
+        overlay_label (str, optional): Legend label of the overlay. Default
+            ``"Information Matrix Covariance"``.
+        filename (str, optional): Output path. Default ``None`` (show).
+        **kwargs: Forwarded to ``corner.corner`` (e.g. ``labels``, ``truths``,
+            ``color``); ``truths`` must be an ``np.ndarray`` if given.
 
     Returns:
-        matplotlib.figure.Figure: The corner plot figure with optional overlays. If `filename` is provided, the figure is saved instead.
+        None: The figure is saved (and closed) or shown.
     """
 
     corner_kwargs = {
@@ -353,17 +398,18 @@ def cornerplot(data, *args, means=None, overlay_covariance=None, legend_label='S
 
 
 def traceplot(chain, labels=None, truths=None, filename=None):
-    """
-    Create trace plots for MCMC chains.
+    """Trace plots: one panel per parameter, every walker and leaf against step.
 
     Args:
-        chain (np.ndarray): MCMC chain of shape (nsteps, nwalkers, nleaves, ndim).
-        labels (list, optional): List of parameter names for x-axis labels. 
-        truths (array-like, optional): True parameter values to overlay as horizontal lines.
-        filename (str, optional): If provided, saves the figure to this filename.
+        chain (np.ndarray): Chain of shape ``(nsteps, nwalkers, nleaves, ndim)`` with
+            ``ndim >= 2`` (a single panel is not indexable).
+        labels (list, optional): Per-parameter y-axis labels. Default ``None``.
+        truths (array_like, optional): Truth values, shape ``(ndim,)`` or
+            ``(ntruths, ndim)``, drawn as dashed horizontal lines. Default ``None``.
+        filename (str, optional): Output path. Default ``None`` (show).
 
     Returns:
-        matplotlib.figure.Figure: The trace plot figure. If `filename` is provided, the figure is saved instead.
+        None: The figure is saved (and closed) or shown.
     """
 
     nsteps, nwalkers, nleaves, ndim = chain.shape
@@ -386,6 +432,22 @@ def traceplot(chain, labels=None, truths=None, filename=None):
 
 
 def plot_loglikelihood(logl, filename=None):
+    """Plot log-likelihood traces per walker, plus a per-walker facet grid.
+
+    The first figure has one line per walker. The second (a seaborn ``FacetGrid``, one
+    panel per walker) shows ``logl - max(logl)`` and is saved to ``filename`` with
+    ``.png`` replaced by ``_facet.png``; any failure while building it is logged as a
+    warning and skipped, so it never aborts a run.
+
+    Args:
+        logl (np.ndarray): Log-likelihood, shape ``(nsteps, nwalkers)`` (e.g. the cold
+            chain).
+        filename (str, optional): Output path of the first figure. Default ``None``
+            (show both).
+
+    Returns:
+        None: The figures are saved (and closed) or shown.
+    """
     nsteps, nwalkers = logl.shape
     fig = plt.figure(figsize=(10, 6))
     for j in range(nwalkers):
@@ -445,30 +507,30 @@ def plot_loglikelihood(logl, filename=None):
 def tempering_ridgeplot(chain, labels=None, palette=None, 
                         bw_adjust=0.5, aspect=5, height=0.5, hspace=-0.25,
                         max_samples=10000, filename=None):
-    """
-    Create ridge plots of tempered distributions using overlapping KDE plots for all parameters.
+    """Ridge (joy) plot of each parameter's marginal at every temperature.
 
-    This creates a visually appealing ridge plot (also known as joy plot) showing
-    how the posterior distribution broadens at higher temperatures. Each temperature
-    level is shown as a separate row with overlapping density estimates.
-    All parameters are shown as columns in a single FacetGrid figure.
+    One seaborn ``FacetGrid`` with a row per temperature (cold at the top, rows labelled
+    by index ``beta_t``) and a column per parameter; each panel is a filled KDE of all
+    steps, walkers and leaves at that temperature (NaNs dropped). Each column's x-range is
+    the cold chain's 0.1-99.9 % quantile range plus a 30 % margin.
 
     Args:
-        chain (np.ndarray): MCMC chain of shape (nsteps, ntemps, nwalkers, nleaves, ndim).
-        labels (list, optional): List of parameter names. If provided, uses labels for column titles.
-        palette (str or list, optional): Seaborn color palette name or list of colors. 
-            Default uses cubehelix_palette.
-        bw_adjust (float, optional): Bandwidth adjustment factor for KDE. Default is 0.5.
-        aspect (float, optional): Aspect ratio of each facet. Default is 5.
-        height (float, optional): Height of each temperature row in inches. Default is 0.5.
-        hspace (float, optional): Vertical spacing between temperature rows (negative for overlap). Default is -0.25.
-        max_samples (int, optional): Maximum number of samples per temperature for KDE. Default is 5000.
-            Subsampling speeds up KDE computation for large chains.
-        filename (str, optional): If provided, saves figure to this filename.
-        
+        chain (np.ndarray): Chain of shape ``(nsteps, ntemps, nwalkers, nleaves, ndim)``.
+        labels (list, optional): Per-parameter labels for the x axes. Default ``None``
+            (``$x_i$``).
+        palette (str or list, optional): Seaborn palette name or list of colours, one per
+            temperature. Default ``None`` (``DEFAULT_PALETTE = "icefire"``).
+        bw_adjust (float, optional): KDE bandwidth factor. Default ``0.5``.
+        aspect (float, optional): Facet aspect ratio. Default ``5``.
+        height (float, optional): Height of each row in inches. Default ``0.5``.
+        hspace (float, optional): Vertical spacing between rows (negative overlaps them).
+            Default ``-0.25``.
+        max_samples (int, optional): Per temperature and parameter, subsample to at most
+            this many points (fixed seed 42) before the KDE. Default ``10000``.
+        filename (str, optional): Output path. Default ``None`` (show).
+
     Returns:
-        matplotlib.figure.Figure: The figure containing all ridge plots.
-            If `filename` is provided, the figure is saved instead.
+        None: The figure is saved (and closed) or shown.
     """
     # Use seaborn context manager to temporarily set theme
     with sns.axes_style("white", {"axes.facecolor": (0, 0, 0, 0)}):
@@ -602,18 +664,19 @@ def tempering_ridgeplot(chain, labels=None, palette=None,
     # return g.figure
 
 def plot_swap_acceptance(swap_acceptance_fraction, palette=None, filename=None):
-    """
-    Plot the temperature swap acceptance fraction between adjacent temperature levels.
+    """Bar chart of the swap acceptance fraction of each adjacent temperature pair.
+
+    Bars are annotated with their values; a dashed reference line marks 0.25.
 
     Args:
-        swap_acceptance_fraction (np.ndarray): Swap acceptance fraction between adjacent 
-            temperatures, shape (ntemps-1,). Element i corresponds to swaps between 
-            temperature i and i+1.
-        palette (str or list, optional): Seaborn color palette name or list of colors.
-        filename (str, optional): If provided, saves the figure to this filename.
+        swap_acceptance_fraction (np.ndarray): Shape ``(ntemps - 1,)``; element ``i`` is the
+            acceptance of swaps between temperatures ``i`` and ``i + 1``.
+        palette (str or list, optional): Seaborn palette name or list of colours. Default
+            ``None`` (``"icefire"``).
+        filename (str, optional): Output path. Default ``None`` (show).
 
     Returns:
-        matplotlib.figure.Figure: The swap acceptance plot figure.
+        matplotlib.figure.Figure: The figure (already closed when ``filename`` is given).
     """
     ntemps = swap_acceptance_fraction.shape[0] + 1
     
@@ -671,16 +734,22 @@ def plot_logl_betas(betas: np.ndarray,
                     palette: str = None,
                     filename: str = None
                     ):
-        """
-        Plots the evolution of log-likelihood values for each temperature.
+        """Plot the mean log-likelihood against ``beta``, titled with the evidence.
+
+        One point per temperature at ``(betas[-1, t], mean(logl[:, t]))`` (x axis log
+        scale); the title shows ``log Z +- dlog Z`` from
+        :func:`~eryn.utils.utility.stepping_stone_log_evidence` with the last step's
+        ``betas``.
 
         Args:
-            betas (numpy.ndarray): Array of inverse temperatures.
-            logl (numpy.ndarray): Array of log-likelihood values.
-            palette (str, optional): Seaborn color palette name or list of colors.
-            filename (str, optional): If provided, saves the figure to this filename.
+            betas: Inverse temperatures, shape ``(nsteps, ntemps)``.
+            logl: Log-likelihood, shape ``(nsteps, ntemps, nwalkers)``.
+            palette: Seaborn palette name or list of colours. Default ``None``
+                (``"icefire"``).
+            filename: Output path. Default ``None`` (show).
+
         Returns:
-            None
+            None: The figure is saved (and closed) or shown.
         """
         fig = plt.figure(figsize=(10, 6))
         ntemp = betas.shape[1]
@@ -697,15 +766,15 @@ def plot_logl_betas(betas: np.ndarray,
         save_or_show(fig, filename)
 
 def plot_betas_evolution(betas: np.ndarray, palette: str = None, filename: str = None):
-    """
-    Plots the evolution of inverse temperatures (betas) over sampling steps.
+    """Plot every inverse temperature against sampler step.
 
     Args:
-        betas (numpy.ndarray): Array of inverse temperatures of shape (nsteps, ntemps).
-        palette (str, optional): Seaborn color palette name or list of colors.
-        filename (str, optional): If provided, saves the figure to this filename.
+        betas: Inverse temperatures, shape ``(nsteps, ntemps)``.
+        palette: Seaborn palette name or list of colours. Default ``None`` (``"icefire"``).
+        filename: Output path. Default ``None`` (show).
+
     Returns:
-        None
+        None: The figure is saved (and closed) or shown.
     """
     nsteps, ntemps = betas.shape
     tempcolors = sns.color_palette(palette if palette is not None else DEFAULT_PALETTE, ntemps)
@@ -761,16 +830,22 @@ def plot_leaves(nleaves: np.ndarray,
                 palette: str = None,
                 iteration: int = 0,
                 filename: str = None):
-    """
-    Plot the histogram of the number of leaves for each temperature.
+    """Histogram of the number of leaves at each temperature, for one branch.
 
-    This method plots a histogram of the number of leaves for each temperature in the `rj_branches` dictionary.
-    It uses the `self.backend` object to get the number of leaves for each temperature.
-    The histogram is plotted using the `plt.hist` function from the `matplotlib.pyplot` module.
-    The plot includes temperature-specific colors and a legend for the colors.
+    One step-filled, density-normalised histogram per temperature with integer-centred bins
+    from ``nleaves_min`` to ``nleaves_max``, a colour-gradient legend from ``T_0`` to
+    ``T_max``, and the step number printed in the corner.
+
+    Args:
+        nleaves: Leaf counts, shape ``(nsteps, ntemps, nwalkers)``.
+        nleaves_min: Smallest possible number of leaves.
+        nleaves_max: Largest possible number of leaves.
+        palette: Seaborn palette name or list of colours. Default ``None`` (``"icefire"``).
+        iteration: Step number shown on the figure. Default ``0``.
+        filename: Output path. Default ``None`` (show).
 
     Returns:
-    None
+        None: The figure is saved (and closed) or shown.
     """
     bns = (np.arange(nleaves_min, nleaves_max + 2) - 0.5)
     ntemps = nleaves.shape[1]
@@ -829,13 +904,16 @@ def plot_leaves(nleaves: np.ndarray,
 
 def plot_leaves_evolution(nleaves: np.ndarray,
                           filename: str = None):
-    """
-    Plot the evolution of the number of leaves per walker in the cold chain over sampling steps.
+    """Plot the number of leaves of each cold-chain walker against sampler step.
+
+    Not called by :func:`produce_rj_plots` (its call there is commented out).
+
     Args:
-        nleaves (np.ndarray): Array of number of leaves in the cold chain, shape (nsteps, nwalkers).
-        filename (str, optional): If provided, saves the figure to this filename.
+        nleaves: Cold-chain leaf counts, shape ``(nsteps, nwalkers)``.
+        filename: Output path. Default ``None`` (show).
+
     Returns:
-        None
+        None: The figure is saved (and closed) or shown.
     """
     nsteps, nwalkers = nleaves.shape
     fig = plt.figure(figsize=(10, 6))
@@ -850,11 +928,20 @@ def plot_acceptance_fraction(steps: typing.Union[np.ndarray, list],
                             total_acceptance_fraction: np.ndarray,
                              moves_acceptance_fraction: dict,
                              filename: str = None):
-    """
-    Plot the acceptance fraction for different moves over sampling steps.
+    """Plot the cold-chain acceptance fraction history, total and per move.
+
+    Each curve is the walker mean of temperature 0; a dashed reference line marks 0.234.
 
     Args:
+        steps: Sampler iterations of the recorded points, length ``nrec``.
+        total_acceptance_fraction: Total acceptance fractions, shape
+            ``(nrec, ntemps, nwalkers)``.
+        moves_acceptance_fraction: ``{move name: array}``, each of shape
+            ``(nrec, ntemps, nwalkers)``; may be empty.
+        filename: Output path. Default ``None`` (show).
 
+    Returns:
+        None: The figure is saved (and closed) or shown.
     """
 
     fig = plt.figure(figsize=(10, 6))
@@ -878,14 +965,20 @@ def plot_tempered_acceptance_fraction(steps: typing.Union[np.ndarray, list],
                             total_acceptance_fraction: np.ndarray,
                             palette: str = None,
                             filename: str = None):
-    """
-    Plot the acceptance fraction for different moves over sampling steps.
+    """Plot the total acceptance fraction history of every temperature.
+
+    One curve per temperature (walker mean), with a colour-gradient legend from ``T_0`` to
+    ``T_max``.
 
     Args:
-        steps (np.ndarray or list): Array of sampling steps.
-        total_acceptance_fraction (np.ndarray): Array of total acceptance fractions, shape (nsteps, ntemps, nwalkers).
-        palette (str or list, optional): Seaborn color palette name or list of colors.
-        filename (str, optional): If provided, saves the figure to this filename.
+        steps: Sampler iterations of the recorded points, length ``nrec``.
+        total_acceptance_fraction: Total acceptance fractions, shape
+            ``(nrec, ntemps, nwalkers)``.
+        palette: Seaborn palette name or list of colours. Default ``None`` (``"icefire"``).
+        filename: Output path. Default ``None`` (show).
+
+    Returns:
+        None: The figure is saved (and closed) or shown.
     """
     ntemps = total_acceptance_fraction.shape[1]
     tempcolors = sns.color_palette(palette if palette is not None else DEFAULT_PALETTE, ntemps)
@@ -943,13 +1036,23 @@ def plot_act_evolution(chain: dict,
                        iteration: int = 0,
                        parent_folder: str = '.'):
     
-    """
-    Plot the evolution of the autocorrelation time for each branch in the chain. Also plots the ACT values per parameter in each branch.
+    """Plot how the cold-chain integrated autocorrelation time grows with chain length.
+
+    For 10 log-spaced chain lengths from ``min(100, iteration)`` to ``iteration``, computes
+    :func:`~eryn.utils.utility.get_integrated_act` of the cold chain (walker-averaged) and
+    plots, per branch, the first ``ndim`` entries (the first leaf's parameters) against the
+    ``tau = N / 50`` reference line, then the per-branch maximum in a combined figure.
+    Branches with NaNs in the cold chain are skipped with a printed notice.
 
     Args:
-        chain (Dict): Dictionary of MCMC chains for different branches.
-        iteration (int, optional): Current iteration number for labeling. Default is 0.
-        parent_folder (str, optional): Folder to save the plots. Default is current directory.
+        chain: ``{branch_name: chain of shape (nsteps, ntemps, nwalkers, nleaves, ndim)}``.
+        iteration: Current iteration; sets the chain lengths and must be ``>= 1``. Default
+            ``0``.
+        parent_folder: Output folder: ``<parent_folder>/<branch>/act_evolution.png`` and
+            ``<parent_folder>/max_act_evolution.png``. Default ``"."``.
+
+    Returns:
+        None: The figures are saved and closed.
     """
 
     NPOINTS = 10
@@ -1031,20 +1134,30 @@ def produce_base_plots(chain: dict,
                        parent_folder: str = '.',
                        ):
 
-    """
-    Produce a set of standard diagnostic plot. These include:
-    
-    * corner plots for the cold chain per branch,
-    * trace plots for the cold chain per branch,
-    * log-likelihood evolution plots.
+    """Write the standard diagnostic plots (the ``base`` group of :class:`PlotContainer`).
+
+    For each branch (folder ``<parent_folder>/<branch>/``, created if needed):
+
+    * ``cornerplot.png``: :func:`cornerplot` of the cold chain (all walkers and leaves,
+      rows with NaNs dropped), with ``truths`` and the optional covariance overlay;
+    * ``traceplot.png``: :func:`traceplot` of the cold chain.
+
+    Plus ``<parent_folder>/loglikelihood.png`` (and ``loglikelihood_facet.png``) from
+    :func:`plot_loglikelihood` on the cold-chain log-likelihood.
 
     Args:
-        chain (Dict): Dictionary of MCMC chains for different branches.
-        logl (np.ndarray): Log-likelihood array of shape (nsteps, ntemperatures, nwalkers).
-        truths (Dict, optional): Dictionary of true parameter values for different branches.
-        overlay_covariance (Dict, optional): Dictionary of covariance matrices to overlay on corner plots.
-        labels (Dict, optional): Dictionary of parameter labels for different branches.
-        parent_folder (str, optional): Folder to save the plots. Default is current directory.
+        chain: ``{branch_name: chain of shape (nsteps, ntemps, nwalkers, nleaves, ndim)}``.
+        logl: Log-likelihood, shape ``(nsteps, ntemps, nwalkers)``.
+        truths: ``{branch_name: np.ndarray}`` of truth values (``(ndim,)`` or
+            ``(ntruths, ndim)``), also used as the overlay centre. Default ``None``.
+        overlay_covariance: ``{branch_name: covariance matrix}`` to overlay on the corner
+            plots. Default ``None``.
+        labels: ``{branch_name: list of parameter labels}``. Default ``None``.
+        iteration: Step number shown in the corner-plot legend. Default ``0``.
+        parent_folder: Output folder. Default ``"."``.
+
+    Returns:
+        None: All figures are saved and closed.
     """
 
     # create dictionary with a color shade for each branch
@@ -1101,22 +1214,26 @@ def produce_tempering_plots(chain: dict,
                             parent_folder: str = '.',
                             palette: str = None
                             ):
-    """
-    Produce tempering ridge plots for each branch in the chain. These include:
+    """Write the tempering diagnostics (the ``tempering`` group of :class:`PlotContainer`).
 
-    * ridge plots of the tempered distributions per parameter per branch,
-    * the swap acceptance fraction between adjacent temperatures,
-    * the averaged log-likelihood vs. betas plot,
-    * the evolution of betas over sampling steps.
+    * ``<parent_folder>/<branch>/tempering_ridgeplot.png``: :func:`tempering_ridgeplot`
+      per branch;
+    * ``<parent_folder>/swap_acceptance.png``: :func:`plot_swap_acceptance`;
+    * ``<parent_folder>/logl_betas.png``: :func:`plot_logl_betas` (with the
+      stepping-stone evidence);
+    * ``<parent_folder>/betas_evolution.png``: :func:`plot_betas_evolution`.
 
     Args:
-        chain (Dict): Dictionary of MCMC chains for different branches.
-        betas (np.ndarray): Inverse temperatures of shape (nsteps, ntemps,).
-        swap_acceptance_fraction (np.ndarray): Swap acceptance fraction between adjacent temperatures.
-        labels (Dict, optional): Dictionary of parameter labels for different branches.
-        logl (np.ndarray): Log-likelihood array of shape (nsteps, ntemperatures, nwalkers).
-        parent_folder (str, optional): Folder to save the plots. Default is current directory.
-        palette (str or list, optional): Seaborn color palette name or list of colors.
+        chain: ``{branch_name: chain of shape (nsteps, ntemps, nwalkers, nleaves, ndim)}``.
+        betas: Inverse temperatures, shape ``(nsteps, ntemps)``.
+        logl: Log-likelihood, shape ``(nsteps, ntemps, nwalkers)``.
+        swap_acceptance_fraction: Adjacent-pair swap acceptance, shape ``(ntemps - 1,)``.
+        labels: ``{branch_name: list of parameter labels}``. Default ``None``.
+        parent_folder: Output folder. Default ``"."``.
+        palette: Seaborn palette name or list of colours. Default ``None`` (``"icefire"``).
+
+    Returns:
+        None: All figures are saved and closed.
     """
 
     for branch, samples in chain.items():
@@ -1159,19 +1276,28 @@ def produce_advanced_plots(steps: typing.Union[np.ndarray, list],
                            iteration: int = 0,
                            chain: dict = None,
                            parent_folder: str = '.'):
-    """
-    Produce advanced diagnostic plots. These include:
-        
-    * autocorrelation time evolution per parameter per branch in the cold chain, 
-    * the comparison of the maximum autocorrelation  time in each branch against the number of steps, 
-    * the acceptance fraction evolution over steps in the cold chain (both overall and per move), 
-    * the overall acceptance fraction evolution over steps per temperature.
-    
+    """Write the advanced diagnostics (the ``advanced`` group of :class:`PlotContainer`).
+
+    * ``<parent_folder>/acceptance_fraction.png``: :func:`plot_acceptance_fraction`
+      (cold chain, total and per move);
+    * ``<parent_folder>/tempered_acceptance_fraction.png``:
+      :func:`plot_tempered_acceptance_fraction` (total, per temperature);
+    * the autocorrelation-time plots of :func:`plot_act_evolution`.
+
     Args:
-        steps (Union[np.ndarray, list]): Array or list of sampling steps.
-        total_acceptance_fraction (np.ndarray): Total acceptance fraction array of shape (nsteps, ntemps, nwalkers).
-        moves_acceptance_fraction (Dict): Dictionary of acceptance fractions for different moves.
-        parent_folder (str, optional): Folder to save the plots. Default is current directory.
+        steps: Sampler iterations of the recorded acceptance points, length ``nrec``.
+        total_acceptance_fraction: Shape ``(nrec, ntemps, nwalkers)``.
+        moves_acceptance_fraction: ``{move name: array}``, each of shape
+            ``(nrec, ntemps, nwalkers)``.
+        palette: Seaborn palette name or list of colours. Default ``None`` (``"icefire"``).
+        iteration: Current iteration, forwarded to :func:`plot_act_evolution`. Default
+            ``0``.
+        chain: ``{branch_name: chain of shape (nsteps, ntemps, nwalkers, nleaves, ndim)}``
+            for the autocorrelation plots. Default ``None``.
+        parent_folder: Output folder. Default ``"."``.
+
+    Returns:
+        None: All figures are saved and closed.
     """
 
     plot_acceptance_fraction(
@@ -1201,16 +1327,22 @@ def produce_rj_plots(nleaves: dict,
                      parent_folder: str = '.',
                      iteration: int = 0):
     
-    """
-    Produce RJ diagnostic plots for each branch in the chain. At present, only plots the histogram of the number of leaves across temperatures.
-    
+    """Write the reversible-jump diagnostics (the ``rj`` group of :class:`PlotContainer`).
+
+    For each branch with ``nleaves_max > nleaves_min``, writes
+    ``<parent_folder>/<branch>/rj_nleaves.png`` with :func:`plot_leaves`; other branches
+    are skipped.
+
     Args:
-        nleaves (Dict): Dictionary of number of leaves arrays for different branches.
-        nleaves_min (Dict): Dictionary of minimum number of leaves for different branches.
-        nleaves_max (Dict): Dictionary of maximum number of leaves for different branches.
-        palette (str or list, optional): Seaborn color palette name or list of colors.
-        parent_folder (str, optional): Folder to save the plots. Default is current directory.
-        iteration (int, optional): Current iteration number for labeling plots.
+        nleaves: ``{branch_name: leaf counts of shape (nsteps, ntemps, nwalkers)}``.
+        nleaves_min: ``{branch_name: int}``; a missing branch counts as 1.
+        nleaves_max: ``{branch_name: int}``; a missing branch counts as 1.
+        palette: Seaborn palette name or list of colours. Default ``None`` (``"icefire"``).
+        parent_folder: Output folder. Default ``"."``.
+        iteration: Step number shown on the figures. Default ``0``.
+
+    Returns:
+        None: All figures are saved and closed.
     """
 
     for branch, leaves in nleaves.items():
@@ -1242,18 +1374,63 @@ def produce_rj_plots(nleaves: dict,
 
 
 class PlotContainer:
-    """
-    An Update that generates diagnostic plots at specified intervals
-    
+    """Generate the runtime diagnostic plots from a backend.
+
+    Not an :class:`~eryn.utils.updates.Update`: the sampler calls :meth:`produce_plots`
+    directly every ``plot_iterations`` steps (and sets :attr:`backend` to its own backend
+    when the container is passed as ``plot_generator``). Each call reads the chain,
+    log-likelihood and ``betas`` from the backend and writes the selected plot groups to
+    ``<parent_folder>/<group>/`` (see the module docstring for the groups).
+
+    Construction calls :func:`setup_plotting` (global matplotlib style; prints a notice if
+    LaTeX is missing) and creates ``parent_folder``.
+
     Args:
-        plots (list or str): List of plot types to generate. Options are 'base', 'tempering', 'advanced', 'rj', or 'all'.  If multiple plot types are desired, provide a list of strings.
-        branches (list, optional): List of branch names to generate plots for. If None, all branches are used.
-        truths (dict, optional): Dictionary of true parameter values for different branches.
-        overlay_covariance (dict, optional): Dictionary of covariance matrices to overlay on corner plots.
-        tempering_palette (str or list, optional): Seaborn color palette name or list of colors for tempering plots. If None, it defaults to `icefire`.
-        parent_folder (str, optional): Folder to save the plots. Default is current directory.
-        discard (float, optional): Number of initial samples to discard from the chain before plotting. If between 0 and 1, it is treated as fraction of total samples. Default is 0.
-        stop (int, optional): Maximum number of steps to generate plots for. Default is 10000.
+        backend: Backend to read (an :class:`~eryn.backends.Backend` or a reader with
+            ``iteration``, ``key_order``, ``get_chain``, ``get_log_like``, ``get_betas``,
+            and for the ``tempering`` / ``advanced`` / ``rj`` groups ``swaps_accepted``,
+            ``nwalkers``, ``accepted``, ``rj``, ``get_nleaves``, ``nleaves_max``,
+            ``rj_branches``). Default ``None`` (set it before plotting).
+        plots: ``"base"``, ``"tempering"``, ``"advanced"``, ``"rj"``, ``"all"``, or a list
+            of the first four. Default ``"base"``.
+        branches: Branch names whose chains are plotted. Default ``None`` (all). The
+            ``rj`` group is not filtered by this.
+        truths: ``{branch_name: np.ndarray}`` of truth values for the ``base`` plots.
+            Default ``None``.
+        overlay_covariance: ``{branch_name: covariance matrix}`` overlaid on the corner
+            plots. Default ``None``.
+        tempering_palette: Seaborn palette name or list of colours for the per-temperature
+            plots. Default ``None`` (``"icefire"``).
+        parent_folder: Output folder (created). Default ``"."``.
+        discard: Leading samples dropped before plotting: a count when ``>= 1``, else a
+            fraction of ``backend.iteration``. Default ``0``.
+        stop: :meth:`produce_plots` does nothing once ``backend.iteration > stop``. Default
+            ``10000``.
+
+    Attributes:
+        plots (list[str]): Selected plot groups.
+        steps (list[int]): Iterations at which the ``advanced`` group recorded acceptance.
+        total_acceptance_fraction (np.ndarray or None): Recorded total acceptance
+            fractions, shape ``(nrec, ntemps, nwalkers)``.
+        move_acceptance_fractions (dict): Recorded per-move acceptance fractions.
+
+    Raises:
+        ValueError: If ``plots`` names an unknown group.
+
+    Example:
+        .. code-block:: python
+
+            from eryn.ensemble import EnsembleSampler
+            from eryn.utils import PlotContainer
+
+            plotter = PlotContainer(
+                plots=["base", "tempering"], parent_folder="diagnostics/", discard=0.3
+            )
+            sampler = EnsembleSampler(
+                nwalkers, ndim, log_like_fn, priors,
+                tempering_kwargs=dict(ntemps=4),  # the "tempering" group needs ntemps > 1
+                plot_iterations=100, plot_generator=plotter,
+            )
     """
     
     def __init__(self, 
@@ -1267,9 +1444,7 @@ class PlotContainer:
                  discard: float = 0,
                  stop: int = int(1e4), 
                  ):
-        """
-        Initialize the PlotContainer.
-        """
+        """Initialize the PlotContainer (arguments are documented on the class)."""
         setup_plotting()
         self.backend = backend
 
@@ -1304,6 +1479,7 @@ class PlotContainer:
 
     @property
     def backend(self):
+        """The backend (or reader) the plots are drawn from."""
         return self._backend
     @backend.setter
     def backend(self, value):
@@ -1311,6 +1487,7 @@ class PlotContainer:
 
     @property
     def truths(self):
+        """``{branch_name: truth values}`` for the ``base`` plots, or ``None``."""
         return self._truths
     @truths.setter
     def truths(self, value):
@@ -1318,19 +1495,37 @@ class PlotContainer:
 
     @property
     def overlay_covariance(self):
+        """``{branch_name: covariance matrix}`` overlaid on the corner plots, or ``None``."""
         return self._overlay_covariance
     @overlay_covariance.setter
     def overlay_covariance(self, value):
         self._overlay_covariance = value
 
     def produce_plots(self, sampler=None) -> None:
-        """
-        Generate diagnostic plots at specified intervals.
+        """Read the backend and write every selected plot group.
+
+        Does nothing once ``backend.iteration > stop``. Uses ``backend.key_order`` as the
+        per-branch parameter labels. The ``tempering`` group uses the swap acceptance
+        ``swaps_accepted / (iteration * nwalkers)``. The ``advanced`` group appends the
+        current acceptance fractions to the recorded history before plotting and reads the
+        full (undiscarded) chain for the autocorrelation plots. The ``rj`` group is skipped
+        when ``backend.rj`` is ``False``.
 
         Args:
-            sampler: The sampler object. If not provided, uses self.backend. In this cases not all the plots could be available.
+            sampler (EnsembleSampler, optional): The running sampler. Supplies the moves
+                (per-move acceptance in ``advanced``) and ``nleaves_min`` (``rj``; else 0
+                is used for every RJ branch). Default ``None``: plot from the backend alone.
+
         Returns:
-            None
+            None: The figures are saved under ``parent_folder``.
+
+        Raises:
+            NotImplementedError: If the backend has ``nsamplers > 1``.
+
+        Note:
+            With ``sampler=None`` the ``advanced`` group raises ``UnboundLocalError`` (a
+            ``NameError``): the fallback test ``hasattr(self.backend, moves)`` reads the
+            not-yet-assigned local ``moves`` instead of the string ``"moves"``.
         """
 
         if getattr(self.backend, "nsamplers", 1) > 1:

@@ -1,4 +1,28 @@
-"""GPU Backend Tools."""
+"""Eryn: ensemble MCMC with parallel tempering, reversible jump and multiple branches.
+
+The package namespace holds only version metadata (``__version__``,
+``__version_tuple__``, and ``_is_editable``, ``True`` for an editable install). Import the
+components from their submodules:
+
+- :class:`eryn.ensemble.EnsembleSampler`: the sampler;
+- :mod:`eryn.state`: :class:`~eryn.state.State`, :class:`~eryn.state.Branch`,
+  :class:`~eryn.state.BranchSupplemental`;
+- :mod:`eryn.moves`: proposals and :class:`~eryn.moves.tempering.TemperatureControl`;
+- :mod:`eryn.priors`: prior distributions and :class:`~eryn.priors.ProbDistContainer`;
+- :mod:`eryn.backends`: chain storage (:class:`~eryn.backends.Backend`,
+  :class:`~eryn.backends.HDFBackend`);
+- :mod:`eryn.utils`: periodic and transform containers, update and stopping callbacks,
+  plotting and diagnostics.
+
+Eryn ships no compiled code; the deprecated GPU path of
+:class:`~eryn.paraensemble.ParaEnsembleSampler` takes its array module from
+``gpubackendtools``.
+
+Example:
+    >>> import eryn
+    >>> isinstance(eryn.__version__, str)
+    True
+"""
 
 # ruff: noqa: E402
 try:

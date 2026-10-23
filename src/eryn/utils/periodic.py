@@ -1,3 +1,10 @@
+"""Periodic-parameter handling: :class:`PeriodicContainer`.
+
+The sampler builds one container from its ``periodic`` argument and hands it to every move;
+proposals call :meth:`PeriodicContainer.distance` (shortest signed separation) and
+:meth:`PeriodicContainer.wrap` (map back into ``[0, period)``).
+"""
+
 from __future__ import annotations
 
 from typing import Any, TypeVar
@@ -13,14 +20,43 @@ Element = TypeVar("Element", str, int)
 
 
 class PeriodicContainer:
-    """Perform operations for periodic parameters
+    """Periodic distance and wrapping for selected parameters of each branch.
 
     Args:
-        periodic_in (dict[str, dict[str | int, float]]): Keys are ``branch_names``. 
-            Values are dictionaries. These dictionaries have keys as the parameter
-            indexes and values their associated period.
-        key_order (dict[str, list[str]] | None, optional): Order of the string keys if 
-            string keys are used. (default: ``None``)
+        periodic: ``{branch_name: {parameter: period}}``. A parameter is a column index
+            (``int``) or a name (``str``, resolved through ``key_order``). A branch whose
+            value is ``None`` is skipped.
+        key_order: ``{branch_name: [names in column order]}``, required for branches that
+            use names (e.g. ``{name: prior.key_order for name, prior in priors.items()}``
+            with :class:`~eryn.priors.probdist.ProbDistContainer` priors). Default ``None``.
+            :class:`~eryn.ensemble.EnsembleSampler` builds its container from a plain
+            ``periodic`` dict without ``key_order``, so with names pass a ready
+            :class:`PeriodicContainer` instead.
+
+    Attributes:
+        periodic (dict): The input mapping.
+        inds_periodic (dict[str, np.ndarray]): Per branch, the periodic column indices.
+        periods (dict[str, np.ndarray]): Per branch, the matching periods.
+
+    Raises:
+        ValueError: If a branch uses names but ``key_order`` lacks that branch, or a name
+            is not in ``key_order[branch]``.
+
+    Example:
+        >>> import numpy as np
+        >>> from eryn.utils import PeriodicContainer
+        >>> periodic = PeriodicContainer(
+        ...     {"model_0": {"phase": 2 * np.pi}}, key_order={"model_0": ["amp", "phase"]}
+        ... )
+        >>> p = {"model_0": np.array([[1.0, 2 * np.pi + 0.5]])}
+        >>> round(float(periodic.wrap(p)["model_0"][0, 1]), 6)
+        0.5
+        >>> d = periodic.distance(
+        ...     {"model_0": np.array([[0.0, 0.1]])},
+        ...     {"model_0": np.array([[0.0, 2 * np.pi - 0.1]])},
+        ... )
+        >>> round(float(d["model_0"][0, 1]), 6)
+        -0.2
     """
     
     def __init__(
@@ -60,20 +96,23 @@ class PeriodicContainer:
         p2: dict[str, NDArray],
         xp: Any = np,
     ) -> dict[str, NDArray]:
-        """Move from p1 to p2 with periodic distance control
+        """Per-branch separation ``p2 - p1`` with periodic columns taken the short way round.
+
+        For each periodic column, a difference with ``|d| > period / 2`` is shifted by one
+        period towards zero (``d - sign(d) * period``). That lands in
+        ``[-period / 2, period / 2]`` whenever ``|d| < 1.5 * period``, which holds when both
+        inputs are wrapped into ``[0, period)``. Non-periodic columns, and branches without
+        periodic columns, get the plain difference. The inputs are not modified.
 
         Args:
-            p1 (dict): If dict, keys are ``branch_names``
-                and values are positions with parameters along the final dimension.
-            p2 (dict): If dict, keys are ``branch_names``
-                and values are positions with parameters along the final dimension.
-            xp (object, optional): ``numpy`` or ``cupy``. If ``None``, use ``numpy``.
-                (default: ``None``)
+            p1: ``{branch_name: array}``; parameters on the last axis. Branches are taken
+                from ``p1``.
+            p2: Same layout as ``p1``.
+            xp: Array module, ``numpy`` (default) or ``cupy``, matching the arrays.
 
         Returns:
-            dict: Distances accounting for periodicity.
-                    Keys are branch names and values are distance arrays.
-
+            dict[str, xp.ndarray]: ``{branch_name: separation}``, each the shape of the
+            inputs.
         """
         out_diff = {}
 
@@ -101,14 +140,19 @@ class PeriodicContainer:
         p: dict[str, NDArray], 
         xp: Any = np
     ) -> dict[str, NDArray]:
-        """Wrap p with periodic distance control
+        """Wrap the periodic columns of each branch into ``[0, period)``, IN PLACE.
+
+        Uses ``pos[..., inds] % periods``, so the target interval is always
+        ``[0, period)`` whatever the parameter's prior range (a phase with a
+        ``[-pi, pi]`` prior is mapped into ``[0, 2 pi)``).
 
         Args:
-            p (dict): If dict, keys are ``branch_names``
-                and values are positions with parameters along the final dimension.
-            xp (object, optional): ``numpy`` or ``cupy``. If ``None``, use ``numpy``.
-                (default: ``None``)
+            p: ``{branch_name: array}``; parameters on the last axis. The arrays are
+                modified in place.
+            xp: Array module, ``numpy`` (default) or ``cupy``, matching the arrays.
 
+        Returns:
+            dict[str, xp.ndarray]: ``p`` itself, with the wrapped arrays.
         """
         for branch, pos in p.items():
             if branch in self.periods and len(self.periods[branch]) > 0:

@@ -1,3 +1,12 @@
+"""Multiple-try Metropolis machinery (in-model and nested reversible jump).
+
+:class:`MultipleTryMove` is a mixin that, given a subclass's generate / likelihood / prior
+callables, draws ``num_try`` candidates per walker, picks one by importance weight, builds
+the auxiliary (reverse) set and returns the multiple-try log factor. :class:`MultipleTryMoveRJ`
+is its nested-RJ variant (one birth or death per walker). Concrete moves:
+:class:`~eryn.moves.MTDistGenMove` and :class:`~eryn.moves.MTDistGenMoveRJ`. The helpers
+:func:`logsumexp` and :func:`get_mt_computations` are reused by other moves.
+"""
 import warnings
 from abc import ABC
 from copy import deepcopy
@@ -24,6 +33,20 @@ ___ = ["MultipleTryMove"]
 
 
 def logsumexp(a, axis=None, xp=None):
+    """Numerically stable ``log(sum(exp(a), axis=axis))`` along axis 1.
+
+    The maximum is broadcast back with ``max[:, None]``, so despite the general signature
+    the reduction must be along axis 1 (``axis=-1`` or ``1`` for the 2D arrays all callers
+    pass); the default ``axis=None`` fails.
+
+    Args:
+        a (xp.ndarray): Values, shape ``(n, m)``.
+        axis (int, optional): Reduction axis, ``1`` / ``-1``. Default ``None``.
+        xp (module, optional): ``numpy`` or ``cupy``. Default ``None`` means ``numpy``.
+
+    Returns:
+        xp.ndarray: Log-sum-exp per row, shape ``(n,)``.
+    """
     if xp is None:
         xp = np
 
@@ -33,6 +56,7 @@ def logsumexp(a, axis=None, xp=None):
     sum_of_exp = xp.exp(ds).sum(axis=axis)
     return max + xp.log(sum_of_exp)
 
+# TODO check: keep/remove/document -- duplicate; shadowed by the identical definition below
 def get_mt_computations(logP, log_proposal_pdf, symmetric=False, xp=None):
 
     if xp is None:
@@ -62,6 +86,23 @@ def get_mt_computations(logP, log_proposal_pdf, symmetric=False, xp=None):
 
 
 def get_mt_computations(logP, log_proposal_pdf, symmetric=False, xp=None):
+    """Importance weights of the tries and the index of the chosen try per walker.
+
+    The log weight of try ``j`` is ``logP_j - log q_j`` (or ``logP_j`` when
+    ``symmetric``); one try per row is drawn with probability proportional to its weight,
+    using the GLOBAL ``xp.random`` generator.
+
+    Args:
+        logP (xp.ndarray): Log posterior of every try, shape ``(nwalkers, num_try)``.
+        log_proposal_pdf (xp.ndarray): Log proposal density of every try, same shape.
+        symmetric (bool, optional): Ignore ``log_proposal_pdf``. Default ``False``.
+        xp (module, optional): ``numpy`` or ``cupy``. Default ``None`` means ``numpy``.
+
+    Returns:
+        tuple[xp.ndarray, xp.ndarray, xp.ndarray]: ``(log_importance_weights,
+        log_sum_weights, inds_keep)`` with shapes ``(nwalkers, num_try)``, ``(nwalkers,)``
+        and ``(nwalkers,)`` (integer index of the chosen try).
+    """
 
     if xp is None:
         xp = np
@@ -88,25 +129,32 @@ def get_mt_computations(logP, log_proposal_pdf, symmetric=False, xp=None):
 
 
 class MultipleTryMove(ABC):
-    """Generate multiple proposal tries.
+    """Mixin that turns a generate / likelihood / prior trio into a multiple-try proposal.
 
-    This class should be inherited by another proposal class
-    with the ``@classmethods`` overwritten. See :class:`eryn.moves.MTDistGenMove`
-    and :class:`MTDistGenRJ` for examples.
+    Combine it with a :class:`~eryn.moves.Move` subclass (it is not a ``Move`` itself) and
+    override :meth:`special_generate_func`, :meth:`special_like_func`,
+    :meth:`special_prior_func` (and :meth:`special_generate_logpdf` for independent
+    proposals). :meth:`get_proposal` reads ``self.temperature_control.betas`` (a controller
+    must be attached) and ``self.current_state`` (set by the ``Move`` side's ``propose``).
+    It stores ``mt_ll`` / ``mt_lp`` of the chosen tries, which
+    :meth:`~eryn.moves.MHMove.propose` and :meth:`~eryn.moves.ReversibleJumpMove.propose`
+    then use instead of re-evaluating the model. See :class:`~eryn.moves.MTDistGenMove`
+    and :class:`~eryn.moves.MTDistGenMoveRJ`.
 
     Args:
-        num_try (int, optional): Number of tries. (default: 1)
-        independent (bool, optional): Set to ``True`` if the proposal is independent of the current points.
-            (default: ``False``).
-        symmetric (bool, optional): Set to ``True`` if the proposal is symmetric.
-            (default: ``False``).
-        rj (bool, optional): Set to ``True`` if this is a nested reversible jump proposal.
-            (default: ``False``).
-        **kwargs (dict, optional): for compatibility with other proposals.
+        num_try (int, optional): Number of tries per walker. Default ``1``.
+        independent (bool, optional): ``True`` if the proposal does not depend on the
+            current point (the auxiliary set then reuses the tries). Default ``False``.
+        symmetric (bool, optional): ``True`` if the proposal is symmetric (its density drops
+            out of the weights). Default ``False``.
+        rj (bool, optional): ``True`` for a nested reversible-jump proposal; requires
+            ``independent`` and ``symmetric`` to be ``False``. Default ``False``.
+        use_gpu (bool, optional): Selects :attr:`xp` (``cupy`` when truthy). Default
+            ``None``.
+        **kwargs: Ignored here (the ``Move`` side consumes them).
 
-        Raises:
-            ValueError: Input issues.
-
+    Raises:
+        ValueError: ``rj`` with ``symmetric`` or ``independent``.
     """
 
     def __init__(
@@ -134,50 +182,46 @@ class MultipleTryMove(ABC):
 
     @property
     def xp(self):
+        """module: ``cupy`` if ``use_gpu`` is truthy (and cupy is installed), else ``numpy``."""
         xp = cp if self.use_gpu else np
         return xp
 
     @classmethod
     def special_like_func(self, generated_coords, *args, inds_leaves_rj=None, **kwargs):
-        """Calculate the Likelihood for sampled points.
+        """Log-likelihood of every try (implemented by subclasses).
 
         Args:
-            generated_coords (np.ndarray): Generated coordinates with shape ``(number of independent walkers, num_try)``.
-            *args (tuple, optional): additional arguments passed by overwriting the
-                ``get_proposal`` function and passing ``args_like`` keyword argument.
-            inds_leaves_rj (np.ndarray): Index into each individual walker giving the
-                leaf index associated with this proposal. Should only be used if ``self.rj is True``. (default: ``None``)
-            **kwargs (tuple, optional): additional keyword arguments passed by overwriting the
-                ``get_proposal`` function and passing ``kwargs_like`` keyword argument.
+            generated_coords (np.ndarray): Tries, shape ``(nwalkers, num_try, ndim)`` (here
+                ``nwalkers`` counts all independent walkers, ``ntemps * nwalkers`` of the
+                sampler).
+            *args: From ``args_like`` of :meth:`get_mt_proposal`.
+            inds_leaves_rj (np.ndarray, optional): Leaf slot of the proposal per walker; only
+                for ``rj``. Default ``None``.
+            **kwargs: From ``kwargs_like`` of :meth:`get_mt_proposal`.
 
         Returns:
-            np.ndarray: Likelihood values with shape ``(generated_coords.shape[0], num_try).``
+            np.ndarray: Log-likelihood, shape ``(nwalkers, num_try)``.
 
         Raises:
-            NotImplementedError: Function not included.
-
+            NotImplementedError: Always, in this base class.
         """
         raise NotImplementedError
 
     @classmethod
     def special_prior_func(self, generated_coords, *args, **kwargs):
-        """Calculate the Prior for sampled points.
+        """Log prior of every try (implemented by subclasses).
 
         Args:
-            generated_coords (np.ndarray): Generated coordinates with shape ``(number of independent walkers, num_try)``.
-            *args (tuple, optional): additional arguments passed by overwriting the
-                ``get_proposal`` function and passing ``args_prior`` keyword argument.
-            inds_leaves_rj (np.ndarray): Index into each individual walker giving the
-                leaf index associated with this proposal. Should only be used if ``self.rj is True``. (default: ``None``)
-            **kwargs (tuple, optional): additional keyword arguments passed by overwriting the
-                ``get_proposal`` function and passing ``kwargs_prior`` keyword argument.
+            generated_coords (np.ndarray): Tries, shape ``(nwalkers, num_try, ndim)``.
+            *args: From ``args_prior`` of :meth:`get_mt_proposal`.
+            **kwargs: From ``kwargs_prior``; :meth:`get_mt_proposal` also passes
+                ``inds_leaves_rj`` (leaf slot per walker, only meaningful for ``rj``).
 
         Returns:
-            np.ndarray: Prior values with shape ``(generated_coords.shape[0], num_try).``
+            np.ndarray: Log prior, shape ``(nwalkers, num_try)``.
 
         Raises:
-            NotImplementedError: Function not included.
-
+            NotImplementedError: Always, in this base class.
         """
         raise NotImplementedError
 
@@ -185,58 +229,58 @@ class MultipleTryMove(ABC):
     def special_generate_func(
         coords, random, size=1, *args, fill_tuple=None, fill_values=None, **kwargs
     ):
-        """Generate samples and calculate the logpdf of their proposal function.
+        """Draw the tries and their log proposal density (implemented by subclasses).
+
+        Subclasses define it as an instance method ``(self, coords, random, size=1, ...)``.
 
         Args:
-            coords (np.ndarray): Current coordinates of walkers.
-            random (obj): Random generator.
-            *args (tuple, optional): additional arguments passed by overwriting the
-                ``get_proposal`` function and passing ``args_generate`` keyword argument.
-            size (int, optional): Number of tries to generate.
-            fill_tuple (tuple, optional): Length 2 tuple with the indexing of which values to fill
-                when generating. Can be used for auxillary proposals or reverse RJ proposals. First index is the index into walkers and the second index is
-                the index into the number of tries. (default: ``None``)
-            fill_values (np.ndarray): values to fill associated with ``fill_tuple``. Should
-                have size ``(len(fill_tuple[0]), ndim)``. (default: ``None``).
-            **kwargs (tuple, optional): additional keyword arguments passed by overwriting the
-                ``get_proposal`` function and passing ``kwargs_generate`` keyword argument.
+            coords (np.ndarray): Current coordinates, shape ``(nwalkers, ndim)``.
+            random (object): Random generator.
+            size (int, optional): Number of tries per walker (``num_try``). Default ``1``.
+            *args: From ``args_generate`` of :meth:`get_mt_proposal`.
+            fill_tuple (tuple, optional): ``(walker_idx, try_idx)`` of entries to overwrite
+                with ``fill_values`` after drawing, used for the auxiliary set and reverse
+                RJ proposals. Default ``None``.
+            fill_values (np.ndarray, optional): Values for ``fill_tuple``, shape
+                ``(len(fill_tuple[0]), ndim)``. Default ``None``.
+            **kwargs: From ``kwargs_generate`` of :meth:`get_mt_proposal`.
 
         Returns:
-            tuple: (generated points, logpdf of generated points).
+            tuple[np.ndarray, np.ndarray]: Tries of shape ``(nwalkers, size, ndim)`` and their
+            log proposal density, shape ``(nwalkers, size)``.
 
         Raises:
-            NotImplementedError: Function not included.
-
+            NotImplementedError: Always, in this base class.
         """
         raise NotImplementedError
 
     @classmethod
     def special_generate_logpdf(self, coords):
-        """Get logpdf of generated coordinates.
+        """Log proposal density of given points (implemented by subclasses).
 
         Args:
-            coords (np.ndarray): Current coordinates of walkers.
+            coords (np.ndarray): Points, shape ``(n, ndim)``.
 
         Returns:
-            np.ndarray: logpdf of generated points.
+            np.ndarray: Log proposal density, shape ``(n,)``.
 
         Raises:
-            NotImplementedError: Function not included.
+            NotImplementedError: Always, in this base class.
         """
         raise NotImplementedError
 
     def get_mt_log_posterior(self, ll, lp, betas=None):
-        """Calculate the log of the posterior for all tries.
+        """Tempered log posterior of every try, ``betas * ll + lp``.
 
         Args:
-            ll (np.ndarray): Log Likelihood values with shape ``(nwalkers, num_tries)``.
-            lp (np.ndarray): Log Prior values with shape ``(nwalkers, num_tries)``.
-            betas (np.ndarray, optional): Inverse temperatures to include in log Posterior computation.
-                (default: ``None``)
+            ll (xp.ndarray): Log-likelihood, shape ``(nwalkers, num_try)``.
+            lp (xp.ndarray): Log prior, same shape.
+            betas (xp.ndarray, optional): Inverse temperature per walker, shape
+                ``(nwalkers,)``; must be an ``xp.ndarray``. ``None`` means untempered.
+                Default ``None``.
 
         Returns:
-            np.ndarray: Log of the Posterior with shape ``(nwalkers, num_tries)``.
-
+            xp.ndarray: Log posterior, shape ``(nwalkers, num_try)``.
         """
         if betas is None:
             ll_temp = ll.copy()
@@ -251,15 +295,17 @@ class MultipleTryMove(ABC):
         return ll_temp + lp
 
     def readout_adjustment(self, out_vals, all_vals_prop, aux_all_vals):
-        """Read out values from the proposal.
+        """Hook to read out intermediate values of a multiple-try proposal (no-op here).
 
-        Allows the user to read out any values from the proposal that may be needed elsewhere. This function must be overwritten.
+        Called at the end of :meth:`get_mt_proposal`; override to keep any of these.
 
         Args:
-            out_vals (list): ``[logP_out, ll_out, lp_out, log_proposal_pdf_out, log_sum_weights]``.
-            all_vals_prop (list): ``[logP, ll, lp, log_proposal_pdf, log_sum_weights]``.
-            aux_all_vals (list): ``[aux_logP, aux_ll, aux_lp, aux_log_proposal_pdf, aux_log_sum_weights]``.
-
+            out_vals (list): Chosen-try values
+                ``[logP_out, ll_out, lp_out, log_proposal_pdf_out, log_sum_weights]``.
+            all_vals_prop (list): All-try values
+                ``[logP, ll, lp, log_proposal_pdf, log_sum_weights]``.
+            aux_all_vals (list): Auxiliary-set values
+                ``[aux_logP, aux_ll, aux_lp, aux_log_proposal_pdf, aux_log_sum_weights]``.
         """
         pass
 
@@ -279,55 +325,58 @@ class MultipleTryMove(ABC):
         inds_leaves_rj=None,
         inds_reverse_rj=None,
     ):
-        """Make a multiple-try proposal
+        """Make a multiple-try proposal.
 
-        Here, ``nwalkers`` refers to all independent walkers which generally
-        will mean ``nwalkers * ntemps`` in terms of the rest of the sampler.
+        Here ``nwalkers`` counts all independent walkers, generally ``ntemps * nwalkers`` of
+        the sampler. Draws ``num_try`` tries per walker, weights them
+        (:func:`get_mt_computations`), picks one, builds the auxiliary (reverse) set
+        (reusing the tries when ``independent``, the one-leaf-fewer model when ``rj``, or a
+        fresh draw around the chosen point otherwise) and returns the log factor that makes
+        the acceptance the ratio of the summed weights. For ``rj``, reverse (death)
+        proposals have their factor negated and their ``mt_ll`` / ``mt_lp`` reset to
+        ``ll_in`` / ``lp_in``.
+
+        Side effects: sets ``mt_ll``, ``mt_lp`` (chosen tries), ``aux_logP_out``,
+        ``logP_out``, ``aux_ll``, ``aux_lp``, ``log_sum_weights``, ``aux_log_sum_weights``
+        and, for ``rj``, ``inds_reverse_rj`` / ``inds_forward_rj``; then calls
+        :meth:`readout_adjustment`.
 
         Args:
-            coords (np.ndarray): Current coordinates of walkers.
-            random (obj): Random generator.
-            args_generate (tuple, optional): Additional ``*args`` to pass to generate function.
-                Must overwrite ``get_proposal`` function to use these.
-                (default: ``()``)
-            kwargs_generate (dict, optional): Additional ``**kwargs`` to pass to generate function.
-                (default: ``{}``)
-                Must overwrite ``get_proposal`` function to use these.
-            args_like (tuple, optional): Additional ``*args`` to pass to Likelihood function.
-                Must overwrite ``get_proposal`` function to use these.
-                (default: ``()``)
-            kwargs_like (dict, optional): Additional ``**kwargs`` to pass to Likelihood function.
-                Must overwrite ``get_proposal`` function to use these.
-                (default: ``{}``)
-            args_prior (tuple, optional): Additional ``*args`` to pass to Prior function.
-                Must overwrite ``get_proposal`` function to use these.
-                (default: ``()``)
-            kwargs_prior (dict, optional): Additional ``**kwargs`` to pass to Prior function.
-                Must overwrite ``get_proposal`` function to use these.
-                (default: ``{}``)
-            betas (np.ndarray, optional): Inverse temperatures passes to the proposal with shape ``(nwalkers,)``.
-            ll_in (np.ndarray, optional): Log Likelihood values coming in for current coordinates. Must be provided
-                if ``self.rj is True``. If ``self.rj is True``, must be nested.
-                Also, for all proposed removals, this value must be the Likelihood with the binary
-                removed so all proposals are pretending to add a binary.
-                Useful if ``self.independent is True``. (default: ``None``)
-            lp_in (np.ndarray, optional): Log Prior values coming in for current coordinates. Must be provided
-                if ``self.rj is True``. If ``self.rj is True``, must be nested.
-                Also, for all proposed removals, this value must be the Likelihood with the binary
-                removed so all proposals are pretending to add a binary.
-                Useful if ``self.independent is True``. (default: ``None``)
-            inds_leaves_rj (np.ndarray, optional): Array giving the leaf index of each incoming walker.
-                Must be provided if ``self.rj is True``. (default: ``None``)
-            inds_reverse_rj (np.ndarray, optional): Array giving the walker index for which proposals are
-                reverse proposal removing a leaf.
-                Must be provided if ``self.rj is True``. (default: ``None``)
+            coords (np.ndarray): Current coordinates, shape ``(nwalkers, ndim)``.
+            random (object): Random generator passed to :meth:`special_generate_func`.
+            args_generate (tuple, optional): Extra ``*args`` for the generate function
+                (override ``get_proposal`` to use them). Default ``()``.
+            kwargs_generate (dict, optional): Extra ``**kwargs`` for the generate function.
+                Default ``{}``.
+            args_like (tuple, optional): Extra ``*args`` for the likelihood function.
+                Default ``()``.
+            kwargs_like (dict, optional): Extra ``**kwargs`` for the likelihood function.
+                Default ``{}``.
+            args_prior (tuple, optional): Extra ``*args`` for the prior function. Default
+                ``()``.
+            kwargs_prior (dict, optional): Extra ``**kwargs`` for the prior function.
+                Default ``{}``.
+            betas (xp.ndarray, optional): Inverse temperature per walker, shape
+                ``(nwalkers,)``. Default ``None`` (untempered).
+            ll_in (np.ndarray, optional): Log-likelihood at the current coordinates, shape
+                ``(nwalkers,)``. Required for ``rj`` (nested model), where for proposed
+                removals it must be the likelihood WITH THE LEAF REMOVED so every proposal
+                looks like an addition. Used by ``independent`` proposals. Default ``None``.
+            lp_in (np.ndarray, optional): Log prior at the current coordinates, same rules as
+                ``ll_in``. Default ``None``.
+            inds_leaves_rj (np.ndarray, optional): Leaf slot of the proposal per walker,
+                shape ``(nwalkers,)``. Required for ``rj``. Default ``None``.
+            inds_reverse_rj (np.ndarray, optional): Walker indices whose proposal is a
+                removal. Required for ``rj``. Default ``None``.
 
         Returns:
-            tuple: (generated points, factors).
+            tuple[np.ndarray, np.ndarray]: ``(generated_points, factors)``: the chosen try
+            per walker, shape ``(nwalkers, ndim)``, and the log factor, shape
+            ``(nwalkers,)``.
 
         Raises:
-            ValueError: Inputs are incorrect.
-
+            ValueError: ``rj`` without ``ll_in``, ``lp_in``, ``inds_leaves_rj`` and
+                ``inds_reverse_rj``.
         """
 
         # check if rj and make sure we have all the information in that case
@@ -542,24 +591,30 @@ class MultipleTryMove(ABC):
         )
 
     def get_proposal(self, branches_coords, random, branches_inds=None, **kwargs):
-        """Get proposal
+        """In-model multiple-try proposal for a single branch with one leaf per walker.
+
+        Flattens the alive leaf of every ``(temp, walker)``, tempers each with its rung's
+        beta from ``self.temperature_control.betas``, passes the current
+        ``log_like`` / ``log_prior`` of ``self.current_state`` as ``ll_in`` / ``lp_in`` and
+        calls :meth:`get_mt_proposal`; ``mt_ll`` / ``mt_lp`` are reshaped to
+        ``(ntemps, nwalkers)``.
 
         Args:
-            branches_coords (dict): Keys are ``branch_names`` and values are
-                np.ndarray[ntemps, nwalkers, nleaves_max, ndim] representing
-                coordinates for walkers.
-            random (object): Current random state object.
-            branches_inds (dict, optional): Keys are ``branch_names`` and values are
-                np.ndarray[ntemps, nwalkers, nleaves_max] representing which
-                leaves are currently being used. (default: ``None``)
-            **kwargs (ignored): This is added for compatibility. It is ignored in this function.
+            branches_coords (dict): ONE branch, ``{branch_name: coords}`` of shape
+                ``(ntemps, nwalkers, nleaves_max, ndim)``; every walker must have exactly one
+                alive leaf.
+            random (object): Sampler random state.
+            branches_inds (dict, optional): ``{branch_name: inds}``, boolean
+                ``(ntemps, nwalkers, nleaves_max)``. ``None`` marks every leaf alive.
+                Default ``None``.
+            **kwargs: Ignored.
 
         Returns:
-            tuple: (Proposed coordinates, factors) -> (dict, np.ndarray)
+            tuple[dict, np.ndarray]: ``(q, factors)`` with ``q[branch_name]`` of shape
+            ``(ntemps, nwalkers, 1, ndim)`` and ``factors`` of shape ``(ntemps, nwalkers)``.
 
         Raises:
-            ValueError: Input issues.
-
+            ValueError: More than one branch, or a walker with more than one alive leaf.
         """
 
         # mutliple try is only made for one branch here
@@ -623,6 +678,15 @@ class MultipleTryMove(ABC):
 
 
 class MultipleTryMoveRJ(MultipleTryMove):
+    """Nested reversible-jump variant of :class:`MultipleTryMove`.
+
+    Combine it with a :class:`~eryn.moves.ReversibleJumpMove` subclass that provides
+    ``get_model_change_proposal`` (e.g. :class:`~eryn.moves.DistributionGenerateRJ`) and
+    construct it with ``rj=True``. Births are multiple-try proposals; deaths are scored as
+    the reverse of a birth into the one-leaf-fewer model. See
+    :class:`~eryn.moves.MTDistGenMoveRJ`.
+    """
+
     def get_proposal(
         self,
         branches_coords,
@@ -632,32 +696,32 @@ class MultipleTryMoveRJ(MultipleTryMove):
         random,
         **kwargs
     ):
-        """Make a proposal
+        """Propose one multiple-try birth or a death per walker for a single branch.
+
+        Uses ``get_model_change_proposal`` to choose births/deaths, evaluates the
+        one-leaf-fewer model of every death walker through ``self.current_model`` (as the
+        ``ll_in`` / ``lp_in`` of that walker), then calls :meth:`get_mt_proposal`. Needs
+        ``self.temperature_control``, ``self.current_state`` and ``self.current_model`` (set
+        by :meth:`~eryn.moves.ReversibleJumpMove.propose`).
 
         Args:
-            all_coords (dict): Keys are ``branch_names``. Values are
-                np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent
-                coordinates for all the walkers.
-            all_inds (dict): Keys are ``branch_names``. Values are
-                np.ndarray[ntemps, nwalkers, nleaves_max]. These are the boolean
-                arrays marking which leaves are currently used within each walker.
-            nleaves_min_all (list): Minimum values of leaf ount for each model. Must have same order as ``all_cords``.
-            nleaves_max_all (list): Maximum values of leaf ount for each model. Must have same order as ``all_cords``.
-            random (object): Current random state of the sampler.
-            **kwargs (ignored): For modularity.
+            branches_coords (dict): ONE branch, ``{branch_name: coords}`` of shape
+                ``(ntemps, nwalkers, nleaves_max, ndim)``.
+            branches_inds (dict): ``{branch_name: inds}``, boolean
+                ``(ntemps, nwalkers, nleaves_max)``; must not be ``None``.
+            nleaves_min_all (dict): ``{branch_name: int}`` minimum leaf count (one entry).
+            nleaves_max_all (dict): ``{branch_name: int}`` maximum leaf count (one entry).
+            random (object): Sampler random state.
+            **kwargs: Ignored.
 
         Returns:
-            tuple: Tuple containing proposal information.
-                First entry is the new coordinates as a dictionary with keys
-                as ``branch_names`` and values as
-                ``double `` np.ndarray[ntemps, nwalkers, nleaves_max, ndim] containing
-                proposed coordinates. Second entry is the new ``inds`` array with
-                boolean values flipped for added or removed sources. Third entry
-                is the factors associated with the
-                proposal necessary for detailed balance. This is effectively
-                any term in the detailed balance fraction. +log of factors if
-                in the numerator. -log of factors if in the denominator.
+            tuple[dict, dict, np.ndarray]: ``(q, new_inds, factors)``: coordinates with born
+            leaves filled, ``inds`` with births on and deaths off, and log factors of shape
+            ``(ntemps, nwalkers)``.
 
+        Raises:
+            ValueError: More than one branch, ``branches_inds`` is ``None``,
+                ``nleaves_min >= nleaves_max``, or a change other than ``+1`` / ``-1``.
         """
 
         if len(list(branches_coords.keys())) > 1:

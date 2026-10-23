@@ -80,11 +80,27 @@ class NUTSSampler(object):
             Random source. If ``None``, uses ``np.random``.
             (default: ``None``)
 
+    Raises:
+        ValueError: An array ``metric`` whose shape is not ``(ndim, ndim)``.
+
     Attributes:
         step_size (float): Current leapfrog step size.
         last_alpha (float or None): Average acceptance probability of
             the last NUTS step (over all walkers). Useful for tuning.
         last_tree_depth (int or None): Depth reached on the last step.
+
+    Example:
+        >>> import numpy as np
+        >>> from eryn.moves import NUTSSampler
+        >>> sampler = NUTSSampler(
+        ...     lambda x: -x,
+        ...     lambda x: -0.5 * np.sum(x**2, axis=-1),
+        ...     ndim=2,
+        ...     random=np.random.RandomState(0),
+        ... )
+        >>> chain = sampler.sample(np.zeros((4, 2)), n_samples=10)
+        >>> chain.shape
+        (10, 4, 2)
     """
 
     def __init__(
@@ -134,6 +150,11 @@ class NUTSSampler(object):
     # ------------------------------------------------------------------
 
     def _set_metric(self, metric):
+        """Store the metric: flat, constant ``(ndim, ndim)`` mass matrix, or callable.
+
+        Raises:
+            ValueError: An array metric whose shape is not ``(ndim, ndim)``.
+        """
         if metric is None or (
             isinstance(metric, str)
             and metric.lower() in ("flat", "identity", "cartesian", "euclidean")
@@ -183,6 +204,7 @@ class NUTSSampler(object):
         self._inv_mass_matrix = np.linalg.inv(M)
 
     def _sample_momentum(self, shape):
+        """Draw momenta ``r ~ N(0, M)``, shape ``(N, ndim)``."""
         z = self.random.randn(*shape)
         if self._flat_metric:
             return z
@@ -192,6 +214,7 @@ class NUTSSampler(object):
         return np.einsum("nij,nj->ni", self._mass_chol, z)
 
     def _kinetic_energy(self, r):
+        """Kinetic energy ``0.5 * r^T M^{-1} r`` per walker, shape ``(N,)``."""
         if self._flat_metric:
             return 0.5 * np.sum(r * r, axis=-1)
         if self._inv_mass_matrix.ndim == 2:
@@ -200,6 +223,7 @@ class NUTSSampler(object):
         return 0.5 * np.einsum("ni,nij,nj->n", r, self._inv_mass_matrix, r)
 
     def _velocity(self, r):
+        """Velocity ``M^{-1} r`` per walker, shape ``(N, ndim)``."""
         if self._flat_metric:
             return r
         if self._inv_mass_matrix.ndim == 2:
@@ -211,6 +235,7 @@ class NUTSSampler(object):
     # ------------------------------------------------------------------
 
     def _safe_grad(self, x):
+        """Gradient of the log posterior with non-finite entries set to ``0``."""
         g = self.grad_log_posterior_fn(x)
         return np.where(np.isfinite(g), g, 0.0)
 
@@ -235,6 +260,7 @@ class NUTSSampler(object):
     # ------------------------------------------------------------------
 
     def _hamiltonian(self, x, r):
+        """Return ``(H, logp)`` with ``H = -logp + K(r)``; NaN ``H`` becomes ``inf``."""
         logp = self.log_posterior_fn(x)
         K = self._kinetic_energy(r)
         H = -logp + K
@@ -429,6 +455,7 @@ class NUTSSampler(object):
         return x_s, accepted
 
     def _update_dual_averaging(self, mean_alpha):
+        """One primal-dual averaging update of ``step_size`` (Hoffman & Gelman 2014)."""
         m = self._adapt_count + 1
         eta1 = 1.0 / (m + self._t0)
         self._h_bar = (1.0 - eta1) * self._h_bar + eta1 * (
@@ -550,9 +577,13 @@ class NUTSMove(MHMove):
             step size is adapted. (default: ``100``)
         **kwargs: Passed to :class:`MHMove`.
 
-    Notes:
+    Raises:
+        ValueError: Both ``metric`` and ``scale`` given, or ``scale`` has the wrong shape.
+
+    Note:
         The current implementation supports problems with a single
-        branch and ``nleaves_max == 1``.
+        branch and ``nleaves_max == 1``. The likelihood gradient is called on the whole
+        flattened ensemble, ``(ntemps * nwalkers, ndim)``, and must return that shape.
     """
 
     def __init__(
@@ -611,6 +642,7 @@ class NUTSMove(MHMove):
 
     @property
     def step_size(self):
+        """float: Leapfrog step size of the internal :class:`NUTSSampler` (settable)."""
         return self._nuts.step_size
 
     @step_size.setter
@@ -668,13 +700,24 @@ class NUTSMove(MHMove):
     def propose(self, model, state):
         """Take a NUTS step using ``model`` to evaluate the posterior.
 
+        The NUTS sampler is pointed at the tempered callables and ``model.random``, steps
+        every walker of every rung once, and the moved walkers are re-scored with the model
+        and merged (no Metropolis test). Ends with
+        :meth:`~eryn.moves.tempering.TemperatureControl.temper_comps` when a
+        ``temperature_control`` is set.
+
         Args:
             model (:class:`eryn.model.Model`): Carrier of the
                 log-likelihood / log-prior callables.
-            state (:class:`eryn.state.State`): Current sampler state.
+            state (:class:`eryn.state.State`): Current sampler state; updated in place.
 
         Returns:
-            tuple: ``(new_state, accepted)``.
+            tuple[:class:`eryn.state.State`, np.ndarray]: ``(state, accepted)``;
+            ``accepted`` is the boolean ``(ntemps, nwalkers)`` array of walkers NUTS moved.
+
+        Raises:
+            NotImplementedError: More than one branch, or ``nleaves_max != 1``.
+            ValueError: The branch ``ndim`` differs from the configured ``ndim``.
         """
         self.setup(state.branches_coords)
 

@@ -1,4 +1,18 @@
 # -*- coding: utf-8 -*-
+"""Containers for the sampler state at one step.
+
+- :class:`State`: everything the sampler carries for all walkers at one step (per-branch
+  coordinates and active-leaf flags, log-likelihood, log-prior, inverse temperatures,
+  blobs, supplemental information, random state, independent-sampler mask).
+- :class:`Branch`: the coordinates and ``inds`` of one branch (model).
+- :class:`BranchSupplemental`: arbitrary side information indexed like the walkers or
+  leaves, so that it moves with them through proposals and temperature swaps.
+- :class:`ParaState`: deprecated state for the deprecated
+  :class:`~eryn.paraensemble.ParaEnsembleSampler`.
+
+``cupy`` is imported as ``xp`` when available (``numpy`` otherwise) so that
+:class:`BranchSupplemental` can hold GPU arrays.
+"""
 
 import warnings
 from copy import deepcopy
@@ -14,44 +28,45 @@ import numpy as np
 __all__ = ["State"]
 
 def return_x(x):
+    """Return ``x`` unchanged (the no-copy counterpart of ``deepcopy``)."""
     return x
 
 class BranchSupplemental(object):
-    """Special object to carry information through sampler.
+    """Side information carried through the sampler and indexed like the walkers.
 
-    The :class:`BranchSupplemental` object is a holder of information that is
-    passed through the sampler. It can also be indexed similar to other quantities
-    carried throughout the sampler.
-
-    This indexing is based on the ``base_shape``. You can store many objects that have the same base
-    shape and then index across all of them. For example, if you want to store individual leaf
-    information, the base shape will be ``(ntemps, nwalkers, nleaves_max)``.
-    If you want to store a 2D array per individual leaf, the overall shape will be
-    ``(ntemps, nwalkers, nleaves_max, dim2_extra, dim1_extra)``. Another type of information is
-    stored in a class object (for example). Using ``numpy`` object arrays,
-    ``ntemps * nwalkers * nleaves_max`` number of class objects can be stored in the array. Then,
-    using special indexing functions, information can be updated/accessed across all objects
-    stored simultaneously. If you index this class, it will give you back a dictionary with
-    all objects stored indexed for each leaf. So if you index (0, 0, 0) in our running example,
-    you will get back a dictionary with one 2D array and one class object from the ``numpy`` object
-    array.
-
-    All of these objects are stored in ``self.holder``.
+    A holder of named arrays that share a leading ``base_shape``. Indexing the object
+    indexes every stored array at once, so the information follows the walkers (or leaves)
+    through proposals and temperature swaps. Use base shape ``(ntemps, nwalkers)`` for
+    walker-level information (``State.supplemental``) and
+    ``(ntemps, nwalkers, nleaves_max)`` for leaf-level information
+    (``Branch.branch_supplemental``). Dimensions beyond the base shape are free, for example
+    ``(ntemps, nwalkers, nleaves_max, dim2_extra, dim1_extra)`` holds a 2D array per leaf.
+    Arbitrary Python objects can be stored in ``numpy`` object arrays of exactly
+    ``base_shape`` (one object per walker or leaf). Indexing returns a dict with each stored
+    array indexed the same way; for example ``supp[0, 0, 0]`` in the leaf-level case gives
+    the 2D array and the object of that leaf.
 
     Args:
-        obj_info (dict): Initial information for storage. Keys are the names to be stored under
-            and values are arrays. These arrays should have a base shape that is equivalent to
-            ``base_shape``, meaning ``array.shape[:len(base_shape)] == self.base_shape``.
-            The dimensions beyond the base shape can be anything.
-        base_shape (tuple): Base shape for indexing. Objects stored in the supplemental object
-            will have a shape that at minimum is equivalent to ``base_shape``.
-        copy (bool, optional): If ``True``, copy whatever information is given in before it is stored.
-            if ``False``, store directly the input information. (default: ``False``)
+        obj_info (dict): Initial content: names to arrays (``numpy`` or ``cupy``), object
+            arrays, or nested lists (see :meth:`add_objects`). The leading dimensions must
+            equal ``base_shape``.
+        base_shape (tuple): Leading shape shared by every stored array.
+        copy (bool, optional): If ``True``, deep-copy object arrays before storing them.
+            Numeric ``numpy`` / ``cupy`` arrays are always copied. Default ``False``.
 
     Attributes:
-        holder (dict): All of the objects stored for this supplemental object.
+        holder (dict): Name to stored array.
+        base_shape (tuple): Shared leading shape.
+        ndim (int): ``len(base_shape)``.
 
-
+    Example:
+        >>> import numpy as np
+        >>> from eryn.state import BranchSupplemental
+        >>> supp = BranchSupplemental({"snr": np.zeros((2, 4, 3))}, base_shape=(2, 4, 3))
+        >>> supp[0]["snr"].shape
+        (4, 3)
+        >>> supp.contained_objects
+        ['snr']
     """
 
     def __init__(self, obj_info: dict, base_shape: tuple, copy: bool = False):
@@ -64,19 +79,25 @@ class BranchSupplemental(object):
         self.add_objects(obj_info, copy=copy)
 
     def add_objects(self, obj_info: dict, copy=False):
-        """Add objects to the holder.
+        """Add (or replace) named arrays in the holder.
+
+        Three kinds of values are accepted:
+
+        - a ``numpy`` object array: stored as is (deep-copied when ``copy``); its shape
+          must equal ``base_shape``;
+        - a numeric ``numpy`` or ``cupy`` array: always stored as a copy; its leading shape
+          is not checked;
+        - anything else (for example nested lists): copied element by element into a new
+          object array of shape ``base_shape`` (supported up to 3 base dimensions); the
+          lengths along the base axes are checked.
 
         Args:
-            obj_info (dict): Information for storage. Keys are the names to be stored under
-                and values are arrays. These arrays should have a base shape that is equivalent to
-                ``base_shape``, meaning ``array.shape[:len(base_shape)] == self.base_shape``.
-                The dimensions beyond the base shape can be anything.
-            copy (bool, optional): If ``True``, copy whatever information is given in before it is stored.
-                if ``False``, store directly the input information. (default: ``False``)
+            obj_info (dict): Name to value, as above.
+            copy (bool, optional): Deep-copy object arrays before storing. Default ``False``.
 
         Raises:
-            ValueError: Shape matching issues.
-
+            ValueError: An object array whose shape differs from ``base_shape``, or a list
+                whose lengths do not match ``base_shape``.
         """
 
         # whether a copy is requested
@@ -144,17 +165,14 @@ class BranchSupplemental(object):
                             self.holder[name][i] = obj_contained[i]
 
     def remove_objects(self, names):
-        """Remove objects from the holder.
-
+        """Remove named arrays from the holder (they are not returned).
 
         Args:
-            names (str or list of str): Strings associated with information to delete.
-                Please note it does not return the information.
+            names (str or list of str): Names to remove.
 
         Raises:
-            ValueError: Input issues.
-
-
+            ValueError: ``names`` is neither a str nor a list.
+            KeyError: A name is not stored.
         """
         # check inputs
         if not isinstance(names, list):
@@ -169,7 +187,7 @@ class BranchSupplemental(object):
 
     @property
     def contained_objects(self):
-        """The list of keys of contained objects."""
+        """list of str: Names of the stored arrays."""
         return list(self.holder.keys())
 
     def __contains__(self, name: str):
@@ -177,31 +195,28 @@ class BranchSupplemental(object):
         return name in self.holder
 
     def __getitem__(self, tmp):
-        """Special indexing for retrieval.
-
-        When indexing the overall class, this will return the slice of each object
+        """Index every stored array with the same index.
 
         Args:
-            tmp (int, np.ndarray, or slice): indexing slice of some form.
+            tmp (int, slice, tuple, or np.ndarray): Any numpy-style index over the base
+                axes (for example a boolean mask of shape ``base_shape``).
 
         Returns:
-            dict: Keys are names of the objects contained. Values are the slices of those objects.
-
+            dict: Name to ``array[tmp]`` for every stored array.
         """
         # slice each object contained
         return {name: values[tmp] for name, values in self.holder.items()}
 
     def __setitem__(self, tmp, new_value):
-        """Special indexing for setting elements.
+        """Set ``array[tmp] = new_value[name]`` for every stored array named in ``new_value``.
 
-        When indexing the overall class, this will set object information.
-
-        **Please note**: If you try to input information that is not already stored,
-        it will ignore it.
+        Names in ``new_value`` that are not already stored are ignored; stored arrays
+        missing from ``new_value`` are left unchanged.
 
         Args:
-            tmp (int, np.ndarray, or slice): indexing slice of some form.
-
+            tmp (int, slice, tuple, or np.ndarray): Any numpy-style index over the base
+                axes.
+            new_value (dict): Name to the values to write.
         """
         # loop through values already in holder
         for name, values in self.holder.items():
@@ -211,23 +226,23 @@ class BranchSupplemental(object):
             self.holder[name][tmp] = new_value[name]
 
     def take_along_axis(self, indices, axis: int, skip_names=[]):
-        """Take information from contained arrays along an axis.
+        """Apply ``take_along_axis`` to every stored numeric array.
 
-        See ```numpy.take_along_axis`` <https://numpy.org/doc/stable/reference/generated/numpy.take_along_axis.html>`_.
+        The ``numpy`` / ``cupy`` counterpart of :func:`numpy.take_along_axis`, applied to
+        each stored array; ``indices`` gains trailing unit axes to match arrays with extra
+        dimensions. Used by the moves to gather the walkers taking part in a proposal.
 
         Args:
-            indices (xp.ndarray): Indices to take along each 1d slice of arr. This must match the dimension
-                of ``self.base_shape``, but other dimensions only need to broadcast against
-                ``self.base_shape``.
-            axis (int): The axis to take 1d slices along.
-            skip_names (list of str, optional): By default, this function returns the results for
-                all stored objects. This list gives the strings of objects to leave behind and
-                not return.
+            indices (xp.ndarray): Integer indices with ``len(base_shape)`` dimensions that
+                broadcast against ``base_shape`` (``numpy`` or ``cupy``, matching the stored
+                arrays).
+            axis (int): Axis to take along.
+            skip_names (list of str, optional): Names to leave out of the result. Default
+                ``[]``.
 
         Returns:
-            dict: Keys are names of stored objects and values are the proper array slices.
-
-
+            dict: Name to the gathered array. Object arrays are gathered with
+            :func:`numpy.take_along_axis` without index expansion.
         """
         # prepare output dictionary
         out = {}
@@ -260,21 +275,19 @@ class BranchSupplemental(object):
         return out
 
     def put_along_axis(self, indices, values_in: dict, axis: int):
-        """Put information information into contained arrays along an axis.
+        """Write values back into the stored arrays along the second base axis.
 
-        See ```numpy.put_along_axis`` <https://numpy.org/doc/stable/reference/generated/numpy.put_along_axis.html>`_.
-
-        **Please note** this function is not implemented in ``cupy``, so this is a custom implementation
-        for both ``cupy`` and ``numpy``.
+        A custom counterpart of :func:`numpy.put_along_axis` (``cupy`` has none), applied
+        in place to every stored array named in ``values_in``. As implemented it handles 2D
+        ``indices`` of shape ``(n0, k)`` and writes ``values_in[name]`` at positions
+        ``(i, indices[i, j])`` of the first two axes, so it is equivalent to
+        ``put_along_axis(..., axis=1)``; the ``axis`` argument is not used.
 
         Args:
-            indices (xp.ndarray): Indices to put values along each 1d slice of arr. This must match
-            the dimension of ``self.base_shape``, but other dimensions only need to broadcast against
-            ``self.base_shape``.
-            axis (int): The axis to put 1d slices along.
-            values_in (dict): Keys are the objects contained to update. Values are the arrays of these
-                objects with shape and dimension that can broadcast to match that of indices.
-
+            indices (xp.ndarray): Integer indices of shape ``(n0, k)`` into axis 1.
+            values_in (dict): Name to the values to write, shape ``(n0, k, ...)`` (extra
+                trailing dimensions as in the stored array). Names not stored are ignored.
+            axis (int): Not used (see above).
         """
         # iterate through all objects in the holder
         for name, values in self.holder.items():
@@ -312,10 +325,13 @@ class BranchSupplemental(object):
 
     @property
     def flat(self):
-        """Get flattened arrays from the stored objects.
+        """dict: Name to the stored array with its first two axes merged.
 
-        Here "flat" is in relation to ``self.base_shape``. Beyond ``self.base_shape``, the shape is mainted.
-
+        Numeric arrays of shape ``(n0, n1, ...)`` become ``(n0 * n1, ...)``; object arrays
+        are fully flattened. For the walker-level base shape ``(ntemps, nwalkers)`` this
+        gives one entry per walker in flattened ``(ntemps, nwalkers)`` order, which is how
+        :meth:`~eryn.ensemble.EnsembleSampler.compute_log_like` indexes ``supps``. For a
+        numeric array with a 3-axis base shape only the first two axes are merged.
         """
         out = {}
         # loop through holder
@@ -331,11 +347,11 @@ class BranchSupplemental(object):
 
 
 class Branch(object):
-    """Special container for one branch (model)
+    """Coordinates and active-leaf flags of one branch (model).
 
-    This class is a key component of Eryn. It this type of object
-    that allows for different models to be considered simultaneously
-    within an MCMC run.
+    One :class:`Branch` per model lets several models be sampled together in one run. The
+    coordinates of inactive leaves are kept in ``coords``; the backend stores
+    ``store_missing_leaves`` (default ``np.nan``) for them instead.
 
     When running many independent samplers at once (``nsamplers > 1``), the
     sampler axis is FOLDED into the temperature axis: arrays keep their 4D/3D
@@ -344,21 +360,41 @@ class Branch(object):
     the arrays with the sampler axis unfolded.
 
     Args:
-        coords (4D double np.ndarray[ntemps, nwalkers, nleaves_max, ndim]): The coordinates
-            in parameter space of all walkers.
-        inds (3D bool np.ndarray[ntemps, nwalkers, nleaves_max], optional): The information
-            on which leaves are used and which are not used. A value of True means the specific leaf
-            was used in this step. Parameters from unused walkers are still kept. When they
-            are output to the backend, the backend saves a special number (default: ``np.nan``) for all coords
-            related to unused leaves at that step. If None, inds will fill with all True values.
-            (default: ``None``)
-        branch_supplemental (object): :class:`BranchSupplemental` object specific to this branch. (default: ``None``)
+        coords (np.ndarray): Coordinates of all walkers, shape
+            ``(ntemps, nwalkers, nleaves_max, ndim)`` (``numpy``, or ``cupy`` for the
+            deprecated :class:`ParaState`). Stored without copying.
+        inds (np.ndarray, optional): Boolean active-leaf flags, shape
+            ``(ntemps, nwalkers, nleaves_max)``; ``True`` means the leaf is in the model at
+            this step. Must be a ``numpy`` array. ``None`` marks every leaf active.
+            Default ``None``.
+        branch_supplemental (BranchSupplemental, optional): Leaf-level side information for
+            this branch; its ``base_shape`` must equal ``inds.shape``. Default ``None``.
         nsamplers (int, optional): Number of independent samplers folded into
-            the leading axis. (default: ``1``)
+            the leading axis. Default ``1``.
 
     Raises:
-        ValueError: ``inds`` has wrong shape or number of leaves is less than zero.
+        ValueError: ``inds`` is not a ``numpy`` array or has the wrong shape, the
+            supplemental base shape differs from ``inds.shape``, or the leading axis is not
+            divisible by ``nsamplers``.
 
+    Attributes:
+        coords (np.ndarray): Coordinates, shape ``(ntemps, nwalkers, nleaves_max, ndim)``.
+        inds (np.ndarray): Active-leaf flags, shape ``(ntemps, nwalkers, nleaves_max)``.
+        branch_supplemental (BranchSupplemental or None): Leaf-level side information.
+        shape (tuple): ``coords.shape``.
+        ntemps (int): Leading (folded) axis size.
+        nwalkers (int): Number of walkers.
+        nleaves_max (int): Maximum number of leaves.
+        ndim (int): Parameters per leaf.
+        nsamplers (int): Number of folded independent samplers.
+
+    Example:
+        >>> import numpy as np
+        >>> from eryn.state import Branch
+        >>> inds = np.array([[[True, False]]])  # (ntemps, nwalkers, nleaves_max)
+        >>> branch = Branch(np.zeros((1, 1, 2, 3)), inds=inds)
+        >>> branch.nleaves
+        array([[1]])
     """
 
     # class-level default so unpickled/legacy Branch objects still work
@@ -398,80 +434,126 @@ class Branch(object):
 
     @property
     def nleaves(self):
-        """Number of leaves for each walker"""
+        """np.ndarray: Active leaves per walker, shape ``(ntemps, nwalkers)`` (int)."""
         # get number of leaves in each walker by summing inds along last axis
         nleaves = np.sum(self.inds, axis=-1)
         return nleaves
 
     @property
     def ntemps_per_sampler(self):
-        """Number of temperatures per independent sampler (folded axis-0 = nsamplers * ntemps_per_sampler)."""
+        """int: Temperatures per independent sampler (``ntemps // nsamplers``)."""
         return self.ntemps // self.nsamplers
 
     @property
     def coords_grouped(self):
-        """View of ``coords`` with the sampler axis unfolded: shape ``(nsamplers, ntemps_per_sampler, nwalkers, nleaves_max, ndim)``."""
+        """np.ndarray: ``coords`` reshaped with the sampler axis unfolded.
+
+        Shape ``(nsamplers, ntemps_per_sampler, nwalkers, nleaves_max, ndim)``; a view of
+        ``coords`` when the reshape allows one.
+        """
         return self.coords.reshape(
             (self.nsamplers, self.ntemps_per_sampler) + self.coords.shape[1:]
         )
 
     @property
     def inds_grouped(self):
-        """View of ``inds`` with the sampler axis unfolded: shape ``(nsamplers, ntemps_per_sampler, nwalkers, nleaves_max)``."""
+        """np.ndarray: ``inds`` reshaped with the sampler axis unfolded.
+
+        Shape ``(nsamplers, ntemps_per_sampler, nwalkers, nleaves_max)``.
+        """
         return self.inds.reshape(
             (self.nsamplers, self.ntemps_per_sampler) + self.inds.shape[1:]
         )
 
 
 class State(object):
-    """The state of the ensemble during an MCMC run
+    """The state of the ensemble at one step of an MCMC run.
+
+    Holds one :class:`Branch` per model plus the walker-level quantities. ``ntemps`` below
+    is the folded leading-axis size (``nsamplers * ntemps_per_sampler``).
+
+    Coordinates are normalized per branch on input: a single array becomes the branch
+    ``"model_0"``; 2D ``(nwalkers, ndim)`` becomes ``(1, nwalkers, 1, ndim)``; 3D
+    ``(ntemps, nwalkers, ndim)`` becomes ``(ntemps, nwalkers, 1, ndim)``; 4D
+    ``(ntemps, nwalkers, nleaves_max, ndim)`` is kept; 5D
+    ``(nsamplers, ntemps, nwalkers, nleaves_max, ndim)`` is folded. ``log_like`` and
+    ``log_prior`` pass through ``np.atleast_2d``, ``betas`` through ``np.atleast_1d`` and
+    ``blobs`` through ``np.atleast_3d``.
 
     Args:
-        coords (double ndarray[ntemps, nwalkers, nleaves_max, ndim], dict, or :class:`.State`): The current positions of the walkers
-            in the parameter space. If dict, need to use ``branch_names`` for the keys.
-        inds (bool ndarray[ntemps, nwalkers, nleaves_max] or dict, optional): The information
-            on which leaves are used and which are not used. A value of True means the specific leaf
-            was used in this step. If dict, need to use ``branch_names`` for the keys.
-            Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
-            (default: ``None``)
-        branch_supplemental (object): :class:`BranchSupplemental` object specific to this branch.
-            (default: ``None``)
-        log_like (ndarray[ntemps, nwalkers], optional): Log likelihoods
-            for the  walkers at positions given by ``coords``.
-            Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
-            (default: ``None``)
-        log_prior (ndarray[ntemps, nwalkers], optional): Log priors
-            for the  walkers at positions given by ``coords``.
-            Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
-            (default: ``None``)
-        betas (ndarray[ntemps], optional): Temperatures in the sampler at the current step.
-            Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
-            (default: ``None``)
-        blobs (ndarray[ntemps, nwalkers, nblobs], Optional): The metadata “blobs”
-            associated with the current position. The value is only returned if
-            lnpostfn returns blobs too.
-            Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
-            (default: ``None``)
-        random_state (Optional): The current state of the random number
-            generator.
-            Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
-            (default: ``None``)
-        copy (bool, optional): If True, copy the the arrays in the former :class:`.State` obhect.
+        coords (np.ndarray, dict, or State): Walker positions: one array (single branch) or
+            a dict keyed by branch name (shapes as above). An object with a ``branches``
+            attribute (a :class:`State`) is copied instead: its branches, ``log_like``,
+            ``log_prior``, ``blobs``, ``betas``, ``supplemental``, ``random_state``,
+            ``nsamplers`` and ``samplers_running`` are taken over, and the other
+            arguments are ignored except ``nsamplers`` (checked) and ``samplers_running``
+            (overrides).
+        inds (dict, optional): Branch name to boolean active-leaf arrays of shape
+            ``(ntemps, nwalkers, nleaves_max)`` (or 4D with a leading ``nsamplers`` axis);
+            a dict needs an entry for every branch. ``None`` (or a ``None`` entry) marks
+            every leaf active. Default ``None``.
+        branch_supplemental (dict, optional): Branch name to a leaf-level
+            :class:`BranchSupplemental` (base shape ``(ntemps, nwalkers, nleaves_max)``);
+            branches missing from the dict get ``None``. Default ``None``.
+        supplemental (BranchSupplemental, optional): Walker-level side information, base
+            shape ``(ntemps, nwalkers)``; passed to the likelihood as ``supps`` when the
+            sampler's ``provide_supplemental`` is set. Default ``None``.
+        log_like (np.ndarray, optional): Log-likelihood, shape ``(ntemps, nwalkers)``.
+            Default ``None`` (computed by the sampler).
+        log_prior (np.ndarray, optional): Log-prior, shape ``(ntemps, nwalkers)``. Default
+            ``None`` (computed by the sampler).
+        betas (np.ndarray, optional): Inverse temperatures, shape ``(ntemps,)``. Default
+            ``None``.
+        blobs (np.ndarray, optional): Extra per-walker values returned by the likelihood,
+            shape ``(ntemps, nwalkers, nblobs)``. Default ``None``.
+        random_state (object, optional): Random-number-generator state, as returned by
+            :attr:`EnsembleSampler.random_state <eryn.ensemble.EnsembleSampler.random_state>`.
+            Default ``None``.
+        copy (bool, optional): If ``True``, deep-copy the inputs (or the attributes of an
+            input :class:`State`); otherwise store references. Default ``False``.
         nsamplers (int, optional): Number of independent samplers. Internally, the sampler
             axis is FOLDED into the temperature axis (leading axis size
             ``nsamplers * ntemps_per_sampler``); 5D coordinate input
             ``(nsamplers, ntemps, nwalkers, nleaves_max, ndim)`` is folded automatically
             (similarly 4D ``inds``, 3D ``log_like``/``log_prior``, 2D ``betas``, 4D ``blobs``).
             Use the ``*_grouped`` properties to view arrays with the sampler axis unfolded.
-            If ``None``, inferred from 5D input or set to 1. (default: ``None``)
-        samplers_running (bool np.ndarray[nsamplers], optional): Mask of which independent
-            samplers are actively running. Inactive samplers are skipped in
+            If ``None``, inferred from 5D input or set to 1. Default ``None``.
+        samplers_running (np.ndarray, optional): Boolean mask of shape ``(nsamplers,)`` of
+            the independent samplers that are running. Inactive samplers are skipped in
             likelihood/prior evaluation and tempering by the sampler. If ``None``, all
-            samplers run. (default: ``None``)
+            samplers run. Default ``None``.
 
     Raises:
-        ValueError: Dimensions of inputs or input types are incorrect.
+        ValueError: ``coords`` is not an array, dict or State; a coordinate array is not
+            2D-5D; 5D branches disagree on ``nsamplers``; ``nsamplers`` conflicts with the
+            input; ``inds`` or ``branch_supplemental`` is not a dict; or
+            ``samplers_running`` has the wrong shape (plus the :class:`Branch` checks).
 
+    Attributes:
+        branches (dict): Branch name to :class:`Branch`.
+        log_like (np.ndarray or None): Log-likelihood, shape ``(ntemps, nwalkers)``.
+        log_prior (np.ndarray or None): Log-prior, shape ``(ntemps, nwalkers)``.
+        betas (np.ndarray or None): Inverse temperatures, shape ``(ntemps,)``.
+        blobs (np.ndarray or None): Blobs, shape ``(ntemps, nwalkers, nblobs)``.
+        supplemental (BranchSupplemental or None): Walker-level side information.
+        random_state (object or None): Random-number-generator state.
+        nsamplers (int): Number of folded independent samplers.
+        samplers_running (np.ndarray or None): Running-sampler mask, shape
+            ``(nsamplers,)``.
+
+    Note:
+        When ``coords`` is a dict, its entries are replaced in place by the reshaped
+        arrays (2D, 3D and 5D inputs).
+
+    Example:
+        >>> import numpy as np
+        >>> from eryn.state import State
+        >>> coords = np.zeros((2, 4, 1, 3))  # (ntemps, nwalkers, nleaves_max, ndim)
+        >>> state = State({"model_0": coords}, log_like=np.zeros((2, 4)))
+        >>> state.branches["model_0"].shape
+        (2, 4, 1, 3)
+        >>> state.branches_inds["model_0"].shape
+        (2, 4, 1)
     """
 
     # __slots__ = (
@@ -643,56 +725,65 @@ class State(object):
 
     @property
     def branches_inds(self):
-        """Get the ``inds`` from all branch objects returned as a dictionary with ``branch_names`` as keys."""
+        """dict: Branch name to ``inds`` (shape ``(ntemps, nwalkers, nleaves_max)``)."""
         return {name: branch.inds for name, branch in self.branches.items()}
 
     @property
     def branches_coords(self):
-        """Get the ``coords`` from all branch objects returned as a dictionary with ``branch_names`` as keys."""
+        """dict: Branch name to ``coords`` (shape ``(ntemps, nwalkers, nleaves_max, ndim)``)."""
         return {name: branch.coords for name, branch in self.branches.items()}
 
     @property
     def branches_supplemental(self):
-        """Get the ``branch.supplemental`` from all branch objects returned as a dictionary with ``branch_names`` as keys."""
+        """dict: Branch name to its ``branch_supplemental`` (or ``None``)."""
         return {
             name: branch.branch_supplemental for name, branch in self.branches.items()
         }
 
     @property
     def branch_names(self):
-        """Get the branch names in this state."""
+        """list of str: Branch names, in insertion order."""
         return list(self.branches.keys())
 
     @property
     def ntemps_per_sampler(self):
-        """Number of temperatures per independent sampler (folded axis-0 = nsamplers * ntemps_per_sampler)."""
+        """int: Temperatures per independent sampler (folded leading axis // ``nsamplers``)."""
         first_branch = self.branches[list(self.branches.keys())[0]]
         return first_branch.ntemps // self.nsamplers
 
     @property
     def log_like_grouped(self):
-        """View of ``log_like`` with the sampler axis unfolded: shape ``(nsamplers, ntemps_per_sampler, nwalkers)``."""
+        """np.ndarray or None: ``log_like`` reshaped with the sampler axis unfolded.
+
+        Shape ``(nsamplers, ntemps_per_sampler, nwalkers)``; ``None`` if ``log_like`` is.
+        """
         if self.log_like is None:
             return None
         return self.log_like.reshape((self.nsamplers, -1) + self.log_like.shape[1:])
 
     @property
     def log_prior_grouped(self):
-        """View of ``log_prior`` with the sampler axis unfolded: shape ``(nsamplers, ntemps_per_sampler, nwalkers)``."""
+        """np.ndarray or None: ``log_prior`` reshaped with the sampler axis unfolded.
+
+        Shape ``(nsamplers, ntemps_per_sampler, nwalkers)``; ``None`` if ``log_prior`` is.
+        """
         if self.log_prior is None:
             return None
         return self.log_prior.reshape((self.nsamplers, -1) + self.log_prior.shape[1:])
 
     @property
     def betas_grouped(self):
-        """View of ``betas`` with the sampler axis unfolded: shape ``(nsamplers, ntemps_per_sampler)``."""
+        """np.ndarray or None: ``betas`` reshaped to ``(nsamplers, ntemps_per_sampler)``."""
         if self.betas is None:
             return None
         return self.betas.reshape(self.nsamplers, -1)
 
     @property
     def blobs_grouped(self):
-        """View of ``blobs`` with the sampler axis unfolded: shape ``(nsamplers, ntemps_per_sampler, nwalkers, ...)``."""
+        """np.ndarray or None: ``blobs`` reshaped with the sampler axis unfolded.
+
+        Shape ``(nsamplers, ntemps_per_sampler, nwalkers, ...)``; ``None`` if ``blobs`` is.
+        """
         if self.blobs is None:
             return None
         return self.blobs.reshape(
@@ -700,19 +791,24 @@ class State(object):
             + self.blobs.shape[1:]
         )
 
+    # TODO check: keep/remove/document -- broken: reads __slots__ (commented out); no callers
     def copy_into_self(self, state_to_copy):
+        """Copy the ``__slots__`` attributes of ``state_to_copy`` onto this state."""
         for name in state_to_copy.__slots__:
             setattr(self, name, getattr(state_to_copy, name))
 
     def get_log_posterior(self, temper: bool = False):
-        """Get the posterior probability
+        """Compute the log-posterior ``beta * log_like + log_prior`` of every walker.
 
         Args:
-            temper (bool, optional): If ``True``, apply tempering to the posterior computation.
+            temper (bool, optional): If ``True``, weight the log-likelihood by ``betas``;
+                otherwise use ``beta = 1``. Default ``False``.
 
         Returns:
-            np.ndarray[ntemps, nwalkers]: Log of the posterior probability.
+            np.ndarray: Log-posterior, shape ``(ntemps, nwalkers)``.
 
+        Note:
+            ``betas`` must be set even when ``temper`` is ``False`` (it gives the shape).
         """
 
         if temper:
@@ -749,41 +845,49 @@ class State(object):
 
 
 class ParaState(object):
-    """The state of the ensemble during an MCMC run
+    """State of the deprecated :class:`~eryn.paraensemble.ParaEnsembleSampler` (deprecated).
+
+    Holds ``ngroups`` independent single-branch ensembles. Each branch is stored in a
+    :class:`Branch` whose four axes are reinterpreted as ``(ngroups, ntemps, nwalkers,
+    ndim)`` (so ``Branch.ntemps`` is ``ngroups``, ``Branch.nwalkers`` is ``ntemps``, and
+    so on); ``inds`` is not used. Arrays may be ``numpy`` or ``cupy``.
 
     Args:
-        coords (double ndarray[ntemps, nwalkers, nleaves_max, ndim], dict, or :class:`.State`): The current positions of the walkers
-            in the parameter space. If dict, need to use ``branch_names`` for the keys.
-        groups_running (bool ndarray[ntemps, nwalkers, nleaves_max] or dict, optional): The information
-            on which leaves are used and which are not used. A value of True means the specific leaf
-            was used in this step. If dict, need to use ``branch_names`` for the keys.
-            Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
-            (default: ``None``)
-        log_like (ndarray[ntemps, nwalkers], optional): Log likelihoods
-            for the  walkers at positions given by ``coords``.
-            Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
-            (default: ``None``)
-        log_prior (ndarray[ntemps, nwalkers], optional): Log priors
-            for the  walkers at positions given by ``coords``.
-            Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
-            (default: ``None``)
-        betas (ndarray[ntemps], optional): Temperatures in the sampler at the current step.
-            Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
-            (default: ``None``)
-        blobs (ndarray[ntemps, nwalkers, nblobs], Optional): The metadata “blobs”
-            associated with the current position. The value is only returned if
-            lnpostfn returns blobs too.
-            Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
-            (default: ``None``)
-        random_state (Optional): The current state of the random number
-            generator.
-            Input should be ``None`` if a complete :class:`.State` object is input for ``coords``.
-            (default: ``None``)
-        copy (bool, optional): If True, copy the the arrays in the former :class:`.State` obhect.
+        coords (np.ndarray, cupy.ndarray, dict, or ParaState): Positions, shape
+            ``(ngroups, ntemps, nwalkers, ndim)``, either one array (stored as branch
+            ``"model_0"``) or a dict keyed by branch name. 2D and 3D inputs are expanded as
+            in :class:`State` (``[None, :, None, :]`` and ``[:, :, None, :]``). An object
+            with a ``branches`` attribute is copied instead (all its attributes are taken
+            over and the other arguments are ignored).
+        groups_running (np.ndarray, optional): Boolean mask of shape ``(ngroups,)`` of the
+            groups being sampled. Default ``None`` (the sampler then runs every group).
+        branch_supplemental (dict, optional): Branch name to a
+            :class:`BranchSupplemental` with base shape ``(ngroups, ntemps, nwalkers)``.
+            Default ``None``.
+        supplemental (object, optional): Group-level side information (stored, not used by
+            the sampler). Default ``None``.
+        log_like (np.ndarray, optional): Log-likelihood, shape
+            ``(ngroups, ntemps, nwalkers)``. Default ``None``.
+        log_prior (np.ndarray, optional): Log-prior, shape ``(ngroups, ntemps, nwalkers)``.
+            Default ``None``.
+        betas (np.ndarray, optional): Inverse temperatures, shape ``(ngroups, ntemps)``.
+            Default ``None``.
+        blobs (np.ndarray, optional): Blobs (stored, not used by the sampler). Default
+            ``None``.
+        random_state (object, optional): Random generator (the sampler stores the
+            ``numpy.random`` / ``cupy.random`` module here). Default ``None``.
+        copy (bool, optional): If ``True``, deep-copy the inputs. When copying a ParaState,
+            ``random_state`` is always shared, not copied. Default ``False``.
 
     Raises:
-        ValueError: Dimensions of inputs or input types are incorrect.
+        ValueError: ``coords`` is not an array, dict or state, or ``branch_supplemental`` is
+            not a dict.
+        AttributeError: A coordinate array with fewer than 2 or more than 4 dimensions (the
+            intended ``ValueError`` message reads ``coords.ndim`` on the dict).
 
+    Warning:
+        Deprecated: construction emits a ``DeprecationWarning``. Use :class:`State` with the
+        ``nsamplers`` / ``samplers_running`` arguments instead.
     """
 
     # __slots__ = (
@@ -880,34 +984,34 @@ class ParaState(object):
 
     @property
     def branches_coords(self):
-        """Get the ``coords`` from all branch objects returned as a dictionary with ``branch_names`` as keys."""
+        """dict: Branch name to ``coords`` (shape ``(ngroups, ntemps, nwalkers, ndim)``)."""
         return {name: branch.coords for name, branch in self.branches.items()}
 
     @property
     def branches_supplemental(self):
-        """Get the ``branch.supplemental`` from all branch objects returned as a dictionary with ``branch_names`` as keys."""
+        """dict: Branch name to its ``branch_supplemental`` (or ``None``)."""
         return {
             name: branch.branch_supplemental for name, branch in self.branches.items()
         }
 
     @property
     def branch_names(self):
-        """Get the branch names in this state."""
+        """list of str: Branch names, in insertion order."""
         return list(self.branches.keys())
 
+    # TODO check: keep/remove/document -- broken: reads __slots__ (commented out); no callers
     def copy_into_self(self, state_to_copy):
+        """Copy the ``__slots__`` attributes of ``state_to_copy`` onto this state."""
         for name in state_to_copy.__slots__:
             setattr(self, name, getattr(state_to_copy, name))
 
+    # TODO check: keep/remove/document -- (ngroups, ntemps) betas do not broadcast; no callers
     def get_log_posterior(self, temper: bool = False):
-        """Get the posterior probability
+        """Compute ``betas * log_like + log_prior`` (``betas = 1`` unless ``temper``).
 
-        Args:
-            temper (bool, optional): If ``True``, apply tempering to the posterior computation.
-
-        Returns:
-            np.ndarray[ntemps, nwalkers]: Log of the posterior probability.
-
+        As written, ``betas`` of shape ``(ngroups, ntemps)`` multiplies ``log_like`` of
+        shape ``(ngroups, ntemps, nwalkers)`` without a trailing axis, which does not
+        broadcast in general.
         """
 
         if temper:

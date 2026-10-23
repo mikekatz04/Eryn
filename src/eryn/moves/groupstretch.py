@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Stretch move with a stationary complement (:class:`GroupStretchMove`)."""
 try:
     import cupy as xp
 except (ModuleNotFoundError, ImportError):
@@ -13,18 +14,45 @@ __all__ = ["GroupStretchMove"]
 
 
 class GroupStretchMove(GroupMove, StretchMove):
-    """Proposal like stretch with stationary compliment.
+    """Stretch proposal whose complement comes from a stationary group.
 
-    This move uses the stretch proposal method and math, but the compliment
-    of walkers used to propose a new point is chosen from a stationary group
-    rather than the current walkers in the ensemble.
+    Uses the stretch math of :class:`~eryn.moves.StretchMove` (``y = c + z (x - c)``,
+    log factor ``(d - 1) log z``), but the complement point ``c`` of each walker comes from
+    :meth:`~eryn.moves.GroupMove.find_friends` (a stationary group refreshed every
+    ``n_iter_update`` calls) rather than from the live ensemble, and all walkers move at
+    once. This makes a stretch-like proposal usable alongside reversible jump.
 
-    This move allows for "stretch"-like proposal to be used in Reversible Jump MCMC.
+    The class is still abstract: a subclass implements
+    :meth:`~eryn.moves.GroupMove.setup_friends` and
+    :meth:`~eryn.moves.GroupMove.find_friends`.
 
     Args:
-        **kwargs (dict, optional): Keyword arguments passed to :class:`GroupMove` and
-            :class:`StretchMove`.
+        **kwargs: Passed whole to BOTH the :class:`~eryn.moves.GroupMove` constructor
+            (``nfriends``, ``n_iter_update``, ``live_dangerously``) and the
+            :class:`~eryn.moves.StretchMove` constructor (``a``, ``return_gpu``,
+            ``random_seed``, plus the :class:`~eryn.moves.RedBlueMove` keywords); each
+            ignores what it does not use, and both reach :class:`~eryn.moves.Move`
+            (so ``Move.__init__`` runs twice).
 
+    Example:
+        .. code-block:: python
+
+            import numpy as np
+            from eryn.moves import GroupStretchMove
+
+            class RandomFriends(GroupStretchMove):
+                def setup_friends(self, branches):
+                    # snapshot of the current coordinates
+                    self.friends = {n: b.coords.copy() for n, b in branches.items()}
+
+                def find_friends(self, name, s, s_inds=None, branch_supps=None):
+                    ntemps, nwalkers = s.shape[:2]
+                    pick = np.random.randint(nwalkers, size=(ntemps, nwalkers))
+                    return np.take_along_axis(
+                        self.friends[name], pick[:, :, None, None], axis=1
+                    )
+
+            move = RandomFriends(nfriends=16, n_iter_update=10, a=2.0)
     """
 
     def __init__(self, **kwargs):
@@ -40,29 +68,38 @@ class GroupStretchMove(GroupMove, StretchMove):
         branch_supps=None,
         **kwargs
     ):
-        """Generate group stretch proposal coordinates
+        """Generate a group-stretch proposal for all walkers.
+
+        For each branch, the complement comes from :meth:`choose_c_vals` (that is,
+        :meth:`~eryn.moves.GroupMove.find_friends`) and the new points from
+        :meth:`~eryn.moves.StretchMove.get_new_points`, so every branch of a walker shares
+        one stretch factor ``z``.
 
         Args:
-            s_all (dict): Keys are ``branch_names`` and values are coordinates
-                for which a proposal is to be generated.
-            random (object): Random state object.
-            gibbs_ndim (int or np.ndarray, optional): If Gibbs sampling, this indicates
-                the true dimension. If given as an array, must have shape ``(ntemps, nwalkers)``.
-                See the tutorial for more information.
-                (default: ``None``)
-            s_inds_all (dict, optional): Keys are ``branch_names`` and values are
-                ``inds`` arrays indicating which leaves are currently used. (default: ``None``)
-            branch_supps (dict, optional): Keys are ``branch_names`` and values are
-                :class:`BranchSupplemental` objects. For the group stretch,
-                ``branch_supps`` are the best device for passing and tracking useful
-                information. (default: ``None``)
+            s_all (dict): ``{branch_name: coords}``, shape
+                ``(ntemps, nwalkers, nleaves_max, ndim)``.
+            random (object): Host random state (``model.random``); ``xp.random`` is used
+                when ``use_gpu`` is set.
+            gibbs_ndim (int, optional): Number of parameters actually moved; when given the
+                factors are rescaled to it with
+                :meth:`~eryn.moves.StretchMove.adjust_factors` (scalar only). Default
+                ``None``.
+            s_inds_all (dict, optional): ``{branch_name: inds}`` of the leaves taking part,
+                shape ``(ntemps, nwalkers, nleaves_max)``; forwarded to ``find_friends``.
+                Default ``None``.
+            branch_supps (dict, optional): ``{branch_name: BranchSupplemental}`` forwarded to
+                ``find_friends``; the natural place to carry friend-lookup bookkeeping.
+                Default ``None``.
+            **kwargs: Ignored.
 
         Returns:
-            tuple: First entry is new positions. Second entry is detailed balance factors.
+            tuple[dict, np.ndarray]: ``(newpos, factors)``: proposed coordinates with the
+            shapes of ``s_all`` and log factors ``(d - 1) log z`` of shape
+            ``(ntemps, nwalkers)``, with ``d = sum(nleaves_max * ndim)`` over the branches
+            (or ``gibbs_ndim`` when given).
 
         Raises:
-            ValueError: Issues with dimensionality.
-
+            ValueError: Branches have different walker counts.
         """
         # needs to be set before we reach the end
         self.zz = None

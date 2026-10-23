@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Run several moves in sequence as one proposal slot (:class:`CombineMove`)."""
 
 import numpy as np
 import tqdm
@@ -10,20 +11,34 @@ __all__ = ["CombineMove"]
 
 
 class CombineMove(Move):
-    """Move that combines specific moves in order.
+    """Move that runs a fixed list of moves in order, as one proposal.
+
+    :meth:`propose` calls each sub-move's ``propose`` in list order, threading the state
+    through. Each sub-move does its own accept/reject and its own temperature swaps (if it
+    has a controller), so the combined move does no extra swapping. Acceptance bookkeeping
+    lives on the sub-moves (see :attr:`acceptance_fraction`).
 
     Args:
-        moves (list): List of moves, similar to how ``moves`` is submitted
-            to :class:`eryn.ensemble.EnsembleSampler`. If weights are provided,
-            they will be ignored.
-        *args (tuple, optional): args to be passed to :class:`Move`.
-        share_temperature_control (bool, optional): If ``True``, share the ``temperature_control`` of the 
-            combined move with its underlying constituent moves. Default is ``True``. 
-        verbose (bool, optional): If ``True``, use ``tqdm`` to show progress throught steps.
-            This can be very helpful when debugging.
-        **kwargs (dict, optional): kwargs to be passed to :class:`Move`.
+        moves (list): Moves to run, in order. :meth:`propose` and the
+            ``temperature_control`` / ``periodic`` setters unwrap ``(move, weight)`` tuples
+            (weights ignored), but the :attr:`accepted` setter and the acceptance-fraction
+            properties do not, so the sampler's counter initialisation fails on tuples;
+            pass bare moves.
+        *args: Forwarded to :class:`~eryn.moves.Move`.
+        verbose (bool, optional): Wrap the loop over sub-moves in a ``tqdm`` progress bar
+            (useful when debugging). Default ``False``.
+        share_temperature_control (bool, optional): If ``True``, setting a non-``None``
+            ``temperature_control`` on the combined move (including through the
+            constructor or the sampler) also sets it on every sub-move. Default ``True``.
+        **kwargs: Forwarded to :class:`~eryn.moves.Move`. Its ``periodic`` is always
+            propagated to the sub-moves, including the ``None`` default at construction
+            (which replaces any ``periodic`` already set on a sub-move until the sampler
+            fills in its own).
 
-
+    Attributes:
+        moves (list): The sub-moves (or ``(move, weight)`` tuples) in run order.
+        verbose (bool): See ``verbose``.
+        share_temperature_control (bool): See ``share_temperature_control``.
     """
 
     def __init__(self, moves, *args, verbose=False, share_temperature_control=True, **kwargs):
@@ -35,7 +50,15 @@ class CombineMove(Move):
 
     @property
     def accepted(self):
-        """Accepted counts for each move."""
+        """list[np.ndarray]: Accepted counts of each sub-move, in order.
+
+        Setting it copies the given ``np.ndarray`` onto every sub-move (this is how
+        :class:`~eryn.ensemble.EnsembleSampler` initialises the counters). Reading it checks
+        ``self._accepted``, which this class never sets, so the getter raises
+        ``AttributeError`` unless a subclass sets ``_accepted``. LISA Analysis Tools' stage
+        builder relies on that: it tests ``hasattr(combined, "accepted")`` and then sets
+        the counters, so making the getter raise anything else breaks that check.
+        """
         if self._accepted is None:
             raise ValueError(
                 "accepted must be inititalized with the init_accepted function if you want to use it."
@@ -53,7 +76,8 @@ class CombineMove(Move):
 
     @property
     def acceptance_fraction(self):
-        """get acceptance fraction averaged over all moves"""
+        """np.ndarray: Sub-move acceptance fractions averaged over the sub-moves,
+        shape ``(ntemps, nwalkers)``."""
         acceptance_fraction_out = np.mean(
             [move.acceptance_fraction for move in self.moves], axis=0
         )
@@ -61,13 +85,17 @@ class CombineMove(Move):
 
     @property
     def acceptance_fraction_separate(self):
-        """get acceptance fraction from each move"""
+        """list[np.ndarray]: Acceptance fraction of each sub-move, in order."""
         acceptance_fraction_out = [move.acceptance_fraction for move in self.moves]
         return acceptance_fraction_out
 
     @property
     def temperature_control(self):
-        """temperature controller"""
+        """:class:`~eryn.moves.tempering.TemperatureControl` or None: Temperature controller.
+
+        A non-``None`` value is also set on every sub-move when
+        ``share_temperature_control`` is ``True``.
+        """
         return self._temperature_control
 
     @temperature_control.setter
@@ -87,7 +115,8 @@ class CombineMove(Move):
 
     @property
     def periodic(self):
-        """periodic parameter information"""
+        """:class:`~eryn.utils.PeriodicContainer` or None: Periodic-parameter information;
+        setting it also sets it on every sub-move."""
         return self._periodic
 
     @periodic.setter
@@ -102,18 +131,17 @@ class CombineMove(Move):
         self._periodic = periodic
 
     def propose(self, model, state):
-        """Propose a combined move.
+        """Run every sub-move's ``propose`` in order.
 
         Args:
-            model (:class:`eryn.model.Model`): Carrier of sampler information.
-            state (:class:`State`): Current state of the sampler.
+            model (:class:`eryn.model.Model`): Sampler callables and ``random``.
+            state (:class:`eryn.state.State`): Current state, passed through the sub-moves.
 
         Returns:
-            tuple: (state, accepted)
-                The first return is the state of the sampler after the move.
-                The second return value is the accepted count array for each walker
-                counting for all proposals.
-
+            tuple[:class:`eryn.state.State`, np.ndarray]: ``(state, accepted)``: the state
+            after the last sub-move and the element-wise sum of the sub-moves' ``accepted``
+            arrays, shape ``(ntemps, nwalkers)`` (an OR when they are boolean, since the
+            first array's dtype is kept).
         """
 
         # prepare for verbosity if needed

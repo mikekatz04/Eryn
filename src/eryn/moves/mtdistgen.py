@@ -1,3 +1,4 @@
+"""Multiple-try independence move drawing tries from a fixed distribution."""
 import numpy as np
 
 from eryn.moves import MHMove
@@ -5,18 +6,31 @@ from eryn.moves.multipletry import MultipleTryMove
 
 
 class MTDistGenMove(MultipleTryMove, MHMove):
-    """Perform a multiple try MH move based on a distribution.
-    
-    Distribution must be independent of the current point.
-    
-    This is effectively an example of the mutliple try class inheritance structure.
+    """Multiple-try Metropolis-Hastings move with tries drawn from a fixed distribution.
+
+    The distribution must not depend on the current point, so construct the move with
+    ``independent=True`` (the non-independent auxiliary path of
+    :meth:`~eryn.moves.MultipleTryMove.get_mt_proposal` is not usable with this class).
+    Works on a single branch with one leaf per walker and needs a
+    ``temperature_control`` (the sampler attaches one). Also serves as the reference
+    example of the multiple-try inheritance structure.
 
     Args:
-        generate_dist (dict): Keys are branch names and values are :class:`ProbDistContainer` objects 
-            that have ``logpdf`` and ``rvs`` methods. If you 
-        *args (tuple, optional): Additional arguments to pass to parent classes.
-        **kwargs (dict, optional): Keyword arguments passed to parent classes.
-    
+        generate_dist (:class:`eryn.priors.ProbDistContainer`): ONE container (not a dict)
+            with ``logpdf`` and ``rvs`` over the branch's parameters, e.g. the branch prior.
+        **kwargs: Passed to both :class:`~eryn.moves.MultipleTryMove` (``num_try``,
+            ``independent``, ``symmetric``) and :class:`~eryn.moves.MHMove` /
+            :class:`~eryn.moves.Move`.
+
+    Example:
+        >>> from eryn.priors import ProbDistContainer, UniformDistribution
+        >>> from eryn.moves import MTDistGenMove
+        >>> priors = ProbDistContainer(
+        ...     {0: UniformDistribution(-5.0, 5.0), 1: UniformDistribution(-5.0, 5.0)}
+        ... )
+        >>> move = MTDistGenMove(priors, num_try=25, independent=True)
+        >>> move.num_try
+        25
     """
 
     def __init__(self, generate_dist, **kwargs):
@@ -27,39 +41,38 @@ class MTDistGenMove(MultipleTryMove, MHMove):
         self.generate_dist = generate_dist
 
     def special_generate_logpdf(self, generated_coords):
-        """Get logpdf of generated coordinates.
-        
+        """Log density of ``generate_dist`` at the given points.
+
         Args:
-            generated_coords (np.ndarray): Current coordinates of walkers. 
-            
+            generated_coords (np.ndarray): Points, shape ``(n, ndim)``.
+
         Returns:
-            np.ndarray: logpdf of generated points.
-            
+            np.ndarray: Log density, shape ``(n,)``.
         """
         return self.generate_dist.logpdf(generated_coords)
 
     def special_generate_func(
         self, coords, random, size=1, fill_tuple=None, fill_values=None, **kwargs
     ):
-        """Generate samples and calculate the logpdf of their proposal function.
-        
+        """Draw ``size`` tries per walker from ``generate_dist``.
+
         Args:
-            coords (np.ndarray): Current coordinates of walkers. 
-            random (obj): Random generator.
-            *args (tuple, optional): additional arguments passed by overwriting the 
-                ``get_proposal`` function and passing ``args_generate`` keyword argument.
-            size (int, optional): Number of tries to generate. 
-            fill_tuple (tuple, optional): Length 2 tuple with the indexing of which values to fill
-                when generating. Can be used for auxillary proposals or reverse RJ proposals. First index is the index into walkers and the second index is 
-                the index into the number of tries. (default: ``None``)
-            fill_values (np.ndarray): values to fill associated with ``fill_tuple``. Should 
-                have size ``(len(fill_tuple[0]), ndim)``. (default: ``None``).
-            **kwargs (tuple, optional): additional keyword arguments passed by overwriting the 
-                ``get_proposal`` function and passing ``kwargs_generate`` keyword argument.
+            coords (np.ndarray): Current coordinates, shape ``(nwalkers, ndim)`` (only the
+                walker count is used).
+            random (object): Not used; draws come from ``generate_dist.rvs``.
+            size (int, optional): Tries per walker. Default ``1``.
+            fill_tuple (tuple, optional): ``(walker_idx, try_idx)`` entries to overwrite with
+                ``fill_values`` after drawing. Default ``None``.
+            fill_values (np.ndarray, optional): Values for ``fill_tuple``, shape
+                ``(len(fill_tuple[0]), ndim)``. Default ``None``.
+            **kwargs: Ignored.
 
         Returns:
-            tuple: (generated points, logpdf of generated points).
-        
+            tuple[np.ndarray, np.ndarray]: Tries of shape ``(nwalkers, size, ndim)`` and their
+            log density, shape ``(nwalkers, size)``.
+
+        Raises:
+            ValueError: ``size`` is not an ``int``.
         """
         nwalkers = coords.shape[0]
 
@@ -81,14 +94,17 @@ class MTDistGenMove(MultipleTryMove, MHMove):
         return generated_coords, generated_logpdf
 
     def set_coords_and_inds(self, generated_coords):
-        """Setup coordinates for prior and Likelihood
-        
+        """Pack the tries into a sampler-shaped coordinate dict for the model callables.
+
+        The tries become ``(1, nwalkers * num_try, 1, ndim)`` for ``self.key_in``; other
+        branches are reshaped to ``(1, -1, nleaves_max, ndim)``.
+
         Args:
-            generated_coords (np.ndarray): Generated coordinates with shape ``(number of independent walkers, num_try)``. 
+            generated_coords (np.ndarray): Tries, shape ``(nwalkers, num_try, ndim)``.
 
         Returns:
-            dict: Coordinates for Likelihood and Prior.
-        
+            dict: ``{branch_name: coords}`` to pass to ``compute_log_like_fn`` /
+            ``compute_log_prior_fn``.
         """
         ndim = self.current_state.branches[self.key_in].shape[-1]
 
@@ -105,15 +121,14 @@ class MTDistGenMove(MultipleTryMove, MHMove):
         return coords_in_dict
 
     def special_like_func(self, generated_coords, **kwargs):
-        """Calculate the Likelihood for sampled points.
-        
+        """Log-likelihood of every try through ``self.current_model.compute_log_like_fn``.
+
         Args:
-            generated_coords (np.ndarray): Generated coordinates with shape ``(number of independent walkers, num_try)``. 
-            **kwargs (dict, optional): For compatibility. 
+            generated_coords (np.ndarray): Tries, shape ``(nwalkers, num_try, ndim)``.
+            **kwargs: Ignored.
 
         Returns:
-            np.ndarray: Likelihood values with shape ``(generated_coords.shape[0], num_try).``
-        
+            np.ndarray: Log-likelihood, shape ``(nwalkers, num_try)``.
         """
         coords_in = self.set_coords_and_inds(generated_coords)
         ll = self.current_model.compute_log_like_fn(coords_in)[0]
@@ -121,15 +136,14 @@ class MTDistGenMove(MultipleTryMove, MHMove):
         return ll
 
     def special_prior_func(self, generated_coords, **kwargs):
-        """Calculate the Prior for sampled points.
-        
+        """Log prior of every try through ``self.current_model.compute_log_prior_fn``.
+
         Args:
-            generated_coords (np.ndarray): Generated coordinates with shape ``(number of independent walkers, num_try)``. 
-            **kwargs (dict, optional): For compatibility. 
-            
+            generated_coords (np.ndarray): Tries, shape ``(nwalkers, num_try, ndim)``.
+            **kwargs: Ignored.
+
         Returns:
-            np.ndarray: Prior values with shape ``(generated_coords.shape[0], num_try).``
-        
+            np.ndarray: Log prior, shape ``(nwalkers, num_try)``.
         """
         coords_in = self.set_coords_and_inds(generated_coords)
         lp = self.current_model.compute_log_prior_fn(coords_in)

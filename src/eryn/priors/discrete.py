@@ -1,3 +1,12 @@
+"""Discrete priors over integer values.
+
+:class:`DiscreteUniform` (uniform over ``minimum .. maximum`` inclusive),
+:class:`CategoricalDistribution` (uniform over ``0 .. n_categories - 1``) and
+:class:`PoissonDistribution`. Samples are returned as float64 arrays holding integer values,
+so they fit in the sampler's float coordinate arrays; ``logpdf`` (alias ``logpmf`` on
+:class:`DiscreteUniform`) is ``-inf`` at non-integer values.
+"""
+
 from __future__ import annotations
 
 import numpy as np
@@ -8,20 +17,40 @@ from .base import Prior
 
 
 class DiscreteUniform(Prior):
-    """A uniform discrete prior over a range of integers [minimum, maximum].
-    
-    This is useful for model selection (RJ-MCMC) or selecting discrete states.
+    """Uniform prior over the integers ``minimum, minimum + 1, ..., maximum`` (inclusive).
+
+    Useful for discrete states such as a model index. ``n_states = maximum - minimum + 1``
+    and every state has probability ``1 / n_states``.
 
     Args:
-        minimum (int): Minimum integer bound.
-        maximum (int): Maximum integer bound.
-        name (str, optional): Name of the prior. (default: ``None``)
-        name_phys (str, optional): Physical name. (default: ``None``)
-        latex_label (str, optional): Latex label. (default: ``None``)
-        unit (str, optional): Unit string. (default: ``None``)
-        use_cupy (bool, optional): Use CuPy. (default: ``False``)
-        return_gpu (bool, optional): Return arrays on GPU. (default: ``False``)
-        **kwargs: Additional arguments passed to base prior.
+        minimum: Lowest state; a Python ``int`` (numpy integers fail the type check).
+        maximum: Highest state; a Python ``int`` strictly greater than ``minimum``.
+        name: Name of the prior. Default ``None``.
+        name_phys: Physical parameter name. Default ``None``.
+        latex_label: LaTeX label. Default ``None``.
+        unit: Unit string. Default ``None``.
+        use_cupy: Compute with CuPy. Default ``False``.
+        return_gpu: Return CuPy arrays (when ``use_cupy``). Default ``False``.
+        **kwargs: Forwarded to :class:`~eryn.priors.base.Prior`.
+
+    Attributes:
+        min_int (int): Lowest state.
+        max_int (int): Highest state.
+        n_states (int): Number of states.
+        minimum (float): ``float(minimum)``.
+        maximum (float): ``float(maximum)``.
+
+    Raises:
+        ValueError: If a bound is not an ``int`` or ``minimum >= maximum``.
+
+    Example:
+        >>> import numpy as np
+        >>> from eryn.priors import DiscreteUniform
+        >>> dist = DiscreteUniform(1, 4)
+        >>> bool(np.all(np.isin(dist.rvs(20), [1.0, 2.0, 3.0, 4.0])))
+        True
+        >>> bool(dist.logpdf(2.0) == -np.log(4)), float(dist.logpdf(2.5))
+        (True, -inf)
     """
 
     def __init__(
@@ -60,6 +89,15 @@ class DiscreteUniform(Prior):
         self._logpdf_val = -np.log(self.n_states)
 
     def rvs(self, size: int | tuple[int, ...] = (1,), **kwargs) -> NDArrayLike:
+        """Draw states uniformly from ``min_int .. max_int``.
+
+        Args:
+            size: Output shape; an ``int`` means ``(size,)``. Default ``(1,)``.
+            **kwargs: Ignored.
+
+        Returns:
+            NDArrayLike: float64 array of integer values, shape ``size``.
+        """
         if isinstance(size, int):
             size = (size,)
             
@@ -68,6 +106,17 @@ class DiscreteUniform(Prior):
         return self._to_device(samples)
 
     def logpdf(self, x: ArrayLike, **kwargs) -> NDArrayLike:
+        """Log-probability ``-log(n_states)`` at integer states in range, ``-inf`` elsewhere.
+
+        Also available as ``logpmf``.
+
+        Args:
+            x: Value(s); non-integer values get ``-inf``.
+            **kwargs: Ignored.
+
+        Returns:
+            NDArrayLike: float64 log-probabilities, shape of ``x``.
+        """
         x_arr = self.xp.asarray(x)
         out = self.xp.full_like(x_arr, -np.inf, dtype=self.xp.float64)
         
@@ -78,6 +127,15 @@ class DiscreteUniform(Prior):
     logpmf = logpdf
 
     def cdf(self, x: ArrayLike, **kwargs) -> NDArrayLike:
+        """Step CDF: ``clip(floor(x) - min_int + 1, 0, n_states) / n_states``.
+
+        Args:
+            x: Value(s).
+            **kwargs: Ignored.
+
+        Returns:
+            NDArrayLike: CDF values in ``[0, 1]``, shape of ``x``.
+        """
         x_arr = self.xp.asarray(x)
         states_below = self.xp.floor(x_arr) - self.min_int + 1
         states_below = self.xp.clip(states_below, 0, self.n_states)
@@ -86,18 +144,21 @@ class DiscreteUniform(Prior):
 
 
 class CategoricalDistribution(DiscreteUniform):
-    """Convenience prior for sampling categorically among N possibilities.
+    """Uniform categorical prior over ``0, 1, ..., n_categories - 1``.
 
-    Samples uniformly from the integers [0, 1, ..., n_categories - 1].
+    A :class:`DiscreteUniform` with ``minimum = 0`` and ``maximum = n_categories - 1``.
 
     Args:
-        n_categories (int): Number of categories.
-        name (str, optional): Name of the prior. (default: ``None``)
-        name_phys (str, optional): Physical name. (default: ``None``)
-        latex_label (str, optional): Latex label. (default: ``None``)
-        use_cupy (bool, optional): Use CuPy. (default: ``False``)
-        return_gpu (bool, optional): Return arrays on GPU. (default: ``False``)
-        **kwargs: Additional arguments passed to base prior.
+        n_categories: Number of categories; a Python ``int`` ``>= 2``.
+        name: Name of the prior. Default ``None``.
+        name_phys: Physical parameter name. Default ``None``.
+        latex_label: LaTeX label. Default ``None``.
+        use_cupy: Compute with CuPy. Default ``False``.
+        return_gpu: Return CuPy arrays (when ``use_cupy``). Default ``False``.
+        **kwargs: Forwarded to :class:`DiscreteUniform` (e.g. ``unit``).
+
+    Raises:
+        ValueError: If ``n_categories`` is not an ``int`` or is ``< 2``.
     """
 
     def __init__(
@@ -126,18 +187,27 @@ class CategoricalDistribution(DiscreteUniform):
 
 
 class PoissonDistribution(Prior):
-    """Poisson prior distribution for integer event counts.
+    """Poisson prior for non-negative integer counts.
 
-    Probability mass function: p(k) = (lam^k * e^-lam) / k!
+    ``p(k) = lam**k * exp(-lam) / k!`` for integer ``k >= 0`` (``minimum = 0``,
+    ``maximum = inf``). ``log k!`` is evaluated with ``gammaln`` from ``scipy.special``
+    (numpy) or ``cupyx.scipy.special`` (``use_cupy``), resolved once at construction.
 
     Args:
-        lam (float): Rate parameter (mean).
-        name (str, optional): Name of the prior. (default: ``None``)
-        name_phys (str, optional): Physical name. (default: ``None``)
-        latex_label (str, optional): Latex label. (default: ``None``)
-        use_cupy (bool, optional): Use CuPy. (default: ``False``)
-        return_gpu (bool, optional): Return arrays on GPU. (default: ``False``)
-        **kwargs: Additional arguments passed to base prior.
+        lam: Rate (mean); must be ``> 0``.
+        name: Name of the prior. Default ``None``.
+        name_phys: Physical parameter name. Default ``None``.
+        latex_label: LaTeX label. Default ``None``.
+        use_cupy: Compute with CuPy. Default ``False``.
+        return_gpu: Return CuPy arrays (when ``use_cupy``). Default ``False``.
+        **kwargs: Forwarded to :class:`~eryn.priors.base.Prior`.
+
+    Attributes:
+        lam (float): Rate (mean).
+
+    Raises:
+        ValueError: If ``lam <= 0``.
+        ImportError: If ``use_cupy`` and ``cupyx.scipy.special`` cannot be imported.
     """
 
     def __init__(
@@ -183,6 +253,15 @@ class PoissonDistribution(Prior):
             self._gammaln = gammaln
 
     def rvs(self, size: int | tuple[int, ...] = (1,), **kwargs) -> NDArrayLike:
+        """Draw Poisson counts.
+
+        Args:
+            size: Output shape; an ``int`` means ``(size,)``. Default ``(1,)``.
+            **kwargs: Ignored.
+
+        Returns:
+            NDArrayLike: float64 array of non-negative integer values, shape ``size``.
+        """
         if isinstance(size, int):
             size = (size,)
             
@@ -190,6 +269,15 @@ class PoissonDistribution(Prior):
         return self._to_device(samples)
 
     def logpdf(self, x: ArrayLike, **kwargs) -> NDArrayLike:
+        """Log-probability ``k log(lam) - lam - log(k!)`` at integers ``k >= 0``, else ``-inf``.
+
+        Args:
+            x: Value(s).
+            **kwargs: Ignored.
+
+        Returns:
+            NDArrayLike: float64 log-probabilities, shape of ``x``.
+        """
         x_arr = self.xp.asarray(x)
         out = self.xp.full_like(x_arr, -np.inf, dtype=self.xp.float64)
         

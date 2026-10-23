@@ -24,6 +24,12 @@ This is deliberately the same split as :class:`eryn.moves.RidgeGibbsMove`
 and its duck-typed ``fiber_map``: the generic sampling machinery lives
 here; the physics that builds fibers, ridges, and information matrices
 lives with the model.
+
+Entry points: :class:`EigenAxisMove`; :func:`eigen_axis_set` (axes and widths from
+information matrices), :func:`prior_box_scales` and :func:`axis_prior_bounds` (prior-aware
+step bounds), :func:`project_out_direction`, and :func:`draw_axis_step` (the one-axis draw,
+reusable by other moves). All array functions follow the input's array module (``numpy`` or
+``cupy``).
 """
 
 import numpy as np
@@ -68,6 +74,14 @@ def prior_box_scales(lo, hi):
 
     Degenerate columns (a fixed / per-leaf-filled parameter has zero prior
     width) keep a scale of 1.0 rather than dividing by zero.
+
+    Args:
+        lo (array_like): Lower prior bounds per parameter, shape ``(ndim,)``.
+        hi (array_like): Upper prior bounds per parameter, shape ``(ndim,)``.
+
+    Returns:
+        np.ndarray: ``|hi - lo|`` as float, shape ``(ndim,)``; non-finite or non-positive
+        widths are replaced by ``1.0``.
     """
     lo = np.asarray(lo, dtype=float)
     hi = np.asarray(hi, dtype=float)
@@ -81,6 +95,14 @@ def project_out_direction(info, t):
 
     Removes one direction from the information matrix. Written out rather
     than materialising ``P`` so the cost stays O(ndim^2) per source.
+
+    Args:
+        info (xp.ndarray): Information matrices ``F``, shape ``(n, ndim, ndim)``.
+        t (xp.ndarray): UNIT directions to remove, shape ``(n, ndim)``.
+
+    Returns:
+        xp.ndarray: Projected matrices, shape ``(n, ndim, ndim)``, explicitly symmetrised;
+        same array module as ``info``.
     """
     xp = _array_module(info)
     Ft = xp.einsum("nij,nj->ni", info, t)
@@ -104,9 +126,18 @@ def axis_prior_bounds(axes, widths):
     step sizes -- and touches nothing else.
 
     ``widths`` is the per-column prior box width from
-    :func:`prior_box_scales`. Components below ``1e-12`` of the axis
-    norm are ignored so a direction that barely touches a narrow parameter
-    is not bounded by it.
+    :func:`prior_box_scales`. Components with ``|a_i| <= 1e-12`` (absolute; the
+    axes are unit vectors) are ignored so a direction that barely touches a
+    narrow parameter is not bounded by it.
+
+    Args:
+        axes (xp.ndarray): Unit axes, shape ``(n, ndim, naxes)``; column ``k`` is axis ``k``.
+        widths (xp.ndarray): Prior box widths, shape ``(ndim,)``, same array module as
+            ``axes``.
+
+    Returns:
+        xp.ndarray: Largest step per axis, shape ``(n, naxes)`` (``inf`` for an axis with no
+        component above the threshold).
     """
     xp = _array_module(axes)
     aa = xp.abs(axes)
@@ -120,32 +151,38 @@ def axis_prior_bounds(axes, widths):
 def eigen_axis_set(info, t_fiber=None, ridge_axis=None, sigma_max=1.0):
     """Per-source proposal axes and their own 1-sigma widths.
 
-    Returns ``(axes, sigmas)`` with ``axes`` shaped ``(n, ndim, ndim)``
-    (column ``k`` is axis ``k``) and ``sigmas`` shaped ``(n, ndim)``.
-
-    Args:
-        info: ``(n, ndim, ndim)`` information matrices (one per source).
-        t_fiber: Optional ``(n, ndim)`` unit tangents of an exactly (or
-            nearly) likelihood-flat direction. When given, that direction
-            is projected out before the eigendecomposition and the columns
-            are ordered by |overlap with the fiber| so the fiber-aligned
-            eigenvector lands LAST — where it is either overwritten by
-            ``ridge_axis`` or left as the (bounded) near-flat direction.
-        ridge_axis: Optional ``(n, ndim)`` analytic-manifold direction to
-            install in the last column (raw; it is orthogonalised against
-            ``t_fiber`` when one is given, then normalised). Use this for
-            model-specific ridge/manifold axes the information matrix
-            cannot be trusted to produce itself.
-        sigma_max: Bound on any single axis width — a genuinely flat
-            direction otherwise yields ``1/sqrt(~0)``. In prior-box-
-            whitened coordinates the natural bound is 1.0 = one prior
-            width; it binds only on near-null axes.
-
+    Axes are the eigenvectors of each information matrix (optionally with a fiber
+    direction projected out and a ridge direction installed in the last column).
     ``sigma_k = 1 / sqrt(a_k^T F a_k)`` uses the ORIGINAL information
     matrix, so each axis is scaled by its own curvature. A 1-D move pays
     no ``d``-dimensional cost penalty, which is why no relative
     eigen-floor is needed: that floor exists only because a joint draw
     must share one global scale.
+
+    Args:
+        info (xp.ndarray): ``(n, ndim, ndim)`` information matrices (one per source).
+        t_fiber (xp.ndarray, optional): ``(n, ndim)`` unit tangents of an exactly (or
+            nearly) likelihood-flat direction. When given, that direction
+            is projected out before the eigendecomposition and the columns
+            are ordered by the absolute overlap with the fiber so the fiber-aligned
+            eigenvector lands LAST, where it is either overwritten by
+            ``ridge_axis`` or left as the (bounded) near-flat direction.
+            Default ``None``.
+        ridge_axis (xp.ndarray, optional): ``(n, ndim)`` analytic-manifold direction to
+            install in the last column (raw; it is orthogonalised against
+            ``t_fiber`` when one is given, then normalised). Use this for
+            model-specific ridge/manifold axes the information matrix
+            cannot be trusted to produce itself. Default ``None``.
+        sigma_max (float, optional): Upper bound on any single axis width; a genuinely
+            flat direction otherwise yields ``1/sqrt(~0)``. In prior-box-whitened
+            coordinates the natural bound is 1.0 = one prior width; it binds only on
+            near-null axes. Default ``1.0``.
+
+    Returns:
+        tuple[xp.ndarray, xp.ndarray]: ``(axes, sigmas)`` with ``axes`` of shape
+        ``(n, ndim, ndim)`` (column ``k`` is axis ``k``) and ``sigmas`` of shape
+        ``(n, ndim)``, in the array module of ``info``. This is the table format
+        :meth:`EigenAxisMove.set_axes` accepts once the source axis is mapped to leaves.
     """
     xp = _array_module(info)
     if t_fiber is not None:
@@ -185,8 +222,18 @@ def draw_axis_step(axes, sigmas, rng, jump_factor=1.0):
     legacy ``RandomState`` — e.g. Eryn's ``model.random``); the picks and
     variates are drawn on the host and moved to the axes' array module.
 
-    Returns ``(dy, picked_axis)``; ``picked_axis`` is host numpy for
-    per-axis acceptance counters.
+    Args:
+        axes (xp.ndarray): Axes per row, shape ``(n, ndim, naxes)``; column ``k`` is axis
+            ``k``.
+        sigmas (xp.ndarray): 1-sigma width per axis, shape ``(n, naxes)``.
+        rng (object): Host random generator with ``integers`` / ``standard_normal``
+            (``Generator``) or ``randint`` / ``randn`` (``RandomState``).
+        jump_factor (float, optional): Scalar multiplier on every step. Default ``1.0``.
+
+    Returns:
+        tuple[xp.ndarray, np.ndarray]: ``(dy, picked_axis)``: the steps, shape
+        ``(n, ndim)``, in the array module of ``axes``, and the picked axis index per row,
+        shape ``(n,)``, as host numpy (for per-axis acceptance counters).
     """
     xp = _array_module(axes)
     n, _, naxes = axes.shape
@@ -230,15 +277,28 @@ class EigenAxisMove(MHMove):
             its 1-sigma step. Branches with no table fall back to the
             branch supplemental keys above; neither present raises.
         mode (str, optional): ``"axis"`` draws along ONE uniformly picked
-            axis per leaf (default); ``"full"`` draws jointly,
-            ``dy = jump_factor * (axes * sigmas) @ z``.
+            axis per leaf; ``"full"`` draws jointly,
+            ``dy = jump_factor * (axes * sigmas) @ z``. Default ``"axis"``.
         jump_factor (float, optional): Fixed scalar multiplier on every
-            step. (default: ``1.0``)
-        **kwargs: Forwarded to the parent :class:`Move` (``periodic``,
-            ``temperature_control``, ``gibbs_sampling_setup``, ...).
+            step. Default ``1.0``.
+        **kwargs: Forwarded to :class:`~eryn.moves.MHMove` / :class:`~eryn.moves.Move`
+            (``periodic``, ``temperature_control``, ``gibbs_sampling_setup``, ...).
             ``skip_supp_names_update`` defaults to the two eigen
             supplemental keys so frozen tables are not merged
             arithmetically on accept/reject.
+
+    Raises:
+        ValueError: ``mode`` is not ``"axis"`` or ``"full"``, or a table in
+            ``axes_and_sigmas`` has an invalid shape (see :meth:`set_axes`).
+
+    Example:
+        >>> import numpy as np
+        >>> from eryn.moves import EigenAxisMove
+        >>> axes = np.eye(2)
+        >>> sigmas = np.array([0.1, 0.5])
+        >>> move = EigenAxisMove({"model_0": (axes, sigmas)}, mode="axis")
+        >>> move.mode, move.jump_factor
+        ('axis', 1.0)
     """
 
     _MODES = ("axis", "full")
@@ -268,6 +328,16 @@ class EigenAxisMove(MHMove):
         as-is until the next call — the freeze between calls is what keeps
         ``factors == 0`` honest, so refresh it only at proposal-block
         boundaries, never inside a repeat sweep.
+
+        Args:
+            name (str): Branch name.
+            axes (xp.ndarray): Axes, shape ``(ndim, ndim)``, ``(nleaves_max, ndim, ndim)`` or
+                ``(ntemps, nwalkers, nleaves_max, ndim, ndim)``; column ``k`` is axis ``k``.
+            sigmas (xp.ndarray): 1-sigma widths, shape ``axes.shape[:-1]``.
+
+        Raises:
+            ValueError: ``axes`` has an unsupported rank, is not square in its last two
+                dimensions, or ``sigmas`` does not match.
         """
         xp = _array_module(axes)
         axes = xp.asarray(axes)
@@ -289,7 +359,27 @@ class EigenAxisMove(MHMove):
         self._tables[name] = (axes, sigmas)
 
     def _rows_for(self, name, inds_here, nrows, ndim, branch_supps, xp):
-        """Resolve per-row ``(axes, sigmas)`` for the alive leaves."""
+        """Resolve per-row ``(axes, sigmas)`` for the alive leaves.
+
+        Uses the explicit table of ``name`` if one is set (broadcast, indexed by leaf, or
+        indexed by ``(temp, walker, leaf)`` by rank), else the ``"eigen_axes"`` /
+        ``"eigen_sigmas"`` entries of the branch supplemental at ``inds_here``.
+
+        Args:
+            name (str): Branch name.
+            inds_here (tuple): ``(temp, walker, leaf)`` index arrays of the alive leaves.
+            nrows (int): Number of alive leaves.
+            ndim (int): Parameters per leaf.
+            branch_supps (dict or None): Branch supplementals.
+            xp (module): Array module of the coordinates.
+
+        Returns:
+            tuple[xp.ndarray, xp.ndarray]: Axes ``(nrows, ndim, ndim)`` and sigmas
+            ``(nrows, ndim)``.
+
+        Raises:
+            ValueError: No table and no supplemental entries, or a table ``ndim`` mismatch.
+        """
         table = self._tables.get(name)
         if table is not None:
             axes, sigmas = table
@@ -324,26 +414,32 @@ class EigenAxisMove(MHMove):
                      supps=None, branch_supps=None, **kwargs):
         """Propose a symmetric eigen-axis jump for every alive leaf.
 
-        Args:
-            branches_coords (dict): Keys are ``branch_names`` and values are
-                np.ndarray[ntemps, nwalkers, nleaves_max, ndim].
-            random (object): Host random state (``model.random``).
-            branches_inds (dict, optional): Keys are ``branch_names`` and
-                values are np.ndarray[ntemps, nwalkers, nleaves_max]
-                marking alive leaves. ``None`` treats every leaf as alive.
-            supps (ignored): For signature compatibility.
-            branch_supps (dict, optional): Per-branch
-                :class:`eryn.state.BranchSupplemental`; used as the axis
-                source for branches with no explicit table.
-            **kwargs (ignored): For signature compatibility.
-
-        Returns:
-            tuple: ``(q, factors)`` — proposed coordinates dict and
-            ``np.zeros((ntemps, nwalkers))`` (the draw is symmetric).
-
         Every alive leaf is one row: leaves of the same walker draw their
         axes INDEPENDENTLY, and dead leaves are returned byte-identical.
         The leaf axis is never folded into the walker/temperature axes.
+        ``mode="axis"`` uses :func:`draw_axis_step`; ``mode="full"`` draws
+        ``dy = jump_factor * (axes * sigmas) @ z`` with ``z ~ N(0, I)``. Proposed points
+        are wrapped when ``periodic`` is set.
+
+        Args:
+            branches_coords (dict): ``{branch_name: coords}``, shape
+                ``(ntemps, nwalkers, nleaves_max, ndim)`` (numpy or cupy).
+            random (object): Host random state (``model.random``).
+            branches_inds (dict, optional): ``{branch_name: inds}``, boolean
+                ``(ntemps, nwalkers, nleaves_max)`` marking the leaves to move. ``None``
+                treats every leaf as alive. Default ``None``.
+            supps (optional): Ignored; for signature compatibility. Default ``None``.
+            branch_supps (dict, optional): Per-branch
+                :class:`eryn.state.BranchSupplemental`; used as the axis
+                source for branches with no explicit table. Default ``None``.
+            **kwargs: Ignored; for signature compatibility.
+
+        Returns:
+            tuple[dict, np.ndarray]: ``(q, factors)``: proposed coordinates per branch and
+            ``np.zeros((ntemps, nwalkers))`` (the draw is symmetric).
+
+        Raises:
+            ValueError: A branch has no axis table and no supplemental entries.
         """
         q = {}
         for name, coords in branches_coords.items():

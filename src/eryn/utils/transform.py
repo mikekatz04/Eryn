@@ -1,3 +1,10 @@
+"""Parameter-basis transforms: :class:`TransformContainer`.
+
+Maps coordinates from the sampler's INPUT basis (the sampled parameters) to an OUTPUT basis
+(what a likelihood or waveform needs) by filling fixed parameters and applying per-parameter
+and multi-parameter transforms, and back again when inverse transforms are supplied.
+"""
+
 from __future__ import annotations
 
 from typing import Any, Callable, List, Dict, Tuple, TypeVar
@@ -13,44 +20,98 @@ import numpy as np
 Element = TypeVar("Element", str, int)
 
 class TransformContainer:
-    """Container for helpful transformations
+    """Map coordinates between the sampling (input) basis and an output basis.
+
+    Forward direction (:meth:`both_transforms`, ``(..., ndim) -> (..., ndim_full)``):
+
+    1. :meth:`fill_values` places each input column at its output-basis position and
+       writes the fixed ``fill_dict`` values into their columns.
+    2. :meth:`transform_base_parameters` applies, IN OUTPUT-BASIS COLUMNS, the
+       single-parameter transforms first and then the multi-parameter transforms (in
+       insertion order).
+
+    Inverse direction (:meth:`both_inverse_transforms`): the inverse transforms
+    (multi-parameter first, in reverse insertion order, then single-parameter), then
+    :meth:`unfill_values` drops the fixed columns and restores the input order.
+
+    Keys of ``parameter_transforms``, ``inverse_parameter_transforms`` and ``fill_dict`` are
+    output-basis ELEMENTS (names, or ints for an integer basis; an ``int`` key is matched as
+    an element of ``output_basis``, not used as a column index). A transform key absent from
+    ``output_basis`` is looked up in ``key_map``; input-basis names and fill keys are mapped
+    through ``key_map`` whenever they appear in it. A single-parameter transform is
+    ``f(column) -> column``; a multi-parameter transform keyed by a tuple is
+    ``f(*columns) -> sequence of columns``, written back in the key's order. Each column
+    passed has shape ``params.shape[:-1][::-1]`` (a row of the transposed array;
+    multi-parameter transforms receive copies).
 
     Args:
-        input_basis (list): List of integers or strings representing each 
-            basis element from the input basis.
-        output_basis (list): List of integers or strings representing each 
-            basis element for the output basis.
-        parameter_transforms (dict, optional): Keys are ``int`` or ``tuple``
-            of ``int`` that contain the indexes into the parameters
-            that correspond to the transformation added as the Values to the
-            dict. If using ``fill_values``, you must be careful with
-            making sure parameter transforms properly comes before or after
-            filling values. ``int`` indicate single parameter transforms. These
-            are performed first. ``tuple`` of ``int`` indicates multiple
-            parameter transforms. These are performed after single-parameter transforms. 
-            (default: ``None``)
-        fill_dict (dict or list of dict, optional): Fixed (non-sampled) output-basis
-            parameters. As a plain ``dict``, keys are output-basis names and values are
-            the scalars filled identically for every input row. As a ``list`` of such
-            dicts, the fills are **per leaf**: entry ``i`` holds the fill values for
-            leaf ``i`` (all entries must share exactly the same keys; the caller is
-            responsible for the list being ``nleaves_max`` long). Per-leaf containers
-            require the ``leaf_inds`` argument in :func:`fill_values` /
-            :func:`both_transforms` to know which leaf each input row belongs to.
-            (default: ``None``)
-        inverse_parameter_transforms (dict, optional): Inverse transformations going
-            from the output basis back to the input basis. Keyed identically to
-            ``parameter_transforms`` (output-basis names / indexes, mapped through
-            ``key_map`` as needed). Each value must be the functional inverse of the
-            corresponding entry in ``parameter_transforms``. These are used by
-            :func:`inverse_transform_base_parameters` and
-            :func:`both_inverse_transforms`; if a forward transform has no matching
-            inverse, calling those methods raises a ``ValueError``.
-            (default: ``None``)
+        input_basis: Names (or ints) of the sampled parameters, in column order. Each must
+            be in ``output_basis`` or in ``key_map``.
+        output_basis: Names (or ints) of the output parameters, in column order.
+        parameter_transforms: Forward transforms, ``{key or tuple of keys: callable}``.
+            Default ``None`` (no transforms).
+        inverse_parameter_transforms: Inverses, keyed like ``parameter_transforms``; each
+            value must invert the matching forward entry. Needed by
+            :meth:`inverse_transform_base_parameters` / :meth:`both_inverse_transforms`.
+            Default ``None``.
+        fill_dict: Fixed (non-sampled) output-basis parameters. A ``dict`` maps key ->
+            scalar, filled identically in every row. A ``list`` of such dicts gives
+            PER-LEAF fills: entry ``i`` holds the values for leaf ``i`` (all entries must
+            have the same keys in the same order; the length is not checked, so the list
+            must cover every leaf index passed in ``leaf_inds``, typically ``nleaves_max``
+            entries), and :meth:`fill_values` / :meth:`both_transforms` then need
+            ``leaf_inds``. An empty ``dict`` fixes nothing but still enables the reordering
+            into the output basis (see the Note). Default ``None``.
+        key_map: ``{name: output-basis name}``, typically for input-basis names that are
+            not in ``output_basis`` (e.g. a sampled ``"Mc"`` written into an ``"fdot"``
+            column that a multi-parameter transform then converts). The input column is
+            placed at the mapped output column. Default ``None`` (empty).
+
+    Attributes:
+        input_basis (list): Input basis.
+        output_basis (list): Output basis.
+        ndim (int): ``len(input_basis)``.
+        ndim_full (int): ``len(output_basis)``.
+        test_inds (np.ndarray): Output-basis column of each input column.
+        base_transforms (dict or None): ``"single_param"`` (``{int: f}``) and
+            ``"mult_param"`` (``{tuple: f}``) keyed by output-basis column, or ``None``.
+        base_inverse_transforms (dict or None): Same layout for the inverses.
+        fill_dict (dict or None): Processed fills: ``"fill_inds"`` (output columns),
+            ``"fill_values"`` (shape ``(n_fill,)``, or ``(n_leaves, n_fill)`` per leaf) and
+            ``"test_inds"``; ``None`` without fills.
+        n_leaf_fills (int or None): Number of per-leaf fill entries, or ``None``.
+        original_parameter_transforms (dict or None): Input ``parameter_transforms``.
+        original_inverse_parameter_transforms (dict or None): Input inverse transforms.
+        original_fill_dict (dict, list or None): Input ``fill_dict``.
 
     Raises:
-        ValueError: Input information is not correct.
+        ValueError: If an input-basis key is in neither ``output_basis`` nor ``key_map``, a
+            transform key has an unsupported type, or ``fill_dict`` is malformed (empty
+            list, non-dict entries, or per-leaf entries with different keys).
+        AssertionError: If a transform key is in neither ``output_basis`` nor ``key_map``.
 
+    Note:
+        The reordering of input columns into output-basis positions happens only in
+        :meth:`fill_values`, and only when ``fill_dict`` is not ``None``. Without a
+        ``fill_dict``, :meth:`both_transforms` applies the output-basis-indexed transforms
+        to the input array as it is, which is correct only when the two bases have the
+        same order and length. Pass ``fill_dict={}`` otherwise.
+
+    Example:
+        >>> import numpy as np
+        >>> from eryn.utils import TransformContainer
+        >>> tc = TransformContainer(
+        ...     input_basis=["a", "b"],
+        ...     output_basis=["a", "b", "c"],
+        ...     parameter_transforms={"a": np.square},
+        ...     inverse_parameter_transforms={"a": np.sqrt},
+        ...     fill_dict={"c": 5.0},
+        ... )
+        >>> out = tc.both_transforms(np.array([[3.0, 2.0]]))
+        >>> out.tolist()
+        [[9.0, 2.0, 5.0]]
+        >>> tc.both_inverse_transforms(out).tolist()
+        [[3.0, 2.0]]
     """
 
     def __init__(
@@ -145,10 +206,17 @@ class TransformContainer:
 
     @staticmethod
     def _parse_parameter_transforms(parameter_transforms, output_basis, key_map):
-        """Resolve a transforms dict keyed by basis names into index-keyed form.
+        """Resolve a transforms dict keyed by basis names into output-column-keyed form.
 
-        Returns a dict with ``"single_param"`` (``{int: callable}``) and
-        ``"mult_param"`` (``{tuple of int: callable}``) entries.
+        Keys not in ``output_basis`` are mapped through ``key_map`` (``AssertionError`` if
+        absent there too).
+
+        Returns:
+            dict: ``"single_param"`` (``{int: callable}``) and ``"mult_param"``
+            (``{tuple of int: callable}``).
+
+        Raises:
+            ValueError: If a key is not a ``str`` / ``int`` / ``tuple``.
         """
         # differentiate between single and multi parameter transformations
         transforms = {"single_param": {}, "mult_param": {}}
@@ -179,21 +247,24 @@ class TransformContainer:
     def transform_base_parameters(
         self, params, copy=True, return_transpose=False, xp=None
     ):
-        """Transform the base parameters
+        """Apply the forward transforms to output-basis columns.
+
+        Single-parameter transforms run first, then multi-parameter transforms in insertion
+        order. Without transforms the input is returned (transposed if requested) as is.
 
         Args:
-            params (np.ndarray[..., ndim]): Array with coordinates. This array is
-                transformed according to the ``self.base_transforms`` dictionary.
-            copy (bool, optional): If True, copy the input array.
-                (default: ``True``)
-            return_transpose (bool, optional): If True, return the transpose of the
-                array. (default: ``False``)
-            xp (object, optional): ``numpy`` or ``cupy``. If ``None``, use ``numpy``.
-                (default: ``None``) 
+            params (xp.ndarray): Coordinates of shape ``(..., ndim_full)`` in OUTPUT-basis
+                column order (i.e. after :meth:`fill_values`).
+            copy (bool, optional): If ``True``, work on a copy; if ``False``, ``params`` is
+                modified in place. Default ``True``.
+            return_transpose (bool, optional): If ``True``, return the transposed array
+                (parameters on the first axis). Default ``False``.
+            xp (module, optional): ``numpy`` or ``cupy``; not otherwise used here. Default
+                ``None`` (``numpy``).
 
         Returns:
-            np.ndarray[..., ndim]: Transformed ``params`` array.
-
+            xp.ndarray: Transformed coordinates, shape ``(..., ndim_full)`` (or its
+            transpose).
         """
 
         # cupy or numpy
@@ -226,25 +297,28 @@ class TransformContainer:
                 return params
 
     def fill_values(self, params, xp=None, leaf_inds=None):
-        """fill fixed parameters
+        """Expand input-basis coordinates to the output basis and write the fixed values.
 
-        This also adjusts parameter order as needed between the two bases.
+        Builds a new float64 array of shape ``params.shape[:-1] + (ndim_full,)``, copies the
+        input columns to their output positions (``test_inds``) and writes the fill values
+        (per row from ``leaf_inds`` for a per-leaf container). Without a ``fill_dict`` the
+        input is returned unchanged (no reordering).
 
         Args:
-            params (np.ndarray[..., ndim]): Array with coordinates. This array is
-                filled with values according to the ``self.fill_dict`` dictionary.
-            xp (object, optional): ``numpy`` or ``cupy``. If ``None``, use ``numpy``.
-                (default: ``None``)
-            leaf_inds (np.ndarray, optional): Leaf index of each input row, shape
-                ``params.shape[:-1]`` (1D of length ``n`` for 2D coords). Required
-                when the container was built with a per-leaf ``fill_dict`` list:
-                row ``j`` is filled with the fill values of leaf ``leaf_inds[j]``,
-                vectorized across rows. Ignored for scalar-fill containers.
-                (default: ``None``)
+            params (xp.ndarray): Coordinates of shape ``(..., ndim)`` in input-basis order.
+            xp (module, optional): ``numpy`` or ``cupy``. Default ``None`` (``numpy``).
+            leaf_inds (xp.ndarray, optional): Leaf index of each row, shape
+                ``params.shape[:-1]``. Required for a per-leaf ``fill_dict``: row ``j`` gets
+                the fill values of leaf ``leaf_inds[j]``. Ignored otherwise. Default
+                ``None``.
 
         Returns:
-            np.ndarray[..., ndim_full]: Filled ``params`` array.
+            xp.ndarray: Filled coordinates, shape ``(..., ndim_full)``; ``params`` itself
+            when there is no ``fill_dict``.
 
+        Raises:
+            ValueError: If a per-leaf container gets no ``leaf_inds`` or ``leaf_inds`` of
+                the wrong shape.
         """
         if self.fill_dict is not None:
             if xp is None:
@@ -301,37 +375,33 @@ class TransformContainer:
     def both_transforms(
         self, params, copy=True, return_transpose=False, xp=None, leaf_inds=None
     ):
-        """Transform the parameters and fill fixed parameters
+        """Map sampling-basis coordinates to the output basis (fill, then transform).
 
-        This fills the fixed parameters and then transforms all of them. Therefore, the user
-        must be careful with the indexes input.
-
-        This is generally the direction recommended because fixed parameters may change
-        non-fixed parameters during parameter transformations. This can be reversed
-        with the ``reverse`` kwarg.
+        Runs :meth:`fill_values` and then :meth:`transform_base_parameters`. Filling first
+        means the transforms see the fixed values too (a fixed parameter can
+        enter a multi-parameter transform), and every transform key refers to an
+        output-basis column. There is no option to reverse this order.
 
         Args:
-            params (np.ndarray[..., ndim]): Array with coordinates. This array is
-                transformed according to the ``self.base_transforms`` dictionary.
-            copy (bool, optional): If True, copy the input array.
-                (default: ``True``)
-            return_transpose (bool, optional): If ``True``, return the transpose of the
-                array. (default: ``False``)
-            xp (object, optional): ``numpy`` or ``cupy``. If ``None``, use ``numpy``.
-                (default: ``None``)
-            leaf_inds (np.ndarray, optional): Per-row leaf indices, forwarded to
-                :func:`fill_values`. Required for containers built with a per-leaf
-                ``fill_dict`` list; ignored otherwise. (default: ``None``)
+            params (xp.ndarray): Coordinates of shape ``(..., ndim)`` in input-basis order.
+            copy (bool, optional): Forwarded to :meth:`transform_base_parameters`. Default
+                ``True``.
+            return_transpose (bool, optional): If ``True``, return the transposed array.
+                Default ``False``.
+            xp (module, optional): ``numpy`` or ``cupy``. Default ``None`` (``numpy``).
+            leaf_inds (xp.ndarray, optional): Per-row leaf indices, forwarded to
+                :meth:`fill_values`; required for a per-leaf ``fill_dict``. Default
+                ``None``.
 
         Returns:
-            np.ndarray[..., ndim]: Transformed and filleds ``params`` array.
-
+            xp.ndarray: Output-basis coordinates, shape ``(..., ndim_full)`` (or its
+            transpose).
         """
         # numpy or cupy
         if xp is None:
             xp = np
 
-        # run transforms first
+        # fill (and reorder into the output basis) first, then run the transforms
         temp = self.fill_values(params, xp=xp, leaf_inds=leaf_inds)
         temp = self.transform_base_parameters(
             temp, copy=copy, return_transpose=return_transpose, xp=xp
@@ -340,6 +410,8 @@ class TransformContainer:
 
     def _check_inverse_coverage(self):
         """Verify every forward transform has a matching inverse.
+
+        A no-op when there are no forward transforms.
 
         Raises:
             ValueError: A forward transform exists without a matching entry in
@@ -374,29 +446,27 @@ class TransformContainer:
     def inverse_transform_base_parameters(
         self, params, copy=True, return_transpose=False, xp=None
     ):
-        """Inverse-transform the base parameters (output basis -> input basis values)
+        """Apply the inverse transforms, undoing :meth:`transform_base_parameters`.
 
-        This applies the user-provided ``inverse_parameter_transforms``, undoing
-        :func:`transform_base_parameters`. Multi-parameter inverses are applied
-        first, then single-parameter inverses (the reverse of the forward order).
+        Multi-parameter inverses run first (in reverse insertion order, in case transforms
+        overlap), then single-parameter inverses: the reverse of the forward order. The
+        array stays in the output basis; :meth:`unfill_values` reduces it.
 
         Args:
-            params (np.ndarray[..., ndim_full]): Array with coordinates in the output
-                basis. This array is transformed according to the
-                ``self.base_inverse_transforms`` dictionary.
-            copy (bool, optional): If True, copy the input array.
-                (default: ``True``)
-            return_transpose (bool, optional): If True, return the transpose of the
-                array. (default: ``False``)
-            xp (object, optional): ``numpy`` or ``cupy``. If ``None``, use ``numpy``.
-                (default: ``None``)
+            params (xp.ndarray): Output-basis coordinates, shape ``(..., ndim_full)``.
+            copy (bool, optional): If ``True``, work on a copy; if ``False``, ``params`` is
+                modified in place. Default ``True``.
+            return_transpose (bool, optional): If ``True``, return the transposed array.
+                Default ``False``.
+            xp (module, optional): ``numpy`` or ``cupy``; not otherwise used here. Default
+                ``None`` (``numpy``).
 
         Returns:
-            np.ndarray[..., ndim_full]: Inverse-transformed ``params`` array.
+            xp.ndarray: Inverse-transformed coordinates, shape ``(..., ndim_full)`` (or its
+            transpose).
 
         Raises:
-            ValueError: A forward transform exists without a matching inverse.
-
+            ValueError: If a forward transform has no matching inverse.
         """
 
         # cupy or numpy
@@ -435,21 +505,17 @@ class TransformContainer:
                 return params
 
     def unfill_values(self, params, xp=None):
-        """remove fixed parameters (inverse of :func:`fill_values`)
+        """Reduce output-basis coordinates to the input basis (inverse of :meth:`fill_values`).
 
-        This selects the input-basis entries out of an output-basis array,
-        dropping the filled (fixed) values and undoing any parameter reordering
-        between the two bases.
+        Selects the input columns (``params[..., test_inds]``), which drops the fixed values
+        and undoes the reordering. Without a ``fill_dict`` the input is returned unchanged.
 
         Args:
-            params (np.ndarray[..., ndim_full]): Array with coordinates in the output
-                basis. The fill entries given by ``self.fill_dict`` are removed.
-            xp (object, optional): ``numpy`` or ``cupy``. If ``None``, use ``numpy``.
-                (default: ``None``)
+            params (xp.ndarray): Output-basis coordinates, shape ``(..., ndim_full)``.
+            xp (module, optional): ``numpy`` or ``cupy``. Default ``None`` (``numpy``).
 
         Returns:
-            np.ndarray[..., ndim]: ``params`` array reduced to the input basis.
-
+            xp.ndarray: Input-basis coordinates, shape ``(..., ndim)``.
         """
         if self.fill_dict is not None:
             if xp is None:
@@ -464,28 +530,24 @@ class TransformContainer:
     def both_inverse_transforms(
         self, params, copy=True, return_transpose=False, xp=None
     ):
-        """Inverse-transform the parameters and remove fixed parameters
+        """Map output-basis coordinates back to the sampling basis (unfill after inverting).
 
-        This is the inverse of :func:`both_transforms`: it applies the inverse
-        parameter transforms in the output basis and then removes the fill
-        entries, returning coordinates in the input (sampling) basis.
+        The inverse of :meth:`both_transforms`: runs
+        :meth:`inverse_transform_base_parameters` and then :meth:`unfill_values`.
 
         Args:
-            params (np.ndarray[..., ndim_full]): Array with coordinates in the output
-                basis.
-            copy (bool, optional): If True, copy the input array.
-                (default: ``True``)
-            return_transpose (bool, optional): If ``True``, return the transpose of the
-                array. (default: ``False``)
-            xp (object, optional): ``numpy`` or ``cupy``. If ``None``, use ``numpy``.
-                (default: ``None``)
+            params (xp.ndarray): Output-basis coordinates, shape ``(..., ndim_full)``.
+            copy (bool, optional): Forwarded to :meth:`inverse_transform_base_parameters`.
+                Default ``True``.
+            return_transpose (bool, optional): If ``True``, return the transposed result.
+                Default ``False``.
+            xp (module, optional): ``numpy`` or ``cupy``. Default ``None`` (``numpy``).
 
         Returns:
-            np.ndarray[..., ndim]: Inverse-transformed ``params`` array in the input basis.
+            xp.ndarray: Input-basis coordinates, shape ``(..., ndim)`` (or its transpose).
 
         Raises:
-            ValueError: A forward transform exists without a matching inverse.
-
+            ValueError: If a forward transform has no matching inverse.
         """
         # numpy or cupy
         if xp is None:

@@ -1,3 +1,12 @@
+"""The branch prior container, :class:`ProbDistContainer`.
+
+The sampler takes one container per branch (``priors={branch_name: ProbDistContainer(...)}``)
+and calls :meth:`ProbDistContainer.logpdf` on ``(N, ndim)`` coordinate arrays and
+:meth:`ProbDistContainer.rvs` to draw starting points and proposals. The container sums
+independent component priors, each owning one column or a tuple of columns, and resolves
+conditional components (priors whose ``logpdf`` / ``rvs`` depend on another column).
+"""
+
 from __future__ import annotations
 
 import inspect
@@ -18,27 +27,80 @@ from ..utils.utility import NDArrayLike
 Element = TypeVar("Element", str, int)
 
 class ProbDistContainer:
-    """Container for holding and generating prior info.
+    """Joint prior over the ``ndim`` columns of a coordinate array, built from components.
+
+    Each key of ``priors_in`` names the column(s) one component owns; the container's
+    log-prior is the sum of the component log-densities and :meth:`rvs` fills each
+    component's columns from its own ``rvs``.
+
+    Column assignment:
+
+    - ``int`` key: that column index. ``(int, ...)`` tuple key: those column indices.
+    - ``str`` key: the next free column, in insertion order. Each member of a
+      ``(str, ...)`` tuple key also takes the next column, so a tuple's members are
+      CONSECUTIVE. ``key_order`` lists the names in column order; call
+      :meth:`reset_key_order` to move named columns to other positions (for example to
+      scatter a tuple's members to their real basis columns).
+    - Integer and string keys cannot be mixed, and the keys must cover every column
+      ``0 .. ndim - 1``.
+
+    Component contract (duck-typed; any object with these methods works):
+
+    - ``logpdf(x, **kw)`` (or ``logpmf``), with ``x`` of shape ``(N,)`` for a one-column
+      key and ``(N, k)`` for a ``k``-column key, returning ``N`` values.
+    - ``rvs(size=..., **kw)`` returning shape ``size`` (one column) or ``size + (k,)``.
+    - Optional ``required_variables`` (names of conditional variables; inferred from the
+      method signatures for :class:`~eryn.priors.base.Prior` subclasses). Each one is taken
+      from the call's keyword arguments, else from the column of that name in the input
+      array (or, in :meth:`rvs`, the already drawn output).
+    - Keyword arguments are filtered to each method's signature unless it accepts
+      ``**kwargs``.
+
+    Plain ``rvs`` / ``logpdf`` are called, so the transform-backed priors of
+    :mod:`eryn.priors.analytical` (e.g. :class:`~eryn.priors.analytical.LogUniform`) are
+    sampled and scored in their SAMPLING variable.
 
     Args:
-        priors_in (dict): Dictionary with keys as int or tuple of int
-            describing which parameters the prior takes. Values are
-            probability distributions with ``logpdf`` and ``rvs`` methods.
-        use_cupy (bool, optional): If ``True``, use CuPy. If ``False`` use Numpy.
-            (default: ``False``)
-        return_gpu (bool, optional): If ``True``, return CuPy array. If ``False``,
-            return Numpy array. (default: ``False``)
+        priors_in: Mapping of key (``int``, ``str``, or a tuple of either) to a component
+            distribution. Copied to a ``dict``.
+        use_cupy: If ``True``, evaluate with CuPy. The value (also ``False``) is written,
+            in place, to every component that has a ``use_cupy`` attribute (recursively
+            into nested containers), and those components get ``return_gpu = True`` so
+            arrays stay on the device inside the container. Default ``False``.
+        return_gpu: When ``use_cupy``, return CuPy arrays from :meth:`logpdf` / :meth:`rvs`;
+            if ``False`` they are copied to the host. Default ``False``.
 
     Attributes:
-        priors_in (dict): Dictionary with keys as int or tuple of int
-            describing which parameters the prior takes. Values are
-            probability distributions with ``logpdf`` and ``rvs`` methods.
-        priors (list): list of indexes and their associated distributions arranged
-            in a list.
-        ndim (int): Full dimensionality.
-    
+        priors_in (dict): Copy of the input mapping, in insertion order. Not modified by
+            :meth:`reset_key_order`.
+        priors (list): ``[column_indices, distribution]`` pairs; ``column_indices`` is an
+            int ``np.ndarray``.
+        ndim (int): Number of columns.
+        key_order (list): Names (string keys) or ``list(range(ndim))`` (integer keys) in
+            column order.
+        name_to_idx (dict): Key or name -> column index.
+        has_strings (bool): Keys are strings.
+        has_ints (bool): Keys are integers.
+        use_cupy (bool): Backend flag.
+        return_gpu (bool): Whether results stay on the device.
+
     Raises:
-        ValueError: Missing parameters or incorrect index keys.
+        ValueError: If integer and string keys are mixed, a key has an unsupported type,
+            or some column in ``0 .. ndim - 1`` has no prior.
+
+    Example:
+        >>> from eryn.priors import ProbDistContainer, UniformDistribution
+        >>> priors = ProbDistContainer({
+        ...     "a": UniformDistribution(0.0, 1.0),
+        ...     "b": UniformDistribution(-2.0, 2.0),
+        ... })
+        >>> priors.ndim, priors.key_order
+        (2, ['a', 'b'])
+        >>> x = priors.rvs(size=5)
+        >>> x.shape, priors.logpdf(x).shape
+        ((5, 2), (5,))
+        >>> round(priors.logpdf([0.5, 0.0]), 6)
+        -1.386294
     """
 
     def __init__(
@@ -69,9 +131,13 @@ class ProbDistContainer:
     def _set_use_cupy(self, use_cupy: bool) -> None:
         """Set ``use_cupy`` on this container and all nested priors/containers.
 
-        ``use_cupy`` is a flag (``xp`` is derived from it) so this is safe to
-        call post-construction as well; nested :class:`ProbDistContainer`
-        children recurse so arbitrarily deep joints switch backend together.
+        ``use_cupy`` is a flag (``xp`` is derived from it) so this is safe to call after
+        construction as well; nested :class:`ProbDistContainer` children recurse so
+        arbitrarily deep joints switch backend together. Every child that receives the flag
+        also gets ``return_gpu = True`` (the container itself decides what it returns).
+
+        Args:
+            use_cupy: New backend flag.
         """
         self.use_cupy = bool(use_cupy)
         for prior in self.priors_in.values():
@@ -83,7 +149,14 @@ class ProbDistContainer:
                 prior.return_gpu = True
 
     def _parse_priors(self) -> None:
-        """Parse input keys, assert uniformity, and determine array shapes."""
+        """Assign columns to the input keys and fill ``priors`` / ``name_to_idx`` / ``ndim``.
+
+        Implements the column rules of the class docstring and checks that keys are all
+        integers or all strings and that every column has a prior.
+
+        Raises:
+            ValueError: On mixed or unsupported key types, or uncovered columns.
+        """
         current_ind = 0
         key_order_tmp: list[str] = []
         temp_inds: list[NDArray[np.int_]] = []
@@ -150,7 +223,11 @@ class ProbDistContainer:
         self.ndim: int = int(uni_inds.max() + 1)
         
     def _build_signatures(self) -> None:
-        """Cache method signatures to filter kwargs correctly."""
+        """Cache each component's accepted keyword names for :meth:`_filter_kwargs`.
+
+        Per component (in ``priors`` order) and for each of ``logpdf`` / ``logpmf`` / ``rvs``
+        it defines, stores the named parameters and whether it takes ``**kwargs``.
+        """
         self._prior_signatures: list[dict[str, dict[str, Any]]] = []
         
         for _, dist in self.priors:            
@@ -168,7 +245,11 @@ class ProbDistContainer:
             self._prior_signatures.append(sig_info)
 
     def _filter_kwargs(self, prior_idx: int, method_name: str, kwargs: dict[str, Any]) -> dict[str, Any]:
-        """Filter kwargs to match the exact signature of a prior method."""
+        """Keep only the kwargs that component ``prior_idx``'s ``method_name`` accepts.
+
+        Returns ``kwargs`` unchanged when the method takes ``**kwargs``, and ``{}`` when the
+        method is missing or ``kwargs`` is empty.
+        """
         if not kwargs:
             return {}
 
@@ -184,7 +265,14 @@ class ProbDistContainer:
     def _extract_dependencies(
         self, prior_i: Any, x: NDArray[np.float64], kwargs: dict[str, Any]
     ) -> dict[str, Any]:
-        """Dynamically pull required conditional parameters from kwargs or state array."""
+        """Collect a component's ``required_variables`` from kwargs or from ``x``.
+
+        Each variable comes from ``kwargs`` if present, else from column
+        ``name_to_idx[name]`` of ``x`` (``x[..., idx]``).
+
+        Raises:
+            ValueError: If a required variable is in neither place.
+        """
         deps: dict[str, Any] = {}
         required = getattr(prior_i, "required_variables", tuple())
         for req in required:
@@ -199,7 +287,13 @@ class ProbDistContainer:
 
     @property
     def xp(self) -> Any:
-        """Return the appropriate array module (NumPy or CuPy)."""
+        """module: ``cupy`` when ``use_cupy`` is set, else ``numpy``.
+
+        Note:
+            If CuPy failed to import, the module-level name ``cp`` is never bound, so with
+            ``use_cupy=True`` this raises ``NameError`` rather than the ``ImportError`` the
+            code intends.
+        """
         if self.use_cupy:
             if cp is None:
                 raise ImportError("CuPy is not installed but use_cupy is True.")
@@ -212,19 +306,32 @@ class ProbDistContainer:
         keys: Sequence[str | int] | None = None,
         **kwargs: Any,
     ) -> NDArrayLike:
-        """Get logpdf by summing logpdf of individual distributions
+        """Sum the component log-densities for each row of ``x``.
+
+        Each component sees its own columns (``(N,)`` for one column, ``(N, k)`` for a
+        tuple) plus its conditional variables, and must return ``N`` values; ``logpmf`` is
+        used for components without ``logpdf``.
 
         Args:
-            x (double np.ndarray[..., ndim]):
-                Input parameters to get prior values.
-            keys (list, optional): List of keys related to which parameters to gather the logpdf for.
-                They must exactly match the input keys for the ``priors_in`` dictionary for the ``__init__`` 
-                function. Even when using this kwarg, must provide all ``ndim`` parameters as input. The prior will just not 
-                be calculated if its associated key is not included. Default is ``None``.
+            x: Coordinates of shape ``(ndim,)`` (one point) or ``(N, ndim)``, in the
+                container's column order.
+            keys: Restrict the sum to some components. Entries are matched against each
+                component's COLUMN INDICES: an ``int`` for a one-column component, a tuple
+                of ints for a multi-column one. For an integer-keyed container these are the
+                original keys; for a string-keyed container pass column indices (names never
+                match). ``x`` must still hold all ``ndim`` columns. Default ``None`` (all
+                components).
+            **kwargs: Forwarded to each component's ``logpdf`` (filtered to its signature)
+                and used to supply conditional variables.
 
         Returns:
-            cp.ndarray or np.ndarray[``size + (self.ndim,)``]: Prior values.
+            float or xp.ndarray: For 2-D ``x``, float64 log-prior of shape ``(N,)``; a numpy
+            array unless ``use_cupy`` and ``return_gpu`` are both set. For 1-D ``x``, a
+            Python ``float``.
 
+        Raises:
+            ValueError: If ``x`` is not 1-D or 2-D, a component returns a number of values
+                other than ``N``, or a conditional variable cannot be found.
         """
         x_arr = self.xp.asarray(x)
         squeeze = False
@@ -281,7 +388,16 @@ class ProbDistContainer:
         return prior_vals
 
     def ppf(self, x: NDArray, groups: Any = None, **kwargs: Any) -> NDArrayLike:
-        """Percent point function (inverse of cdf)."""
+        """Percent point function (inverse CDF); not implemented.
+
+        Args:
+            x: Ignored.
+            groups: Ignored.
+            **kwargs: Ignored.
+
+        Raises:
+            NotImplementedError: Always.
+        """
         raise NotImplementedError("PPF is not yet implemented for the ProbDistContainer.")
 
     def rvs(
@@ -290,27 +406,31 @@ class ProbDistContainer:
         keys: Sequence[str | int] | None = None,
         **kwargs: Any,
     ) -> NDArrayLike:
-        """Generate random values according to prior distribution
+        """Draw prior samples, one component at a time.
 
-        The user will have to be careful if there are prior functions that
-        do not have an ``rvs`` method. This means that generated points may lay
-        inside the prior of all input priors that have ``rvs`` methods, but
-        outside the prior if priors without the ``rvs`` method are included.
+        Components are drawn in ``priors`` order, except that a conditional component is
+        deferred until all its ``required_variables`` are known (passed in ``kwargs`` or
+        already drawn); the drawn columns are then read from the output array. Columns of
+        components that have no ``rvs`` method, or that ``keys`` excludes, are left at
+        ``0.0``, so such samples need not lie inside the full prior.
 
         Args:
-            size (int or tuple of ints, optional): Output size for number of generated
-                sources from prior distributions.
-            keys (list, optional): List of keys related to which parameters to generate.
-                They must exactly match the input keys for the ``priors_in`` dictionary for the ``__init__`` 
-                function. If used, it will produce and output array of ``tuple(size) + (len(keys),)``. 
-                Default is ``None``.
+            size: Leading output shape; an ``int`` means ``(size,)``. Default ``1``.
+            keys: Restrict the draw to some components, matched against COLUMN INDICES as in
+                :meth:`logpdf`. The output still has all ``ndim`` columns. Default ``None``.
+            **kwargs: Forwarded to each component's ``rvs`` (filtered to its signature);
+                their names count as known conditional variables.
 
         Returns:
-            cp.ndarray or np.ndarray[``size + (self.ndim,)``]: Generated samples.
+            xp.ndarray: float64 samples of shape ``size + (ndim,)``; a numpy array unless
+            ``use_cupy`` and ``return_gpu`` are both set.
 
         Raises:
-            ValueError: If size is not an int or tuple.
-
+            ValueError: If ``size`` is not an ``int`` or tuple, or a component returns the
+                wrong number of values.
+            RuntimeError: If resolving the conditional dependencies needs more than
+                ``2 * len(priors) + 1`` component visits (circular or unresolvable
+                dependency).
         """
         if isinstance(size, int):
             size = (size,)
@@ -394,15 +514,34 @@ class ProbDistContainer:
         return out
 
     def reset_key_order(self, new_key_order: list[int] | list[str]) -> None:
-        """Resets the key order to a new key order and reshuffles the prior to match the new key order.
+        """Move the named columns so that ``new_key_order[j]`` lives in column ``j``.
+
+        Every component's column indices are remapped by name, ``priors`` is re-sorted by
+        lowest column, and ``key_order`` / ``name_to_idx`` / the signature cache are
+        updated. ``priors_in`` and ``ndim`` are unchanged; a fresh container built from
+        ``priors_in`` therefore has the ORIGINAL (insertion) layout and needs the same
+        call to match.
 
         Args:
-            new_key_order (Sequency[str] | Sequence[int]): The new desired order of keys.
-                Must contain the exact same elements as `self.key_order` and be of the same data type.
+            new_key_order: A permutation of ``key_order`` with the same element type.
 
         Raises:
-            TypeError: Old and new key order must be of the same type
-            ValueError: Old and new key order must have identical elements
+            TypeError: If the element type differs from that of ``key_order``.
+            ValueError: If ``new_key_order`` is not a permutation of ``key_order``.
+
+        Example:
+            >>> from eryn.priors import ProbDistContainer, UniformDistribution
+            >>> priors = ProbDistContainer({
+            ...     "b": UniformDistribution(10.0, 20.0),
+            ...     "a": UniformDistribution(0.0, 1.0),
+            ... })
+            >>> priors.key_order
+            ['b', 'a']
+            >>> priors.reset_key_order(["a", "b"])
+            >>> priors.key_order
+            ['a', 'b']
+            >>> bool((priors.rvs(100)[:, 1] >= 10.0).all())
+            True
         """
         if not isinstance(new_key_order[0], type(self.key_order[0])):
             raise TypeError("The new key order must be of the same type as the current key order.")

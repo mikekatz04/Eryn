@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""Likelihood-free Gibbs resampling along exact 1-D likelihood degeneracies.
+
+:class:`RidgeGibbsMove` resamples each leaf's position along a "fiber" (a curve on which the
+likelihood is exactly constant) supplied by a duck-typed ``fiber_map``; acceptance needs only
+the per-leaf prior and the fiber measure. The model-specific fiber maps live with the model
+(for example :mod:`lisatools.sampling.ridge_fiber` in LISA Analysis Tools).
+"""
 
 import numpy as np
 
@@ -13,6 +20,14 @@ def _take_invariants(K, index):
 
     ``K`` may be a dict of 1D arrays, an ``(n, k)`` (or 1D) array, or a
     tuple/list of arrays -- anything whose leading axis is the row axis.
+
+    Args:
+        K (dict, tuple, list, or array_like): Per-row invariants.
+        index (np.ndarray): Boolean mask or integer index over the rows.
+
+    Returns:
+        dict, tuple, list, or np.ndarray: ``K`` restricted to ``index``, in the same
+        container type, with NumPy arrays inside.
     """
     if isinstance(K, dict):
         return {key: np.asarray(value)[index] for key, value in K.items()}
@@ -79,11 +94,13 @@ class RidgeGibbsMove(Move):
             cannot be used.
         leaf_fraction (float, optional): Probability with which each alive
             leaf is included in a given call (random subset, like the RJ
-            flip fraction). (default: ``1.0``)
-        **kwargs: Passed to :class:`Move`.
+            flip fraction); must be in ``(0, 1]``. Default ``1.0``.
+        **kwargs: Passed to :class:`~eryn.moves.Move`.
 
     Raises:
-        ValueError: Incorrect inputs.
+        ValueError: ``branch_name`` is not a ``str``, ``fiber_map`` lacks one of the four
+            callable methods, ``per_leaf_log_prior`` is not callable, or ``leaf_fraction``
+            is outside ``(0, 1]``.
 
     """
 
@@ -129,11 +146,11 @@ class RidgeGibbsMove(Move):
             state (:class:`eryn.state.State`): Current state of the sampler.
 
         Returns:
-            tuple: ``(state, accepted)``
-                ``accepted`` is the ``(ntemps, nwalkers)`` boolean array of
-                walkers with at least one accepted leaf (bookkeeping
-                convention of the other moves).
-
+            tuple[:class:`eryn.state.State`, np.ndarray]: ``(state, accepted)``. ``state`` is
+            a copy of the input (built with ``type(state)``, so State subclasses survive)
+            when any leaf was accepted, else the input state itself. ``accepted`` is the
+            ``(ntemps, nwalkers)`` boolean array of walkers with at least one accepted leaf
+            (bookkeeping convention of the other moves). No temperature swaps are made.
         """
         ntemps, nwalkers = state.log_like.shape
         accepted = np.zeros((ntemps, nwalkers), dtype=bool)
@@ -236,6 +253,6 @@ class RidgeGibbsMove(Move):
         return new_state, accepted
 
     def _accumulate_accepted(self, accepted):
-        """Add to the per-move acceptance counters if the sampler set them up."""
+        """Add ``accepted`` to :attr:`accepted` if the sampler has initialised it."""
         if getattr(self, "_accepted", None) is not None:
             self.accepted += accepted

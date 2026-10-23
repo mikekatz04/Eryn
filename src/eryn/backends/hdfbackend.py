@@ -1,4 +1,21 @@
 # -*- coding: utf-8 -*-
+"""HDF5 chain storage: :class:`HDFBackend` (requires ``h5py``).
+
+:class:`HDFBackend` keeps the same storage layout as :class:`~eryn.backends.Backend` in a
+group (default ``"mcmc"``) of an HDF5 file, reading every quantity back from the file on
+access, so a run can be inspected while it is written and resumed after it stops. Files
+written before the independent-samplers axis existed (no ``nsamplers`` group attribute)
+are still read and appended in their legacy layout. :class:`TempHDFBackend` is a context
+manager that yields an :class:`HDFBackend` on a temporary file (used by the tests).
+
+File layout of the group: attributes ``version``, ``nbranches``, ``branch_names``,
+``ntemps``, ``nwalkers``, ``nsamplers``, ``has_blobs``, ``rj``, ``iteration`` and
+``random_state_<i>``; sub-groups ``info``, ``ndims``, ``nleaves_max``, ``key_order``
+(attributes), ``chain`` and ``inds`` (one dataset per branch) and ``moves`` (one group
+per tracked move with an ``acceptance_fraction`` dataset); datasets ``log_like``,
+``log_prior``, ``betas``, ``samplers_running``, ``accepted``, ``swaps_accepted``, and
+``rj_accepted`` / ``blobs`` when used.
+"""
 
 from __future__ import division, print_function
 
@@ -19,7 +36,9 @@ except ImportError:
     h5py = None
 
 
+# TODO check: keep/remove/document -- emcee leftover; no callers in Eryn or LAT; leaks a temp file
 def does_hdf5_support_longdouble():
+    """Return ``True`` if ``h5py`` can write and read back ``np.longdouble`` data."""
     if h5py is None:
         return False
     with NamedTemporaryFile(
@@ -39,33 +58,47 @@ def does_hdf5_support_longdouble():
 
 
 class HDFBackend(Backend):
-    """A backend that stores the chain in an HDF5 file using h5py
+    """Backend that stores the chain in an HDF5 file with ``h5py``.
 
-    .. note:: You must install `h5py <http://www.h5py.org/>`_ to use this
-        backend.
+    Same storage layout and getters as :class:`~eryn.backends.Backend`, but every quantity
+    lives in the group ``name`` of ``filename`` and is read from the file on access
+    (``nwalkers``, ``ntemps``, ``iteration``, ... are file-backed properties). Passing a
+    file name as the sampler's ``backend`` creates one of these. If the group already
+    exists, the backend counts as :attr:`initialized` and the sampler resumes from it;
+    :meth:`reset` deletes and recreates the group. Opening retries on HDF5 lock contention
+    (up to 100 times, 1 s apart) and reads retry on ``OSError`` (up to 100 times, 20 s
+    apart), so a file can be read while another process writes it.
 
     Args:
-        filename (str): The name of the HDF5 file where the chain will be
-            saved.
-        name (str, optional): The name of the group where the chain will
-            be saved. (default: ``"mcmc"``)
-        read_only (bool, optional): If ``True``, the backend will throw a
-            ``RuntimeError`` if the file is opened with write access.
-            (default: ``False``)
-        dtype (dtype, optional): Dtype to use for data storage. If None,
-            program uses np.float64. (default: ``None``)
-        compression (str, optional): Compression type for h5 file. See more information
-            in the
-            `h5py documentation <https://docs.h5py.org/en/stable/high/dataset.html#filter-pipeline>`_.
-            (default: ``None``)
-        compression_opts (int, optional): Compression level for h5 file. See more information
-            in the
-            `h5py documentation <https://docs.h5py.org/en/stable/high/dataset.html#filter-pipeline>`_.
-            (default: ``None``)
-        store_missing_leaves (double, optional): Number to store for leaves that are not
-            used in a specific step. (default: ``np.nan``)
+        filename (str): Path of the HDF5 file.
+        name (str, optional): Group holding the run. Default ``"mcmc"``.
+        read_only (bool, optional): If ``True``, opening the file in any mode other than
+            ``"r"`` raises ``RuntimeError``. Default ``False``.
+        dtype (numpy.dtype, optional): Floating dtype of new datasets. ``None`` uses
+            ``np.float64`` and, for an existing file, adopts the dtype of its first chain
+            dataset on the first :meth:`open`. Default ``None``.
+        compression (str, optional): ``h5py`` compression filter for every dataset (see
+            the `h5py documentation
+            <https://docs.h5py.org/en/stable/high/dataset.html#filter-pipeline>`_). Default
+            ``None``.
+        compression_opts (int, optional): Compression level for ``compression``. Default
+            ``None``.
+        store_missing_leaves (float, optional): Value stored for the coordinates of
+            inactive leaves. Default ``np.nan``.
 
+    Raises:
+        ImportError: ``h5py`` is not installed.
 
+    Example:
+        .. code-block:: python
+
+            from eryn.backends import HDFBackend
+
+            backend = HDFBackend("chain.h5")  # pass as EnsembleSampler(..., backend=backend)
+            # after (or during) the run:
+            reader = HDFBackend("chain.h5", read_only=True)
+            cold = reader.get_chain(discard=100, thin=5, temp_index=0)["model_0"]
+            last = reader.get_last_sample()
     """
 
     def __init__(
@@ -98,7 +131,7 @@ class HDFBackend(Backend):
 
     @property
     def initialized(self):
-        """Check if backend file has been initialized properly."""
+        """bool: ``True`` if ``filename`` exists, can be opened and contains group ``name``."""
         if not os.path.exists(self.filename):
             return False
         try:
@@ -108,17 +141,22 @@ class HDFBackend(Backend):
             return False
 
     def open(self, mode="r"):
-        """Opens the h5 file in the proper mode.
+        """Open the HDF5 file, retrying on lock contention.
+
+        A ``BlockingIOError``, or an ``OSError`` whose message reports a lock ("unable to
+        lock", "resource temporarily unavailable"), is retried up to 100 times, 1 s apart;
+        any other error is raised at once. If ``dtype`` was not given, it is taken from the
+        first chain dataset of an existing run.
 
         Args:
-            mode (str, optional): Mode to open h5 file.
+            mode (str, optional): ``h5py.File`` mode. Default ``"r"``.
 
         Returns:
-            H5 file object: Opened file.
+            h5py.File: The open file (use it as a context manager).
 
         Raises:
-            RuntimeError: If backend is opened for writing when it is read-only.
-
+            RuntimeError: A mode other than ``"r"`` on a read-only backend.
+            OSError: The file cannot be opened (or the lock persists after 100 tries).
         """
 
         if self.read_only and mode != "r":
@@ -191,38 +229,46 @@ class HDFBackend(Backend):
         nsamplers=1,
         **info,
     ):
-        """Clear the state of the chain and empty the backend
+        """Delete group ``name`` from the file (if present) and recreate it empty.
+
+        Opens the file in append mode, writes the run attributes, the ``info``, ``ndims``,
+        ``nleaves_max`` and ``key_order`` sub-groups, and zero-length resizable datasets
+        (see the module docstring for the layout). Destroys any run already stored under
+        ``name``.
 
         Args:
-            nwalkers (int): The size of the ensemble
-            ndims (int, list of ints, or dict): The number of dimensions for each branch. If
-                ``dict``, keys should be the branch names and values the associated dimensionality.
-            nleaves_max (int, list of ints, or dict, optional): Maximum allowable leaf count for each branch.
-                It should have the same length as the number of branches.
-                If ``dict``, keys should be the branch names and values the associated maximal leaf value.
-                (default: ``1``)
-            ntemps (int, optional): Number of rungs in the temperature ladder.
-                (default: ``1``)
-            branch_names (str or list of str, optional): Names of the branches used. If not given,
-                branches will be names ``model_0``, ..., ``model_n`` for ``n`` branches.
-                (default: ``None``)
-            nbranches (int, optional): Number of branches. This is only used if ``branch_names is None``.
-                (default: ``1``)
-            rj (bool, optional): If True, reversible-jump techniques are used.
-                (default: ``False``)
-            moves (list, optional): List of all of the move classes input into the sampler.
-                (default: ``None``)
-            key_order (dict, optional): Keys are ``branch_names`` and values are lists of key ordering for each
-                branch. For example, ``{"model_0": ["x1", "x2", "x3"]}``.
-                (default: ``None``)
+            nwalkers (int): Walkers per temperature.
+            ndims (int, list of int, np.ndarray, or dict): Dimensionality of each branch. An
+                ``int`` is only valid for a single branch; a list or array follows
+                ``branch_names``; a dict is keyed by branch name.
+            nleaves_max (int, list of int, np.ndarray, or dict, optional): Maximum leaf count
+                per branch, same forms as ``ndims``. Default ``1``.
+            ntemps (int, optional): Temperatures per sampler. Default ``1``.
+            branch_names (str or list of str, optional): Branch names. ``None`` means
+                ``["model_0", ..., f"model_{nbranches - 1}"]``. Default ``None``.
+            nbranches (int, optional): Number of branches; only used if ``branch_names`` is
+                ``None``. Default ``1``.
+            rj (bool, optional): If ``True``, also store reversible-jump acceptance counts.
+                Default ``False``.
+            moves (list of str, optional): Names of the tracked moves; one ``moves/<name>``
+                group with an ``acceptance_fraction`` dataset is created per name. Default
+                ``None``.
+            key_order (dict, optional): Branch name to the list of parameter keys, written
+                as attributes of ``key_order``. Default ``None``.
             nsamplers (int, optional): Number of independent samplers run simultaneously.
                 New files always store datasets with a sampler axis directly after the
                 step axis; getters squeeze it when ``nsamplers == 1``. Files written
                 before this axis existed (no ``nsamplers`` attr) are read and written
-                in the legacy layout. (default: ``1``)
-            **info (dict, optional): Any other key-value pairs to be added
-                as attributes to the backend. These are also added to the HDF5 file.
+                in the legacy layout. Default ``1``.
+            **info: Extra key/value pairs set as backend attributes and written as
+                attributes of the ``info`` group (values must be HDF5-attribute compatible).
 
+        Raises:
+            ValueError: ``branch_names`` is not a str or list, or ``ndims`` /
+                ``nleaves_max`` has an unsupported type or a key not in ``branch_names``.
+            AssertionError: A list length (or an ``int`` for several branches) does not
+                match the number of branches.
+            RuntimeError: The backend is read-only.
         """
 
         # open file in append mode
@@ -429,25 +475,25 @@ class HDFBackend(Backend):
 
     @property
     def key_order(self):
-        """Key order of parameters for each model."""
+        """dict: Branch name to its list of parameter keys (empty if none was stored)."""
         with self.open() as f:
             return {key: list(value) for key, value in f[self.name]["key_order"].attrs.items()}
 
     @property
     def nwalkers(self):
-        """Get nwalkers from h5 file."""
+        """int: Walkers per temperature, read from the file."""
         with self.open() as f:
             return f[self.name].attrs["nwalkers"]
 
     @property
     def ntemps(self):
-        """Get ntemps from h5 file."""
+        """int: Temperatures per sampler, read from the file."""
         with self.open() as f:
             return f[self.name].attrs["ntemps"]
 
     @property
     def nsamplers(self):
-        """Get nsamplers from h5 file (1 for legacy files without the attr)."""
+        """int: Number of independent samplers, read from the file (1 for legacy files)."""
         with self.open() as f:
             return int(f[self.name].attrs.get("nsamplers", 1))
 
@@ -459,13 +505,13 @@ class HDFBackend(Backend):
 
     @property
     def rj(self):
-        """Get rj from h5 file."""
+        """bool: Whether reversible-jump acceptance counts are stored, read from the file."""
         with self.open() as f:
             return f[self.name].attrs["rj"]
 
     @property
     def nleaves_max(self):
-        """Get nleaves_max from h5 file."""
+        """dict: Branch name to maximum leaf count, read from the file."""
         with self.open() as f:
             return {
                 key: f[self.name]["nleaves_max"].attrs[key]
@@ -474,7 +520,7 @@ class HDFBackend(Backend):
 
     @property
     def ndims(self):
-        """Get ndims from h5 file."""
+        """dict: Branch name to dimensionality, read from the file."""
         with self.open() as f:
             return {
                 key: f[self.name]["ndims"].attrs[key]
@@ -483,30 +529,35 @@ class HDFBackend(Backend):
 
     @property
     def move_keys(self):
-        """Get move_keys from h5 file."""
+        """list of str: Tracked move names (raises ``KeyError`` if no moves are tracked)."""
         with self.open() as f:
             return list(f[self.name]["moves"])
 
     @property
     def branch_names(self):
-        """Get branch names from h5 file."""
+        """list of str: Branch names, read from the file."""
         with self.open() as f:
             return list(f[self.name].attrs["branch_names"])
 
     @property
     def nbranches(self):
-        """Get number of branches from h5 file."""
+        """int: Number of branches, read from the file."""
         with self.open() as f:
             return f[self.name].attrs["nbranches"]
 
     @property
     def reset_args(self):
-        """Get reset_args from h5 file."""
+        """list: ``[nwalkers, ndims]`` read from the file, for :meth:`reset_base`."""
         return [self.nwalkers, self.ndims]
 
     @property
     def reset_kwargs(self):
-        """Get reset_kwargs from h5 file."""
+        """dict: :meth:`reset` keyword arguments rebuilt from the file.
+
+        Reads ``self.moves``, which :class:`HDFBackend` does not define unless it was set
+        as an attribute (for example through ``info``); otherwise this raises
+        ``AttributeError``.
+        """
         return dict(
             nleaves_max=self.nleaves_max,
             ntemps=self.ntemps,
@@ -518,37 +569,46 @@ class HDFBackend(Backend):
         )
 
     def has_blobs(self):
-        """Returns ``True`` if the model includes blobs"""
+        """Return the file's ``has_blobs`` flag (``True`` once blobs were stored)."""
         with self.open() as f:
             return f[self.name].attrs["has_blobs"]
 
     def get_value(self, name, thin=1, discard=0, slice_vals=None, temp_index=None, sampler_index=None, branch_names=None):
-        """Returns a requested value to user.
+        """Read one stored quantity from the file, selected by step, temperature and sampler.
 
-        This function helps to streamline the backend for both
-        basic and hdf backend.
+        Same selection and return shapes as :meth:`eryn.backends.Backend.get_value`, plus
+        ``slice_vals``. Legacy files (no sampler axis) are read with the original
+        ``[steps, temperatures]`` indexing; they support neither ``sampler_index`` nor
+        ``"samplers_running"``. A read that fails with ``OSError`` is retried up to 100
+        times, 20 s apart.
 
         Args:
-            name (str): Name of value requested.
-            thin (int, optional): Take only every ``thin`` steps from the
-                chain. (default: ``1``)
-            discard (int, optional): Discard the first ``discard`` steps in
-                the chain as burn-in. (default: ``0``)
-            slice_vals (indexing np.ndarray or slice, optional): If provided, slice the array directly
-                from the HDF5 file with slice = ``slice_vals``. ``thin`` and ``discard`` will be
-                ignored if slice_vals is not ``None``. This is particularly useful if files are
-                very large and the user only wants a small subset of the overall array.
-                (default: ``None``)
-            temp_index (int, optional): Integer for the desired temperature index.
-                If ``None``, will return all temperatures. (default: ``None``)
+            name (str): ``"chain"``, ``"inds"``, ``"log_like"``, ``"log_prior"``,
+                ``"betas"``, ``"blobs"``, ``"samplers_running"``, or another dataset of the
+                group with the same leading axes.
+            thin (int, optional): Keep every ``thin``-th step. Default ``1``.
+            discard (int, optional): Number of initial steps to drop. Default ``0``.
+            slice_vals (slice or np.ndarray, optional): Step index used directly on the
+                datasets instead of ``thin`` / ``discard`` (useful to read a small part of a
+                large file). Default ``None``.
+            temp_index (int, optional): Single temperature index. ``None`` keeps all.
+                Default ``None``.
             sampler_index (int, optional): Integer for the desired independent-sampler
                 index. If ``None``, returns all samplers (the sampler axis is squeezed
-                away entirely when ``nsamplers == 1``). (default: ``None``)
-            branch_names (str or list, optional): Specific branch names requested. (default: ``None``)
+                away entirely when ``nsamplers == 1``). Default ``None``.
+            branch_names (list of str, optional): Branches returned for ``"chain"`` /
+                ``"inds"``; ``None`` returns all. Default ``None``.
 
         Returns:
-            dict or np.ndarray: Values requested.
+            dict or np.ndarray or None: A dict keyed by branch name for ``"chain"`` and
+            ``"inds"``; ``None`` for ``"blobs"`` when no blobs are stored; otherwise an
+            array.
 
+        Raises:
+            AttributeError: The file or group does not exist, or nothing is stored yet.
+            ValueError: ``sampler_index`` on a legacy file.
+            KeyError: ``"samplers_running"`` on a legacy file.
+            OSError: The file could not be read after 100 tries.
         """
         # check if initialized
         if not self.initialized:
@@ -655,11 +715,15 @@ class HDFBackend(Backend):
         return v_all
 
     def get_move_info(self):
-        """Get move information.
+        """Read the per-move information from the file.
 
         Returns:
-            dict: Keys are move names and values are dictionaries with information on the moves.
+            dict: Move name to ``{dataset name: np.ndarray}`` for every dataset of its
+            ``moves/<name>`` group (``"acceptance_fraction"``, shape
+            ``(nsamplers * ntemps, nwalkers)``).
 
+        Raises:
+            KeyError: No moves are tracked in the file.
         """
         # setup output dictionary
         move_info_out = {}
@@ -678,14 +742,10 @@ class HDFBackend(Backend):
 
     @property
     def shape(self):
-        """The dimensions of the ensemble
+        """dict: Branch name to the per-step shape of its coordinates.
 
-        Returns:
-            dict: Shape of samples
-                Keys are ``branch_names`` and values are tuples with
-                shapes of individual branches: (ntemps, nwalkers, nleaves_max, ndim),
-                or (nsamplers, ntemps, nwalkers, nleaves_max, ndim) when ``nsamplers > 1``.
-
+        ``(ntemps, nwalkers, nleaves_max, ndim)``, or
+        ``(nsamplers, ntemps, nwalkers, nleaves_max, ndim)`` when ``nsamplers > 1``.
         """
         # open file wrapped in with
         with self.open() as f:
@@ -705,13 +765,17 @@ class HDFBackend(Backend):
 
     @property
     def iteration(self):
-        """Number of iterations stored in the hdf backend so far."""
+        """int: Number of steps stored in the file so far."""
         with self.open() as f:
             return f[self.name].attrs["iteration"]
 
     @property
     def accepted(self):
-        """Number of accepted moves per walker."""
+        """np.ndarray: Cumulative in-model acceptance counts per walker, read from the file.
+
+        Shape ``(ntemps, nwalkers)`` for ``nsamplers == 1`` (and legacy files), else
+        ``(nsamplers, ntemps, nwalkers)``.
+        """
         with self.open() as f:
             out = f[self.name]["accepted"][...]
             if "nsamplers" in f[self.name].attrs and f[self.name].attrs["nsamplers"] == 1:
@@ -720,7 +784,10 @@ class HDFBackend(Backend):
 
     @property
     def rj_accepted(self):
-        """Number of accepted rj moves per walker."""
+        """np.ndarray: Cumulative reversible-jump acceptance counts, same shapes as accepted.
+
+        Raises ``KeyError`` when the run has no reversible jump.
+        """
         with self.open() as f:
             out = f[self.name]["rj_accepted"][...]
             if "nsamplers" in f[self.name].attrs and f[self.name].attrs["nsamplers"] == 1:
@@ -729,7 +796,11 @@ class HDFBackend(Backend):
 
     @property
     def swaps_accepted(self):
-        """Number of accepted swaps."""
+        """np.ndarray: Cumulative accepted temperature swaps per adjacent rung pair.
+
+        Shape ``(ntemps - 1,)`` for ``nsamplers == 1`` (and legacy files), else
+        ``(nsamplers, ntemps - 1)``.
+        """
         with self.open() as f:
             out = f[self.name]["swaps_accepted"][...]
             if "nsamplers" in f[self.name].attrs and f[self.name].attrs["nsamplers"] == 1:
@@ -738,7 +809,11 @@ class HDFBackend(Backend):
 
     @property
     def random_state(self):
-        """Get the random state"""
+        """list or None: The saved ``random_state_<i>`` attributes, in order (``None`` if none).
+
+        The elements of the tuple returned by ``RandomState.get_state()``, as written by
+        :meth:`save_step`.
+        """
         with self.open() as f:
             elements = [
                 v
@@ -748,13 +823,19 @@ class HDFBackend(Backend):
         return elements if len(elements) else None
 
     def grow(self, ngrow, blobs):
-        """Expand the storage space by some number of samples
+        """Resize every step-indexed dataset to ``iteration + ngrow`` steps.
+
+        On the first call with blobs, creates the ``blobs`` dataset (dtype ``self.dtype``,
+        last axis ``blobs.shape[-1]``) and sets ``has_blobs``.
 
         Args:
-            ngrow (int): The number of steps to grow the chain.
-            blobs (None or np.ndarray): The current array of blobs. This is used to compute the
-                dtype for the blobs array.
+            ngrow (int): Number of steps that will be saved next.
+            blobs (np.ndarray or None): Current blobs of the state, folded shape
+                ``(nsamplers * ntemps, nwalkers, nblobs)``, or ``None`` without blobs.
 
+        Raises:
+            ValueError: Blobs appear or disappear relative to what is stored, or their
+                shape differs from the stored blobs.
         """
         self._check_blobs(blobs)
 
@@ -824,23 +905,33 @@ class HDFBackend(Backend):
         swaps_accepted=None,
         moves_accepted_fraction=None,
     ):
-        """Save a step to the backend
+        """Write one step to the file at index :attr:`iteration` and advance it.
+
+        Same content as :meth:`eryn.backends.Backend.save_step`, written in one append-mode
+        open; the random state is written as the ``random_state_<i>`` attributes, so
+        ``state.random_state`` must be an iterable (not ``None``). Legacy files are written
+        in their own layout. Lock contention while opening is retried by :meth:`open`.
 
         Args:
-            state (State): The :class:`State` of the ensemble.
-            accepted (ndarray): An array of boolean flags indicating whether
-                or not the proposal for each walker was accepted.
-            rj_accepted (ndarray, optional): An array of the number of accepted steps
-                for the reversible jump proposal for each walker.
-                If :code:`self.rj` is True, then rj_accepted must be an array with
-                :code:`rj_accepted.shape == accepted.shape`. If :code:`self.rj`
-                is False, then rj_accepted must be None, which is the default.
-            swaps_accepted (ndarray, optional): 1D array with number of swaps accepted
-                for the in-model step. (default: ``None``)
-            moves_accepted_fraction (dict, optional): Dict of acceptance fraction arrays for all of the
-                moves in the sampler. This dict must have the same keys as ``self.move_keys``.
-                (default: ``None``)
+            state (State): State to save, folded leading axis ``nsamplers * ntemps``.
+            accepted (np.ndarray): In-model acceptance counts of this step, shape
+                ``(nsamplers * ntemps, nwalkers)`` (or ``(nsamplers, ntemps, nwalkers)``).
+            rj_accepted (np.ndarray, optional): Reversible-jump acceptance counts, same
+                shape as ``accepted``; required when ``rj`` is set and forbidden otherwise.
+                Default ``None``.
+            swaps_accepted (np.ndarray, optional): Accepted swaps per adjacent rung pair,
+                shape ``(ntemps - 1,)`` (``(nsamplers, ntemps - 1)`` when
+                ``nsamplers > 1``). Default ``None``.
+            moves_accepted_fraction (dict, optional): Move name to its acceptance-fraction
+                array, with every key of :attr:`move_keys`. Default ``None``.
 
+        Raises:
+            ValueError: A shape mismatch, inconsistent blobs or ``rj_accepted``, or
+                ``moves_accepted_fraction`` when the file tracks no moves.
+            OSError: The file cannot be opened (not a lock error).
+            NameError: A lock-like ``OSError`` reaches the retry handler here (for example
+                after :meth:`open` gave up); the handler's message formats an undefined
+                ``mode``, so this outer loop never retries.
         """
         file_opened = False
         max_tries = 100
@@ -882,6 +973,7 @@ class HDFBackend(Backend):
                     # with the sampler axis (unfold via reshape at this write
                     # boundary), legacy files keep the original layout
                     def unfold(arr):
+                        """Reshape a folded array to ``(nsamplers, ntemps, ...)`` (new layout)."""
                         if not has_sampler_axis:
                             return arr
                         return np.reshape(
@@ -970,7 +1062,24 @@ class HDFBackend(Backend):
 
 
 class TempHDFBackend(object):
-    """Check if HDF5 is working and available."""
+    """Context manager yielding an :class:`HDFBackend` on a temporary file (for tests).
+
+    Entering creates a temporary ``.hdf5`` file and returns an :class:`HDFBackend` on it
+    with group ``"test"``; exiting deletes the file.
+
+    Args:
+        dtype (numpy.dtype, optional): Passed to :class:`HDFBackend`. Default ``None``.
+        compression (str, optional): Passed to :class:`HDFBackend`. Default ``None``.
+        compression_opts (int, optional): Passed to :class:`HDFBackend`. Default ``None``.
+
+    Example:
+        .. code-block:: python
+
+            from eryn.backends import TempHDFBackend
+
+            with TempHDFBackend() as backend:
+                backend.reset(8, 2)
+    """
 
     def __init__(self, dtype=None, compression=None, compression_opts=None):
         self.dtype = dtype

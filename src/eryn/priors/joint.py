@@ -1,3 +1,13 @@
+"""N-dimensional (joint) priors.
+
+:class:`JointPrior` is the base for priors over several parameters at once (per-parameter
+metadata plus optional N-D transforms between the sampling and physical spaces);
+:class:`MultivariateGaussian` is the implemented example. Use one in a
+:class:`~eryn.priors.probdist.ProbDistContainer` under a tuple key, e.g.
+``{("a", "b"): MultivariateGaussian(...)}``: the container then passes it arrays of shape
+``(N, k)`` with ``k`` the tuple length.
+"""
+
 from __future__ import annotations
 
 from typing import Callable, Sequence
@@ -10,6 +20,49 @@ from .base import AbstractPrior
 
 
 class JointPrior(AbstractPrior):
+    """Base class for N-dimensional priors.
+
+    A subclass implements ``rvs(size=..., **kwargs)`` returning shape
+    ``size + (num_vars,)`` and ``logpdf(x, **kwargs)`` taking ``x`` of shape
+    ``(..., num_vars)`` and returning shape ``x.shape[:-1]``, both in the SAMPLING space.
+    The ``*_physical`` methods map through ``forward_transform_nd`` /
+    ``inverse_transform_nd`` / ``log_jacobian_nd`` the same way as
+    :class:`~eryn.priors.base.Prior` does in 1-D. The column layout inside a
+    :class:`~eryn.priors.probdist.ProbDistContainer` comes from the container key, not from
+    ``names``.
+
+    Args:
+        names: Parameter names; must be non-empty. Sets ``num_vars``.
+        names_phys: Physical parameter names; a ``None`` entry falls back to the matching
+            ``names`` entry. Default ``None`` (use ``names``).
+        latex_labels: LaTeX labels; a ``None`` entry falls back to
+            ``_default_latex_labels[name]`` and then ``str(name)``. Default ``None``.
+        units: Unit strings, one per parameter. Default ``None`` (all ``None``).
+        boundaries: Boundary-condition labels (``None``, ``"periodic"``, ``"reflective"``),
+            one per parameter; metadata only. Default ``None`` (all ``None``).
+        use_cupy: Compute with CuPy. Default ``False``.
+        return_gpu: Return CuPy arrays (when ``use_cupy``). Default ``False``.
+        forward_transform_nd: Callable ``f(x_phys, **kwargs) -> x_samp`` on
+            ``(..., num_vars)`` arrays. Default ``None``.
+        inverse_transform_nd: Callable ``g(x_samp, **kwargs) -> x_phys``. Default ``None``.
+        log_jacobian_nd: Callable ``h(x_phys, **kwargs)`` returning
+            ``log|det(d x_samp / d x_phys)|``. Default ``None``.
+
+    Attributes:
+        names (tuple[str, ...]): Parameter names.
+        num_vars (int): Number of parameters.
+        names_phys (tuple[str, ...]): Physical parameter names.
+        boundaries (tuple): Boundary-condition labels.
+        forward_transform_nd (callable or None): Physical -> sampling map.
+        inverse_transform_nd (callable or None): Sampling -> physical map.
+        log_jacobian_nd (callable or None): Log-determinant of the forward Jacobian.
+
+    Raises:
+        ValueError: If ``names`` is empty, a metadata sequence has the wrong length, or a
+            boundary label is unsupported.
+        ImportError: If ``use_cupy`` is ``True`` and CuPy is not installed.
+    """
+
     _default_latex_labels = {}
 
     def __init__(
@@ -25,23 +78,7 @@ class JointPrior(AbstractPrior):
         inverse_transform_nd: Callable[..., NDArrayLike] | None = None,
         log_jacobian_nd: Callable[..., NDArrayLike] | None = None,
     ):
-        """Main joint prior constructor for N-dimensional parameter spaces.
-
-        Args:
-            names (list of str): Names associated with the parameters.
-            names_phys (list of str, optional): Physical parameter names. (default: ``None``)
-            latex_labels (list of str, optional): Latex labels for parameters. (default: ``None``)
-            units (list of str, optional): Strings describing parameter units. (default: ``None``)
-            boundaries (list of str, optional): Boundary conditions for each parameter. (default: ``None``)
-            use_cupy (bool, optional): If ``True``, uses CuPy for GPU acceleration. (default: ``False``)
-            return_gpu (bool, optional): If ``True``, returns GPU arrays. (default: ``False``)
-            forward_transform_nd (callable, optional): Transform from physical to sampling space. (default: ``None``)
-            inverse_transform_nd (callable, optional): Transform from sampling to physical space. (default: ``None``)
-            log_jacobian_nd (callable, optional): Log-determinant of the Jacobian matrix. (default: ``None``)
-                
-        Raises:
-            ValueError: If names sequence is empty, or lengths of provided metadata lists mismatch.
-        """
+        """Build the joint prior (arguments are documented on the class)."""
         super().__init__(use_cupy=use_cupy, return_gpu=return_gpu)
 
         if not names:
@@ -84,17 +121,20 @@ class JointPrior(AbstractPrior):
         size: int | tuple[int, ...] = (1,), 
         **kwargs
     ) -> NDArrayLike:
-        """Draws random variable(s) from the joint prior distribution.
+        """Draw samples in the SAMPLING space (override in subclasses).
+
+        The base implementation only validates ``size`` and then raises.
 
         Args:
-            size (int or tuple of int, optional): Size of the sample. (default: ``(1,)``)
-            **kwargs: Additional keyword arguments.
+            size: Leading output shape; an ``int`` means ``(size,)``. Default ``(1,)``.
+            **kwargs: Conditional variables (and any extra options) for subclasses.
 
         Returns:
-            NDArrayLike: Random sample drawn from the prior distribution.
+            NDArrayLike: Samples of shape ``size + (num_vars,)`` (in subclasses).
 
         Raises:
-            ValueError: If size is not an integer or a tuple of integers.
+            ValueError: If ``size`` is not an ``int`` or a tuple.
+            NotImplementedError: Always, in the base class.
         """
         if not isinstance(size, int) and not isinstance(size, tuple):
             raise ValueError("size must be an integer or tuple of ints.")
@@ -108,14 +148,16 @@ class JointPrior(AbstractPrior):
         size: int | tuple[int, ...] = (1,), 
         **kwargs
     ) -> NDArrayLike:
-        """Draw a random sample in the physical parameter space. 
-        
+        """Draw samples in the PHYSICAL space: ``inverse_transform_nd(rvs(size))``.
+
+        Without ``inverse_transform_nd`` this returns the :meth:`rvs` samples unchanged.
+
         Args:
-            size (int or tuple of int, optional): Size of the sample. (default: ``(1,)``)
-            **kwargs: Additional keyword arguments.
-            
+            size: Leading output shape; an ``int`` means ``(size,)``. Default ``(1,)``.
+            **kwargs: Forwarded to :meth:`rvs` and ``inverse_transform_nd``.
+
         Returns:
-            NDArrayLike: A random sample in the physical parameter space.
+            NDArrayLike: Physical-space samples of shape ``size + (num_vars,)``.
         """
         samples = self.rvs(size=size, **kwargs)
         if self.inverse_transform_nd is None:
@@ -129,14 +171,17 @@ class JointPrior(AbstractPrior):
         x: ArrayLike,
         **kwargs
     ) -> NDArrayLike:
-        """The log probability density of the joint prior.
+        """Joint log-density in the SAMPLING space (override in subclasses).
 
         Args:
-            x (ArrayLike): The N-dimensional value(s) to evaluate.
-            **kwargs: Additional keyword arguments.
+            x: Values of shape ``(..., num_vars)``.
+            **kwargs: Conditional variables (and any extra options) for subclasses.
 
         Returns:
-            NDArrayLike: The log probability density.
+            NDArrayLike: Log-density of shape ``x.shape[:-1]`` (in subclasses).
+
+        Raises:
+            NotImplementedError: Always, in the base class.
         """
         raise NotImplementedError("logpdf method is implemented in subclass")
 
@@ -145,14 +190,17 @@ class JointPrior(AbstractPrior):
         x_phys: ArrayLike, 
         **kwargs
     ) -> NDArrayLike:
-        """Log probability density evaluated in the physical parameter space. 
-        
+        """Joint log-density in the PHYSICAL space.
+
+        Computes ``logpdf(forward_transform_nd(x_phys)) + log_jacobian_nd(x_phys)``; falls
+        back to ``logpdf(x_phys)`` when either piece is ``None``.
+
         Args:
-            x_phys (ArrayLike): Value(s) in the physical space.
-            **kwargs: Additional keyword arguments.
-                
+            x_phys: Physical values of shape ``(..., num_vars)``.
+            **kwargs: Forwarded to the transform, :meth:`logpdf` and the Jacobian.
+
         Returns:
-            NDArrayLike: Log probability density in physical space.
+            NDArrayLike: Log-density of shape ``x_phys.shape[:-1]``.
         """
         if self.forward_transform_nd is None or self.log_jacobian_nd is None:
             return self._to_device(self.logpdf(x_phys, **kwargs))
@@ -169,14 +217,14 @@ class JointPrior(AbstractPrior):
         x: ArrayLike,
         **kwargs
     ) -> NDArrayLike:
-        """Probability density of the joint prior distribution.
+        """Joint density in the SAMPLING space: ``exp(logpdf(x))``.
 
         Args:
-            x (ArrayLike): N-dimensional value(s) to evaluate.
-            **kwargs: Additional keyword arguments.
+            x: Values of shape ``(..., num_vars)``.
+            **kwargs: Forwarded to :meth:`logpdf`.
 
         Returns:
-            NDArrayLike: The probability density.
+            NDArrayLike: Density of shape ``x.shape[:-1]``.
         """
         output = self.xp.exp(self.logpdf(x, **kwargs))
         return self._to_device(output)
@@ -186,14 +234,17 @@ class JointPrior(AbstractPrior):
         x_phys: ArrayLike, 
         **kwargs
     ) -> NDArrayLike:
-        """Probability density evaluated in the physical parameter space.
-        
+        """Joint density in the PHYSICAL space.
+
+        Computes ``pdf(forward_transform_nd(x_phys)) * exp(log_jacobian_nd(x_phys))``; falls
+        back to ``pdf(x_phys)`` when either piece is ``None``.
+
         Args:
-            x_phys (ArrayLike): N-dimensional value(s) in physical space.
-            **kwargs: Additional keyword arguments.
+            x_phys: Physical values of shape ``(..., num_vars)``.
+            **kwargs: Forwarded to the transform, :meth:`pdf` and the Jacobian.
 
         Returns:
-            NDArrayLike: Probability density in physical space.
+            NDArrayLike: Density of shape ``x_phys.shape[:-1]``.
         """
         if self.forward_transform_nd is None or self.log_jacobian_nd is None:
             return self._to_device(self.pdf(x_phys, **kwargs))
@@ -210,10 +261,14 @@ class JointPrior(AbstractPrior):
         x: ArrayLike,
         **kwargs
     ) -> NDArrayLike:
-        """CDF numerical integration for N-dimensional JointPriors.
+        """Not available for joint priors.
+
+        Args:
+            x: Ignored.
+            **kwargs: Ignored.
 
         Raises:
-            NotImplementedError: Mathematically undefined for general N-dimensions.
+            NotImplementedError: Always; there is no generic N-D CDF.
         """
         raise NotImplementedError(
             "Generic CDF numerical integration is mathematically undefined "
@@ -225,10 +280,15 @@ class JointPrior(AbstractPrior):
         x: ArrayLike,
         **kwargs
     ) -> NDArrayLike:
-        """Boundary checking for N-dimensional bounds.
+        """Support check for N-D values (override in subclasses).
+
+        Args:
+            x: Values of shape ``(..., num_vars)``.
+            **kwargs: Subclass options.
 
         Raises:
-            NotImplementedError: Must be implemented by specific JointPrior subclass.
+            NotImplementedError: Always, in the base class (and in
+                :class:`MultivariateGaussian`, which does not override it).
         """
         raise NotImplementedError(
             "Boundary checking must be implemented per JointPrior subclass."
@@ -236,6 +296,7 @@ class JointPrior(AbstractPrior):
 
     @property
     def latex_label(self) -> tuple[str, ...]:
+        """Per-parameter LaTeX labels (``None`` entries resolved on assignment)."""
         return self.__latex_label
 
     @latex_label.setter
@@ -260,6 +321,7 @@ class JointPrior(AbstractPrior):
 
     @property
     def unit(self) -> tuple[str | None, ...]:
+        """Per-parameter unit strings (``None`` where unset)."""
         return self.__unit
 
     @unit.setter
@@ -281,16 +343,44 @@ class JointPrior(AbstractPrior):
     
     
 class MultivariateGaussian(JointPrior):
-    """N-dimensional Multivariate Gaussian Prior.
+    """Multivariate Gaussian prior over ``len(names)`` parameters.
+
+    At construction ``mu`` and ``cov`` are checked for shape, ``cov`` for symmetry,
+    invertibility and a positive determinant, and then Cholesky-factorised; the precision
+    matrix, log-normalisation and lower Cholesky factor are cached. No transforms
+    (sampling and physical spaces coincide).
 
     Args:
-        names (list of str): Names associated with parameters.
-        mu (ArrayLike): Mean vector.
-        cov (ArrayLike): Covariance matrix.
-        latex_labels (list of str, optional): Latex labels for parameters. (default: ``None``)
-        units (list of str, optional): Strings describing parameter units. (default: ``None``)
-        use_cupy (bool, optional): If ``True``, uses CuPy for GPU acceleration. (default: ``False``)
-        return_gpu (bool, optional): If ``True``, returns GPU arrays. (default: ``False``)
+        names: Parameter names; ``num_vars = len(names)``.
+        mu: Mean vector, shape ``(num_vars,)``.
+        cov: Covariance matrix, shape ``(num_vars, num_vars)``.
+        latex_labels: LaTeX labels (see :class:`JointPrior`). Default ``None``.
+        units: Unit strings. Default ``None``.
+        use_cupy: Compute with CuPy. Default ``False``.
+        return_gpu: Return CuPy arrays (when ``use_cupy``). Default ``False``.
+
+    Attributes:
+        mu (xp.ndarray): Mean, float64, shape ``(num_vars,)``.
+        cov (xp.ndarray): Covariance, float64, shape ``(num_vars, num_vars)``.
+        prec (xp.ndarray): Inverse covariance.
+        cholesky_lower (xp.ndarray): Lower Cholesky factor of ``cov``.
+
+    Raises:
+        ValueError: If ``mu`` / ``cov`` have the wrong shape, ``cov`` is not symmetric, is
+            singular, or has a non-positive determinant.
+        numpy.linalg.LinAlgError: From the Cholesky factorisation when ``cov`` is not
+            positive definite but its determinant is positive (an even number of negative
+            eigenvalues passes the determinant test).
+
+    Example:
+        >>> import numpy as np
+        >>> from eryn.priors import MultivariateGaussian, ProbDistContainer
+        >>> mvn = MultivariateGaussian(["a", "b"], mu=[0.0, 1.0], cov=np.eye(2))
+        >>> mvn.rvs(4).shape
+        (4, 2)
+        >>> priors = ProbDistContainer({("a", "b"): mvn})
+        >>> priors.logpdf(priors.rvs(3)).shape
+        (3,)
     """
 
     def __init__(
@@ -335,6 +425,15 @@ class MultivariateGaussian(JointPrior):
         self.cholesky_lower = self.xp.linalg.cholesky(self.cov)
 
     def rvs(self, size: int | tuple[int, ...] = (1,), **kwargs) -> NDArrayLike:
+        """Draw ``mu + L z`` with ``z`` standard normal and ``L`` the Cholesky factor.
+
+        Args:
+            size: Leading output shape; an ``int`` means ``(size,)``. Default ``(1,)``.
+            **kwargs: Ignored.
+
+        Returns:
+            NDArrayLike: Samples of shape ``size + (num_vars,)``.
+        """
         if isinstance(size, int):
             size = (size,)
 
@@ -343,6 +442,18 @@ class MultivariateGaussian(JointPrior):
         return self._to_device(samples)
 
     def logpdf(self, x: ArrayLike, **kwargs) -> NDArrayLike:
+        """Normalised multivariate-normal log-density.
+
+        Args:
+            x: Values of shape ``(..., num_vars)``.
+            **kwargs: Ignored.
+
+        Returns:
+            NDArrayLike: Log-density of shape ``x.shape[:-1]``.
+
+        Raises:
+            ValueError: If the last axis of ``x`` is not ``num_vars`` long.
+        """
         x_arr = self.xp.asarray(x)
         
         if x_arr.shape[-1] != self.num_vars:

@@ -1,4 +1,14 @@
 # -*- coding: utf-8 -*-
+"""Deprecated vectorized sampler for many independent single-branch ensembles.
+
+:class:`ParaEnsembleSampler` advances ``ngroups`` independent parallel-tempered ensembles
+of shape ``(ntemps, nwalkers, ndim)`` with one batched likelihood call per proposal, on CPU
+(``numpy``) or GPU (``cupy``), with a built-in stretch proposal and temperature swaps. It
+is superseded by :class:`~eryn.ensemble.EnsembleSampler` with ``nsamplers=...``, and works
+with the deprecated :class:`~eryn.state.ParaState` and
+:class:`~eryn.backends.parabackend.ParaBackend`. :func:`shuffle_along_axis` is its
+independent-permutation helper.
+"""
 
 import warnings
 from copy import deepcopy
@@ -27,22 +37,31 @@ _CUDA_BACKEND_PRIORITY = ("gbt_cuda13x", "gbt_cuda12x", "gbt_cuda11x")
 def shuffle_along_axis(a, axis, xp=np):
     """Independently shuffle array ``a`` along ``axis``.
 
+    Each 1D slice along ``axis`` gets its own random permutation (from
+    ``xp.random.rand``, so it follows the global ``numpy`` / ``cupy`` random state).
+
     Args:
-        a (ndarray): Array to shuffle.
+        a (np.ndarray or cupy.ndarray): Array to shuffle.
         axis (int): Axis along which to shuffle.
         xp (module, optional): Array module (``numpy`` or ``cupy``) matching
-            the type of ``a``. (default: ``numpy``)
+            the type of ``a``. Default ``numpy``.
 
     Returns:
-        ndarray: Copy of ``a`` shuffled along ``axis``.
+        np.ndarray or cupy.ndarray: Copy of ``a`` shuffled along ``axis``.
 
+    Example:
+        >>> import numpy as np
+        >>> from eryn.paraensemble import shuffle_along_axis
+        >>> out = shuffle_along_axis(np.tile(np.arange(4), (3, 1)), -1)
+        >>> sorted(out[0].tolist())
+        [0, 1, 2, 3]
     """
     idx = xp.random.rand(*a.shape).argsort(axis=axis)
     return xp.take_along_axis(a, idx, axis=axis)
 
 
 class ParaEnsembleSampler(EnsembleSampler):
-    """Vectorized ensemble sampler running many independent ensembles at once.
+    """Vectorized ensemble sampler running many independent ensembles at once (deprecated).
 
     This sampler advances ``ngroups`` independent parallel-tempered ensembles
     simultaneously. All groups share a single (vectorized) likelihood call per
@@ -50,76 +69,134 @@ class ParaEnsembleSampler(EnsembleSampler):
     batching across groups is much cheaper than looping over them. Each group
     is a self-contained ensemble with shape ``(ntemps, nwalkers, ndim)`` and
     its own temperature ladder; groups can be switched on and off between
-    steps via ``ParaState.groups_running``.
+    steps via ``ParaState.groups_running``. Each proposal iteration is one
+    stretch-move pass over the two halves of the walkers (see :meth:`propose`)
+    followed, when ``ntemps > 1``, by adjacent-rung swaps and ladder adaptation
+    (:meth:`tempering_operations`).
 
     The compute backend (CPU/GPU) is fixed at instantiation through the
     ``force_backend`` / ``gpu`` arguments and is sourced from the
-    GPUBackendTools (GBT) backend registry — Eryn ships no compiled code of
+    GPUBackendTools (GBT) backend registry; Eryn ships no compiled code of
     its own. All internal arrays use the matching array module (``self.xp``:
     ``numpy`` for the CPU backend, ``cupy`` for CUDA backends).
 
     Args:
-        ndim (int): Number of dimensions in the parameter space.
-        nwalkers (int): Number of walkers per temperature per group.
+        ndim: Number of dimensions in the parameter space.
+        nwalkers: Number of walkers per temperature per group.
             Must be even (the stretch proposal splits walkers in half).
-        ngroups (int): Number of independent ensembles run simultaneously.
-        log_like_fn (callable): Likelihood function. Receives a 2D array of
-            parameters flattened over all groups/temperatures/walkers with
-            in-prior points and must return a 1D array of log-likelihood
-            values of matching length.
-        priors (dict): Dictionary with ``name`` as the key and a
-            :class:`eryn.prior.ProbDistContainer` as the value.
-        tempering_kwargs (dict, optional): Keyword arguments for
-            :class:`eryn.moves.tempering.TemperatureControl`. If ``None``,
-            no tempering is used (``ntemps = 1``). (default: ``None``)
-        args (list or tuple, optional): Positional arguments passed to
-            ``log_like_fn``. (default: ``()``)
-        kwargs (dict, optional): Keyword arguments passed to ``log_like_fn``.
-            (default: ``None``)
-        gpu (int, optional): If provided, use this CUDA device and run with
+        ngroups: Number of independent ensembles run simultaneously.
+        log_like_fn (callable): Called as
+            ``log_like_fn(x, *args, **kwargs)`` (plus ``branch_supps=...`` and
+            ``supps=...`` when ``provide_supplemental``), where ``x`` is the 2D
+            ``(n, ndim)`` array (``xp``) of the in-prior points of all running
+            groups, temperatures and walkers. Must return a 1D array of ``n``
+            log-likelihood values; NaN results are replaced by ``-1e300``.
+        priors (dict): ``{name: prior}``, where ``prior`` is a
+            :class:`~eryn.priors.ProbDistContainer` (or a dict of distributions, or
+            any object with ``logpdf``; see :attr:`EnsembleSampler.priors
+            <eryn.ensemble.EnsembleSampler.priors>`). It is evaluated on the
+            ``(n, ndim)`` coordinates, after ``prior_transform_fn`` if given.
+        tempering_kwargs: Keyword arguments for
+            :class:`~eryn.moves.tempering.TemperatureControl`, built with
+            ``(ndim, nwalkers)``; its ladder is copied to every group (``betas``
+            of shape ``(ngroups, ntemps)``). If ``None``, no tempering is used
+            (``ntemps = 1``). Default ``None``.
+        args: Positional arguments passed to ``log_like_fn``. Default ``()``.
+        kwargs: Keyword arguments passed to ``log_like_fn``. Default ``None``
+            (none).
+        gpu: If provided, use this CUDA device and run with
             ``cupy`` (resolved through the first available GBT CUDA backend).
             If ``None`` (and no CUDA ``force_backend`` is given), run on CPU
-            with ``numpy``. (default: ``None``)
-        force_backend (str, optional): Name of the GBT backend to use, e.g.
+            with ``numpy``. Default ``None``.
+        force_backend: Name of the GBT backend to use, e.g.
             ``"cpu"``, ``"cuda12x"`` (or prefixed: ``"gbt_cpu"``). Overrides
             the default CPU resolution; combine with ``gpu`` to also select
             the CUDA device index. The jax backend is not supported (this
-            sampler mutates arrays in place). (default: ``None``)
-        periodic (dict or :class:`eryn.utils.PeriodicContainer`, optional):
-            Periodic-parameter information passed to the stretch proposal.
-            (default: ``None``)
-        backend (ParaBackend, optional): Storage backend. If ``None``, an
-            in-memory :class:`eryn.backends.ParaBackend` is created.
-            (default: ``None``)
-        update_fn (callable, optional): Called as ``update_fn(i, state, sampler)``
-            every ``update_iterations`` proposals. (default: ``None``)
-        update_iterations (int, optional): Number of proposals between calls
-            to ``update_fn``. ``<= 0`` disables updates. (default: ``-1``)
-        stopping_fn (callable, optional): Called as ``stopping_fn(i, state, sampler)``
-            every ``stopping_iterations`` sampler iterations; a truthy return
-            stops sampling. (default: ``None``)
-        stopping_iterations (int, optional): Number of iterations between calls
-            to ``stopping_fn``. ``<= 0`` disables stopping checks. (default: ``-1``)
+            sampler mutates arrays in place). Default ``None``.
+        periodic: Periodic-parameter information passed to the stretch
+            proposal, as a dict ``{name: {index: period}}`` or a
+            :class:`~eryn.utils.PeriodicContainer`. Default ``None``.
+        backend: Storage backend. If ``None``, an in-memory
+            :class:`~eryn.backends.parabackend.ParaBackend` is created. A given,
+            initialized backend must have shape ``(ngroups, ntemps, nwalkers, ndim)``.
+            Default ``None``.
+        update_fn: Called as ``update_fn(i, state, sampler)``
+            every ``update_iterations`` proposals. Default ``None``.
+        update_iterations: Number of proposals between calls
+            to ``update_fn``. ``<= 0`` disables updates. Default ``-1``.
+        stopping_fn: Called as ``stopping_fn(i, state, sampler)`` by :meth:`run_mcmc`
+            every ``stopping_iterations`` yielded states; a truthy return
+            stops sampling. Default ``None``.
+        stopping_iterations: Number of yielded states between calls
+            to ``stopping_fn``. ``<= 0`` disables stopping checks. Default ``-1``.
         prior_transform_fn (object, optional): Object implementing
             ``transform_to_prior_basis(coords, groups_running)`` (in-place map
-            of coordinates to the basis in which ``priors`` is defined) and
-            ``adjust_logp(logp, groups_running)`` (in-place Jacobian
-            adjustment of the log-prior). Used for per-group prior bounds
-            (e.g. per-band frequency limits). If ``None``, coordinates are
-            passed to ``priors`` unchanged. (default: ``None``)
-        name (str, optional): Branch name for the single branch sampled.
-            (default: ``"model_0"``)
-        provide_supplemental (bool, optional): If ``True``, pass ``supps`` and
+            of the ``(num_running, ntemps, nwalkers, ndim)`` coordinates to the
+            basis in which ``priors`` is defined) and
+            ``adjust_logp(logp, groups_running)`` (in-place Jacobian adjustment of
+            the ``(num_running, ntemps, nwalkers)`` log-prior), where
+            ``groups_running`` holds the integer indices of the running groups.
+            Used for per-group prior bounds (e.g. per-band frequency limits). If
+            ``None``, coordinates are passed to ``priors`` unchanged. Default
+            ``None``.
+        name: Branch name for the single branch sampled. Default ``"model_0"``.
+        provide_supplemental: If ``True``, pass ``supps`` and
             ``branch_supps`` keyword arguments through to ``log_like_fn``.
-            (default: ``False``)
-        gibbs_sampling_setup (bool np.ndarray[ndim], optional): If provided,
-            only parameters where this mask is ``True`` are sampled; the
-            remaining dimensions stay fixed at their current values.
-            (default: ``None``)
+            Default ``False``.
+        gibbs_sampling_setup (np.ndarray, optional): Boolean mask of shape
+            ``(ndim,)`` (a ``numpy`` array). If provided, only parameters where
+            this mask is ``True`` are sampled; the remaining dimensions stay fixed
+            at their current values. Default ``None``.
 
     Raises:
-        ValueError: Invalid inputs.
+        ValueError: ``nwalkers`` is odd, ``priors`` is not a dict containing ``name``,
+            or the requested compute backend is unavailable or incompatible.
+        AssertionError: ``gibbs_sampling_setup`` is not a boolean ``numpy`` array of
+            length ``ndim``, or a given initialized backend has another shape.
 
+    Attributes:
+        ndim (int): Parameters per walker.
+        nwalkers (int): Walkers per temperature per group.
+        ngroups (int): Number of independent groups.
+        ntemps (int): Temperatures per group.
+        betas (xp.ndarray): Current inverse temperatures, shape ``(ngroups, ntemps)``.
+        base_temperature_control (TemperatureControl or None): Source of the ladder and
+            of the adaptation settings.
+        move_proposal (StretchMove): The stretch proposal.
+        swaps_accepted (xp.ndarray): Swaps accepted at the last tempering step, shape
+            ``(ngroups, ntemps - 1)`` (set once tempering has run).
+
+    Warning:
+        Deprecated: construction emits a ``DeprecationWarning``. Use
+        :class:`~eryn.ensemble.EnsembleSampler` with ``nsamplers=...`` (plus
+        ``State.samplers_running`` and ``prior_transform_fn``). This class does not
+        call ``EnsembleSampler.__init__``; inherited members that need attributes set
+        there (``get_model`` needs ``pool``) or :class:`~eryn.backends.Backend` features
+        that :class:`~eryn.backends.parabackend.ParaBackend` lacks (``get_inds``,
+        ``get_autocorr_time``) do not work.
+
+    Example:
+        .. code-block:: python
+
+            import numpy as np
+            from eryn.paraensemble import ParaEnsembleSampler
+            from eryn.priors import ProbDistContainer, UniformDistribution
+            from eryn.state import ParaState
+
+            ndim, nwalkers, ngroups, ntemps = 2, 8, 4, 3
+            priors = {"model_0": ProbDistContainer(
+                {i: UniformDistribution(-5.0, 5.0) for i in range(ndim)})}
+
+            def log_like_fn(x):  # x: (n, ndim)
+                return -0.5 * np.sum(x**2, axis=-1)
+
+            sampler = ParaEnsembleSampler(
+                ndim, nwalkers, ngroups, log_like_fn, priors,
+                tempering_kwargs=dict(ntemps=ntemps),
+            )
+            start = np.random.uniform(-1, 1, size=(ngroups, ntemps, nwalkers, ndim))
+            state = ParaState({"model_0": start}, groups_running=np.ones(ngroups, dtype=bool))
+            state = sampler.run_mcmc(state, 100)
     """
 
     def __init__(
@@ -247,20 +324,31 @@ class ParaEnsembleSampler(EnsembleSampler):
 
     @property
     def random_state(self):
-        """Random number generator (``numpy.random`` or ``cupy.random``)."""
+        """module: Random number generator (the ``numpy.random`` or ``cupy.random`` module).
+
+        Unlike :attr:`EnsembleSampler.random_state
+        <eryn.ensemble.EnsembleSampler.random_state>`, this is the global generator module
+        itself, not a saved state.
+        """
         return self._random
 
     @random_state.setter
     def random_state(self, random):
+        """Set the generator module."""
         self._random = random
 
     @property
     def periodic(self):
-        """:class:`eryn.utils.PeriodicContainer` or ``None``."""
+        """PeriodicContainer or None: Periodic-parameter container.
+
+        Setting a dict wraps it in :class:`~eryn.utils.PeriodicContainer`; any type other
+        than dict, ``PeriodicContainer`` or ``None`` raises ``ValueError``.
+        """
         return self._periodic
 
     @periodic.setter
     def periodic(self, periodic):
+        """Validate and store ``periodic`` (see the getter)."""
         if isinstance(periodic, dict):
             self._periodic = PeriodicContainer(periodic)
         elif isinstance(periodic, PeriodicContainer) or periodic is None:
@@ -272,11 +360,16 @@ class ParaEnsembleSampler(EnsembleSampler):
 
     @property
     def backend(self):
-        """:class:`eryn.backends.ParaBackend` storage object."""
+        """ParaBackend: Storage object.
+
+        Setting ``None`` creates and resets an in-memory
+        :class:`~eryn.backends.parabackend.ParaBackend` for this sampler's shape.
+        """
         return self._backend
 
     @backend.setter
     def backend(self, backend):
+        """Store ``backend``, or build a fresh :class:`ParaBackend` for ``None``."""
         if backend is None:
             self._backend = ParaBackend()
             self._backend.reset(
@@ -295,7 +388,9 @@ class ParaEnsembleSampler(EnsembleSampler):
 
         ``force_backend`` wins when given (bare names like ``"cpu"`` /
         ``"cuda12x"`` get the ``gbt_`` prefix). A bare ``gpu`` index implies
-        the first available CUDA backend. Default is CPU.
+        the first available CUDA backend (``gbt_cuda13x``, then ``gbt_cuda12x``,
+        then ``gbt_cuda11x``). Default is CPU. Raises ``ValueError`` for a non-str
+        or jax backend, an unavailable backend, or ``gpu`` with a non-CUDA backend.
         """
         if force_backend is not None:
             if not isinstance(force_backend, str):
@@ -338,21 +433,27 @@ class ParaEnsembleSampler(EnsembleSampler):
 
     @property
     def xp(self):
-        """Array module from the GBT backend: ``cupy`` on GPU, else ``numpy``."""
+        """module: Array module from the GBT backend: ``cupy`` on GPU, else ``numpy``."""
         return self.compute_backend.xp
 
     @property
     def use_gpu(self):
-        """Whether this sampler instance runs on GPU."""
+        """bool: Whether this sampler instance runs on GPU (the backend uses ``cupy``)."""
         return self.compute_backend.uses_cupy
 
     @property
     def gpu(self):
-        """CUDA device index or ``None`` for CPU."""
+        """int or None: CUDA device index, or ``None`` for CPU.
+
+        Setting an index on a CPU-resolved sampler switches it to the first available
+        CUDA backend (``ValueError`` if there is none) and calls
+        ``cupy.cuda.runtime.setDevice``.
+        """
         return self._gpu
 
     @gpu.setter
     def gpu(self, gpu):
+        """Select the CUDA device (see the getter)."""
         if gpu is not None:
             if not self.compute_backend.uses_cupy:
                 # explicit device request on a CPU-resolved sampler:
@@ -368,7 +469,11 @@ class ParaEnsembleSampler(EnsembleSampler):
         self._gpu = gpu
 
     def add_gpu_index(self, gpu):
-        """Set the CUDA device index (switches the sampler to GPU)."""
+        """Set the CUDA device index (switches the sampler to GPU).
+
+        Args:
+            gpu (int): CUDA device index (see :attr:`gpu`).
+        """
         self.gpu = gpu
 
     def sample(
@@ -381,45 +486,45 @@ class ParaEnsembleSampler(EnsembleSampler):
         store=True,
         progress=False,
     ):
-        """Advance the chains as a generator
+        """Advance all groups as a generator.
+
+        Completes the initial state first: a missing ``groups_running`` becomes all
+        ``True``; a missing ``log_prior`` / ``log_like`` is computed for the running groups
+        (``-inf`` / ``-1e300`` elsewhere); ``betas`` on the state replace the sampler's,
+        otherwise the sampler's are copied onto the state. Each proposal iteration calls
+        :meth:`propose`; every ``thin_by`` iterations the state is saved (when ``store``)
+        and yielded. ``update_fn`` runs every ``update_iterations`` proposal iterations.
 
         Args:
-            initial_state (:class:`ParaState` or ndarray[ngroups, ntemps, nwalkers, ndim] or dict): The initial
-                :class:`ParaState` or positions of the walkers in the
-                parameter space. If a dict, keys should be the ``name``
-                of this sampler's branch. If ``betas`` are provided in the
-                state object, they will be loaded into the sampler.
-            iterations (int or None, optional): The number of steps to generate.
+            initial_state (ParaState, np.ndarray, cupy.ndarray, or dict): The initial
+                :class:`~eryn.state.ParaState`, or positions of shape
+                ``(ngroups, ntemps, nwalkers, ndim)`` (a dict is keyed by the sampler's
+                ``name``). The input is copied.
+            iterations (int or None, optional): The number of states to yield.
                 ``None`` generates an infinite stream (requires ``store=False``).
-                (default: 1)
+                Default ``1``.
             tune (bool, optional): Included for signature compatibility with
                 :class:`eryn.ensemble.EnsembleSampler`; not used here.
-                (default: ``False``)
-            thin_by (int, optional): If you only want to store and yield every
-                ``thin_by`` samples in the chain, set ``thin_by`` to an
-                integer greater than 1. When this is set, ``iterations *
-                thin_by`` proposals will be made. (default: 1)
-            store (bool, optional): By default, the sampler stores in the backend
-                the positions (and other information) of the samples in the
-                chain. If you are using another method to store the samples to
-                a file or if you don't need to analyze the samples after the
-                fact (for burn-in for example) set ``store`` to ``False``. (default: ``True``)
-            progress (bool or str, optional): If ``True``, a progress bar will
-                be shown as the sampler progresses. If a string, will select a
-                specific ``tqdm`` progress bar - most notable is
-                ``'notebook'``, which shows a progress bar suitable for
-                Jupyter notebooks.  If ``False``, no progress bar will be
-                shown. (default: ``False``)
+                Default ``False``.
             skip_initial_state_check (bool, optional): Included for signature
                 compatibility with :class:`eryn.ensemble.EnsembleSampler`;
-                not used here. (default: ``True``)
+                not used here. Default ``True``.
+            thin_by (int, optional): Proposal iterations per stored / yielded state, so
+                ``iterations * thin_by`` proposal iterations are made. Default ``1``.
+            store (bool, optional): If ``True``, grow the backend and save every yielded
+                state. Default ``True``.
+            progress (bool or str, optional): ``True`` shows a ``tqdm`` progress bar; a str
+                selects ``tqdm.tqdm_<str>`` (for example ``"notebook"``); ``False`` shows
+                none. Default ``False``.
 
-        Returns:
-            ParaState: Every ``thin_by`` steps, this generator yields the :class:`ParaState` of the ensemble.
+        Yields:
+            ParaState: The current state, every ``thin_by`` proposal iterations.
 
         Raises:
-            ValueError: Improper initialization.
-
+            ValueError: ``iterations=None`` with ``store=True``; coordinates, ``betas``,
+                ``log_like`` or ``log_prior`` with the wrong shape; a NaN or infinite
+                initial ``log_like`` / ``log_prior`` on a running group; or
+                ``thin_by <= 0``.
         """
         if iterations is None and store:
             raise ValueError("'store' must be False when 'iterations' is None")
@@ -576,23 +681,28 @@ class ParaEnsembleSampler(EnsembleSampler):
     ):
         """Compute the log-likelihood for in-prior points.
 
+        Calls ``log_like_fn`` once on the ``(n, ndim)`` array of points with a finite
+        log-prior. NaN results become ``-1e300``. On GPU the device is synchronized
+        before returning.
+
         Args:
             coords (dict): Coordinates keyed by branch ``name`` with values of
                 shape ``(num_groups_running, ntemps, nwalkers, ndim)``.
-            groups_running (ndarray, optional): Indices of the running groups
-                associated with the leading axis of ``coords``. (default: ``None``)
-            logp (ndarray, optional): Pre-computed log-prior. If ``None``, it
-                is computed here. Points with ``-inf`` log-prior are skipped
-                and filled with ``-1e300``. (default: ``None``)
-            supps (optional): Supplemental information passed through to the
-                likelihood when ``provide_supplemental`` is set. (default: ``None``)
-            branch_supps (optional): Branch supplemental information passed
-                through to the likelihood when ``provide_supplemental`` is set.
-                (default: ``None``)
+            groups_running (xp.ndarray, optional): Integer indices of the running
+                groups along the leading axis of ``coords`` (used for
+                ``prior_transform_fn`` when ``logp`` is computed here). Default ``None``.
+            logp (xp.ndarray, optional): Pre-computed log-prior, shape
+                ``coords[name].shape[:-1]``. If ``None``, it is computed here. Points with
+                ``-inf`` log-prior are skipped and filled with ``-1e300``. Default
+                ``None``.
+            supps (object, optional): Supplemental information passed through to the
+                likelihood when ``provide_supplemental`` is set. Default ``None``.
+            branch_supps (dict, optional): ``{name: BranchSupplemental}``; restricted to the
+                in-prior points and passed through to the likelihood when
+                ``provide_supplemental`` is set. Default ``None``.
 
         Returns:
-            ndarray: Log-likelihood with the same shape as ``logp``.
-
+            xp.ndarray: Log-likelihood with the same shape as ``logp``.
         """
         if groups_running is not None:
             assert coords[self.name].shape[0] == len(groups_running)
@@ -634,12 +744,12 @@ class ParaEnsembleSampler(EnsembleSampler):
         Args:
             coords (dict): Coordinates keyed by branch ``name`` with values of
                 shape ``(num_groups_running, ntemps, nwalkers, ndim)``.
-            groups_running (ndarray, optional): Indices of the running groups
-                associated with the leading axis of ``coords``. (default: ``None``)
+            groups_running (xp.ndarray, optional): Integer indices of the running groups
+                along the leading axis of ``coords``, passed to ``prior_transform_fn``.
+                Default ``None``.
 
         Returns:
-            ndarray: Log-prior of shape ``coords[name].shape[:-1]``.
-
+            xp.ndarray: Log-prior of shape ``coords[name].shape[:-1]``.
         """
         if groups_running is not None:
             assert coords[self.name].shape[0] == len(groups_running)
@@ -662,27 +772,31 @@ class ParaEnsembleSampler(EnsembleSampler):
         return logp
 
     def run_mcmc(self, initial_state, nsteps, burn=None, post_burn_update=False, **kwargs):
-        """
-        Iterate :func:`sample` for ``nsteps`` iterations and return the result.
+        """Run :meth:`sample` for ``nsteps`` yielded states and return the last state.
+
+        An optional burn-in of ``burn`` proposal iterations runs first with
+        ``store=False`` and ``thin_by=1``. During the burn-in ``update_fn`` is called by
+        :meth:`sample` and, in addition, by this loop every
+        ``update_iterations * thin_by`` burn-in states. ``stopping_fn`` is checked every
+        ``stopping_iterations`` yielded states after the burn-in.
 
         Args:
-            initial_state (ParaState or ndarray[ngroups, ntemps, nwalkers, ndim] or dict): The initial
-                :class:`ParaState` or positions of the walkers in the
-                parameter space. If a dict, keys should be the ``name``
-                of this sampler's branch. If ``betas`` are provided in the
-                state object, they will be loaded into the sampler.
-            nsteps (int): The number of steps to generate. The total number of proposals is ``nsteps * thin_by``.
-            burn (int, optional): Number of burn steps to run before storing information. The ``thin_by`` kwarg is ignored when counting burn steps since there is no storage (equivalent to ``thin_by=1``).
-            post_burn_update (bool, optional): If ``True``, run ``update_fn`` after burn in.
-
-        Other parameters are directly passed to :func:`sample`.
+            initial_state (ParaState, np.ndarray, dict, or None): Starting point, as for
+                :meth:`sample`; ``None`` continues from the previous call's final state.
+            nsteps (int): Number of states to yield (and store). The number of proposal
+                iterations is ``nsteps * thin_by``. ``0`` returns the (burned-in) initial
+                state.
+            burn (int, optional): Burn-in proposal iterations. Default ``None`` (none).
+            post_burn_update (bool, optional): If ``True`` and ``update_fn`` is set, call
+                it once after the burn-in. Default ``False``.
+            **kwargs: Forwarded to :meth:`sample` (``thin_by``, ``store``, ``progress``).
 
         Returns:
-            ParaState: This method returns the most recent result from :func:`sample`.
+            ParaState: The last state yielded by :meth:`sample`.
 
         Raises:
-            ValueError: ``If initial_state`` is None and ``run_mcmc`` has never been called.
-
+            ValueError: ``initial_state`` is ``None`` and ``run_mcmc`` has never been
+                called, or any error raised by :meth:`sample`.
         """
         if initial_state is None:
             if self._previous_state is None:
@@ -746,13 +860,22 @@ class ParaEnsembleSampler(EnsembleSampler):
     def propose(self, state):
         """Run one stretch proposal (plus temperature swaps) on all running groups.
 
+        The walkers are split at random (global ``np.random``) into two halves; each half
+        is moved with :class:`~eryn.moves.StretchMove` using the other half as the
+        complement, then accepted when ``factors + logP_new - logP_old > log(u)``, where
+        ``factors`` are the stretch move's log proposal factors, ``u`` is uniform and
+        ``logP = beta * log_like + log_prior``. With ``gibbs_sampling_setup``, the
+        dimensions outside the mask keep their current values. When ``ntemps > 1``,
+        :meth:`tempering_operations` follows.
+
         Args:
-            state (ParaState): Current state of all groups.
+            state (ParaState): Current state of all groups (not modified; a copy is
+                updated and returned).
 
         Returns:
-            tuple: ``(new_state, accepted)`` where ``accepted`` has shape
-                ``(ngroups, ntemps, nwalkers)``.
-
+            tuple[ParaState, xp.ndarray]: ``(new_state, accepted)`` where ``accepted`` is
+            an integer array of shape ``(ngroups, ntemps, nwalkers)`` (1 where the
+            proposal was accepted).
         """
         new_state = ParaState(state, copy=True)
         groups_running = new_state.groups_running.copy()
@@ -878,7 +1001,22 @@ class ParaEnsembleSampler(EnsembleSampler):
         return new_state, accepted
 
     def tempering_operations(self, state):
-        """IN-PLACE temperature swapping"""
+        """Swap walkers between adjacent temperatures and adapt the ladder, in place.
+
+        For every running group and each rung pair ``(i - 1, i)``, from the hottest down,
+        randomly paired walkers swap coordinates, log-likelihood and log-prior with
+        acceptance ``log u < (beta_{i-1} - beta_i) * (logL_i - logL_{i-1})``. Accepted
+        counts go to ``self.swaps_accepted`` (shape ``(ngroups, ntemps - 1)``). If the
+        base temperature control is adaptive (and ``stop_adaptation`` has not been
+        reached), the interior inverse temperatures of ``state.betas`` are then adjusted
+        from the per-pair acceptance ratios with a hyperbolically decaying step, the
+        coldest and hottest rungs fixed (same scheme as
+        :class:`~eryn.moves.tempering.TemperatureControl`).
+
+        Args:
+            state (ParaState): State to update in place (coordinates, ``log_like``,
+                ``log_prior``, ``betas``).
+        """
 
         groups_running = state.groups_running.copy()
         num_groups_running = groups_running.sum().item()

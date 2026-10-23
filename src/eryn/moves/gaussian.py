@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Gaussian random-walk Metropolis move (:class:`GaussianMove`)."""
 
 import numpy as np
 
@@ -8,31 +9,40 @@ __all__ = ["GaussianMove"]
 
 
 class GaussianMove(MHMove):
-    """A Metropolis step with a Gaussian proposal function.
+    """Metropolis step with a symmetric Gaussian random-walk proposal.
 
-    This class is heavily based on the same class in ``emcee``.
+    Heavily based on the class of the same name in ``emcee``. Every alive leaf of a branch
+    is perturbed independently with that branch's proposal; the proposal is symmetric, so
+    the returned factors are zero. Values are wrapped when ``periodic`` is set.
 
     Args:
-        cov (dict): The covariance of the proposal function. The keys are branch names and the
-            values are covariance information. This information can be provided as a scalar,
-            vector, or matrix and the proposal will be assumed isotropic,
-            axis-aligned, or general, respectively.
-        mode (str, optional): Select the method used for updating parameters. This
-            can be one of ``"vector"``, ``"random"``, or ``"sequential"``. The
-            ``"vector"`` mode updates all dimensions simultaneously,
-            ``"random"`` randomly selects a dimension and only updates that
-            one, and ``"sequential"`` loops over dimensions and updates each
-            one in turn. (default: ``"vector"``)
-        factor (float, optional): If provided the proposal will be made with a
-            standard deviation uniformly selected from the range
-            ``exp(U(-log(factor), log(factor))) * cov``. This is invalid for
-            the ``"vector"`` mode. (default: ``None``)
-        **kwargs (dict, optional): Kwargs for parent classes. (default: ``{}``)
+        cov_all (dict): ``{branch_name: cov}``. ``cov`` is a scalar variance (isotropic
+            proposal), a length-``ndim`` vector of variances (axis-aligned) or an
+            ``(ndim, ndim)`` covariance matrix (general).
+        mode (str, optional): ``"vector"`` updates all parameters at once, ``"random"`` one
+            randomly chosen parameter per leaf, ``"sequential"`` one parameter per call,
+            cycling through them. A full covariance matrix only supports ``"vector"``.
+            Default ``"vector"``.
+        factor (float, optional): If given (``>= 1``), the step is scaled by
+            ``exp(U(-log(factor), log(factor)))``, one draw per call. Default ``None``.
+        **kwargs: Forwarded to :class:`~eryn.moves.MHMove` / :class:`~eryn.moves.Move`.
 
     Raises:
-        ValueError: If the proposal dimensions are invalid or if any of any of
-            the other arguments are inconsistent.
+        ValueError: ``cov`` has an invalid shape, ``factor < 1``, or ``mode`` is not
+            supported for that covariance form.
 
+    Warning:
+        The diagonal form (a 1D variance vector with more than one entry; unrelated to
+        ``mode="vector"``) currently fails at construction: the helper computes
+        ``np.linalg.cholesky`` of the 1D scale vector, which raises
+        ``numpy.linalg.LinAlgError``. Pass ``np.diag(variances)`` instead.
+
+    Example:
+        >>> import numpy as np
+        >>> from eryn.moves import GaussianMove
+        >>> move = GaussianMove({"model_0": 0.01 * np.eye(2)})
+        >>> sorted(move.all_proposal)
+        ['model_0']
     """
 
     def __init__(self, cov_all, mode="vector", factor=None, **kwargs):
@@ -66,21 +76,21 @@ class GaussianMove(MHMove):
         super().__init__(**kwargs)
 
     def get_proposal(self, branches_coords, random, branches_inds=None, **kwargs):
-        """Get proposal from Gaussian distribution
+        """Draw a Gaussian step for every selected leaf.
 
         Args:
-            branches_coords (dict): Keys are ``branch_names`` and values are
-                np.ndarray[ntemps, nwalkers, nleaves_max, ndim] representing
-                coordinates for walkers.
-            random (object): Current random state object.
-            branches_inds (dict, optional): Keys are ``branch_names`` and values are
-                np.ndarray[ntemps, nwalkers, nleaves_max] representing which
-                leaves are currently being used. (default: ``None``)
-            **kwargs (ignored): This is added for compatibility. It is ignored in this function.
+            branches_coords (dict): ``{branch_name: coords}``, shape
+                ``(ntemps, nwalkers, nleaves_max, ndim)``.
+            random (object): Random state with ``randn`` / ``randint`` / ``uniform`` /
+                ``multivariate_normal`` (``model.random``).
+            branches_inds (dict, optional): ``{branch_name: inds}``, boolean
+                ``(ntemps, nwalkers, nleaves_max)``; only these leaves move. ``None`` moves
+                every leaf. Default ``None``.
+            **kwargs: Ignored.
 
         Returns:
-            tuple: (Proposed coordinates, factors) -> (dict, np.ndarray)
-
+            tuple[dict, np.ndarray]: ``(q, factors)``: proposed coordinates with the shapes
+            of ``branches_coords`` and zeros of shape ``(ntemps, nwalkers)``.
         """
 
         # initialize ouput
@@ -132,6 +142,12 @@ class GaussianMove(MHMove):
 
 
 class _isotropic_proposal(object):
+    """Isotropic Gaussian step ``x0 + f * scale * N(0, 1)`` for rows ``(n, ndim)``.
+
+    Called as ``proposal(x0, rng) -> (x_new, zeros(n))``; ``mode`` restricts the update to
+    one random (``"random"``) or cycling (``"sequential"``) parameter per row.
+    """
+
     allowed_modes = ["vector", "random", "sequential"]
 
     def __init__(self, scale, factor, mode):
@@ -180,11 +196,15 @@ class _isotropic_proposal(object):
 
 
 class _diagonal_proposal(_isotropic_proposal):
+    """Axis-aligned Gaussian step with a per-parameter ``scale`` vector."""
+
     def get_updated_vector(self, rng, x0):
         return x0 + self.get_factor(rng) * self.scale * rng.randn(*(x0.shape))
 
 
 class _proposal(_isotropic_proposal):
+    """Correlated Gaussian step with full covariance ``scale``; ``"vector"`` mode only."""
+
     allowed_modes = ["vector"]
 
     def get_updated_vector(self, rng, x0):

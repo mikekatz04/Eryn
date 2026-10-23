@@ -1,4 +1,12 @@
 # -*- coding: utf-8 -*-
+"""Group ensemble moves: proposals built from a STATIONARY complement ("friends").
+
+:class:`GroupMove` is the reversible-jump-friendly cousin of :class:`~eryn.moves.RedBlueMove`:
+instead of the live positions of the other walkers, the complement is a frozen snapshot that
+subclasses build in :meth:`GroupMove.setup_friends` and query in
+:meth:`GroupMove.find_friends`, refreshed only every ``n_iter_update`` calls. The stock
+concrete move is :class:`~eryn.moves.GroupStretchMove`.
+"""
 import warnings
 from abc import ABC
 from copy import deepcopy
@@ -12,26 +20,49 @@ __all__ = ["GroupMove"]
 
 
 class GroupMove(Move, ABC):
-    """
-    A "group" ensemble move based on the :class:`eryn.moves.RedBlueMove`.
+    """Abstract "group" ensemble move with a stationary complement.
 
-    In moves like the :class:`eryn.moves.StretchMove`, the complimentary
-    group for which the proposal is used is chosen from the current points in
-    the ensemble. In "group" moves the complimentary group is a stationary group
-    that is updated every `n_iter_update` iterations. This update is performed with the
-    last set of coordinates to maintain detailed balance.
+    In moves like :class:`~eryn.moves.StretchMove` the complement used to build a proposal
+    is the current position of the other walkers. In a group move it is a stationary group
+    ("friends") that is rebuilt every ``n_iter_update`` calls to :meth:`propose`, from the
+    coordinates as they were at the START of that call, and held fixed in between. This is
+    the recommended in-model family under reversible jump (the sampler warns when a plain
+    :class:`~eryn.moves.StretchMove` is combined with RJ moves).
+
+    Subclasses implement :meth:`setup_friends` (build the stationary group from the
+    branches), :meth:`find_friends` (return a complement point per proposed walker) and
+    ``get_proposal``; :meth:`fix_friends` is an optional hook for leaves born through RJ.
+
+    Unlike :class:`~eryn.moves.RedBlueMove`, :meth:`propose` moves ALL walkers at once
+    (no sub-ensemble split).
 
     Args:
-        nfriends (int, optional): The number of friends to draw from as the complimentary
-            ensemble. This group is determined from the stationary group. If ``None``, it will
-            be set to the number of walkers. (default: ``None``)
-        n_iter_update (int, optional): Number of iterations to run before updating the
-            stationary distribution. (default: 100).
-        live_dangerously (bool, optional): If ``True``, allow for ``n_iter_update == 1``.
-            (deafault: ``False``)
+        nfriends (int): Number of friends a proposal draws from in the stationary group.
+            The code calls ``int(nfriends)`` at construction, so the ``None`` default
+            raises ``TypeError``; pass an integer (``propose`` would otherwise fall back to
+            ``nwalkers``).
+        n_iter_update (int, optional): Calls between stationary-group rebuilds. Default
+            ``100``.
+        live_dangerously (bool, optional): If ``True``, allow ``n_iter_update <= 1``.
+            Default ``False``.
+        **kwargs: Forwarded to :class:`~eryn.moves.Move`.
 
-    ``kwargs`` are passed to :class:`Move` class.
+    Raises:
+        ValueError: ``n_iter_update <= 1`` without ``live_dangerously``.
+        TypeError: ``nfriends`` left at ``None``.
 
+    Attributes:
+        nfriends (int): See ``nfriends``.
+        n_iter_update (int): See ``n_iter_update``.
+        iter (int): Number of :meth:`propose` calls so far.
+        current_model (:class:`eryn.model.Model`): Model of the current call (set before
+            ``get_proposal``, for subclasses).
+        current_state (:class:`eryn.state.State`): State of the current call.
+
+    Note:
+        **Independent samplers:** with ``nsamplers > 1`` the arrays this move sees are
+        FOLDED (leading axis ``nsamplers * ntemps_per_sampler``); friends must only be drawn
+        from rows of the same sampler. See :meth:`find_friends`.
     """
 
     def __init__(
@@ -48,7 +79,7 @@ class GroupMove(Move, ABC):
         self.iter = 0
 
     def find_friends(self, name, s, s_inds=None, branch_supps=None):
-        """Function for finding friends.
+        """Return the complement point for every proposed walker (implemented by subclasses).
 
         **Independent-samplers contract:** when the sampler runs with
         ``nsamplers > 1``, the arrays received here are FOLDED — axis 0 has size
@@ -62,31 +93,44 @@ class GroupMove(Move, ABC):
         catalog built from all temperatures).
 
         Args:
-            name (str): Branch name for proposal coordinates.
-            s (np.ndarray): Coordinates array for the points to be moved.
-            s_inds (np.ndarray, optional): ``inds`` arrays that represent which leaves are present.
-                (default: ``None``)
-            branch_supps (dict, optional): Keys are ``branch_names`` and values are
-                :class:`BranchSupplemental` objects. For group proposals,
-                ``branch_supps`` are the best device for passing and tracking useful
-                information. (default: ``None``)
+            name (str): Branch name of the coordinates.
+            s (xp.ndarray): Coordinates of the points to move, shape
+                ``(ntemps, nwalkers, nleaves_max, ndim)``.
+            s_inds (xp.ndarray, optional): Boolean ``inds`` of those points, shape
+                ``(ntemps, nwalkers, nleaves_max)``. Default ``None``.
+            branch_supps (dict, optional): ``{branch_name: BranchSupplemental}`` (a deep
+                copy of the state's); the natural place to carry per-leaf bookkeeping for
+                the friend lookup. Default ``None``.
 
-        Return:
-            np.ndarray: Complimentary values.
+        Returns:
+            xp.ndarray: Complement points, same shape as ``s``.
 
+        Raises:
+            NotImplementedError: Always, in this base class.
         """
         raise NotImplementedError
 
     def choose_c_vals(self, name, s, s_inds=None, branch_supps=None):
-        """Get the complimentary values."""
+        """Return the complement points; delegates to :meth:`find_friends`.
+
+        Overrides :meth:`~eryn.moves.StretchMove.choose_c_vals` (different signature) so
+        :meth:`~eryn.moves.GroupStretchMove.get_proposal` reads the stationary group.
+        """
         return self.find_friends(name, s, s_inds=s_inds, branch_supps=branch_supps)
 
     def setup(self, branches):
-        """Any setup necessary for the proposal"""
+        """Hook run at the start of every :meth:`propose` (no-op here).
+
+        Args:
+            branches (dict): The state's ``{branch_name: Branch}``.
+        """
         pass
 
     def setup_friends(self, branches):
-        """Setup anything for finding friends.
+        """Build the stationary friends group (implemented by subclasses).
+
+        Called by :meth:`propose` on the first call and every ``n_iter_update`` calls, with
+        the branches as they were at the start of the call.
 
         **Independent-samplers contract:** with ``nsamplers > 1`` the branch
         arrays are folded (axis 0 = ``nsamplers * ntemps_per_sampler``) and any
@@ -95,59 +139,68 @@ class GroupMove(Move, ABC):
         :func:`find_friends` for the full contract.
 
         Args:
-            branches (dict): Dictionary with all the current branches in the sampler.
+            branches (dict): ``{branch_name: Branch}`` of the sampler state.
 
+        Raises:
+            NotImplementedError: Always, in this base class.
         """
         raise NotImplementedError
 
     def fix_friends(self, branches):
-        """Fix any friends that were born through RJ.
+        """Optional hook to patch friends for leaves born through RJ (no-op here).
 
-        This function is not required. If not implemented, it will just return immediately.
+        Called by :meth:`propose` on every call that does not rebuild the group.
 
         Args:
-            branches (dict): Dictionary with all the current branches in the sampler.
-
+            branches (dict): ``{branch_name: Branch}`` of the sampler state.
         """
         return
 
     @classmethod
     def get_proposal(self, s_all, random, gibbs_ndim=None, s_inds_all=None, **kwargs):
-        """Generate group stretch proposal coordinates
+        """Generate proposal coordinates for all walkers (implemented by subclasses).
 
         Args:
-            s_all (dict): Keys are ``branch_names`` and values are coordinates
-                for which a proposal is to be generated.
-            random (object): Random state object.
-            gibbs_ndim (int or np.ndarray, optional): If Gibbs sampling, this indicates
-                the true dimension. If given as an array, must have shape ``(ntemps, nwalkers)``.
-                See the tutorial for more information.
-                (default: ``None``)
-            s_inds_all (dict, optional): Keys are ``branch_names`` and values are
-                ``inds`` arrays indicating which leaves are currently used. (default: ``None``)
+            s_all (dict): ``{branch_name: coords}``, shape
+                ``(ntemps, nwalkers, nleaves_max, ndim)``.
+            random (object): Sampler random state (``model.random``).
+            gibbs_ndim (int, optional): Number of parameters actually moved in this Gibbs
+                split; :meth:`propose` passes a scalar. Default ``None``.
+            s_inds_all (dict, optional): ``{branch_name: inds}`` of the leaves taking part,
+                shape ``(ntemps, nwalkers, nleaves_max)``. Default ``None``.
+            **kwargs: Extra inputs; :meth:`propose` passes ``branch_supps``.
 
         Returns:
-            tuple: First entry is new positions. Second entry is detailed balance factors.
+            tuple[dict, np.ndarray]: ``(q, factors)``: proposed coordinates with the shapes
+            of ``s_all`` and log proposal factors of shape ``(ntemps, nwalkers)``.
 
         Raises:
-            ValueError: Issues with dimensionality.
-
+            NotImplementedError: Always, in this base class.
         """
 
         raise NotImplementedError("The proposal must be implemented by " "subclasses")
 
     def propose(self, model, state):
-        """Use the move to generate a proposal and compute the acceptance
+        """Propose all walkers against the stationary group, once per Gibbs split.
+
+        Rebuilds the friends with :meth:`setup_friends` on the first call and every
+        ``n_iter_update`` calls (calling :meth:`fix_friends` on the others). For each Gibbs
+        split: deep-copy the supplementals, propose with ``get_proposal`` (passing the
+        split's ``inds`` and the copied ``branch_supps``), restore parameters outside the
+        split, score with ``model.compute_log_prior_fn`` / ``model.compute_log_like_fn``
+        (which may adjust the copied supplementals in place), accept per walker with
+        ``factors + logP_new - logP_old > log(U)`` and merge. Ends with
+        :meth:`~eryn.moves.tempering.TemperatureControl.temper_comps` when a
+        ``temperature_control`` is set.
 
         Args:
-            model (:class:`eryn.model.Model`): Carrier of sampler information.
-            state (:class:`State`): Current state of the sampler.
+            model (:class:`eryn.model.Model`): Sampler callables and ``random``.
+            state (:class:`eryn.state.State`): Current state; updated in place.
 
         Returns:
-            tuple: (state, accepted)
-                The first return is the state of the sampler after the move.
-                The second return value is the accepted count array.
-
+            tuple[:class:`eryn.state.State`, np.ndarray]: ``(state, accepted)``;
+            ``accepted`` is the boolean ``(ntemps, nwalkers)`` result of the LAST Gibbs split
+            (all splits are added to :attr:`accepted`).
         """
 
         # Check that the dimensions are compatible.

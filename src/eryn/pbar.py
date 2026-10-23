@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Progress-bar helper for the samplers: :func:`get_progress_bar` (``tqdm`` or a no-op)."""
 
 import logging
 
@@ -29,16 +30,23 @@ class _NoOpPBar(object):
 
 
 def get_progress_bar(display, total):
-    """Get a progress bar interface with given properties
+    """Return a progress-bar context manager with an ``update(n)`` method.
 
-    If the tqdm library is not installed, this will always return a "progress
-    bar" that does nothing.
+    If a bar is requested but ``tqdm`` is not installed, a warning is logged and a bar
+    that does nothing is returned.
 
     Args:
-        display (bool or str): Should the bar actually show the progress? Or a
-                               string to indicate which tqdm bar to use.
-        total (int): The total size of the progress bar.
+        display (bool or str): ``False`` for no bar, ``True`` for ``tqdm.tqdm``, or a str
+            ``s`` for ``tqdm.tqdm_<s>`` (for example ``"notebook"``).
+        total (int or None): Total number of updates (``None`` for an open-ended bar).
 
+    Returns:
+        object: A ``tqdm`` bar, or an internal no-op bar with the same interface.
+
+    Example:
+        >>> from eryn.pbar import get_progress_bar
+        >>> with get_progress_bar(False, 10) as pbar:
+        ...     pbar.update(1)
     """
     if display:
         if tqdm is None:

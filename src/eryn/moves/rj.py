@@ -1,4 +1,12 @@
 # -*- coding: utf-8 -*-
+"""Reversible-jump (trans-dimensional) proposal base class (:class:`ReversibleJumpMove`).
+
+A reversible-jump move changes which leaves of a branch are alive (the ``inds`` mask) and
+proposes coordinates for born leaves. :class:`ReversibleJumpMove` does the bookkeeping
+around a subclass's ``get_proposal``: Gibbs splits over branches, the edge factors at
+``nleaves_min`` / ``nleaves_max``, scoring, accept/reject and rung swaps without ladder
+adaptation. The stock concrete move is :class:`~eryn.moves.DistributionGenerateRJ`.
+"""
 
 from copy import deepcopy
 from multiprocessing.sharedctypes import Value
@@ -14,21 +22,44 @@ __all__ = ["ReversibleJumpMove"]
 
 
 class ReversibleJumpMove(Move):
-    """
-    An abstract reversible jump move.
+    """Abstract reversible-jump move.
+
+    Subclasses implement ``get_proposal`` (and usually ``get_model_change_proposal``).
+    :meth:`propose` adds the edge factors that correct the birth/death choice asymmetry at
+    the leaf-count limits and uses the move's (tempered) log posterior for acceptance.
+    Gibbs splits may only name branches (``is_rj=True`` is passed to
+    :class:`~eryn.moves.Move`).
 
     Args:
-        nleaves_max (dict): Maximum number(s) of leaves for each model.
-            Keys are ``branch_names`` and values are ``nleaves_max`` for each branch.
-            This is a keyword argument, nut it is required.
-        nleaves_min (dict): Minimum number(s) of leaves for each model.
-            Keys are ``branch_names`` and values are ``nleaves_min`` for each branch.
-            This is a keyword argument, nut it is required.
-        tune (bool, optional): If True, tune proposal. (Default: ``False``)
-        fix_change (int or None, optional): Fix the change in the number of leaves. Make them all
-            add a leaf or remove a leaf. This can be useful for some search functions. Options
-            are ``+1`` or ``-1``. (default: ``None``)
+        nleaves_max (dict): ``{branch_name: int}`` maximum leaf count per branch. Keyword
+            argument, but required.
+        nleaves_min (dict): ``{branch_name: int}`` minimum leaf count per branch. Keyword
+            argument, but required.
+        dr (bool or Move, optional): Delayed rejection for rejected births. ``True`` wraps a
+            :class:`~eryn.moves.DistributionGenerate` from ``self.generate_dist`` (which
+            must already be set, as :class:`~eryn.moves.DistributionGenerateRJ` does);
+            a move instance is wrapped as given; ``None`` / ``False`` disables it. The
+            propose-time delayed-rejection branch is not implemented and raises
+            ``NotImplementedError``. Default ``None``.
+        dr_max_iter (int, optional): Maximum delayed-rejection iterations. Default ``5``.
+        tune (bool, optional): Stored as ``self.tune``. Note that this instance attribute
+            shadows the :meth:`~eryn.moves.Move.tune` method. Default ``False``.
+        fix_change (int or None, optional): Force every walker to add (``+1``) or remove
+            (``-1``) a leaf (still clamped at the limits); useful for some search
+            functions. ``None`` picks the direction at random. Default ``None``.
+        **kwargs: Forwarded to :class:`~eryn.moves.Move` (``temperature_control``,
+            ``gibbs_sampling_setup``, ``prevent_swaps``, ...).
 
+    Raises:
+        ValueError: ``nleaves_min`` / ``nleaves_max`` missing or not dicts, or
+            ``fix_change`` not in ``(None, +1, -1)``.
+
+    Attributes:
+        nleaves_max (dict): See ``nleaves_max``.
+        nleaves_min (dict): See ``nleaves_min``.
+        fix_change (int or None): See ``fix_change``.
+        dr (:class:`~eryn.moves.delayedrejection.DelayedRejection`, None or False):
+            Delayed-rejection wrapper when enabled, else the ``dr`` value given.
     """
 
     def __init__(
@@ -77,83 +108,87 @@ class ReversibleJumpMove(Move):
             self.dr = DelayedRejection(dr_proposal, max_iter=dr_max_iter)
 
     def setup(self, branches_coords):
-        """Any setup for the proposal.
+        """Hook run at the start of every :meth:`propose` (no-op here).
 
         Args:
-            branches_coords (dict): Keys are ``branch_names``. Values are
-                np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent
-                coordinates for all the walkers.
-
+            branches_coords (dict): The state's ``{branch_name: Branch}`` (the caller passes
+                ``state.branches``).
         """
 
     def get_proposal(
         self, all_coords, all_inds, nleaves_min_all, nleaves_max_all, random, **kwargs
     ):
-        """Make a proposal
+        """Propose a change of model (implemented by subclasses).
 
         Args:
-            all_coords (dict): Keys are ``branch_names``. Values are
-                np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent
-                coordinates for all the walkers.
-            all_inds (dict): Keys are ``branch_names``. Values are
-                np.ndarray[ntemps, nwalkers, nleaves_max]. These are the boolean
-                arrays marking which leaves are currently used within each walker.
-            nleaves_min_all (dict): Minimum values of leaf ount for each model. Must have same order as ``all_cords``.
-            nleaves_max_all (dict): Maximum values of leaf ount for each model. Must have same order as ``all_cords``.
-            random (object): Current random state of the sampler.
-            **kwargs (ignored): For modularity.
+            all_coords (dict): ``{branch_name: coords}`` for the branches of this Gibbs
+                split, shape ``(ntemps, nwalkers, nleaves_max, ndim)``.
+            all_inds (dict): ``{branch_name: inds}``, boolean
+                ``(ntemps, nwalkers, nleaves_max)`` marking the alive leaves.
+            nleaves_min_all (dict): ``{branch_name: int}`` minimum leaf counts.
+            nleaves_max_all (dict): ``{branch_name: int}`` maximum leaf counts.
+            random (object): Sampler random state (``model.random``).
+            **kwargs: :meth:`propose` passes ``branch_supps`` (the split's branch
+                supplementals) and ``supps`` (the state supplemental).
 
         Returns:
-            tuple: Tuple containing proposal information.
-                First entry is the new coordinates as a dictionary with keys
-                as ``branch_names`` and values as
-                ``double `` np.ndarray[ntemps, nwalkers, nleaves_max, ndim] containing
-                proposed coordinates. Second entry is the new ``inds`` array with
-                boolean values flipped for added or removed sources. Third entry
-                is the factors associated with the
-                proposal necessary for detailed balance. This is effectively
-                any term in the detailed balance fraction. +log of factors if
-                in the numerator. -log of factors if in the denominator.
+            tuple[dict, dict, np.ndarray]: ``(q, new_inds, factors)``: proposed coordinates
+            (shape as ``all_coords``), proposed ``inds`` with leaves switched on (births) or
+            off (deaths), and log proposal factors of shape ``(ntemps, nwalkers)`` (``+log``
+            of numerator terms, ``-log`` of denominator terms of the acceptance ratio).
 
         Raises:
-            NotImplementedError: If this proposal is not implemented by a subclass.
-
+            NotImplementedError: Always, in this base class.
         """
         raise NotImplementedError("The proposal must be implemented by " "subclasses")
 
     def get_model_change_proposal(self, inds, random, nleaves_min, nleaves_max):
-        """Helper function for changing the model count by 1.
+        """Choose, per walker, one leaf to add or remove (implemented by subclasses).
 
-        This helper function works with nested models where you want to add or remove
-        one leaf at a time.
+        For nested models where the leaf count changes by one at a time.
 
         Args:
-            inds (np.ndarray): ``inds`` values for this specific branch with shape
+            inds (np.ndarray): Boolean ``inds`` of one branch, shape
                 ``(ntemps, nwalkers, nleaves_max)``.
-            random (object): Current random state of the sampler.
-            nleaves_min (int): Minimum allowable leaf count for this branch.
-            nleaves_max (int): Maximum allowable leaf count for this branch.
+            random (object): Sampler random state.
+            nleaves_min (int): Minimum leaf count for this branch.
+            nleaves_max (int): Maximum leaf count for this branch.
 
         Returns:
-            dict: Keys are ``"+1"`` and ``"-1"``. Values are indexing information.
-                    ``"+1"`` and ``"-1"`` indicate if a source is being added or removed, respectively.
-                    The indexing information is a 2D array with shape ``(number changing, 3)``.
-                    The length 3 is the index into each of the ``(ntemps, nwalkers, nleaves_max)``.
+            dict: ``{"+1": idx, "-1": idx}`` for births and deaths; each ``idx`` is an
+            integer array of shape ``(nchanging, 3)`` holding
+            ``(temp, walker, leaf)`` indices.
 
+        Raises:
+            NotImplementedError: Always, in this base class.
         """
 
         raise NotImplementedError
 
     def propose(self, model, state):
-        """Use the move to generate a proposal and compute the acceptance
+        r"""Run one reversible-jump step per Gibbs split (branch group).
+
+        For each split: call ``get_proposal``, restore the branches the split does not
+        touch, and add edge factors for branches with ``nleaves_max - nleaves_min >= 2``:
+        ``log(1/2)`` when the CURRENT count sits at a limit (the move there is forced) and
+        ``-log(1/2)`` when the PROPOSED count does. Then score (``mt_lp`` / ``mt_ll`` from a
+        multiple-try subclass are used when present), accept per walker with
+        ``factors + logP_new - logP_old > log(U)`` and merge. Finally, unless
+        ``prevent_swaps`` is set, run
+        :meth:`~eryn.moves.tempering.TemperatureControl.temper_comps` with
+        ``adapt=False`` (swaps, no ladder adaptation).
 
         Args:
-            model (:class:`eryn.model.Model`): Carrier of sampler information.
-            state (:class:`State`): Current state of the sampler.
+            model (:class:`eryn.model.Model`): Sampler callables and ``random``.
+            state (:class:`eryn.state.State`): Current state; updated in place.
 
         Returns:
-            :class:`State`: State of sampler after proposal is complete.
+            tuple[:class:`eryn.state.State`, np.ndarray]: ``(state, accepted)``;
+            ``accepted`` is the boolean ``(ntemps, nwalkers)`` result of the LAST split.
 
+        Raises:
+            ValueError: A split names no branch, or ``nleaves_min > nleaves_max``.
+            NotImplementedError: Delayed rejection (``dr``) is enabled.
         """
         # this exposes anywhere in the proposal class to this information
 

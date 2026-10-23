@@ -1,4 +1,19 @@
 # -*- coding: utf-8 -*-
+r"""Parallel tempering: the inverse-temperature ladder, rung swaps and ladder adaptation.
+
+:func:`make_ladder` builds a geometric ladder of inverse temperatures
+:math:`\beta = 1/T` (from ``ptemcee``). :class:`TemperatureControl` owns the ladder for a
+sampler (or for several folded independent samplers) and provides the tempered log
+posterior :math:`\beta \log L + \log p`, the neighbour-rung swaps
+(:meth:`TemperatureControl.temperature_swaps`), the ladder adaptation of arXiv:1501.05823
+(:meth:`TemperatureControl.adapt_temps`), and :meth:`TemperatureControl.temper_comps`, which
+runs both on a :class:`~eryn.state.State` at the end of a move's ``propose``.
+
+A tempered :class:`~eryn.moves.Move` holds a reference to one controller (``None`` when
+untempered). Moves that manage their own swaps (for example in LISA Analysis Tools) call
+:meth:`TemperatureControl.temperature_swaps` and :meth:`TemperatureControl.adapt_temps`
+directly, including the ``fancy_swap`` path.
+"""
 
 from copy import deepcopy
 
@@ -10,39 +25,46 @@ __all__ = ["TemperatureControl"]
 
 
 def make_ladder(ndim, ntemps=None, Tmax=None):
-    """
-    Returns a ladder of :math:`\\beta \\equiv 1/T` under a geometric spacing that is determined by the
-    arguments ``ntemps`` and ``Tmax``.  The temperature selection algorithm works as follows:
-    Ideally, ``Tmax`` should be specified such that the tempered posterior looks like the prior at
-    this temperature.  If using adaptive parallel tempering, per `arXiv:1501.05823
-    <http://arxiv.org/abs/1501.05823>`_, choosing ``Tmax = inf`` is a safe bet, so long as
-    ``ntemps`` is also specified.
+    r"""Build a geometric ladder of inverse temperatures :math:`\beta \equiv 1/T`.
 
-    This function is originally from ``ptemcee`` `github.com/willvousden/ptemcee <https://github.com/willvousden/ptemcee>`_.
+    Ideally ``Tmax`` is chosen so that the tempered posterior looks like the prior at that
+    temperature. With adaptive parallel tempering (`arXiv:1501.05823
+    <http://arxiv.org/abs/1501.05823>`_), ``Tmax = inf`` together with ``ntemps`` is a safe
+    choice. Originally from ``ptemcee`` (https://github.com/willvousden/ptemcee).
 
-    Temperatures are chosen according to the following algorithm:
-    * If neither ``ntemps`` nor ``Tmax`` is specified, raise an exception (insufficient
-    information).
-    * If ``ntemps`` is specified but not ``Tmax``, return a ladder spaced so that a Gaussian
-    posterior would have a 25% temperature swap acceptance ratio.
-    * If ``Tmax`` is specified but not ``ntemps``:
-    * If ``Tmax = inf``, raise an exception (insufficient information).
-    * Else, space chains geometrically as above (for 25% acceptance) until ``Tmax`` is reached.
-    * If ``Tmax`` and ``ntemps`` are specified:
-    * If ``Tmax = inf``, place one chain at ``inf`` and ``ntemps-1`` in a 25% geometric spacing.
-    * Else, use the unique geometric spacing defined by ``ntemps`` and ``Tmax``.`
+    The geometric step ``T_{k+1} / T_k`` is a tabulated function of ``ndim`` (for
+    ``ndim > 100`` the approximation ``1 + 2 sqrt(log 4) / sqrt(ndim)``) chosen so that a
+    Gaussian posterior would have a 25% swap acceptance between neighbours. The cases:
+
+    * only ``ntemps``: ``ntemps`` rungs at that step, ``Tmax = step**(ntemps - 1)``;
+    * only finite ``Tmax``: ``ntemps = int(log(Tmax) / log(step) + 2)`` rungs, spaced
+      geometrically from ``T = 1`` to ``Tmax``;
+    * ``ntemps`` and finite ``Tmax``: the unique geometric spacing from ``T = 1`` to ``Tmax``
+      with ``ntemps`` rungs;
+    * ``ntemps`` and ``Tmax = inf``: ``ntemps - 1`` rungs at that step plus a final
+      ``beta = 0`` rung.
 
     Args:
-        ndim (int): The number of dimensions in the parameter space.
-        ntemps (int, optional): If set, the number of temperatures to generate.
-        Tmax (float, optional): If set, the maximum temperature for the ladder.
+        ndim (int): Dimension of the parameter space. Must be a Python ``int`` (NumPy integers
+            are rejected).
+        ntemps (int, optional): Number of rungs. Default ``None``.
+        Tmax (float, optional): Maximum temperature, ``> 1`` (``np.inf`` allowed with
+            ``ntemps``). Default ``None``.
 
     Returns:
-        np.ndarray[ntemps]: Output inverse temperature (beta) array.
+        np.ndarray: Inverse temperatures, shape ``(ntemps,)``, decreasing from ``1.0``.
 
     Raises:
-        ValueError: Improper inputs.
+        ValueError: ``ndim`` or ``ntemps`` is not a positive ``int``, neither ``ntemps`` nor
+            ``Tmax`` is given, or ``Tmax <= 1``.
+        TypeError: ``Tmax = inf`` without ``ntemps``.
 
+    Example:
+        >>> import numpy as np
+        >>> from eryn.moves.tempering import make_ladder
+        >>> betas = make_ladder(2, ntemps=3)
+        >>> bool(np.allclose(betas, [1.0, 1.0 / 7.0, 1.0 / 49.0]))
+        True
     """
 
     # make sure all inputs are okay
@@ -200,55 +222,84 @@ def make_ladder(ndim, ntemps=None, Tmax=None):
 
 
 class TemperatureControl(object):
-    """Controls the temperature ladder and operations in the sampler.
+    r"""Own the temperature ladder: tempered posterior, rung swaps and ladder adaptation.
 
-    All of the tempering features within Eryn are controlled from this class.
-    This includes the evaluation of the tempered posterior, swapping between temperatures, and
-    the adaptation of the temperatures over time. The adaptive tempering model can be
-    found in the Eryn paper as well as the paper for `ptemcee`, which acted
-    as a basis for the code below.
+    All tempering in Eryn goes through this class. The tempered log posterior is
+    :math:`\beta_t \log L + \log p` per rung ``t``. Swaps exchange walkers between
+    neighbouring rungs (:meth:`temperature_swaps`); the ladder then adapts
+    (:meth:`adapt_temps`) following arXiv:1501.05823, the scheme ``ptemcee`` implements and
+    this code is based on. :meth:`temper_comps` does both on a
+    :class:`~eryn.state.State` and is what most moves call at the end of ``propose``.
 
     Args:
-        effective_ndim (int): Effective dimension used to determine temperatures if betas not given.
-        nwalkers (int): Number of walkers in the sampler. Must maintain proper order of branches.
-        ntemps (int, optional): Number of temperatures. If this is provided rather than ``betas``,
-            :func:`make_ladder` will be used to generate the temperature ladder. (default: 1)
-        betas (np.ndarray[ntemps], optional): If provided, will use as the array of inverse temperatures.
-            (default: ``None``).
-        Tmax (float, optional): If provided and ``betas`` is not provided, this will be included with
-            ``ntemps`` when determing the temperature ladder with :func:`make_ladder`.
-            See that functions docs for more information. (default: ``None``)
-        adaptive (bool, optional): If ``True``, adapt the temperature ladder during sampling.
-            (default: ``True``).
-        adaptation_lag (int, optional): lag parameter from
-            `arXiv:1501.05823 <http://arxiv.org/abs/1501.05823>`_. ``adaptation_lag`` must be
-            much greater than ``adapation_time``. (default: 10000)
-        adaptation_time (int, optional): initial amplitude of adjustments from
-            `arXiv:1501.05823 <http://arxiv.org/abs/1501.05823>`_. ``adaptation_lag`` must be
-            much greater than ``adapation_time``. (default: 100)
-        stop_adaptation (int, optional): If ``stop_adaptation > 0``, the adapating will stop after
-            ``stop_adaption`` steps. The number of steps is counted as the number times adaptation
-            has happened which is generally once per sampler iteration. For example,
-            if you only want to adapt temperatures during burn-in, you set ``stop_adaption = burn``.
-            This can become complicated when using the repeating proposal options, so the
-            user must be careful and verify constant temperatures in the backend.
-            (default: -1)
-        permute (bool, optional): If ``True``, permute the walkers in each temperature during
-            swaps. (default: ``True``)
-        skip_swap_supp_names (list, optional): List of strings that indicate supplemental keys that are not to be swapped.
-            (default: ``[]``)
-        nsamplers (int, optional): Number of independent samplers run simultaneously.
-            Each sampler carries its own temperature ladder; the ladders are FOLDED
-            into ``self.betas``, a flat array of length ``nsamplers * ntemps``
-            (see ``betas_grouped``). Swaps only occur within a sampler's own ladder
-            and each ladder adapts independently. (default: 1)
+        effective_ndim (int): Dimension passed to :func:`make_ladder` when ``betas`` is not
+            given and ``ntemps > 1``.
+        nwalkers (int): Walkers per rung.
+        ntemps (int, optional): Number of rungs when ``betas`` is not given. ``1`` gives
+            ``betas = [1.0]`` (no ``make_ladder`` call); otherwise the ladder comes from
+            :func:`make_ladder` with ``Tmax``. Ignored when ``betas`` is given. Default ``1``.
+        betas (np.ndarray, optional): Inverse temperatures to use as given: shape
+            ``(ntemps,)`` (tiled across samplers when ``nsamplers > 1``) or
+            ``(nsamplers, ntemps)`` (one ladder per sampler). Default ``None``.
+        Tmax (float, optional): Maximum temperature passed to :func:`make_ladder` with
+            ``ntemps`` when ``betas`` is not given. Default ``None``.
+        adaptive (bool, optional): If ``True``, adapt the ladder after swaps. Default ``True``.
+        adaptation_lag (int, optional): Lag of the hyperbolic decay of the adjustments
+            (arXiv:1501.05823); should be much larger than ``adaptation_time``. Default
+            ``10000``.
+        adaptation_time (int, optional): Inverse initial amplitude of the adjustments
+            (arXiv:1501.05823). Default ``100``.
+        stop_adaptation (int, optional): If ``>= 0``, adaptation stops once :attr:`time`
+            (the number of adaptations so far, generally one per sampler iteration) reaches
+            it, e.g. ``stop_adaptation = burn`` adapts only during burn-in. With repeated
+            proposals per iteration verify in the backend that the ladder is constant
+            afterwards. Negative means never stop. Default ``-1``.
+        permute (bool, optional): If ``True``, pair randomly permuted walkers of the two rungs
+            in each swap; if ``False``, walker ``k`` of rung ``t`` is paired with walker ``k``
+            of rung ``t - 1``. Can be overridden per call (``permute_here``). Default
+            ``True``.
+        skip_swap_supp_names (list, optional): Supplemental keys (state supplemental and
+            branch supplementals) that stay with their slot instead of moving with the
+            swapped walker, e.g. a per-slot walker index. Default ``[]``.
+        skip_swap_branches (list, optional): Branch names whose coordinates (and ``inds`` and
+            branch supplementals) are not swapped. Default ``[]``.
+        nsamplers (int, optional): Number of independent samplers run at once. Each sampler
+            has its own ladder; the ladders are FOLDED into the flat :attr:`betas` of length
+            ``nsamplers * ntemps`` (see :attr:`betas_grouped`). Swaps happen only within a
+            sampler's ladder, and each ladder adapts independently. Default ``1``.
+
+    Raises:
+        ValueError: 2D ``betas`` whose first axis is not ``nsamplers``.
 
     Attributes:
-        betas (np.ndarray[ntemps * nsamplers]): Flat (folded) inverse-temperature array.
-            Row ``s * ntemps + t`` of the folded sampler arrays is temperature ``t``
-            of independent sampler ``s``. For ``nsamplers == 1`` this is the usual
-            ``(ntemps,)`` ladder.
+        betas (np.ndarray): Flat (folded) inverse temperatures, shape
+            ``(nsamplers * ntemps,)``. Row ``s * ntemps + t`` is rung ``t`` of sampler ``s``.
+            For ``nsamplers == 1`` this is the usual ``(ntemps,)`` ladder.
+        ntemps (int): Rungs per sampler.
+        nwalkers (int): Walkers per rung.
+        nsamplers (int): Number of independent samplers.
+        time (int): Number of :meth:`adapt_temps` calls made with ``adaptive`` on and
+            ``ntemps > 1``; keeps counting after ``stop_adaptation`` is reached.
+        swaps_proposed (np.ndarray): Proposed swaps per neighbour pair, ``nwalkers`` each;
+            shape ``(ntemps - 1,)`` or ``(nsamplers, ntemps - 1)``.
+        swaps_accepted (np.ndarray): Accepted swaps per neighbour pair from the LAST
+            :meth:`temperature_swaps` call; same shape as :attr:`swaps_proposed`. Only exists
+            after the first call.
+        permute (bool): Default walker pairing (see ``permute``).
+        adaptive (bool): Whether :meth:`adapt_temps` changes the ladder.
+        adaptation_lag (int): See ``adaptation_lag``.
+        adaptation_time (int): See ``adaptation_time``.
+        stop_adaptation (int): See ``stop_adaptation``.
+        skip_swap_supp_names (list): See ``skip_swap_supp_names``.
+        skip_swap_branches (list): See ``skip_swap_branches``.
 
+    Example:
+        >>> from eryn.moves import TemperatureControl
+        >>> tc = TemperatureControl(2, 8, ntemps=3)
+        >>> tc.betas.shape
+        (3,)
+        >>> tc.swaps_proposed.tolist()
+        [8, 8]
     """
 
     def __init__(
@@ -321,63 +372,64 @@ class TemperatureControl(object):
 
     @property
     def ntemps_eff(self):
-        """Size of the folded leading axis: ``nsamplers * ntemps``."""
+        """int: Size of the folded leading axis, ``nsamplers * ntemps``."""
         return self.nsamplers * self.ntemps
 
     @property
     def betas_grouped(self):
-        """View of ``betas`` with the sampler axis unfolded: shape ``(nsamplers, ntemps)``.
+        """np.ndarray: :attr:`betas` unfolded to shape ``(nsamplers, ntemps)``.
 
         This is a reshape view: in-place writes update the flat ``betas`` array.
         """
         return self.betas.reshape(self.nsamplers, self.ntemps)
 
     def compute_log_posterior_tempered(self, logl, logp, betas=None):
-        """Compute the log of the tempered posterior
+        r"""Compute the tempered log posterior :math:`\beta \log L + \log p`.
+
+        The prior is not tempered. NaN products (e.g. ``0 * -inf``) become ``-inf``, see
+        :meth:`tempered_likelihood`. Installed as ``Move.compute_log_posterior`` when a move
+        has a controller.
 
         Args:
-            logl (np.ndarray): Log of the Likelihood. Can be 1D or 2D array. If 2D,
-                must have shape ``(ntemps, nwalkers)``. If 1D, ``betas`` must be provided
-                with the same shape.
-            logp (np.ndarray): Log of the Prior. Can be 1D or 2D array. If 2D,
-                must have shape ``(ntemps, nwalkers)``. If 1D, ``betas`` must be provided
-                with the same shape.
-            betas (np.ndarray[ntemps]): If provided, inverse temperatures as 1D array.
-                If not provided, it will use ``self.betas``. (default: ``None``)
+            logl (np.ndarray): Log-likelihood, shape ``(ntemps, nwalkers)`` (folded leading
+                axis), or 1D together with a matching 1D ``betas``.
+            logp (np.ndarray): Log prior, same shape as ``logl``.
+            betas (np.ndarray, optional): Inverse temperatures. For 2D ``logl`` shape
+                ``(ntemps,)``, applied along axis 0; for 1D ``logl`` same shape as ``logl``.
+                ``None`` uses :attr:`betas` (2D input only). Default ``None``.
 
         Returns:
-            np.ndarray: Log of the temperated posterior.
+            np.ndarray: Tempered log posterior, same shape as ``logl``.
 
         Raises:
-            AssertionError: Inputs are incorrectly shaped.
-
+            AssertionError: ``logl`` and ``logp`` shapes differ.
+            ValueError: 1D ``logl`` without ``betas``.
         """
         assert logl.shape == logp.shape
         tempered_logl = self.tempered_likelihood(logl, betas=betas)
         return tempered_logl + logp
 
     def tempered_likelihood(self, logl, betas=None):
-        """Compute the log of the tempered Likelihood
+        """Compute the tempered log-likelihood ``beta * logl``.
 
-        From `ptemcee`: "This is usually a mundane multiplication, except for the special case where
-        beta == 0 *and* we're outside the likelihood support.
-        Here, we find a singularity that demands more careful attention; we allow the
-        likelihood to dominate the temperature, since wandering outside the
-        likelihood support causes a discontinuity."
+        From ``ptemcee``: "This is usually a mundane multiplication, except for the special
+        case where beta == 0 *and* we're outside the likelihood support. Here, we find a
+        singularity that demands more careful attention; we allow the likelihood to dominate
+        the temperature, since wandering outside the likelihood support causes a
+        discontinuity." Concretely, any NaN in the product (``0 * -inf``) is set to ``-inf``.
 
         Args:
-            logl (np.ndarray): Log of the Likelihood. Can be 1D or 2D array. If 2D,
-                must have shape ``(ntemps, nwalkers)``. If 1D, ``betas`` must be provided
-                with the same shape.
-            betas (np.ndarray[ntemps]): If provided, inverse temperatures as 1D array.
-                If not provided, it will use ``self.betas``. (default: ``None``)
+            logl (np.ndarray): Log-likelihood, shape ``(ntemps, nwalkers)``, or 1D together
+                with a matching 1D ``betas``.
+            betas (np.ndarray, optional): Inverse temperatures; shape ``(ntemps,)`` for 2D
+                ``logl`` (``None`` uses :attr:`betas`), same shape as ``logl`` for 1D input.
+                Default ``None``.
 
         Returns:
-            np.ndarray: Log of the temperated Likelihood.
+            np.ndarray: Tempered log-likelihood, same shape as ``logl``.
 
         Raises:
-            ValueError: betas not provided if needed.
-
+            ValueError: 1D ``logl`` without ``betas``.
         """
         # perform calculation on 1D likelihoods.
         if logl.ndim == 1:
@@ -399,6 +451,7 @@ class TemperatureControl(object):
 
         return loglT
 
+    # TODO check: keep/remove/document -- superseded by _apply_swaps_vectorized; no callers
     def do_swaps_indexing(
         self,
         i,
@@ -414,6 +467,7 @@ class TemperatureControl(object):
         supps=None,
         branch_supps=None,
     ):
+        """Swap the accepted walkers between rungs ``i`` and ``i - 1`` (legacy loop version)."""
 
         # for x and inds, just do full copy
         x_temp = {name: np.copy(x[name]) for name in x}
@@ -559,7 +613,12 @@ class TemperatureControl(object):
         ``idx_i`` / ``idx_i1`` are matching ``(rows, walkers)`` fancy-index tuples
         for the higher / lower rung of each accepted pair. Because the two rungs
         occupy different rows of the folded axis, the two index sets are disjoint.
-        ``dbeta_sel`` is the per-pair inverse-temperature difference.
+        ``dbeta_sel`` is the per-pair inverse-temperature difference
+        ``beta[i - 1] - beta[i]``, used to re-temper ``logP`` for the walker's new rung.
+        Coordinates, ``inds`` and branch supplementals of branches in
+        ``skip_swap_branches`` are left in place; supplemental keys in
+        ``skip_swap_supp_names`` are not moved. All arrays are modified in place and
+        returned in the same order as :meth:`temperature_swaps` returns them.
         """
         # coordinates, inds, and branch supplementals
         for name in x:
@@ -618,34 +677,74 @@ class TemperatureControl(object):
     def temperature_swaps(
         self, x, logP, logl, logp, inds=None, blobs=None, supps=None, branch_supps=None, compute_log_like=None, compute_log_prior=None, fancy_swap=False, permute_here=None, samplers_running=None
     ):
-        """Perform parallel-tempering temperature swaps
+        r"""Propose and apply neighbour-rung swaps, cascading from the hottest rung down.
 
-        This function performs the swapping between neighboring temperatures. It cascades from
-        high temperature down to low temperature. When ``nsamplers > 1``, swaps only occur
-        within each independent sampler's own ladder (rows ``s * ntemps + t`` of the folded
-        leading axis) and are vectorized across samplers.
+        For each rung ``i = ntemps - 1, ..., 1`` every walker slot ``k`` proposes to swap
+        walker ``iperm[k]`` of rung ``i`` with walker ``i1perm[k]`` of rung ``i - 1``
+        (random permutations when permuting, the identity otherwise) and accepts with
+
+        .. math::
+
+            \log\alpha = (\beta_{i-1} - \beta_i)\,(\log L_i - \log L_{i-1}).
+
+        Accepted pairs exchange coordinates, ``inds``, ``logl``, ``logp``, blobs and
+        supplementals, and ``logP`` is re-tempered for the new rung. Because the cascade runs
+        top-down, a walker can descend several rungs in one call. The accepted counts per
+        neighbour pair are stored in :attr:`swaps_accepted` (reset on every call). With
+        ``nsamplers > 1`` swaps only happen within each sampler's ladder (rows
+        ``s * ntemps + t``) and are vectorized across samplers. The ladder is not adapted
+        here (see :meth:`adapt_temps`). The array arguments are swapped in place and also
+        returned (:meth:`temper_comps` passes copies of ``logP`` / ``logl`` / ``logp``).
+
+        With ``fancy_swap=True`` the acceptance uses likelihoods recomputed for the swapped
+        coordinates (:meth:`perform_fancy_swap_acceptance_fraction`), for likelihoods that
+        depend on the slot (for example a per-walker residual) rather than only on the
+        coordinates. After each rung's swaps the full ``logl`` (and ``logp`` when
+        ``compute_log_prior`` is given) is then recomputed, which is far more expensive.
 
         Args:
-            x (dict): Dictionary with keys as branch names and values as coordinate arrays.
-            logP (np.ndarray[ntemps, nwalkers]): Log of the posterior probability.
-            logl (np.ndarray[ntemps, nwalkers]): Log of the Likelihood.
-            logp (np.ndarray[ntemps, nwalkers]): Log of the prior probability.
-            inds (dict, optional): Dictionary with keys as branch names and values as the index arrays
-                indicating which leaves are used. (default: ``None``)
-            blobs (object, optional): Blobs associated with each walker. (default: ``None``)
-            supps (object, optional): :class:`eryn.state.BranchSupplemental` object. (default: ``None``)
-            branch_supps (dict, optional): Dictionary with keys as branch names and values as
-                :class:`eryn.state.BranchSupplemental` objects for each branch (can be ``None`` for some branches). (default: ``None``)
-            samplers_running (np.ndarray[nsamplers], optional): Boolean mask of actively
-                running samplers. Swaps are only proposed within running samplers. This
+            x (dict): ``{branch_name: coords}``, coords of shape
+                ``(ntemps, nwalkers, nleaves_max, ndim)`` (folded leading axis). Modified in
+                place.
+            logP (np.ndarray): Tempered log posterior, shape ``(ntemps, nwalkers)``.
+            logl (np.ndarray): Log-likelihood, shape ``(ntemps, nwalkers)``.
+            logp (np.ndarray): Log prior, shape ``(ntemps, nwalkers)``.
+            inds (dict, optional): ``{branch_name: inds}`` boolean
+                ``(ntemps, nwalkers, nleaves_max)``. Must be ``None`` with ``fancy_swap``.
+                Default ``None``.
+            blobs (np.ndarray, optional): Blobs, leading shape ``(ntemps, nwalkers)``.
+                Default ``None``.
+            supps (:class:`~eryn.state.BranchSupplemental`, optional): State-level
+                supplemental. Default ``None``.
+            branch_supps (dict, optional): ``{branch_name: BranchSupplemental or None}``.
+                Required (a dict, values may be ``None``) with ``fancy_swap``. Default
+                ``None``.
+            compute_log_like (callable, optional): Required with ``fancy_swap``.
+                ``compute_log_like(x, inds=..., supps=..., branch_supps=..., logp=...)``
+                returning a tuple whose first entry is the log-likelihood for the rows of
+                ``x``; it is called on two-rung slices (without ``logp``) and on the full
+                ensemble. Default ``None``.
+            compute_log_prior (callable, optional): With ``fancy_swap``,
+                ``compute_log_prior(x, inds=..., supps=..., branch_supps=...)`` recomputes
+                ``logp`` after the swaps; ``None`` keeps the swapped ``logp``. Default
+                ``None``.
+            fancy_swap (bool, optional): Use recomputed likelihoods (see above). Only for
+                ``nsamplers == 1``. Default ``False``.
+            permute_here (bool, optional): Overrides :attr:`permute` for this call; ``None``
+                uses :attr:`permute`. Default ``None``.
+            samplers_running (np.ndarray, optional): Boolean mask of running samplers, shape
+                ``(nsamplers,)``. Swaps are only proposed within running samplers. This
                 masking is required for correctness: frozen samplers carry fill values
                 (``-1e300``) in ``logl`` on every rung, so an unmasked swap would always
-                accept (``paccept = 0``) and permute frozen coordinates.
-                (default: ``None``)
+                accept (``paccept = 0``) and permute frozen coordinates. ``None`` means all
+                running. Default ``None``.
 
         Returns:
-            tuple: All of the information that was input now swapped (output in the same order as input).
+            tuple: ``(x, logP, logl, logp, inds, blobs, supps, branch_supps)`` after the swaps.
 
+        Raises:
+            NotImplementedError: ``fancy_swap`` with ``nsamplers > 1``, or with ``inds``
+                given.
         """
         if permute_here is None:
             permute_here = self.permute
@@ -759,6 +858,46 @@ class TemperatureControl(object):
         return (x, logP, logl, logp, inds, blobs, supps, branch_supps)
 
     def perform_fancy_swap_acceptance_fraction(self, dbeta, i, iperm, i1perm, x, logl, inds=None, blobs=None, supps=None, branch_supps=None, compute_log_like=None):
+        r"""Log acceptance of the rung ``i`` / ``i - 1`` swaps from recomputed likelihoods.
+
+        Builds the two-rung slice ``x[i - 1 : i + 1]`` with every proposed pair
+        ``(i, iperm[k]) <-> (i - 1, i1perm[k])`` exchanged (branch supplementals too, minus
+        ``skip_swap_supp_names``; branches in ``skip_swap_branches`` untouched), scores it in
+        ONE ``compute_log_like`` call, and returns per slot ``k``
+
+        .. math::
+
+            \log\alpha_k = \beta_i\,[L'_i - L_i]_{iperm[k]}
+                + \beta_{i-1}\,[L'_{i-1} - L_{i-1}]_{i1perm[k]},
+
+        reading each rung's change at the pair's own walker. Called by
+        :meth:`temperature_swaps` with ``fancy_swap=True`` (``nsamplers == 1`` only).
+
+        Args:
+            dbeta (float): ``beta[i - 1] - beta[i]`` (not used; the betas are read from
+                :attr:`betas`).
+            i (int): Upper rung of the pair.
+            iperm (np.ndarray): Walker order of rung ``i``, shape ``(nwalkers,)``.
+            i1perm (np.ndarray): Walker order of rung ``i - 1``, shape ``(nwalkers,)``.
+            x (dict): Full coordinates ``{branch_name: (ntemps, nwalkers, nleaves_max,
+                ndim)}`` (not modified).
+            logl (np.ndarray): Current log-likelihood, shape ``(ntemps, nwalkers)``.
+            inds (dict, optional): Must be ``None``. Default ``None``.
+            blobs (optional): Not used. Default ``None``.
+            supps (:class:`~eryn.state.BranchSupplemental`, optional): State supplemental;
+                its two-rung slice is passed to ``compute_log_like`` unswapped. Default
+                ``None``.
+            branch_supps (dict): ``{branch_name: BranchSupplemental or None}``; must be a
+                dict.
+            compute_log_like (callable): See :meth:`temperature_swaps`. Required.
+
+        Returns:
+            np.ndarray: Log acceptance per slot, shape ``(nwalkers,)``.
+
+        Raises:
+            NotImplementedError: ``inds`` is not ``None`` (RJ).
+            AssertionError: ``compute_log_like`` is ``None``.
+        """
         
         old_like = logl[i-1 :i + 1]
         if inds is not None:
@@ -838,12 +977,27 @@ class TemperatureControl(object):
         return paccept
 
     def _get_ladder_adjustment(self, time, betas0, ratios):
-        """
-        Execute temperature adjustment according to dynamics outlined in
-        `arXiv:1501.05823 <http://arxiv.org/abs/1501.05823>`_.
+        """Compute the ladder change of arXiv:1501.05823 for one adaptation step.
+
+        With ``kappa = adaptation_lag / (time + adaptation_lag) / adaptation_time`` and
+        ``A_k`` the swap acceptance ratio between rungs ``k`` and ``k + 1``, each temperature
+        gap ``T_{k+1} - T_k`` with ``k < ntemps - 2`` is multiplied by
+        ``exp(kappa * (A_k - A_{k+1}))`` and rungs ``1 .. ntemps - 2`` are rebuilt from
+        ``T_0`` by cumulative sum; the coldest and hottest rungs stay fixed. The ladder itself
+        is not modified.
 
         Axis-aware: accepts a 1D ladder ``(ntemps,)`` or stacked per-sampler
         ladders ``(nsamplers, ntemps)``; the temperature axis is always last.
+
+        Args:
+            time (int): Adaptation step counter (:attr:`time`).
+            betas0 (np.ndarray): Current ladder(s), shape ``(ntemps,)`` or
+                ``(nsamplers, ntemps)``.
+            ratios (np.ndarray): Swap acceptance ratios, shape ``(ntemps - 1,)`` or
+                ``(nsamplers, ntemps - 1)``.
+
+        Returns:
+            np.ndarray: ``new_betas - betas0``, same shape as ``betas0``.
         """
         betas = betas0.copy()
 
@@ -867,11 +1021,18 @@ class TemperatureControl(object):
     def adapt_temps(self, samplers_running=None):
         """Adapt the temperature ladder(s) from the last round of swaps.
 
-        Args:
-            samplers_running (np.ndarray[nsamplers], optional): Boolean mask of
-                actively running samplers. Only running samplers' ladders adapt.
-                (default: ``None``)
+        Uses ``swaps_accepted / swaps_proposed`` from the most recent
+        :meth:`temperature_swaps` call and applies :meth:`_get_ladder_adjustment` to
+        :attr:`betas` (per sampler when ``nsamplers > 1``). Does nothing unless ``adaptive``
+        is on and ``ntemps > 1``; then :attr:`time` advances by one, and the ladder changes
+        only while ``stop_adaptation < 0`` or ``time < stop_adaptation``. The ratios are
+        read first in every case, so calling it before any :meth:`temperature_swaps` call
+        raises ``AttributeError`` (no :attr:`swaps_accepted` yet).
 
+        Args:
+            samplers_running (np.ndarray, optional): Boolean mask of running samplers, shape
+                ``(nsamplers,)``. Only running samplers' ladders adapt (used only when
+                ``nsamplers > 1``). Default ``None``.
         """
         # determine ratios of swaps accepted to swaps proposed (the ladder is fixed)
         ratios = self.swaps_accepted / self.swaps_proposed
@@ -897,19 +1058,25 @@ class TemperatureControl(object):
             self.time += 1
 
     def temper_comps(self, state, adapt=True):
-        """Perfrom temperature-related operations on a state.
+        """Swap rungs on a state, then (optionally) adapt the ladder.
 
-        This includes making swaps and then adapting the temperatures for the next round.
+        Called at the end of ``propose`` by most moves. Computes the tempered posterior with
+        :attr:`betas`, runs :meth:`temperature_swaps` (with the state's
+        ``samplers_running`` mask, if any) on copies of ``log_like`` / ``log_prior`` and on
+        the state's coordinate, ``inds``, blob and supplemental arrays, then calls
+        :meth:`adapt_temps` when ``adapt`` is ``True``, ``adaptive`` is on and
+        ``ntemps > 1``.
 
         Args:
-            state (object): Filled ``State`` object.
-            adapt (bool, optional): If True, swaps are to be performed, but no
-                adaptation is made. In this case, ``self.time`` does not increase by 1.
-                (default: ``True``)
+            state (:class:`eryn.state.State`): Current state. Its coordinate, ``inds``,
+                blob and supplemental arrays are swapped in place.
+            adapt (bool, optional): If ``False``, swap without adapting (and without
+                advancing :attr:`time`); reversible-jump moves use this. Default ``True``.
 
         Returns:
-            :class:`eryn.state.State`: State object after swaps.
-
+            :class:`eryn.state.State`: A new state built from the swapped arrays, carrying
+            the (possibly adapted) :attr:`betas`, the input ``random_state``, ``nsamplers``
+            and ``samplers_running``.
         """
         # get initial values
         logl = state.log_like

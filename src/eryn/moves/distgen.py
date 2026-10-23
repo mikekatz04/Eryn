@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Independence Metropolis-Hastings move drawing from a fixed distribution."""
 
 import numpy as np
 
@@ -9,13 +10,27 @@ __all__ = ["DistributionGenerate"]
 
 
 class DistributionGenerate(MHMove):
-    """Generate proposals from a distribution
+    """Independence proposal: redraw every selected leaf from a fixed distribution.
+
+    Each alive leaf of a branch is replaced by a fresh draw from
+    ``generate_dist[branch]``, independent of the current point; the log factor is
+    ``log q(old) - log q(new)``. With the prior as ``generate_dist`` this is a
+    draw-from-the-prior move.
 
     Args:
-        generate_dist (dict): Dictionary with keys as branch names and items as
-            :class:`ProbDistContainer` objects that have ``logpdf``
-            and ``rvs`` methods.
+        generate_dist (dict): ``{branch_name: ProbDistContainer}``; each must be an
+            :class:`eryn.priors.ProbDistContainer` (``logpdf`` and ``rvs``).
+        *args: Forwarded to :class:`~eryn.moves.MHMove`.
+        **kwargs: Forwarded to :class:`~eryn.moves.MHMove` / :class:`~eryn.moves.Move`.
 
+    Raises:
+        ValueError: ``generate_dist`` is not a dict, or a value is not a
+            ``ProbDistContainer``.
+
+    Warning:
+        The factor accumulation ``factors[t, w] += ...`` uses NumPy fancy indexing, which
+        does not accumulate repeated ``(t, w)`` pairs: with several alive leaves per
+        walker only one leaf's term is kept.
     """
 
     def __init__(self, generate_dist, *args, **kwargs):
@@ -33,29 +48,24 @@ class DistributionGenerate(MHMove):
         super().__init__(*args, **kwargs)
 
     def get_proposal(self, branches_coords, random, branches_inds=None, **kwargs):
-        """Make a proposal
+        """Redraw every selected leaf from ``generate_dist``.
 
         Args:
-            branches_coords (dict): Keys are ``branch_names`` and values are
-                np.ndarray[ntemps, nwalkers, nleaves_max, ndim] representing
-                coordinates for walkers.
-            random (object): Current random state object.
-            branches_inds (dict, optional): Keys are ``branch_names`` and values are
-                np.ndarray[ntemps, nwalkers, nleaves_max] representing which
-                leaves are currently being used. (default: ``None``)
-            **kwargs (ignored): This is added for compatibility. It is ignored in this function.
+            branches_coords (dict): ``{branch_name: coords}``, shape
+                ``(ntemps, nwalkers, nleaves_max, ndim)``.
+            random (object): Sampler random state (not used; draws come from
+                ``generate_dist.rvs``).
+            branches_inds (dict, optional): ``{branch_name: inds}``, boolean
+                ``(ntemps, nwalkers, nleaves_max)``; only these leaves are redrawn. Default
+                ``None`` is meant to select every leaf, but that branch iterates the dict
+                without ``.items()`` and fails; :meth:`~eryn.moves.MHMove.propose` always
+                passes ``inds``.
+            **kwargs: Ignored.
 
         Returns:
-            tuple: Tuple containing proposal information.
-                First entry is the new coordinates as a dictionary with keys
-                as ``branch_names`` and values as
-                ``double `` np.ndarray[ntemps, nwalkers, nleaves_max, ndim] containing
-                proposed coordinates. Second entry
-                is the factors associated with the
-                proposal necessary for detailed balance. This is effectively
-                any term in the detailed balance fraction. +log of factors if
-                in the numerator. -log of factors if in the denominator.
-
+            tuple[dict, np.ndarray]: ``(q, factors)``: proposed coordinates with the shapes
+            of ``branches_coords`` and log factors ``log q(old) - log q(new)`` of shape
+            ``(ntemps, nwalkers)``.
         """
 
         # set up all initial holders

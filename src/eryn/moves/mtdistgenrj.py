@@ -1,3 +1,4 @@
+"""Multiple-try reversible-jump move drawing births from a fixed distribution."""
 import numpy as np
 
 from eryn.moves import DistributionGenerateRJ
@@ -5,21 +6,39 @@ from eryn.moves.multipletry import MultipleTryMoveRJ
 
 
 class MTDistGenMoveRJ(MultipleTryMoveRJ, DistributionGenerateRJ):
-    def __init__(self, generate_dist, *args, **kwargs):
-        """Perform a reversible-jump multiple try move based on a distribution.
-    
-        Distribution must be independent of the current point.
-        
-        This is effectively an example of the mutliple try class inheritance structure.
-        
-        Args:
-            generate_dist (dict): Keys are branch names and values are :class:`ProbDistContainer` objects 
-                that have ``logpdf`` and ``rvs`` methods. If you 
-            *args (tuple, optional): Additional arguments to pass to parent classes.
-            **kwargs (dict, optional): Keyword arguments passed to parent classes.
+    """Reversible-jump multiple-try move with births drawn from a fixed distribution.
 
-            
-        """
+    The birth/death choice comes from
+    :meth:`~eryn.moves.DistributionGenerateRJ.get_model_change_proposal`; each birth draws
+    ``num_try`` candidates from ``generate_dist[branch]`` (independent of the current
+    point) and picks one by importance weight; each death is scored as the reverse of such
+    a birth. ``rj=True`` is forced. Works on one branch per Gibbs split and needs a
+    ``temperature_control`` (the sampler attaches one). Also serves as the reference
+    example of the multiple-try RJ inheritance structure.
+
+    Args:
+        generate_dist (dict): ``{branch_name: ProbDistContainer}`` with ``logpdf`` and
+            ``rvs`` (e.g. the priors).
+        *args: Forwarded to :class:`~eryn.moves.DistributionGenerateRJ`.
+        **kwargs: Passed to :class:`~eryn.moves.multipletry.MultipleTryMoveRJ`
+            (``num_try``) and :class:`~eryn.moves.DistributionGenerateRJ` (``nleaves_max``
+            and ``nleaves_min`` are required there).
+
+    Example:
+        .. code-block:: python
+
+            from eryn.moves import MTDistGenMoveRJ
+
+            rj_move = MTDistGenMoveRJ(
+                priors,  # {"gauss": ProbDistContainer(...)}
+                nleaves_max={"gauss": 8},
+                nleaves_min={"gauss": 0},
+                num_try=25,
+            )
+    """
+
+    def __init__(self, generate_dist, *args, **kwargs):
+        """Initialise both parents with ``rj=True``; see the class docstring."""
         kwargs["rj"] = True
         MultipleTryMoveRJ.__init__(self, **kwargs)
         DistributionGenerateRJ.__init__(self, generate_dist, *args, **kwargs)
@@ -27,38 +46,38 @@ class MTDistGenMoveRJ(MultipleTryMoveRJ, DistributionGenerateRJ):
         self.generate_dist = generate_dist
 
     def special_generate_logpdf(self, generated_coords):
-        """Get logpdf of generated coordinates.
-        
+        """Log density of ``generate_dist[self.key_in]`` at the given points.
+
         Args:
-            generated_coords (np.ndarray): Current coordinates of walkers. 
-            
+            generated_coords (np.ndarray): Points, shape ``(n, ndim)``.
+
         Returns:
-            np.ndarray: logpdf of generated points.
-            """
+            np.ndarray: Log density, shape ``(n,)``.
+        """
         return self.generate_dist[self.key_in].logpdf(generated_coords)
 
     def special_generate_func(
         self, coords, random, size=1, fill_tuple=None, fill_values=None
     ):
-        """Generate samples and calculate the logpdf of their proposal function.
-        
+        """Draw ``size`` tries per walker from ``generate_dist[self.key_in]``.
+
         Args:
-            coords (np.ndarray): Current coordinates of walkers. 
-            random (obj): Random generator.
-            *args (tuple, optional): additional arguments passed by overwriting the 
-                ``get_proposal`` function and passing ``args_generate`` keyword argument.
-            size (int, optional): Number of tries to generate. 
-            fill_tuple (tuple, optional): Length 2 tuple with the indexing of which values to fill
-                when generating. Can be used for auxillary proposals or reverse RJ proposals. First index is the index into walkers and the second index is 
-                the index into the number of tries. (default: ``None``)
-            fill_values (np.ndarray): values to fill associated with ``fill_tuple``. Should 
-                have size ``(len(fill_tuple[0]), ndim)``. (default: ``None``).
-            **kwargs (tuple, optional): additional keyword arguments passed by overwriting the 
-                ``get_proposal`` function and passing ``kwargs_generate`` keyword argument.
+            coords (np.ndarray): Current leaf coordinates, shape ``(nwalkers, ndim)`` (only
+                the walker count is used).
+            random (object): Not used; draws come from ``rvs``.
+            size (int, optional): Tries per walker. Default ``1``.
+            fill_tuple (tuple, optional): ``(walker_idx, try_idx)`` entries to overwrite with
+                ``fill_values`` after drawing (the removed leaves of reverse proposals).
+                Default ``None``.
+            fill_values (np.ndarray, optional): Values for ``fill_tuple``, shape
+                ``(len(fill_tuple[0]), ndim)``. Default ``None``.
 
         Returns:
-            tuple: (generated points, logpdf of generated points).
-        
+            tuple[np.ndarray, np.ndarray]: Tries of shape ``(nwalkers, size, ndim)`` and their
+            log density, shape ``(nwalkers, size)``.
+
+        Raises:
+            ValueError: ``size`` is not an ``int``.
         """
         nwalkers = coords.shape[0]
 
@@ -77,16 +96,20 @@ class MTDistGenMoveRJ(MultipleTryMoveRJ, DistributionGenerateRJ):
         return generated_coords, generated_logpdf
 
     def set_coords_and_inds(self, generated_coords, inds_leaves_rj=None):
-        """Setup coordinates for prior and Likelihood
-        
+        """Build coordinate and ``inds`` dicts with each try inserted into its walker's slot.
+
+        Every walker's current leaves are repeated ``num_try`` times along a flattened walker
+        axis, the try is written into leaf ``inds_leaves_rj`` (switched on), and the other
+        branches are tiled to match.
+
         Args:
-            generated_coords (np.ndarray): Generated coordinates with shape ``(number of independent walkers, num_try)``.
-            inds_leaves_rj (np.ndarray): Index into each individual walker giving the
-                leaf index associated with this proposal. Should only be used if ``self.rj is True``. (default: ``None``)
+            generated_coords (np.ndarray): Tries, shape ``(nwalkers, num_try, ndim)``.
+            inds_leaves_rj (np.ndarray): Leaf slot per walker, shape ``(nwalkers,)``.
+                Default ``None`` (required in practice).
 
         Returns:
-            dict: Coordinates for Likelihood and Prior.
-        
+            tuple[dict, dict]: ``(coords, inds)`` with leading shape
+            ``(1, nwalkers * num_try)``, for ``compute_log_like_fn`` / ``compute_log_prior_fn``.
         """
         coords_in = np.repeat(
             self.current_state.branches[self.key_in].coords.reshape(
@@ -152,16 +175,16 @@ class MTDistGenMoveRJ(MultipleTryMoveRJ, DistributionGenerateRJ):
         return coords_in_dict, inds_in_dict
 
     def special_like_func(self, generated_coords, inds_leaves_rj=None, **kwargs):
-        """Calculate the Likelihood for sampled points.
-        
+        """Log-likelihood of every try through ``self.current_model.compute_log_like_fn``.
+
         Args:
-            generated_coords (np.ndarray): Generated coordinates with shape ``(number of independent walkers, num_try)``. 
-            inds_leaves_rj (np.ndarray): Index into each individual walker giving the
-                leaf index associated with this proposal. Should only be used if ``self.rj is True``. (default: ``None``)
+            generated_coords (np.ndarray): Tries, shape ``(nwalkers, num_try, ndim)``.
+            inds_leaves_rj (np.ndarray): Leaf slot per walker, shape ``(nwalkers,)``.
+                Default ``None`` (required in practice).
+            **kwargs: Ignored.
 
         Returns:
-            np.ndarray: Likelihood values with shape ``(generated_coords.shape[0], num_try).``
-        
+            np.ndarray: Log-likelihood, shape ``(nwalkers, num_try)``.
         """
         coords_in, inds_in = self.set_coords_and_inds(
             generated_coords, inds_leaves_rj=inds_leaves_rj
@@ -171,16 +194,16 @@ class MTDistGenMoveRJ(MultipleTryMoveRJ, DistributionGenerateRJ):
         return ll
 
     def special_prior_func(self, generated_coords, inds_leaves_rj=None, **kwargs):
-        """Calculate the Prior for sampled points.
-        
+        """Log prior of every try through ``self.current_model.compute_log_prior_fn``.
+
         Args:
-            generated_coords (np.ndarray): Generated coordinates with shape ``(number of independent walkers, num_try)``. 
-            inds_leaves_rj (np.ndarray): Index into each individual walker giving the
-                leaf index associated with this proposal. Should only be used if ``self.rj is True``. (default: ``None``)
-            
+            generated_coords (np.ndarray): Tries, shape ``(nwalkers, num_try, ndim)``.
+            inds_leaves_rj (np.ndarray): Leaf slot per walker, shape ``(nwalkers,)``.
+                Default ``None`` (required in practice).
+            **kwargs: Ignored.
+
         Returns:
-            np.ndarray: Prior values with shape ``(generated_coords.shape[0], num_try).``
-        
+            np.ndarray: Log prior, shape ``(nwalkers, num_try)``.
         """
         coords_in, inds_in = self.set_coords_and_inds(
             generated_coords, inds_leaves_rj=inds_leaves_rj

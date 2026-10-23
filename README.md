@@ -17,12 +17,34 @@ To import eryn:
 from eryn.ensemble import EnsembleSampler
 ```
 
+A minimal run (a 3-dimensional Gaussian likelihood with uniform priors):
+
+```python
+import numpy as np
+from eryn.ensemble import EnsembleSampler
+from eryn.priors import ProbDistContainer, UniformDistribution
+
+def log_like_fn(x, mu, invcov):
+    diff = x - mu
+    return -0.5 * diff @ invcov @ diff
+
+ndim, nwalkers = 3, 16
+priors = ProbDistContainer({f"x{i}": UniformDistribution(-5.0, 5.0) for i in range(ndim)})
+sampler = EnsembleSampler(nwalkers, ndim, log_like_fn, priors, args=[np.zeros(ndim), np.eye(ndim)])
+
+start = priors.rvs(size=(nwalkers,))
+state = sampler.run_mcmc(start, 100, progress=False)
+
+# chain shape: (nsteps, ntemps, nwalkers, nleaves_max, ndim) = (100, 1, 16, 1, 3)
+chain = sampler.get_chain()["model_0"]
+```
+
 See [examples notebook](https://github.com/lisa-analysis-tools/Eryn/blob/main/examples/Eryn_tutorial.ipynb) for more info. You can also navigate the [Documentation](https://lisa-analysis-tools.github.io/Eryn/index.html) pages.
 
 
 ### Prerequisites
 
-Eryn has only a few python-based dependencies: `tqdm`, `corner` for plotting, `numpy`, `matplotlib`. 
+Eryn is pure Python (it ships no compiled code). Its main dependencies are `numpy`, `scipy`, `h5py` (for the HDF5 backend), `tqdm`, `matplotlib`, `corner`, `pandas` and `seaborn` (the plotting utilities, imported with the sampler), and `gpubackendtools` (the array backend of the deprecated `ParaEnsembleSampler`). The full list is in `pyproject.toml`. `cupy` is optional: when it is installed, some classes can keep their arrays on the GPU.
 
 ### Installing
 
@@ -42,7 +64,7 @@ python -m unittest discover
 
 ## Contributing
 
-Please read [CONTRIBUTING](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us. See [CONTRIBUTORS](CONTRIBUTORS.md) for those that have authored code for and contributed to Eryn.
+Please read [CONTRIBUTING](https://github.com/lisa-analysis-tools/Eryn/blob/main/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us. See [CONTRIBUTORS](https://github.com/lisa-analysis-tools/Eryn/blob/main/CONTRIBUTORS.md) for those that have authored code for and contributed to Eryn.
 
 ## Versioning
 
@@ -100,7 +122,7 @@ Depending on which proposals are used, you may be required to cite more sources.
 
 ## License
 
-This project is licensed under the GNU License - see the [LICENSE.md](LICENSE) file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](https://github.com/lisa-analysis-tools/Eryn/blob/main/LICENSE) file for details.
 
 ## Acknowledgments
 

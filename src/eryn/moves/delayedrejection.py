@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+"""Delayed rejection for rejected reversible-jump births (not functional).
+
+:class:`DelayedRejection` is built by :class:`~eryn.moves.ReversibleJumpMove` when ``dr`` is
+set, but the propose-time delayed-rejection branch in ``ReversibleJumpMove.propose`` raises
+``NotImplementedError`` before it is called. Not exported from :mod:`eryn.moves`.
+"""
 
 from copy import deepcopy
 
@@ -10,7 +16,10 @@ from .move import Move
 __all__ = ["MHMove"]
 
 
+# TODO check: keep/remove/document -- no users; DelayedRejection never instantiates it
 class DelayedRejectionContainer:
+    """Lists of per-iteration delayed-rejection values (coords, log_prob, log_prior, alpha)."""
+
     def __init__(self, **kwargs):
         for key, item in kwargs.items():
             setattr(self, key, item)
@@ -28,6 +37,7 @@ class DelayedRejectionContainer:
         self.alpha.append(new_alpha)
 
 
+# TODO check: keep/remove/document -- RJ(dr=) DR branch raises NotImplementedError; dev example only
 class DelayedRejection(Move):
     r"""
     Delayed Rejection scheme assuming symmetric and non-adaptive proposal distribution.
@@ -61,13 +71,23 @@ class DelayedRejection(Move):
         inds=None,
         dr_iter=0,
     ):
-        """Calcuate the delayed rejection acceptace ratio.
+        """Run one delayed-rejection stage for the walkers in ``keep_rejected``.
 
         Args:
-            stateslist (:class:`State`): a python list containing the proposed states
+            state (:class:`State`): Current state; updated in place.
+            new_state (:class:`State`): Previously proposed (rejected) state, carrying
+                ``past_alpha`` in its supplemental.
+            keep_rejected (np.ndarray): Boolean ``(ntemps, nwalkers)`` mask of walkers to
+                re-propose.
+            model (:class:`eryn.model.Model`): Sampler callables and ``random``.
+            ntemps (int): Number of temperatures.
+            nwalkers (int): Number of walkers.
+            inds_for_change (dict): Birth/death indices per branch (unused here).
+            inds (dict, optional): Unused. Default ``None``.
+            dr_iter (int, optional): Unused. Default ``0``.
 
         Returns:
-            logalpha: a numpy array containing the acceptance ratios per temperature and walker.
+            tuple: ``(state, new_accepted, new_state)``.
         """
         # Draw a uniform random for the previously rejected points
         randU = model.random.rand(
@@ -158,20 +178,22 @@ class DelayedRejection(Move):
         inds_for_change,
         factors,
     ):
-        """Use the move to generate a proposal and compute the acceptance
+        """Apply delayed rejection to the rejected births of an RJ proposal.
 
         Args:
-            accepted ():
-            model (:class:`eryn.model.Model`): Carrier of sampler information.
+            log_diff_0 (np.ndarray): Log acceptance of the first-stage proposal,
+                ``(ntemps, nwalkers)``.
+            accepted (np.ndarray): First-stage accept flags, ``(ntemps, nwalkers)``.
+            model (:class:`eryn.model.Model`): Sampler callables and ``random``.
             state (:class:`State`): Current state of the sampler.
-            rj_inds (): Dictionary containing the indices where the Reversible Jump
-            move proposed "birth" of a model. Will we operate a Delayed Rejection type
-            of move only on those cases. The keys of the dictionary are the names of the
-            models.
+            new_state (:class:`State`): First-stage proposed state.
+            inds (dict): Proposed ``inds`` per branch.
+            inds_for_change (dict): ``{branch_name: {"+1": idx}}`` where the RJ move
+                proposed births; delayed rejection only acts on those.
+            factors (np.ndarray): First-stage proposal factors (unused).
 
         Returns:
-            :class:`State`: State of sampler after proposal is complete.
-
+            tuple: ``(state, accepted)``.
         """
 
         # Check to make sure that the dimensions match.

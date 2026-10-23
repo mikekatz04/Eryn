@@ -1,8 +1,14 @@
-"""The base Prior classes.
+"""Base classes for Eryn priors.
 
-Provides a functional, stateless base Prior class supporting GPU acceleration,
-automatic conditional dependency tracking via method signatures, and 
-seamless transformations between physical and sampling parameter spaces.
+:class:`AbstractPrior` holds what every prior shares: the numpy / cupy backend switch
+(``use_cupy`` / ``return_gpu`` and the :attr:`AbstractPrior.xp` module), the conditional
+dependency names inferred from the subclass ``logpdf`` / ``rvs`` signatures
+(``required_variables``, read by :class:`~eryn.priors.probdist.ProbDistContainer`), and a
+metadata ``__repr__``. :class:`Prior` is the 1-D base: domain bounds, boundary label, LaTeX
+label and unit, and the optional transforms between the SAMPLING space (where ``rvs`` /
+``logpdf`` live) and the PHYSICAL space (where the ``*_physical`` methods live).
+:class:`PriorException` is an exported exception class for user code (the priors here do not
+raise it).
 """
 
 from __future__ import annotations
@@ -23,21 +29,38 @@ except ImportError:
 
 
 class PriorException(Exception):
-    """General base class for all prior exceptions"""
+    """General base class for prior exceptions.
+
+    Exported from :mod:`eryn.priors` for user code; the priors in this package raise
+    ``ValueError`` / ``NotImplementedError`` rather than this class.
+    """
     pass
 
 
 class AbstractPrior:
-    """Base class for shared Prior functionality.
+    """Base class for shared prior functionality (backend, dependencies, metadata).
 
-    Handles device resolution, automatic dependency inference, and metadata strings.
+    On construction the subclass's own ``logpdf`` and ``rvs`` signatures are inspected
+    (``_infer_dependencies``): every named parameter other than ``self``, ``x``,
+    ``size``, ``rng``, ``random_state``, ``args`` and ``kwargs`` is a conditional variable,
+    stored in ``required_variables``. :class:`~eryn.priors.probdist.ProbDistContainer` then
+    feeds those variables from its keyword arguments or from the other columns of the
+    input array.
 
     Args:
-        use_cupy (bool, optional): If ``True``, uses CuPy for GPU acceleration.
-            (default: ``False``)
-        return_gpu (bool, optional): If ``True``, returns GPU arrays when 
-            ``use_cupy`` is ``True``. (default: ``False``)
+        use_cupy: If ``True``, compute with CuPy (``xp`` is ``cupy``). Default ``False``.
+        return_gpu: If ``True`` (and ``use_cupy``), return CuPy arrays; if ``False``,
+            results are moved to the host with ``.get()``. Default ``False``.
 
+    Attributes:
+        use_cupy (bool): Backend flag; :attr:`xp` is derived from it.
+        return_gpu (bool): Whether results stay on the device.
+        required_variables (tuple[str, ...]): Sorted conditional-variable names inferred
+            from the subclass ``logpdf`` / ``rvs`` signatures. Only methods defined
+            directly on the concrete class are inspected (inherited ones are skipped).
+
+    Raises:
+        ImportError: If ``use_cupy`` is ``True`` and CuPy is not installed.
     """
 
     def __init__(self, use_cupy: bool = False, return_gpu: bool = False):
@@ -50,20 +73,21 @@ class AbstractPrior:
 
     @property
     def xp(self):
-        """numpy or cupy, resolved from ``use_cupy`` (kept as a flag so the
-        prior remains deepcopy/pickle-safe -- storing the module directly
-        as an instance attribute breaks copy.deepcopy of settings trees
-        that contain priors). The module is imported once at import time
-        and cached in a module-level global, so this is a cheap lookup.
+        """module: ``numpy`` or ``cupy``, resolved from ``use_cupy``.
+
+        ``use_cupy`` is kept as a flag so the prior stays deepcopy / pickle safe (storing
+        the module as an instance attribute breaks ``copy.deepcopy`` of settings trees that
+        contain priors). CuPy is imported once at module import and cached in a
+        module-level global, so this is a cheap lookup.
         """
         return _CUPY if self.use_cupy else np
 
     def _infer_dependencies(self):
-        """Automatically infer dependencies from subclass signatures.
-        
-        Evaluates ``logpdf`` and ``rvs`` to determine required conditional 
-        parameters and caches the class initialization keys for fast ``__repr__`` 
-        evaluation.
+        """Infer conditional variables from the subclass signatures and cache repr keys.
+
+        Inspects ``logpdf`` and ``rvs`` (only when defined directly on the concrete class)
+        and stores every non-reserved named parameter in ``required_variables``. Also caches
+        the ``__init__`` parameter names in ``_repr_keys`` for :meth:`__repr__`.
         """
         deps = set()
         reserved_kwargs = {"self", "x", "size", "rng", "random_state", "kwargs", "args"}
@@ -95,13 +119,14 @@ class AbstractPrior:
         ]
 
     def _to_device(self, array: NDArrayLike) -> NDArrayLike:
-        """Safely move arrays back to CPU if requested.
+        """Move a result to the host when ``use_cupy`` is set and ``return_gpu`` is not.
 
         Args:
-            array (NDArrayLike): The array to format.
+            array: The result to format.
 
         Returns:
-            NDArrayLike: CPU or GPU array depending on instance settings.
+            NDArrayLike: ``array.get()`` (or ``np.asarray(array)``) when ``use_cupy`` is set
+            and ``return_gpu`` is not; otherwise ``array`` unchanged.
         """
         if self.use_cupy and not self.return_gpu:
             if hasattr(array, "get"):
@@ -112,8 +137,12 @@ class AbstractPrior:
     def __repr__(self) -> str:
         """String representation of the prior for metadata serialization.
 
+        Lists ``ClassName(key=value, ...)`` for every ``__init__`` parameter that is stored
+        as an attribute of the same name with a ``str`` / ``int`` / ``float`` / ``tuple`` /
+        ``list`` / ``bool`` value; other parameters are omitted.
+
         Returns:
-            str: Evaluatable string representation of the object.
+            str: The representation.
         """
         class_name = self.__class__.__name__
         args = []
@@ -138,6 +167,74 @@ class AbstractPrior:
 
 
 class Prior(AbstractPrior):
+    """Base class for 1-D priors.
+
+    A subclass implements ``rvs(size=..., **kwargs)`` and ``logpdf(x, **kwargs)`` in the
+    SAMPLING space. Extra named parameters in those signatures (for example
+    ``logpdf(self, x, a=0.0, **kwargs)``) declare conditional variables (see
+    :class:`AbstractPrior`). When ``forward_transform`` / ``inverse_transform`` /
+    ``log_jacobian`` are given, the ``*_physical`` methods evaluate the same distribution in
+    the PHYSICAL space:
+
+    .. code-block:: text
+
+        rvs_physical     = inverse_transform(rvs(...))
+        logpdf_physical  = logpdf(forward_transform(x_phys)) + log_jacobian(x_phys)
+
+    Args:
+        name: Name associated with the prior. Default ``None``.
+        name_phys: Name of the associated physical parameter. Default ``None`` (use
+            ``name``).
+        latex_label: LaTeX label. Default ``None``: look ``name`` up in the class-level
+            ``_default_latex_labels`` dict, else use ``str(name)``.
+        unit: LaTeX string with the units. Default ``None``.
+        minimum: Lower bound of the SAMPLING-space domain. Default ``-np.inf``.
+        maximum: Upper bound of the SAMPLING-space domain. Default ``np.inf``.
+        boundary: Boundary-condition label: ``None``, ``"periodic"`` or ``"reflective"``.
+            Stored as metadata only; Eryn's proposals take periodicity from
+            :class:`~eryn.utils.PeriodicContainer`, not from this field. Default ``None``.
+        check_range_nonzero: If ``True``, require ``maximum > minimum``. Default ``True``.
+        use_cupy: Compute with CuPy. Default ``False``.
+        return_gpu: Return CuPy arrays (when ``use_cupy``). Default ``False``.
+        forward_transform: Callable ``f(x_phys, **kwargs) -> x_samp`` from the physical to
+            the sampling space. Default ``None``.
+        inverse_transform: Callable ``g(x_samp, **kwargs) -> x_phys`` from the sampling to
+            the physical space. Default ``None``.
+        log_jacobian: Callable ``h(x_phys, **kwargs)`` returning
+            ``log|d x_samp / d x_phys|`` at the physical value. Default ``None``.
+
+    Attributes:
+        name (str or None): Prior name.
+        name_phys (str or None): Physical parameter name.
+        boundary (str or None): Boundary-condition label.
+        forward_transform (callable or None): Physical -> sampling map.
+        inverse_transform (callable or None): Sampling -> physical map.
+        log_jacobian (callable or None): ``log|d x_samp / d x_phys|``.
+
+    Raises:
+        ValueError: If ``check_range_nonzero`` and ``maximum <= minimum``, or ``boundary`` is
+            not one of the supported labels.
+        ImportError: If ``use_cupy`` is ``True`` and CuPy is not installed.
+
+    Example:
+        A conditional prior whose support follows another column ``a``:
+
+        >>> import numpy as np
+        >>> from eryn.priors import Prior, ProbDistContainer, UniformDistribution
+        >>> class Shifted(Prior):
+        ...     def rvs(self, size=(1,), a=0.0, **kwargs):
+        ...         return np.asarray(a) + np.random.uniform(0.0, 1.0, size=size)
+        ...     def logpdf(self, x, a=0.0, **kwargs):
+        ...         d = np.asarray(x) - np.asarray(a)
+        ...         return np.where((d >= 0.0) & (d <= 1.0), 0.0, -np.inf)
+        >>> Shifted().required_variables
+        ('a',)
+        >>> priors = ProbDistContainer({"a": UniformDistribution(0.0, 5.0), "b": Shifted()})
+        >>> x = priors.rvs(size=3)
+        >>> bool(np.all(np.isfinite(priors.logpdf(x))))
+        True
+    """
+
     _default_latex_labels = {}
 
     def __init__(
@@ -156,27 +253,7 @@ class Prior(AbstractPrior):
         inverse_transform: Callable[..., NDArrayLike] | None = None,
         log_jacobian: Callable[..., NDArrayLike] | None = None,
     ):
-        """Main 1D prior constructor.
-
-        Args:
-            name (str, optional): Name associated with prior. (default: ``None``)
-            name_phys (str, optional): Name of the associated physical parameter. 
-                Defaults to name if not provided. (default: ``None``)
-            latex_label (str, optional): Latex label associated with prior. (default: ``None``)
-            unit (str, optional): A Latex string describing the units. (default: ``None``)
-            minimum (float, optional): Minimum of the domain. (default: ``-np.inf``)
-            maximum (float, optional): Maximum of the domain. (default: ``np.inf``)
-            boundary (str, optional): Boundary condition (None, 'periodic', 'reflective'). (default: ``None``)
-            check_range_nonzero (bool, optional): If ``True``, check that the range is > 0. (default: ``True``)
-            use_cupy (bool, optional): If ``True``, uses CuPy for acceleration. (default: ``False``)
-            return_gpu (bool, optional): If ``True``, returns GPU arrays. (default: ``False``)
-            forward_transform (callable, optional): Transform from physical to sampling space. (default: ``None``)
-            inverse_transform (callable, optional): Transform from sampling to physical space. (default: ``None``)
-            log_jacobian (callable, optional): Log Jacobian of the physical to sampling transform. (default: ``None``)
-                
-        Raises:
-            ValueError: If ``check_range_nonzero`` is True and maximum <= minimum, or boundary is invalid.
-        """
+        """Build the 1-D prior (arguments are documented on the class)."""
         super().__init__(use_cupy=use_cupy, return_gpu=return_gpu)
 
         if check_range_nonzero and maximum <= minimum:
@@ -208,17 +285,20 @@ class Prior(AbstractPrior):
         size: int | tuple[int, ...] = (1,), 
         **kwargs
     ) -> NDArrayLike:
-        """Draws a random variable(s) from the prior distribution.
+        """Draw samples in the SAMPLING space (override in subclasses).
+
+        The base implementation only validates ``size`` and then raises.
 
         Args:
-            size (int or tuple of int, optional): Size of the sample. (default: ``(1,)``)
-            **kwargs: Additional keyword arguments for conditional priors.
+            size: Output shape; an ``int`` means ``(size,)``. Default ``(1,)``.
+            **kwargs: Conditional variables (and any extra options) for subclasses.
 
         Returns:
-            NDArrayLike: A random sample drawn from the prior distribution.
+            NDArrayLike: Samples of shape ``size`` (in subclasses).
 
         Raises:
-            ValueError: If size is not an integer or a tuple of integers.
+            ValueError: If ``size`` is not an ``int`` or a tuple.
+            NotImplementedError: Always, in the base class.
         """
         if not isinstance(size, int) and not isinstance(size, tuple):
             raise ValueError("size must be an integer or tuple of ints.")
@@ -232,14 +312,16 @@ class Prior(AbstractPrior):
         size: int | tuple[int, ...] = (1,), 
         **kwargs
     ) -> NDArrayLike:
-        """Draw a random sample in the physical parameter space. 
-        
+        """Draw samples in the PHYSICAL space: ``inverse_transform(rvs(size))``.
+
+        Without an ``inverse_transform`` this returns the :meth:`rvs` samples unchanged.
+
         Args:
-            size (int or tuple of int, optional): Size of the sample. (default: ``(1,)``)
-            **kwargs: Additional keyword arguments to pass to the rvs method.
-            
+            size: Output shape; an ``int`` means ``(size,)``. Default ``(1,)``.
+            **kwargs: Forwarded to :meth:`rvs` and to ``inverse_transform``.
+
         Returns:
-            NDArrayLike: A random sample in the physical parameter space.
+            NDArrayLike: Physical-space samples of shape ``size``.
         """
         samples = self.rvs(size=size, **kwargs)
         if self.inverse_transform is None:
@@ -253,14 +335,17 @@ class Prior(AbstractPrior):
         x: ArrayLike,
         **kwargs
     ) -> NDArrayLike:
-        """The log probability density at the given value(s).
+        """Log-density in the SAMPLING space (override in subclasses).
 
         Args:
-            x (ArrayLike): Value(s) to calculate logpdf.
-            **kwargs: Additional keyword arguments for conditional priors.
+            x: Sampling-space value(s).
+            **kwargs: Conditional variables (and any extra options) for subclasses.
 
         Returns:
-            NDArrayLike: The log probability density.
+            NDArrayLike: Log-density with the shape of ``x`` (in subclasses).
+
+        Raises:
+            NotImplementedError: Always, in the base class.
         """
         raise NotImplementedError("logpdf method is implemented in subclass")
     
@@ -269,14 +354,18 @@ class Prior(AbstractPrior):
         x_phys: ArrayLike, 
         **kwargs
     ) -> NDArrayLike:
-        """Log probability density evaluated in the physical parameter space. 
-        
+        """Log-density in the PHYSICAL space.
+
+        Computes ``logpdf(forward_transform(x_phys)) + log_jacobian(x_phys)``. If either
+        ``forward_transform`` or ``log_jacobian`` is ``None``, returns ``logpdf(x_phys)``.
+
         Args:
-            x_phys (ArrayLike): Value(s) in physical parameter space.
-            **kwargs: Additional keyword arguments.
-                
+            x_phys: Physical-space value(s).
+            **kwargs: Forwarded to ``forward_transform``, :meth:`logpdf` and
+                ``log_jacobian``.
+
         Returns:
-            NDArrayLike: Log probability density in physical space.
+            NDArrayLike: Physical-space log-density, shape of ``x_phys``.
         """
         if self.forward_transform is None or self.log_jacobian is None:
             return self._to_device(self.logpdf(x_phys, **kwargs))
@@ -293,14 +382,14 @@ class Prior(AbstractPrior):
         x: ArrayLike,
         **kwargs
     ) -> NDArrayLike:
-        """Probability density of the prior distribution.
+        """Density in the SAMPLING space: ``exp(logpdf(x))``.
 
         Args:
-            x (ArrayLike): Value(s) to calculate density.
-            **kwargs: Additional keyword arguments.
+            x: Sampling-space value(s).
+            **kwargs: Forwarded to :meth:`logpdf`.
 
         Returns:
-            NDArrayLike: The probability density.
+            NDArrayLike: Density, shape of ``x``.
         """
         output = self.xp.exp(self.logpdf(x, **kwargs))
         return self._to_device(output)
@@ -310,14 +399,17 @@ class Prior(AbstractPrior):
         x_phys: ArrayLike, 
         **kwargs
     ) -> NDArrayLike:
-        """Probability density evaluated in the physical parameter space.
-        
+        """Density in the PHYSICAL space.
+
+        Computes ``pdf(forward_transform(x_phys)) * exp(log_jacobian(x_phys))``; falls back
+        to ``pdf(x_phys)`` when either transform piece is ``None``.
+
         Args:
-            x_phys (ArrayLike): Value(s) in physical space.
-            **kwargs: Additional keyword arguments.
+            x_phys: Physical-space value(s).
+            **kwargs: Forwarded to ``forward_transform``, :meth:`pdf` and ``log_jacobian``.
 
         Returns:
-            NDArrayLike: Probability density in physical space.
+            NDArrayLike: Physical-space density, shape of ``x_phys``.
         """
         if self.forward_transform is None or self.log_jacobian is None:
             return self._to_device(self.pdf(x_phys, **kwargs))
@@ -335,18 +427,25 @@ class Prior(AbstractPrior):
         n_points: int = 1000,
         **kwargs
     ) -> NDArrayLike:
-        """Generic method to calculate CDF numerically.
+        """CDF in the SAMPLING space by numerical integration of :meth:`pdf`.
+
+        Integrates :meth:`pdf` with the trapezoidal rule on ``n_points`` evenly spaced points
+        over ``[minimum, maximum]``, normalises the cumulative sum to end at 1 (when it is
+        positive) and linearly interpolates at ``x`` (0 below the grid, 1 above).
+        Subclasses with a closed form override this.
 
         Args:
-            x (ArrayLike): Value(s) to calculate the CDF at.
-            n_points (int, optional): Grid points for numerical integration. (default: ``1000``)
-            **kwargs: Additional keyword arguments.
+            x: Sampling-space value(s).
+            n_points: Number of grid points. Default ``1000``.
+            **kwargs: Forwarded to :meth:`pdf`.
 
         Returns:
-            NDArrayLike: CDF values.
+            NDArrayLike: CDF values with the shape of ``x``; a Python ``float`` when ``x`` is
+            a Python ``int`` / ``float`` and ``return_gpu`` is ``False`` (with ``use_cupy``
+            that float is then wrapped as a 0-d numpy array).
 
         Raises:
-            ValueError: If minimum or maximum is infinite.
+            ValueError: If ``minimum`` or ``maximum`` is infinite.
         """
         if self.xp.any(self.xp.isinf([self.minimum, self.maximum])):
             raise ValueError(
@@ -377,16 +476,19 @@ class Prior(AbstractPrior):
         fallback_samples: int = 10_000,
         **kwargs
     ) -> NDArrayLike:
-        """Check if values fall within the prior support.
+        """Boolean mask of ``minimum <= x <= maximum`` (SAMPLING-space bounds).
+
+        If ``minimum`` or ``maximum`` has been set to ``None``, the bounds are instead
+        estimated from ``fallback_samples`` draws of :meth:`rvs`, with a warning. (The
+        constructor defaults are ``-inf`` / ``inf``, which take the direct path.)
 
         Args:
-            x (ArrayLike): Values to evaluate.
-            fallback_samples (int, optional): Number of samples to draw to estimate
-                bounds if minimum/maximum are undefined. (default: ``10_000``)
-            **kwargs: Additional keyword arguments.
+            x: Sampling-space value(s).
+            fallback_samples: Number of draws for the bound estimate. Default ``10_000``.
+            **kwargs: Forwarded to :meth:`rvs` on the fallback path.
 
         Returns:
-            NDArrayLike: Boolean mask indicating inclusion in prior range.
+            NDArrayLike: Boolean mask, shape of ``x``.
         """
         x_arr = self.xp.asarray(x)
         if self.minimum is not None and self.maximum is not None:
@@ -405,6 +507,7 @@ class Prior(AbstractPrior):
 
     @property
     def latex_label(self) -> str:
+        """LaTeX label; setting ``None`` uses the class default for ``name``, else ``str(name)``."""
         return self.__latex_label
 
     @latex_label.setter
@@ -418,6 +521,7 @@ class Prior(AbstractPrior):
 
     @property
     def unit(self) -> str | None:
+        """LaTeX unit string, or ``None``."""
         return self.__unit
 
     @unit.setter
@@ -433,6 +537,7 @@ class Prior(AbstractPrior):
 
     @property
     def minimum(self) -> float:
+        """Lower bound of the SAMPLING-space domain."""
         return self._minimum
 
     @minimum.setter
@@ -441,6 +546,7 @@ class Prior(AbstractPrior):
 
     @property
     def maximum(self) -> float:
+        """Upper bound of the SAMPLING-space domain."""
         return self._maximum
 
     @maximum.setter
@@ -449,4 +555,5 @@ class Prior(AbstractPrior):
 
     @property
     def width(self) -> float:
+        """``maximum - minimum`` (SAMPLING-space width)."""
         return self.maximum - self.minimum

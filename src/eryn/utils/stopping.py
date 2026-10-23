@@ -1,55 +1,78 @@
 # -*- coding: utf-8 -*-
 
+"""Sampler stopping hooks (``EnsembleSampler(stopping_fn=..., stopping_iterations=...)``).
+
+:meth:`~eryn.ensemble.EnsembleSampler.run_mcmc` calls ``stopping_fn(i, state, sampler)``
+after every ``stopping_iterations``-th stored step and ends the run when it returns
+``True``. :class:`Stopping` is the base class; :class:`SearchConvergeStopping` stops once
+the best log-likelihood has stopped improving.
+"""
+
 from abc import ABC
 
 import numpy as np
 
 
 class Stopping(ABC, object):
-    """Base class for stopping.
-    
-    Stopping checks are only performed every ``thin_by`` iterations.
-    
+    """Base class for stopping criteria.
+
+    Subclasses implement ``__call__(self, iter, last_sample, sampler) -> bool``. The sampler
+    only calls it every ``stopping_iterations`` stored steps, and each stored step is
+    ``thin_by`` sampler iterations, so checks happen every
+    ``thin_by * stopping_iterations`` iterations.
     """
 
     @classmethod
     def __call__(self, iter, last_sample, sampler):
-        """Call update function.
+        """Decide whether to stop sampling (override in subclasses).
 
         Args:
-            iter (int): Iteration of the sampler.
-            last_sample (obj): Last state of sampler (:class:`eryn.state.State`).
-            sampler (obj): Full sampler oject (:class:`eryn.ensemble.EnsembleSampler`).
+            iter (int): Step counter passed by the sampler.
+            last_sample (State): Last state of the sampler (:class:`eryn.state.State`).
+            sampler (EnsembleSampler): The sampler (:class:`eryn.ensemble.EnsembleSampler`).
 
         Returns:
-            bool: Value of ``stop``. If ``True``, stop sampling.
-            
+            bool: ``True`` to stop sampling.
+
+        Raises:
+            NotImplementedError: Always, in the base class.
         """
         raise NotImplementedError
 
 
 class SearchConvergeStopping(Stopping):
-    """Stopping function based on a convergence to a maximunm Likelihood.
+    """Stop once the maximum log-likelihood has stopped changing.
 
-    Stopping checks are only performed every ``thin_by`` iterations.
-    Therefore, the iterations of stopping checks are really every
-    ``sampler iterations * thin_by``.  
+    At each check the best log-likelihood stored so far (all temperatures and walkers,
+    after discarding the first ``start_iteration`` stored samples) is compared with the
+    previous best. A change below ``diff`` counts one pass; a change of ``diff`` or more
+    resets the count and records the new best. After ``n_iters`` consecutive passes the
+    call returns ``True`` and the count resets.
 
-    All arguments are stored as attributes.
+    Checks happen every ``stopping_iterations`` stored steps, i.e. every
+    ``thin_by * stopping_iterations`` sampler iterations. All arguments are stored as
+    attributes.
 
     Args:
-        n_iters (int, optional): Number of iterative stopping checks that need to pass
-            in order to stop the sampler. (default: ``30``)
-        diff (float, optional): Change in the Likelihood needed to fail the stopping check. In other words,
-            if the new maximum Likelihood is more than ``diff`` greater than the old, all iterative checks 
-            reset. (default: 0.1). 
-        start_iteration (int, optional): Iteration of sampler to start checking to stop. (default: 0)
-        verbose (bool, optional): If ``True``, print information. (default: ``False``)
+        n_iters (int, optional): Consecutive passing checks needed to stop. Default
+            ``30``.
+        diff (float, optional): Log-likelihood change that fails a check. Default ``0.1``.
+        start_iteration (int, optional): Calls with ``iter < start_iteration`` return
+            ``False``; also the ``discard`` used when reading the log-likelihood. Default
+            ``0``.
+        verbose (bool, optional): If ``True``, print the count and both maxima at every
+            check. Default ``False``.
 
     Attributes:
-        iters_consecutive (int): Number of consecutive passes of the stopping check.
-        past_like_best (float): Previous best Likelihood. The initial value is ``-np.inf``.
-    
+        iters_consecutive (int): Number of consecutive passes so far.
+        past_like_best (float): Best log-likelihood at the last reset; starts at
+            ``-np.inf``.
+
+    Example:
+        .. code-block:: python
+
+            stop = SearchConvergeStopping(n_iters=30, diff=1.0, start_iteration=0)
+            sampler = EnsembleSampler(..., stopping_fn=stop, stopping_iterations=1)
     """
 
     def __init__(self, n_iters=30, diff=0.1, start_iteration=0, verbose=False):
@@ -66,16 +89,15 @@ class SearchConvergeStopping(Stopping):
         self.past_like_best = -np.inf
 
     def __call__(self, iter, sample, sampler):
-        """Call update function.
+        """Run one convergence check.
 
         Args:
-            iter (int): Iteration of the sampler.
-            last_sample (obj): Last state of sampler (:class:`eryn.state.State`).
-            sampler (obj): Full sampler oject (:class:`eryn.ensemble.EnsembleSampler`).
+            iter (int): Step counter passed by the sampler.
+            sample (State): Last state of the sampler (unused).
+            sampler (EnsembleSampler): The sampler; ``sampler.get_log_like`` is read.
 
         Returns:
-            bool: Value of ``stop``. If ``True``, stop sampling.
-            
+            bool: ``True`` to stop sampling.
         """
 
         # if we have not reached the start iteration return

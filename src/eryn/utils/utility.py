@@ -1,5 +1,17 @@
 # -*- coding: utf-8 -*-
 
+"""Numerical helpers for the sampler and its diagnostics.
+
+- :func:`groups_from_inds`: per-leaf group (walker) ids for the vectorised likelihood and
+  prior calls.
+- :func:`get_acf`, :func:`get_integrated_act`: FFT autocorrelation function and
+  integrated autocorrelation time.
+- :func:`thermodynamic_integration_log_evidence`,
+  :func:`stepping_stone_log_evidence`: evidence estimates from a temperature ladder.
+- :func:`psrf`: Gelman-Rubin potential scale reduction factor.
+- ``NDArrayLike``: type alias (``np.ndarray`` at runtime) used in annotations.
+"""
+
 import warnings
 
 import numpy as np
@@ -7,18 +19,26 @@ from scipy.special import logsumexp
 
 
 def groups_from_inds(inds):
-    """Convert inds to group information
+    """Flat group id of every active leaf, per branch.
+
+    The group id of temperature ``t`` and walker ``w`` is ``t * nwalkers + w``. For each
+    branch the ids of the ``True`` entries of ``inds`` are returned in C order, which is
+    the order of ``coords[inds]``. The sampler uses this to tell a vectorised likelihood /
+    prior which walker each leaf row belongs to.
 
     Args:
-        inds (dict): Keys are ``branch_names`` and values are inds
-            np.ndarrays[ntemps, nwalkers, nleaves_max] that specify
-            which leaves are used in this step.
+        inds (dict): ``{branch_name: bool array}`` marking the active leaves, each of
+            shape ``(ntemps, nwalkers, nleaves_max)``.
 
     Returns:
-        dict: Dictionary with group information.
-            Keys are ``branch_names`` and values are
-            np.ndarray[total number of used leaves]. The array is flat.
+        dict: ``{branch_name: int np.ndarray}``, flat, one entry per active leaf.
 
+    Example:
+        >>> import numpy as np
+        >>> from eryn.utils.utility import groups_from_inds
+        >>> inds = {"model_0": np.array([[[True, False], [True, True]]])}
+        >>> groups_from_inds(inds)["model_0"].tolist()
+        [0, 1, 1]
     """
     # prepare output
     groups = {}
@@ -42,17 +62,21 @@ def groups_from_inds(inds):
 
 
 def get_acf(x, axis=0, fast=False):
-    """
-    Estimate the autocorrelation function of a time series using the FFT.
-    :param x:
-        The time series. If multidimensional, set the time axis using the
-        ``axis`` keyword argument and the function will be computed for every
-        other axis.
-    :param axis: (optional)
-        The time axis of ``x``. Assumed to be the first axis if not specified.
-    :param fast: (optional)
-        If ``True``, only use the largest ``2^n`` entries for efficiency.
-        (default: False)
+    """Normalised autocorrelation function of a time series, via the FFT.
+
+    The mean along ``axis`` is removed, the series is zero-padded to ``2 n`` and the ACF is
+    normalised so lag 0 equals 1. Computed independently along every other axis.
+
+    Args:
+        x (array_like): The time series.
+        axis (int, optional): Time axis. Default ``0``. (The normalisation broadcasts
+            correctly only for ``axis=0``.)
+        fast (bool, optional): If ``True``, ``n`` is the largest power of two not above the
+            series length (FFT length ``2 n``, first ``n`` lags returned). The input itself
+            is not cropped (the crop line is a no-op). Default ``False`` (``n`` = length).
+
+    Returns:
+        np.ndarray: ACF for lags ``0 .. n - 1`` along ``axis``; other axes as in ``x``.
     """
 
     x = np.atleast_1d(x)
@@ -78,21 +102,40 @@ def get_acf(x, axis=0, fast=False):
 
 
 def get_integrated_act(x, axis=0, window=50, fast=False, average=True):
-    """
-    Estimate the integrated autocorrelation time of a time series.
-    See `Sokal's notes on
-    MCMC and sample estimators for autocorrelation times.
-    :param x:
-        The time series. If multidimensional, set the time axis using the
-        ``axis`` keyword argument and the function will be computed for every
-        other axis.
-    :param axis: (optional)
-        The time axis of ``x``. Assumed to be the first axis if not specified.
-    :param window: (optional)
-        The size of the window to use. (default: 50)
-    :param fast: (optional)
-        If ``True``, only use the largest ``2^n`` entries for efficiency.
-        (default: False)
+    """Integrated autocorrelation time with a fixed window.
+
+    ``tau = 1 + 2 * sum(acf[1:window])`` along the time axis, with the ACF from
+    :func:`get_acf` (see Sokal's notes on MCMC and sample estimators for autocorrelation
+    times).
+
+    Args:
+        x (np.ndarray or dict): Time series with time on axis 0; or a dict
+            ``{branch_name: chain}`` of 5-D chains
+            ``(nsteps, ntemps, nwalkers, nleaves_max, ndim)`` (as from
+            ``backend.get_chain()``), which are flattened to
+            ``(nsteps, ntemps, nwalkers, nleaves_max * ndim)`` and concatenated on the last
+            axis.
+        axis (int, optional): Time axis; only ``0`` is supported. Default ``0``.
+        window (int, optional): Window end: lags ``1 .. window - 1`` are summed. Default
+            ``50``.
+        fast (bool, optional): Forwarded to :func:`get_acf`. Default ``False``.
+        average (bool, optional): If ``True``, average ``tau`` over axis 1 of the result,
+            i.e. axis 2 of the input (the walkers of a ``(nsteps, ntemps, nwalkers, ...)``
+            chain); needs an input of at least 3 dimensions. Default ``True``.
+
+    Returns:
+        float, np.ndarray or dict: A float for 1-D ``x``; otherwise an array of shape
+        ``x.shape[1:]`` (with axis 1 averaged out when ``average``); for dict input a dict
+        of per-branch arrays split along the last axis.
+
+    Raises:
+        NotImplementedError: If ``axis != 0``.
+        ValueError: If ``x`` is neither a dict nor an ``np.ndarray``.
+
+    Note:
+        For dict input the split points advance by ``ndim`` per branch, not by
+        ``nleaves_max * ndim``, so the per-branch split is only right when
+        ``nleaves_max == 1``.
     """
 
     if axis != 0:
@@ -146,44 +189,42 @@ def get_integrated_act(x, axis=0, window=50, fast=False, average=True):
 
 
 def thermodynamic_integration_log_evidence(betas, logls):
-    """
-    Thermodynamic integration estimate of the evidence.
+    r"""Thermodynamic-integration estimate of the log-evidence (from ``ptemcee``).
 
-    This function origindated in ``ptemcee``.
+    The evidence is the integral of the un-normalised posterior,
+
+    .. math::
+        Z \equiv \int d\theta \, l(\theta) p(\theta).
+
+    With :math:`Z(\beta) = \int d\theta \, l^\beta(\theta) p(\theta)`,
+
+    .. math::
+        \frac{d \log Z}{d \beta}
+        = \frac{1}{Z(\beta)} \int d\theta \, l^\beta p \log l
+        = \left\langle \log l \right\rangle_\beta ,
+
+    so
+
+    .. math::
+        \log Z(1) - \log Z(0)
+        = \int_0^1 d\beta \left\langle \log l \right\rangle_\beta .
+
+    The integral is evaluated with the trapezoidal rule over the ladder. If the hottest
+    ``beta`` is not 0, a ``beta = 0`` point is appended with the hottest chain's mean
+    log-likelihood. The error estimate is the difference from the same integral using
+    every other temperature.
 
     Args:
-        betas (np.ndarray[ntemps]): The inverse temperatures to use for the quadrature.
-        logls (np.ndarray[ntemps]): The mean log-Likelihoods corresponding to ``betas`` to use for
-            computing the thermodynamic evidence.
+        betas (np.ndarray): Inverse temperatures, shape ``(ntemps,)`` (any order; sorted
+            internally).
+        logls (np.ndarray): Mean log-likelihood at each ``beta``, shape ``(ntemps,)``.
+
     Returns:
-        tuple:   ``(logZ, dlogZ)``:
-                Returns an estimate of the
-                log-evidence and the error associated with the finite
-                number of temperatures at which the posterior has been
-                sampled.
+        tuple[float, float]: ``(logZ, dlogZ)``, the log-evidence estimate and its
+        ladder-discretisation error.
 
-    The evidence is the integral of the un-normalized posterior
-    over all of parameter space:
-    .. math::
-        Z \\equiv \\int d\\theta \\, l(\\theta) p(\\theta)
-    Thermodymanic integration is a technique for estimating the
-    evidence integral using information from the chains at various
-    temperatures.  Let
-    .. math::
-        Z(\\beta) = \\int d\\theta \\, l^\\beta(\\theta) p(\\theta)
-    Then
-    .. math::
-        \\frac{d \\log Z}{d \\beta}
-        = \\frac{1}{Z(\\beta)} \\int d\\theta l^\\beta p \\log l
-        = \\left \\langle \\log l \\right \\rangle_\\beta
-    so
-    .. math::
-        \\log Z(1) - \\log Z(0)
-        = \\int_0^1 d\\beta \\left \\langle \\log l \\right\\rangle_\\beta
-    By computing the average of the log-likelihood at the
-    difference temperatures, the sampler can approximate the above
-    integral.
-
+    Raises:
+        ValueError: If ``betas`` and ``logls`` have different lengths.
     """
 
     # make sure they are the same length
@@ -215,29 +256,43 @@ def thermodynamic_integration_log_evidence(betas, logls):
 
 
 def stepping_stone_log_evidence(betas, logls, block_len=50, repeats=100):
-    """
-    Stepping stone approximation for the evidence calculation.
+    """Stepping-stone estimate of the log-evidence, with a block-bootstrap error.
 
-    Based on
-    a. https://arxiv.org/abs/1810.04488 and
-    b. doi: 10.1093/sysbio/syq085
+    Based on Maturana-Russel et al. (2019), https://arxiv.org/abs/1810.04488, and Xie et
+    al. (2011), doi:10.1093/sysbio/syq085. With the ladder sorted to ascending ``beta``,
+    each adjacent pair contributes the log of the sample mean of
+    ``exp((beta_{k+1} - beta_k) * logL)`` over the samples at ``beta_k``; the sum estimates
+    ``log(Z(beta_max) / Z(beta_min))``, which is ``log Z`` when the ladder runs from 0 to 1.
+    The samples of each temperature are pooled over steps and walkers
+    (``(nsteps, ntemps, nwalkers)`` -> ``(nsteps * nwalkers, ntemps)``), and each pair term
+    is normalised by ``log(n)`` once (``n`` = number of kept rows). Sample rows with any
+    non-finite log-likelihood are dropped.
+
+    The error is the standard deviation over ``repeats`` estimates, each built from one
+    random row of every sliding window ``[i, i + block_len)``. If that raises
+    ``ValueError``, a warning is issued and ``dlogZ`` is ``nan``.
 
     Args:
-        betas (np.ndarray[ntemps]): The inverse temperatures to use for the quadrature.
-        logls (np.ndarray[ntemps]): The mean log-Likelihoods corresponding to ``betas`` to use for
-            computing the thermodynamic evidence.
-        block_len (int): The length of each chain block to compute the evidence from. Useful for computing the error-bars.
-        repeats (int): The number of repeats to compute the evidence (using the block above).
+        betas (np.ndarray): Inverse temperatures, shape ``(ntemps,)``.
+        logls (np.ndarray): Log-likelihood samples, shape ``(nsteps, ntemps, nwalkers)``
+            (as from ``backend.get_log_like()``).
+        block_len (int, optional): Window length of the bootstrap. Default ``50``.
+        repeats (int, optional): Number of bootstrap estimates. Default ``100``.
 
-    Returns
-        tuple:   ``(logZ, dlogZ)``:
-            Returns an estimate of the
-            log-evidence and the error associated with the finite
-            number of temperatures at which the posterior has been
-            sampled.
+    Returns:
+        tuple[float, float]: ``(logZ, dlogZ)``.
+
+    Raises:
+        ValueError: If ``logls.shape[1] != len(betas)``.
+
+    Note:
+        Callers: :func:`~eryn.utils.plot.plot_logl_betas` and
+        :meth:`~eryn.backends.Backend.get_evidence_estimate` (stepping-stone method), both
+        passing the ``(nsteps, ntemps, nwalkers)`` array described above.
     """
 
     def calculate_stepping_stone(betas, logls):
+        """Return ``(sum of pair terms, per-pair terms)`` for ``logls`` of shape ``(n, ntemps)``."""
         n = logls.shape[0]
         n_T = betas.shape[0]
         delta_betas = betas[1:] - betas[:-1]
@@ -281,35 +336,26 @@ def stepping_stone_log_evidence(betas, logls, block_len=50, repeats=100):
 
 
 def psrf(C, ndims, per_walker=False):
-    """
-    The Gelman - Rubin convergence diagnostic.
-    A general approach to monitoring convergence of MCMC output of multiple walkers.
-    The function makes a comparison of within-chain and between-chain variances.
-    A large deviation between these two variances indicates non-convergence, and
-    the output [Rhat] deviates from unity.
+    """Gelman-Rubin potential scale reduction factor ``Rhat`` per parameter.
 
-    By default, it combines the MCMC chains for all walkers, and then computes the
-    Rhat for the first and last 1/3 parts of the traces. This can be tuned with the
-    ``per_walker`` flag.
+    Compares within-chain and between-chain variances; values well above 1 indicate
+    non-convergence. With ``per_walker=False`` (default) all samples are pooled
+    (``C.reshape(-1, ndims)``) and the first and last thirds are treated as two chains.
+    With ``per_walker=True``, ``C`` must already be ``(nchains, nsamples, ndims)``.
 
-    Based on
-    a. Brooks, SP. and Gelman, A. (1998) General methods for monitoring convergence
-       of iterative simulations. Journal of Computational and Graphical Statistics, 7, 434-455
-    b. Gelman, A and Rubin, DB (1992) Inference from iterative simulation using multiple sequences,
-       Statistical Science, 7, 457-511.
+    Based on Brooks & Gelman (1998), J. Comput. Graph. Stat. 7, 434-455, and Gelman &
+    Rubin (1992), Stat. Sci. 7, 457-511; code adapted from
+    https://joergdietrich.github.io/emcee-convergence.html.
 
     Args:
-        C (np.ndarray[nwalkers, ndim]): The parameter traces. The MCMC chains.
-        ndims (int): The dimensions
-        per_walker (bool, optional): Do the test on the combined chains, or using
-        each if the walkers separatelly.
+        C (np.ndarray): Parameter traces; any shape whose size is a multiple of ``ndims``
+            when ``per_walker=False``, else ``(nchains, nsamples, ndims)``.
+        ndims (int): Number of parameters (last axis).
+        per_walker (bool, optional): Treat the leading axis of ``C`` as separate chains
+            instead of splitting the pooled samples. Default ``False``.
 
-    Returns
-        tuple:   ``(Rhat, neff)``:
-            Returns an estimate of the Gelman-Rubin convergence diagnostic ``Rhat``,
-            and the effective number od samples ``neff``.
-
-    Code taken from https://joergdietrich.github.io/emcee-convergence.html
+    Returns:
+        np.ndarray: ``Rhat``, shape ``(ndims,)``.
     """
     if not per_walker:
         # Split the complete chains into three parts and perform the
@@ -344,4 +390,5 @@ if TYPE_CHECKING:
 else:
     # Runtime context: Python executes this branch without loading cupy.
     # Set to np.ndarray so it evaluates as a valid Type at runtime without crashing.
+    # (NDArrayLike is the "numpy or cupy array" alias used in the priors' annotations.)
     NDArrayLike: TypeAlias = np.ndarray  

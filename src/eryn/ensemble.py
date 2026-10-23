@@ -1,4 +1,18 @@
 # -*- coding: utf-8 -*-
+"""The ensemble sampler: Eryn's main entry point.
+
+:class:`EnsembleSampler` drives a run. It parses the branches (models), priors, in-model and
+reversible-jump moves, the tempering setup and the storage backend, then advances the ensemble
+with :meth:`EnsembleSampler.sample` (a generator) or :meth:`EnsembleSampler.run_mcmc`.
+:func:`walkers_independent` is the emcee-style check that the initial walkers are linearly
+independent.
+
+Inside the sampler the coordinates of branch ``name`` have shape
+``(ntemps, nwalkers, nleaves_max[name], ndims[name])`` and a boolean ``inds`` array of shape
+``(ntemps, nwalkers, nleaves_max[name])`` marks the active leaves. With ``nsamplers > 1``
+independent samplers, the sampler axis is folded into the temperature axis (leading axis
+``nsamplers * ntemps``).
+"""
 
 import warnings
 from copy import deepcopy
@@ -28,176 +42,194 @@ from collections.abc import Iterable
 
 
 class EnsembleSampler(object):
-    """An ensemble MCMC sampler
+    """Ensemble MCMC sampler with parallel tempering, reversible jump and multiple branches.
 
-    The class controls the entire sampling run. It can handle
-    everything from a basic non-tempered MCMC to a parallel-tempered,
-    global fit containing multiple branches (models) and a variable
-    number of leaves (sources) per branch.
-    See `here <https://lisa-analysis-tools.github.io/Eryn/Eryn_tutorial.html#The-Tree-Metaphor>`_
+    The class controls the entire sampling run, from a basic untempered MCMC to a
+    parallel-tempered global fit with several branches (models), each holding a variable
+    number of leaves (sources). See the `tree metaphor
+    <https://lisa-analysis-tools.github.io/Eryn/Eryn_tutorial.html#The-Tree-Metaphor>`_
     for a basic explainer.
 
-    Parameters related to parallelization can be controlled via the ``pool`` argument.
+    Coordinates of branch ``name`` have shape ``(ntemps, nwalkers, nleaves_max[name],
+    ndims[name])`` inside the sampler; a boolean ``inds`` array of shape
+    ``(ntemps, nwalkers, nleaves_max[name])`` marks the active leaves (``True`` = in the
+    model at this step). Each sampler iteration (one "proposal iteration", see
+    :meth:`sample`) runs ``num_repeats_in_model`` in-model proposals, each with a move
+    drawn at random from ``moves`` (with ``weights``), then, when reversible jump is on,
+    ``num_repeats_rj`` between-model proposals drawn from ``rj_moves``. Temperature swaps
+    are done by the moves themselves through
+    :class:`~eryn.moves.tempering.TemperatureControl` (reversible-jump moves swap without
+    ladder adaptation); the swap counts stored in the backend come from the in-model moves.
 
     Args:
-        nwalkers (int): The number of walkers in the ensemble per temperature.
-        ndims (int, list of ints, or dict): The number of dimensions for each branch. If
-                ``dict``, keys should be the branch names and values the associated dimensionality.
-        log_like_fn (callable): A function that returns the natural logarithm of the
-            likelihood for that position. The inputs to ``log_like_fn`` depend on whether
-            the function is vectorized (kwarg ``vectorize`` below), if you are using reversible jump,
-            and how many branches you have.
+        nwalkers (int): Number of walkers per temperature (per sampler when
+            ``nsamplers > 1``).
+        ndims (int, list of int, np.ndarray, or dict): Dimensionality of each branch. An
+            ``int`` is only valid for a single branch; a list or array is matched to
+            ``branch_names`` in order; a dict is keyed by branch name.
+        log_like_fn (callable): Natural log of the likelihood. It is called as
+            ``log_like_fn(x, [groups,] *args, [supps=..., branch_supps=...,] **kwargs)``,
+            where ``args`` / ``kwargs`` are the arguments below, ``groups`` is passed only
+            when ``vectorize`` and ``provide_groups`` are both ``True``, and ``supps`` /
+            ``branch_supps`` only when ``provide_supplemental`` is ``True``. The form of
+            ``x`` depends on ``vectorize`` and on the number of branches ``N``:
 
-                In the simplest case where ``vectorize == False``, no reversible jump, and only one
-                type of model, the inputs are just the array of parameters for one walker, so shape is ``(ndim,)``.
+            - ``vectorize=False``: one call per walker that has at least one active leaf
+              (through ``pool.map`` if ``pool`` is given, else ``map``). For each branch,
+              the walker's active leaves form an array of shape ``(nleaves_active, ndim)``;
+              without reversible jump a single active leaf is passed as a 1D ``(ndim,)``
+              array. With ``N == 1`` that array is ``x``; with ``N > 1``, ``x`` is the
+              list over branches (``None`` for a branch with no active leaf). The call
+              returns a scalar (or a 1D array: log-likelihood followed by blobs).
+            - ``vectorize=True``: one call for the whole ensemble. With ``N == 1``, ``x`` is
+              the 2D array of all active leaves, shape ``(total active leaves, ndim)``; with
+              ``N > 1`` it is the list ``[X0, X1, ...]`` over branches. ``groups`` (``group0``
+              or ``[group0, group1, ...]``) gives, for each leaf, the index of the walker
+              it belongs to; leaves with the same index enter the same likelihood value.
+              Indices are compacted to ``0 ... ngroups - 1`` over the walkers that have at
+              least one active leaf and a finite log-prior, in flattened
+              ``(ntemps, nwalkers)`` order. Example: 3 walkers with ``(1, 2, 1)`` leaves
+              give ``X0 = array([p0, p1, p2, p3])`` and ``group0 = array([0, 1, 1, 2])``.
+              The call returns an array of shape ``(ngroups,)``, or ``(ngroups, 1 + nblobs)``
+              whose first column is the log-likelihood and the rest blobs.
 
-                If ``vectorize == True``, no reversible jimp, and only one type of model, the inputs will
-                be a 2D array of parameters of all the walkers going in. Shape: ``(num positions, ndim)``.
+            Walkers with no active leaf in any branch, or with a log-prior of ``-inf``, are
+            not evaluated: their log-likelihood is set to ``fill_zero_leaves_val``. As
+            written, :meth:`compute_log_like` reshapes the blobs to ``(ntemps, nwalkers)``,
+            so only a single blob column is supported. See the
+            `tutorial <https://lisa-analysis-tools.github.io/Eryn/Eryn_tutorial.html#>`_.
+        priors (dict or ProbDistContainer): Prior of each branch. Accepted forms:
 
-                If using reversible jump, the leaves that go together in the same Likelihood will be grouped
-                together into a single function call. If ``vectorize == False``, then each group is sent as
-                an individual computation. With ``N`` different branches (``N > 1``), inputs would be a list
-                of 2D arrays of the coordinates for all leaves within each branch: ``([x0, x1,...,xN])``
-                where ``xi`` is 2D with shape ``(number of leaves in this branch, ndim)``. If ``N == 1``, then
-                a list is not provided, just x0, the 2D array of coordinates for the one branch considered.
+            - a :class:`~eryn.priors.ProbDistContainer`, used for a single branch and
+              stored under the name ``"model_0"`` (the branch must keep that default
+              name);
+            - a dict keyed by branch name whose values are either a dict
+              ``{parameter key: distribution}`` (each distribution needs a ``logpdf``
+              method; the dict is wrapped in a :class:`~eryn.priors.ProbDistContainer`),
+              a :class:`~eryn.priors.ProbDistContainer`, or any object with a ``logpdf``
+              method and a ``key_order`` attribute.
 
-                If using reversible jump and ``vectorize == True``, then the arrays of parameters will be output
-                with information as regards the grouping of branch and leaf set. Inputs will be
-                ``([X0, X1,..XN], [group0, group1,...,groupN])`` where ``Xi`` is a 2D array of all
-                leaves in the sampler for branch ``i``. ``groupi`` is an index indicating which unique group
-                that sources belongs. For example, if we have 3 walkers with (1, 2, 1) leaves for model ``i``,
-                respectively, we wil have an ``Xi = array([params0, params1, params2, params3])`` and
-                ``groupsi = array([0, 1, 1, 2])``.
-                If ``N == 1``, then the lists are removed and the inputs become ``(X0, group0)``.
-
-                Extra ``args`` and ``kwargs`` for the Likelihood function can be added with the kwargs
-                ``args`` and ``kwargs`` below.
-
-                Please see the
-                `tutorial <https://lisa-analysis-tools.github.io/Eryn/Eryn_tutorial.html#>`_
-                for more information.
-
-        priors (dict): The prior dictionary can take four forms.
-            1) A dictionary with keys as int or tuple containing the int or tuple of int
-            that describe the parameter number over which to assess the prior, and values that
-            are prior probability distributions that must have a ``logpdf`` class method.
-            2) A :class:`eryn.prior.ProbDistContainer` object.
-            3) A dictionary with keys that are ``branch_names`` and values that are dictionaries for
-            each branch as described for (1).
-            4) A dictionary with keys that are ``branch_names`` and values are
-            :class:`eryn.prior.ProbDistContainer` objects.
-            If the priors dictionary has the specific key ``"all_models_together"`` in it, then a special
-            prior must be input by the user that can produce the prior ``logpdf`` information that can depend on all of the models
-            together rather than handling them separately as is the default. In this case, the user must input
-            as the item attached to this special key a class object with a ``logpdf`` method that takes as input
-            two arguments: ``(coords, inds)``, which are the coordinate and index dictionaries across all models with
-            shapes of ``(ntemps, nwalkers, nleaves_max, ndim)`` and ``(ntemps, nwalkers, nleaves_max)`` for each
-            individual model, respectively. This function must then return the numpy array of logpdf values for the
-            prior value with shape ``(ntemps, nwalkers)``.
-        provide_groups (bool, optional): If ``True``, provide groups as described in ``log_like_fn`` above.
-            A group parameter is added for each branch. (default: ``False``)
-        provide_supplemental (bool, optional): If ``True``, it will provide keyword arguments to
-            the Likelihood function: ``supps`` and ``branch_supps``. Please see the `Tutorial <https://lisa-analysis-tools.github.io/Eryn/Eryn_tutorial.html#>`_
-            and :class:`eryn.state.BranchSupplemental` for more information.
-        tempering_kwargs (dict, optional): Keyword arguments for initialization of the
-            tempering class: :class:`eryn.moves.tempering.TemperatureControl`.  (default: ``{}``)
-        branch_names (list, optional): List of branch names. If ``None``, models will be assigned
-            names as ``f"model_{index}"`` based on ``nbranches``. (default: ``None``)
-        nbranches (int, optional): Number of branches (models) tested.
-            Only used if ``branch_names is None``.
-            (default: ``1``)
-        nleaves_max (int, list of ints, or dict, optional): Maximum allowable leaf count for each branch.
-            It should have the same length as the number of branches.
-            If ``dict``, keys should be the branch names and values the associated maximal leaf value.
-            (default: ``1``)
-        nleaves_min (int, list of ints, or dict, optional): Minimum allowable leaf count for each branch.
-            It should have the same length as the number of branches. Only used with Reversible Jump.
-            If ``dict``, keys should be the branch names and values the associated maximal leaf value.
-            If ``None`` and using Reversible Jump, will fill all branches with zero.
-            (default: ``0``)
-        pool (object, optional): An object with a ``map`` method that follows the same
-            calling sequence as the built-in ``map`` function. This is
-            generally used to compute the log-probabilities for the ensemble
-            in parallel.
-        moves (list or object, optional): This can be a single move object, a list of moves,
-            or a "weighted" list of the form ``[(eryn.moves.StretchMove(),
-            0.1), ...]``. When running, the sampler will randomly select a
-            move from this list (optionally with weights) for each proposal.
-            If ``None``, the default will be :class:`StretchMove`.
-            (default: ``None``)
-        rj_moves (list or object or bool or str, optional): If ``None`` or ``False``, reversible jump will not be included in the run.
-            This can be a single move object, a list of moves,
-            or a "weighted" list of the form ``[(eryn.moves.DistributionGenerateRJ(),
-            0.1), ...]``. When running, the sampler will randomly select a
-            move from this list (optionally with weights) for each proposal.
-            If ``True``, it defaults to :class:`DistributionGenerateRJ`. When running just the :class:`DistributionGenerateRJ`
-            with multiple branches, it will propose changes to all branhces simultaneously.
-            When running with more than one branch, useful options for ``rj_moves`` are ``"iterate_branches"``,
-            ``"separate_branches"``, or ``"together"``. If ``rj_moves == "iterate_branches"``, sample one branch by one branch in order of
-            the branch names. This occurs within one RJ proposal, for each RJ proposal. If ``rj_moves == "separate_branches"``,
-            there will be one RJ move per branch. During each individual RJ move, one of these proposals is chosen at random with
-            equal propability. This is generally recommended when using multiple branches.
-            If ``rj_moves == "together"``, this is equivalent to ``rj_moves == True``.
-            (default: ``None``)
-        dr_moves (bool, optional): If ``None`` ot ``False``, delayed rejection when proposing "birth"
-            of new components/models will be switched off for this run. Requires ``rj_moves`` set to ``True``.
-            Not implemented yet. Working on it.
-            (default: ``None``)
-        dr_max_iter (int, optional): Maximum number of iterations used with delayed rejection. (default: 5)
-        args (optional): A list of extra positional arguments for
-            ``log_like_fn``. ``log_like_fn`` will be called as
-            ``log_like_fn(sampler added args, *args, sampler added kwargs, **kwargs)``.
-        kwargs (optional): A dict of extra keyword arguments for
-            ``log_like_fn``. ``log_like_fn`` will be called as
-            ``log_like_fn(sampler added args, *args, sampler added kwargs, **kwargs)``.
-        backend (optional): Either a :class:`backends.Backend` or a subclass
-            (like :class:`backends.HDFBackend`) that is used to store and
-            serialize the state of the chain. By default, the chain is stored
-            as a set of numpy arrays in memory, but new backends can be
-            written to support other mediums.
-        vectorize (bool, optional): If ``True``, ``log_like_fn`` is expected
-            to accept an array of position vectors instead of just one. Note
-            that ``pool`` will be ignored if this is ``True``. See ``log_like_fn`` information
-            above to understand the arguments of ``log_like_fn`` based on whether
-            ``vectorize`` is ``True``.
-            (default: ``False``)
-        periodic (dict, optional): Keys are ``branch_names``. Values are dictionaries
-            that have (key: value) pairs as (index to parameter: period). Periodic
-            parameters are treated as having periodic boundary conditions in proposals.
-        update_fn (callable, optional): :class:`eryn.utils.updates.AdjustStretchProposalScale`
-            object that allows the user to update the sampler in any preferred way
-            every ``update_iterations`` sampler iterations. The callable must have signature:
-            ``(sampler iteration, last sample state object, EnsembleSampler object)``.
-        update_iterations (int, optional): Number of iterations between sampler
-            updates using ``update_fn``. Updates are only performed at the thinning rate.
-            If ``thin_by>1`` when :func:`EnsembleSampler.run_mcmc` is used, the sampler
-            is updated every ``thin_by * update_iterations`` iterations.
-        stopping_fn (callable, optional): :class:`eryn.utils.stopping.Stopping` object that
-            allows the user to end the sampler if specified criteria are met.
-            The callable must have signature:
-            ``(sampler iteration, last sample state object, EnsembleSampler object)``.
-        stopping_iterations (int, optional): Number of iterations between sampler
-            attempts to evaluate the ``stopping_fn``. Stopping checks are only performed at the thinning rate.
-            If ``thin_by>1`` when :func:`EnsembleSampler.run_mcmc` is used, the sampler
-            is checked for the stopping criterion every ``thin_by * stopping_iterations`` iterations.
-        fill_zero_leaves_val (double, optional): When there are zero leaves in a
-            given walker (across all branches), fill the likelihood value with
-            ``fill_zero_leaves_val``. If wanting to keep zero leaves as a possible
-            model, this should be set to the value of the contribution to the Likelihood
-            from the data. (Default: ``-1e300``).
-        num_repeats_in_model (int, optional): Number of times to repeat the in-model step
-            within in one sampler iteration. When analyzing the acceptance fraction, you must
-            include the value of ``num_repeats_in_model`` to get the proper denominator.
-        num_repeats_rj (int, optional): Number of time to repeat the reversible jump step
-            within in one sampler iteration. When analyzing the acceptance fraction, you must
-            include the value of ``num_repeats_rj`` to get the proper denominator.
-        track_moves (bool, optional): If ``True``, track acceptance fraction of each move
-            in the backend. If ``False``, no tracking is done. If ``True`` and run is interrupted, it will check
-            that the move configuration has not changed. It will not allow the run to go on
-            if it is changed. In this case, the user should declare a new backend and use the last
-            state from the previous backend. **Warning**: If the order of moves of the same move class
-            is changed, the check may not catch it, so the tracking may mix move acceptance fractions together.
-            (default: ``True'')
+            The special key ``"all_models_together"`` replaces the per-branch evaluation
+            with one call ``logpdf(coords, inds, supps=supps, branch_supps=branch_supps)``
+            on the coordinate and ``inds`` dicts (per-branch shapes
+            ``(ntemps, nwalkers, nleaves_max, ndim)`` and ``(ntemps, nwalkers,
+            nleaves_max)``), which must return an array of shape ``(ntemps, nwalkers)``.
+            That object must also carry a ``key_order`` attribute.
+        provide_groups (bool, optional): If ``True``, pass the leaf-group indices to a
+            vectorized ``log_like_fn`` (see above), and evaluate the prior only on active
+            leaves in :meth:`compute_log_prior`. Default ``False``.
+        provide_supplemental (bool, optional): If ``True``, pass the ``supps``
+            (``state.supplemental``) and ``branch_supps`` (per-branch
+            :class:`~eryn.state.BranchSupplemental`) keyword arguments to ``log_like_fn``,
+            indexed to the walkers / leaves of each call. Default ``False``.
+        tempering_kwargs (dict, optional): Keyword arguments for
+            :class:`~eryn.moves.tempering.TemperatureControl` (for example ``ntemps``,
+            ``betas``, ``Tmax``, ``adaptive``, ``stop_adaptation``). Its effective
+            dimension is ``sum(nleaves_max[b] * ndims[b])`` over branches. The default
+            ``{}`` means no tempering: ``ntemps = 1`` and ``temperature_control = None``.
+        branch_names (str or list of str, optional): Branch names. A ``str`` is one
+            branch. If ``None``, the names are ``f"model_{i}"`` for ``i`` in
+            ``range(nbranches)``. Default ``None``.
+        nbranches (int, optional): Number of branches; only used if ``branch_names`` is
+            ``None``. Default ``1``.
+        nleaves_max (int, list of int, np.ndarray, or dict, optional): Maximum leaf count
+            per branch, same forms as ``ndims``. Default ``1``.
+        nleaves_min (int, list of int, np.ndarray, dict, or None, optional): Minimum leaf
+            count per branch for the default reversible-jump move. Only parsed when
+            ``rj_moves`` is ``True`` or a str; ``None`` then means 0 for every branch.
+            User-supplied RJ moves carry their own minimum. Default ``0``.
+        pool (object, optional): Object with a ``map`` method following the built-in
+            ``map`` calling sequence, used for the per-walker likelihood calls when
+            ``vectorize`` is ``False``. Pickling the sampler sets ``self.pool`` to ``None``
+            (on the live object as well). Default ``None``.
+        moves (Move, list of Move, or list of (Move, float), optional): In-model
+            proposals: one move, a list of moves (equal weights), or a list of
+            ``(move, weight)`` pairs (weights are normalized). One move is drawn at random
+            per in-model proposal. ``None`` uses ``StretchMove(a=2.0)``. Moves without a
+            ``temperature_control`` or ``periodic`` receive the sampler's. Default
+            ``None``.
+        rj_moves (Move, list, bool, str, or None, optional): Reversible-jump proposals.
+            ``None`` or ``False``: no reversible jump. A move, a list of moves, or a list of
+            ``(move, weight)`` pairs: drawn at random per RJ proposal. ``True`` or
+            ``"together"``: one :class:`~eryn.moves.DistributionGenerateRJ` (prior draws)
+            that proposes changes to all branches at once. ``"iterate_branches"``: one
+            :class:`~eryn.moves.DistributionGenerateRJ` that updates the branches one by
+            one, in ``branch_names`` order, within each RJ proposal.
+            ``"separate_branches"``: one :class:`~eryn.moves.DistributionGenerateRJ` per
+            branch, chosen with equal probability (recommended with several branches).
+            Any other str raises ``ValueError``. Giving ``rj_moves`` (anything but
+            ``None``) requires ``moves``. Default ``None``.
+        dr_moves (bool or Move, optional): Delayed rejection for the default RJ move built
+            from ``rj_moves=True`` or a str (passed as its ``dr`` argument; ignored for
+            user-supplied RJ moves). ``True`` wraps a
+            :class:`~eryn.moves.DistributionGenerate` over the RJ move's generating
+            distribution (the priors) in
+            :class:`~eryn.moves.delayedrejection.DelayedRejection`; a move object is used as
+            the delayed-rejection proposal; ``None`` or ``False`` disables it. The wrapper
+            is built, but the delayed-rejection branch of
+            :meth:`~eryn.moves.ReversibleJumpMove.propose` is not implemented and raises
+            ``NotImplementedError`` on the first RJ proposal, so only ``None`` / ``False``
+            can run. Default ``None``.
+        dr_max_iter (int, optional): Maximum number of delayed-rejection iterations.
+            Default ``5``.
+        args (list, optional): Extra positional arguments appended after the sampler's
+            arguments in every ``log_like_fn`` call. Default ``None`` (none).
+        kwargs (dict, optional): Extra keyword arguments for every ``log_like_fn`` call.
+            Default ``None`` (none).
+        backend (Backend or str, optional): Chain storage. ``None`` creates an in-memory
+            :class:`~eryn.backends.Backend`; a str is the file name of a new
+            :class:`~eryn.backends.HDFBackend`; any :class:`~eryn.backends.Backend`
+            (sub)class instance is used as given. An already-initialized backend is
+            resumed (see Note). Default ``None``.
+        vectorize (bool, optional): If ``True``, ``log_like_fn`` is called once for all
+            walkers (see above) and ``pool`` is not used. Default ``False``.
+        blobs_dtype (numpy.dtype, optional): Stored as ``self.blobs_dtype``; not used by the
+            sampler. Default ``None``.
+        plot_iterations (int, optional): Produce runtime diagnostic plots every
+            ``plot_iterations`` yielded states in :meth:`run_mcmc` (not in
+            :meth:`sample`). ``<= 0`` disables plotting; ``> 0`` is not supported with
+            ``nsamplers > 1``. Default ``-1``.
+        plot_generator (PlotContainer, optional): Plot generator used when
+            ``plot_iterations > 0``; its ``backend`` is set to the sampler's backend. If
+            ``None``, a :class:`~eryn.utils.PlotContainer` with ``plots=['base', 'rj']``
+            and ``discard=0.2`` is created. Default ``None``.
+        plot_folder (str, optional): Output folder of the default plot generator. ``None``
+            means ``"./runtime_plots"``. Default ``None``.
+        periodic (dict or PeriodicContainer, optional): Periodic parameters, keyed by
+            branch name; each value maps a parameter index to its period. A dict is wrapped
+            in :class:`~eryn.utils.PeriodicContainer` without ``key_order``, so it must use
+            integer indices (pass a ``PeriodicContainer`` built with ``key_order`` for
+            string names). Given to every move that has no ``periodic`` of its own.
+            Default ``None``.
+        update_fn (callable, optional): Called as ``update_fn(i, state, sampler)`` inside
+            :meth:`sample` every ``update_iterations`` proposal iterations, where ``i`` is
+            the 0-based proposal counter of the current :meth:`sample` call, for example an
+            :class:`~eryn.utils.AdjustStretchProposalScale`. Default ``None``.
+        update_iterations (int, optional): Proposal iterations between ``update_fn`` calls
+            (counted per proposal iteration, independent of ``thin_by``). ``<= 0`` disables
+            updates. Default ``-1``.
+        stopping_fn (callable, optional): Called as ``stopping_fn(i, state, sampler)`` by
+            :meth:`run_mcmc` every ``stopping_iterations`` yielded states, that is every
+            ``thin_by * stopping_iterations`` proposal iterations; a truthy return ends the
+            run. Not called by :meth:`sample`. For example an
+            :class:`~eryn.utils.Stopping` subclass. Default ``None``.
+        stopping_iterations (int, optional): Yielded states between ``stopping_fn``
+            checks. ``<= 0`` disables the checks. Default ``-1``.
+        fill_zero_leaves_val (float, optional): Log-likelihood given to walkers that are
+            not evaluated (no active leaf in any branch, or ``-inf`` log-prior). To keep the
+            zero-leaf model possible, set it to the log-likelihood of the data alone.
+            Default ``-1e300``.
+        num_repeats_in_model (int, optional): In-model proposals per sampler iteration.
+            The stored acceptance counts sum over the repeats, so divide
+            :attr:`acceptance_fraction` by this number. Default ``1``.
+        num_repeats_rj (int, optional): Reversible-jump proposals per sampler iteration;
+            same caveat for :attr:`rj_acceptance_fraction`. Default ``1``.
+        track_moves (bool, optional): If ``True``, store each move's acceptance fraction in
+            the backend under ``f"{ClassName}_{k}"`` (``k`` counts moves of the same class).
+            When resuming an initialized backend the move names must match the stored ones
+            (``ValueError`` otherwise; start a new backend from the last state instead).
+            Reordering moves of the same class is not detected and would mix their
+            acceptance fractions. Default ``True``.
         nsamplers (int, optional): Number of fully independent samplers (ensembles) to run
             simultaneously. All samplers' likelihood evaluations are batched into single
             calls (useful for GPU likelihoods). Each sampler carries its own temperature
@@ -208,24 +240,87 @@ class EnsembleSampler(object):
             Internally the sampler axis is folded into the temperature axis, so proposals
             simply see ``nsamplers * ntemps`` "temperatures". Use
             ``State.samplers_running`` (bool array of shape ``(nsamplers,)``) to freeze
-            converged samplers: frozen samplers are skipped in likelihood/prior evaluation
-            and tempering. (default: ``1``)
-        prior_transform_fn (object or dict, optional): Per-sampler prior-basis transform,
-            replacing ``ParaEnsembleSampler.prior_transform_fn``. A dict maps branch names
-            to objects implementing ``transform_to_prior_basis(coords, samplers_running_idx)``
-            (in-place map of ``(num_running, ntemps, nwalkers, ndim)`` coordinates to the
-            basis in which ``priors`` is defined) and ``adjust_logp(logp, samplers_running_idx)``
-            (in-place Jacobian adjustment). Useful for per-sampler prior bounds (e.g.
-            per-band frequency limits). Requires ``nleaves_max == 1`` for the transformed
-            branch and is incompatible with reversible jump, multiple-try moves,
-            ``provide_groups``, and ``all_models_together`` priors. (default: ``None``)
-        info (dict, optional): Key and value pairs reprenting any information
-            the user wants to add to the backend if the user is not inputing
-            their own backend.
+            converged samplers: frozen samplers get a ``-inf`` log-prior, so they are
+            skipped in likelihood evaluation, always reject, and are excluded from
+            tempering. Default ``1``.
+        prior_transform_fn (object or dict, optional): Per-sampler prior-basis transform
+            (the counterpart of the deprecated ``ParaEnsembleSampler`` argument). A dict
+            maps branch names to objects implementing
+            ``transform_to_prior_basis(coords, samplers_running_idx)`` (in-place map of
+            ``(num_running, ntemps, nwalkers, ndim)`` coordinates to the basis in which
+            ``priors`` is defined) and ``adjust_logp(logp, samplers_running_idx)`` (in-place
+            Jacobian adjustment of the ``(num_running, ntemps, nwalkers)`` log-prior);
+            ``samplers_running_idx`` holds the integer indices of the running samplers. A
+            single object is allowed for a single branch. Useful for per-sampler prior
+            bounds (e.g. per-band frequency limits). Requires ``nleaves_max == 1`` for the
+            transformed branch and is incompatible with reversible jump, multiple-try
+            moves, ``provide_groups``, and ``all_models_together`` priors. Default
+            ``None``.
+        info (dict, optional): Extra key/value pairs passed as ``backend.reset(**info)``
+            when the backend is not yet initialized (they become backend attributes; an
+            :class:`~eryn.backends.HDFBackend` also writes them to the file). Default
+            ``{}``.
 
     Raises:
-        ValueError: Any startup issues.
+        ValueError: Invalid ``branch_names``, ``ndims``, ``nleaves_max``, ``nleaves_min``,
+            ``priors``, ``periodic``, ``rj_moves`` str or ``prior_transform_fn``;
+            ``rj_moves`` without ``moves``; ``nsamplers < 1``; a move whose temperature
+            control has another ``nsamplers``; runtime plotting with ``nsamplers > 1``; or,
+            when resuming, a backend whose moves, key order, ``nsamplers`` or shapes differ.
+        AssertionError: ``ndims`` / ``nleaves_max`` (or ``nleaves_min``) length does not
+            match the number of branches, or an ``int`` is given for several branches.
 
+    Attributes:
+        backend (Backend): Chain storage.
+        branch_names (list of str): Branch names, in order.
+        ndims (dict): Dimensionality per branch.
+        nleaves_max (dict): Maximum leaf count per branch.
+        nleaves_min (dict): Minimum leaf count per branch; only set when ``rj_moves`` is
+            ``True`` or a str.
+        nwalkers (int): Walkers per temperature.
+        ntemps (int): Temperatures per sampler.
+        nsamplers (int): Number of independent samplers.
+        ntemps_eff (int): Folded leading-axis size ``nsamplers * ntemps``.
+        temperature_control (TemperatureControl or None): Tempering controller.
+        moves (list of Move): In-model moves; ``weights`` holds their probabilities.
+        rj_moves (list of Move or None): RJ moves; ``rj_weights`` holds their
+            probabilities. ``None`` for ``rj_moves=False``; not set at all for the default
+            ``rj_moves=None``.
+        has_reversible_jump (bool): Whether RJ proposals are made.
+        all_moves (dict): Tracked moves keyed by ``f"{ClassName}_{k}"`` (empty when
+            ``track_moves`` is ``False``).
+        key_order (dict): Branch name to the parameter ``key_order`` of its prior.
+        log_like_fn (callable): ``log_like_fn`` wrapped with ``args`` / ``kwargs``.
+        periodic (PeriodicContainer or None): Periodic-parameter container.
+
+    Note:
+        When ``backend`` is already initialized (for example an existing HDF5 file), the
+        sampler checks it against the configuration and resumes: the random state is read
+        from the backend and the last stored sample becomes the default starting point, so
+        ``run_mcmc(None, nsteps)`` continues the chain. As written this fails for
+        untempered runs: the backend never writes ``betas`` there, but the restored
+        :class:`~eryn.state.State` still carries the (zero or uninitialized) stored rows,
+        and :meth:`sample` then assigns them to a ``None`` temperature control
+        (``AttributeError``).
+
+    Example:
+        >>> import numpy as np
+        >>> from eryn.ensemble import EnsembleSampler
+        >>> from eryn.priors import ProbDistContainer, UniformDistribution
+        >>> def log_like_fn(x, mu, invcov):
+        ...     diff = x - mu
+        ...     return -0.5 * diff @ invcov @ diff
+        >>> ndim, nwalkers = 3, 16
+        >>> priors = ProbDistContainer(
+        ...     {f"x{i}": UniformDistribution(-5.0, 5.0) for i in range(ndim)}
+        ... )
+        >>> sampler = EnsembleSampler(
+        ...     nwalkers, ndim, log_like_fn, priors, args=[np.zeros(ndim), np.eye(ndim)]
+        ... )
+        >>> start = priors.rvs(size=(nwalkers,))
+        >>> state = sampler.run_mcmc(start, 100, progress=False)
+        >>> sampler.get_chain()["model_0"].shape
+        (100, 1, 16, 1, 3)
     """
 
     def __init__(
@@ -796,23 +891,18 @@ class EnsembleSampler(object):
 
     @property
     def random_state(self):
-        """
-        The state of the internal random number generator. In practice, it's
-        the result of calling ``get_state()`` on a
-        ``numpy.random.mtrand.RandomState`` object. You can try to set this
-        property but be warned that if you do this and it fails, it will do
-        so silently.
+        """tuple: State of the sampler's own random number generator.
 
+        The result of ``get_state()`` on the internal ``numpy.random.mtrand.RandomState``
+        (separate from the global numpy generator). It is copied onto every
+        ``state.random_state`` and saved by the backend. Setting it calls ``set_state``;
+        a failing set is silently ignored.
         """
         return self._random.get_state()
     
     @random_state.setter  # NOQA
     def random_state(self, state):
-        """
-        Try to set the state of the random number generator but fail silently
-        if it doesn't work. Don't say I didn't warn you...
-
-        """
+        """Set the generator state; any exception from ``set_state`` is swallowed."""
         try:
             self._random.set_state(state)
         except:
@@ -820,19 +910,24 @@ class EnsembleSampler(object):
 
     @property
     def priors(self):
-        """
-        Return the priors in the sampler.
+        """dict: Branch name (or ``"all_models_together"``) to prior object.
 
+        Setting it accepts the forms listed for the ``priors`` constructor argument: a
+        :class:`~eryn.priors.ProbDistContainer` is stored as ``{"model_0": container}``,
+        dict values that are dicts of distributions are wrapped in a
+        :class:`~eryn.priors.ProbDistContainer`, containers and other objects with a
+        ``logpdf`` method are stored as given. The setter also fills :attr:`key_order` from
+        each prior's ``key_order`` attribute.
+
+        Raises:
+            ValueError: A distribution without ``logpdf``, a dict value of an unsupported
+                type, or an input that is neither a dict nor a ``ProbDistContainer``.
         """
         return self._priors
 
     @priors.setter
     def priors(self, priors):
-        """Set priors information.
-
-        This performs checks to make sure the inputs are okay.
-
-        """
+        """Validate and store the priors (see the getter)."""
         if isinstance(priors, dict):
             self._priors = {}
 
@@ -870,15 +965,19 @@ class EnsembleSampler(object):
 
     @property
     def iteration(self):
+        """int: Number of steps stored in the backend (``backend.iteration``)."""
         return self.backend.iteration
 
     def reset(self, **kwargs):
-        """
-        Reset the backend.
+        """Clear the backend and re-initialize its storage for this sampler.
+
+        Calls ``backend.reset(nwalkers, ndims, **kwargs)``, with ``nsamplers`` defaulting to
+        the sampler's. Called by the constructor when the backend is not yet initialized.
 
         Args:
-            **info (dict, optional): information to pass to backend reset method.
-
+            **kwargs: Forwarded to :meth:`eryn.backends.Backend.reset` (for example
+                ``branch_names``, ``ntemps``, ``nleaves_max``, ``rj``, ``moves``,
+                ``key_order``, and extra ``info`` key/value pairs).
         """
         kwargs.setdefault("nsamplers", self.nsamplers)
         self.backend.reset(self.nwalkers, self.ndims, **kwargs)
@@ -891,15 +990,17 @@ class EnsembleSampler(object):
         return d
 
     def get_model(self):
-        """Get ``Model`` object from sampler
+        """Build the :class:`~eryn.model.Model` handed to every move's ``propose``.
 
-        The model object is used to pass necessary information to the
-        proposals. This method can be used to retrieve the ``model`` used
-        in the sampler from outside the sampler.
+        Called once per :meth:`sample` call. It can also be used to run a move by hand
+        outside the sampler. Subclasses may override it to pass a different model object.
 
         Returns:
-            :class:`Model`: ``Model`` object used by sampler.
-
+            Model: ``Model(log_like_fn, compute_log_like_fn, compute_log_prior_fn,
+            temperature_control, map_fn, random)`` with the wrapped likelihood,
+            :meth:`compute_log_like`, :meth:`compute_log_prior`, the sampler's
+            :class:`~eryn.moves.tempering.TemperatureControl` (or ``None``),
+            ``pool.map`` (or the built-in ``map``), and the sampler's ``RandomState``.
         """
         # Set up a wrapper around the relevant model functions
         if self.pool is not None:
@@ -928,47 +1029,64 @@ class EnsembleSampler(object):
         store=True,
         progress=False,
     ):
-        """Advance the chain as a generator
+        """Advance the ensemble as a generator.
+
+        Each proposal iteration runs ``num_repeats_in_model`` in-model proposals (a move
+        drawn from ``moves`` with ``weights`` each time), then ``num_repeats_rj``
+        reversible-jump proposals if reversible jump is on. Every ``thin_by`` proposal
+        iterations the state is saved to the backend (when ``store``) and yielded.
+        ``update_fn`` runs every ``update_iterations`` proposal iterations; ``stopping_fn``
+        and runtime plots are handled by :meth:`run_mcmc`, not here.
+
+        Before the first proposal the initial state is completed: a missing ``log_prior``
+        / ``log_like`` is computed with :meth:`compute_log_prior` /
+        :meth:`compute_log_like`; ``betas`` stored on the state are loaded into the
+        temperature control, otherwise the temperature control's ladder is copied onto the
+        state.
 
         Args:
-            initial_state (State or ndarray[ntemps, nwalkers, nleaves_max, ndim] or dict): The initial
-                :class:`State` or positions of the walkers in the
-                parameter space. If multiple branches used, must be dict with keys
-                as the ``branch_names`` and values as the positions. If ``betas`` are
-                provided in the state object, they will be loaded into the
-                ``temperature_control``.
-            iterations (int or None, optional): The number of steps to generate.
-                ``None`` generates an infinite stream (requires ``store=False``).
-                (default: 1)
-            tune (bool, optional): If ``True``, the parameters of some moves
-                will be automatically tuned. (default: ``False``)
-            thin_by (int, optional): If you only want to store and yield every
-                ``thin_by`` samples in the chain, set ``thin_by`` to an
-                integer greater than 1. When this is set, ``iterations *
-                thin_by`` proposals will be made. (default: 1)
-            store (bool, optional): By default, the sampler stores in the backend
-                the positions (and other information) of the samples in the
-                chain. If you are using another method to store the samples to
-                a file or if you don't need to analyze the samples after the
-                fact (for burn-in for example) set ``store`` to ``False``. (default: ``True``)
-            progress (bool or str, optional): If ``True``, a progress bar will
-                be shown as the sampler progresses. If a string, will select a
-                specific ``tqdm`` progress bar - most notable is
-                ``'notebook'``, which shows a progress bar suitable for
-                Jupyter notebooks.  If ``False``, no progress bar will be
-                shown. (default: ``False``)
-            skip_initial_state_check (bool, optional): If ``True``, a check
-                that the initial_state can fully explore the space will be
-                skipped. If using reversible jump, the user needs to ensure this on their own
-                (``skip_initial_state_check``is set to ``False`` in this case.
-                (default: ``True``)
+            initial_state (State, np.ndarray, or dict): Starting point. A :class:`State` (or
+                subclass, copied with its own class), or coordinates as accepted by
+                :class:`State`: one array for a single branch, or a dict keyed by branch
+                name, each of shape ``(ntemps, nwalkers, nleaves_max, ndim)`` (2D/3D
+                shortcuts are expanded by :class:`State`). With ``nsamplers > 1`` use 5D
+                ``(nsamplers, ntemps, nwalkers, nleaves_max, ndim)`` coordinates or a State
+                built with ``nsamplers``; for ``nleaves_max == 1`` a 4D
+                ``(nsamplers, ntemps, nwalkers, ndim)`` array is also accepted. The input
+                is copied.
+            iterations (int or None, optional): Number of states to yield (and store).
+                ``None`` generates an infinite stream (requires ``store=False``). Default
+                ``1``.
+            tune (bool, optional): If ``True``, call ``move.tune(state, accepted)`` after
+                every proposal. Default ``False``.
+            skip_initial_state_check (bool, optional): If ``False``, the intent is to raise
+                ``ValueError`` when the initial walkers are not linearly independent
+                (:func:`walkers_independent`, without reversible jump). As written the check
+                reads ``state.coords``, which :class:`State` does not define, so ``False``
+                raises ``AttributeError``. Default ``True``.
+            thin_by (int, optional): Proposal iterations per stored / yielded state, so
+                ``iterations * thin_by`` proposal iterations are made. Replaced by
+                ``self.override_thin_by`` when that attribute exists. Default ``1``.
+            store (bool, optional): If ``True``, grow the backend by ``iterations`` steps
+                and save every yielded state (with acceptance counts and, if
+                ``track_moves``, per-move acceptance fractions). Default ``True``.
+            progress (bool or str, optional): ``True`` shows a ``tqdm`` progress bar; a str
+                selects ``tqdm.tqdm_<str>`` (for example ``"notebook"``); ``False`` shows
+                none. Default ``False``.
 
-        Returns:
-            State: Every ``thin_by`` steps, this generator yields the :class:`State` of the ensemble.
+        Yields:
+            State: The current state, every ``thin_by`` proposal iterations. The stock
+            moves update this object in place on later iterations; keep a copy
+            (``State(state, copy=True)``) if a snapshot is needed.
 
         Raises:
-            ValueError: Improper initialization.
-
+            ValueError: ``iterations=None`` with ``store=True``; coordinates, ``betas``,
+                ``log_like`` or ``log_prior`` with the wrong shape; a state with another
+                ``nsamplers``; a NaN or infinite initial ``log_like`` / ``log_prior`` on a
+                running sampler; or ``thin_by <= 0``.
+            AttributeError: ``skip_initial_state_check=False`` (see above), or the state
+                carries ``betas`` while the sampler is untempered (``temperature_control``
+                is ``None``), as for a state restored from an untempered backend.
         """
         if iterations is None and store:
             raise ValueError("'store' must be False when 'iterations' is None")
@@ -1233,28 +1351,37 @@ class EnsembleSampler(object):
     def run_mcmc(
         self, initial_state, nsteps, burn=None, post_burn_update=False, **kwargs
     ):
-        """
-        Iterate :func:`sample` for ``nsteps`` iterations and return the result.
+        """Run :meth:`sample` for ``nsteps`` stored steps and return the last state.
+
+        An optional burn-in of ``burn`` proposal iterations runs first with ``store=False``
+        and ``thin_by=1``. Then :meth:`sample` runs for ``nsteps`` yielded states; after
+        each one, runtime plots are produced every ``plot_iterations`` states and
+        ``stopping_fn`` is checked every ``stopping_iterations`` states (a truthy return
+        stops the run early). The final state is kept so that ``run_mcmc(None, ...)``
+        continues from it.
 
         Args:
-            initial_state (State or ndarray[ntemps, nwalkers, nleaves_max, ndim] or dict): The initial
-                :class:`State` or positions of the walkers in the
-                parameter space. If multiple branches used, must be dict with keys
-                as the ``branch_names`` and values as the positions. If ``betas`` are
-                provided in the state object, they will be loaded into the
-                ``temperature_control``.
-            nsteps (int): The number of steps to generate. The total number of proposals is ``nsteps * thin_by``.
-            burn (int, optional): Number of burn steps to run before storing information. The ``thin_by`` kwarg is ignored when counting burn steps since there is no storage (equivalent to ``thin_by=1``).
-            post_burn_update (bool, optional): If ``True``, run ``update_fn`` after burn in.
-
-        Other parameters are directly passed to :func:`sample`.
+            initial_state (State, np.ndarray, dict, or None): Starting point, as for
+                :meth:`sample`. ``None`` continues from the state returned by the previous
+                call (or, for a resumed backend, from its last stored sample).
+            nsteps (int): Number of states to yield and (with ``store=True``) store. The
+                number of proposal iterations is ``nsteps * thin_by``. ``0`` returns the
+                (burned-in) initial state without sampling.
+            burn (int, optional): Burn-in proposal iterations run before storing. Default
+                ``None`` (no burn-in).
+            post_burn_update (bool, optional): If ``True`` and ``update_fn`` is set, call
+                ``update_fn(burn, state, sampler)`` once after the burn-in. Default
+                ``False``.
+            **kwargs: Forwarded to :meth:`sample` (``thin_by``, ``store``, ``progress``,
+                ``tune``, ``skip_initial_state_check``).
 
         Returns:
-            State: This method returns the most recent result from :func:`sample`.
+            State: The last state yielded by :meth:`sample` (or the initial state when
+            ``nsteps == 0``).
 
         Raises:
-            ValueError: ``If initial_state`` is None and ``run_mcmc`` has never been called.
-
+            ValueError: ``initial_state`` is ``None`` and there is no previous state, or
+                any error raised by :meth:`sample`.
         """
         if initial_state is None:
             if self._previous_state is None:
@@ -1311,22 +1438,35 @@ class EnsembleSampler(object):
         return results
 
     def compute_log_prior(self, coords, inds=None, supps=None, branch_supps=None):
-        """Calculate the vector of log-prior for the walkers
+        """Compute the log-prior of every walker, summed over branches and active leaves.
+
+        Three paths: an ``"all_models_together"`` prior is called once on the full dicts;
+        with ``provide_groups`` each branch prior is evaluated on the active leaves only
+        and summed per walker; otherwise each branch prior is evaluated on all leaves and
+        inactive leaves are zeroed before summing. A branch with a ``prior_transform_fn``
+        is mapped to its prior basis first (running samplers only; the other samplers get
+        ``-inf``). When ``nsamplers > 1`` and the input has the full folded leading axis,
+        rows of samplers that are not running (``state.samplers_running``) are set to
+        ``-inf``, which makes the likelihood skip them and every proposal there reject.
 
         Args:
-            coords (dict): Keys are ``branch_names`` and values are
-                the position np.arrays[ntemps, nwalkers, nleaves_max, ndim].
-                This dictionary is created with the ``branches_coords`` attribute
-                from :class:`State`.
-            inds (dict, optional): Keys are ``branch_names`` and values are
-                the ``inds`` np.arrays[ntemps, nwalkers, nleaves_max] that indicates
-                which leaves are being used. This dictionary is created with the
-                ``branches_inds`` attribute from :class:`State`.
-                (default: ``None``)
+            coords (dict): Branch name to coordinates of shape
+                ``(ntemps, nwalkers, nleaves_max, ndim)``, for example
+                ``state.branches_coords``. ``ntemps`` here is the leading-axis size of the
+                input (folded ``nsamplers * ntemps`` for a full state).
+            inds (dict, optional): Branch name to boolean active-leaf arrays of shape
+                ``(ntemps, nwalkers, nleaves_max)``, for example ``state.branches_inds``.
+                ``None`` treats every leaf as active. Default ``None``.
+            supps (BranchSupplemental, optional): Forwarded to an ``"all_models_together"``
+                prior only. Default ``None``.
+            branch_supps (dict, optional): Forwarded to an ``"all_models_together"`` prior
+                only. Default ``None``.
 
         Returns:
-            np.ndarray[ntemps, nwalkers]: Prior Values
+            np.ndarray: Log-prior, shape ``(ntemps, nwalkers)``.
 
+        Raises:
+            ValueError: The prior returns NaN.
         """
 
         # get number of temperature and walkers
@@ -1457,32 +1597,47 @@ class EnsembleSampler(object):
     def compute_log_like(
         self, coords, inds=None, logp=None, supps=None, branch_supps=None
     ):
-        """Calculate the vector of log-likelihood for the walkers
+        """Compute the log-likelihood of every walker by calling ``log_like_fn``.
+
+        Marshals the branch dicts into the call convention described for ``log_like_fn``
+        in the class docstring (vectorized or one call per walker, with optional groups and
+        supplementals). Walkers with a ``-inf`` log-prior are removed from the call (their
+        ``inds`` are switched off in a copy, and the ``"inds_keep"`` entry of a branch
+        supplemental that holds one is set to ``False`` there, in place); walkers left with
+        no active leaf receive ``fill_zero_leaves_val``.
 
         Args:
-            coords (dict): Keys are ``branch_names`` and values are
-                the position np.arrays[ntemps, nwalkers, nleaves_max, ndim].
-                This dictionary is created with the ``branches_coords`` attribute
-                from :class:`State`.
-            inds (dict, optional): Keys are ``branch_names`` and values are
-                the inds np.arrays[ntemps, nwalkers, nleaves_max] that indicates
-                which leaves are being used. This dictionary is created with the
-                ``branches_inds`` attribute from :class:`State`.
-                (default: ``None``)
-            logp (np.ndarray[ntemps, nwalkers], optional): Log prior values associated
-                with all walkers. If not provided, it will be calculated because
-                if a walker has logp = -inf, its likelihood is not calculated.
-                This prevents evaluting likelihood outside the prior.
-                (default: ``None``)
+            coords (dict): Branch name to coordinates of shape
+                ``(ntemps, nwalkers, nleaves_max, ndim)``, for example
+                ``state.branches_coords``.
+            inds (dict, optional): Branch name to boolean active-leaf arrays of shape
+                ``(ntemps, nwalkers, nleaves_max)``. ``None`` treats every leaf as active.
+                Default ``None``.
+            logp (np.ndarray, optional): Log-prior of shape ``(ntemps, nwalkers)``. If
+                ``None`` it is computed with :meth:`compute_log_prior`, so that the
+                likelihood is never evaluated outside the prior. Default ``None``.
+            supps (BranchSupplemental, optional): Walker-level supplemental information
+                (``state.supplemental``, base shape ``(ntemps, nwalkers)``), passed to
+                ``log_like_fn`` as ``supps`` when ``provide_supplemental`` is set. Default
+                ``None``.
+            branch_supps (dict, optional): Branch name to
+                :class:`~eryn.state.BranchSupplemental` (or ``None``), for example
+                ``state.branches_supplemental``, passed as ``branch_supps`` when
+                ``provide_supplemental`` is set. Default ``None``.
 
         Returns:
-            tuple: Carries log-likelihood and blob information.
-                First entry is np.ndarray[ntemps, nwalkers] with values corresponding
-                to the log likelihood of each walker. Second entry is ``blobs``.
+            tuple[np.ndarray, np.ndarray | None]: The log-likelihood, shape
+            ``(ntemps, nwalkers)``, and the blobs (``None`` when ``log_like_fn`` returns no
+            blobs). The blobs are reshaped to ``(ntemps, nwalkers)``, which only succeeds
+            for exactly one blob column; more columns raise ``ValueError`` in the reshape.
+            If every walker has a ``-inf`` log-prior, a warning is issued and
+            ``(full -1e300 array, None)`` is returned.
 
-         Raises:
-            ValueError: Infinite or NaN values in parameters.
-
+        Raises:
+            ValueError: An infinite or NaN coordinate on an active leaf; both ``supps`` and
+                ``branch_supps`` are ``None`` while ``provide_supplemental`` is set; or the
+                likelihood returns NaN.
+            NotImplementedError: ``log_like_fn`` returns an object-dtype array.
         """
 
         # if inds not provided, use all
@@ -1786,12 +1941,22 @@ class EnsembleSampler(object):
 
     @property
     def acceptance_fraction(self):
-        """The fraction of proposed steps that were accepted"""
+        """np.ndarray: In-model acceptance fraction per walker.
+
+        ``backend.accepted / backend.iteration``, counted over the proposal iterations that
+        were stored. Shape ``(ntemps, nwalkers)``, or ``(nsamplers, ntemps, nwalkers)`` when
+        ``nsamplers > 1``. The counts sum over ``num_repeats_in_model`` repeats, so divide
+        by that number for a per-proposal fraction.
+        """
         return self.backend.accepted / float(self.backend.iteration)
 
     @property
     def rj_acceptance_fraction(self):
-        """The fraction of proposed reversible jump steps that were accepted"""
+        """np.ndarray or None: Reversible-jump acceptance fraction per walker.
+
+        Same layout as :attr:`acceptance_fraction` (sums over ``num_repeats_rj``);
+        ``None`` without reversible jump.
+        """
         if self.has_reversible_jump:
             return self.backend.rj_accepted / float(self.backend.iteration)
         else:
@@ -1799,11 +1964,19 @@ class EnsembleSampler(object):
 
     @property
     def swap_acceptance_fraction(self):
-        """The fraction of proposed temperature swaps that were accepted"""
+        """np.ndarray: Fraction of accepted temperature swaps per adjacent rung pair.
+
+        ``backend.swaps_accepted / (backend.iteration * nwalkers)``. Shape
+        ``(ntemps - 1,)``, or ``(nsamplers, ntemps - 1)`` when ``nsamplers > 1``.
+        """
         return self.backend.swaps_accepted / float(
             self.backend.iteration * self.nwalkers
         )
 
+    # The getters below forward to the backend; each takes the docstring of the
+    # matching Backend method through the ``__doc__`` assignment after its def.
+    # Exception: get_log_like is assigned Backend.get_log_prior.__doc__ (a code
+    # slip), so its rendered help describes the log-prior.
     def get_chain(self, **kwargs):
         return self.get_value("chain", **kwargs)
 
@@ -1850,7 +2023,17 @@ class EnsembleSampler(object):
     get_betas.__doc__ = Backend.get_betas.__doc__
 
     def get_value(self, name, **kwargs):
-        """Get a specific value"""
+        """Return a stored quantity from the backend.
+
+        Args:
+            name (str): Stored quantity, for example ``"chain"``, ``"inds"``,
+                ``"log_like"``, ``"log_prior"``, ``"betas"``, ``"blobs"``.
+            **kwargs: Forwarded to ``backend.get_value`` (see
+                :meth:`eryn.backends.Backend.get_value`).
+
+        Returns:
+            dict or np.ndarray: What ``backend.get_value`` returns.
+        """
         return self.backend.get_value(name, **kwargs)
 
     def get_autocorr_time(self, **kwargs):
@@ -1861,10 +2044,12 @@ class EnsembleSampler(object):
 
 
 class _FunctionWrapper(object):
-    """
-    This is a hack to make the likelihood function pickleable when ``args``
-    or ``kwargs`` are also included.
+    """Picklable wrapper that appends fixed ``args`` / ``kwargs`` to every likelihood call.
 
+    Args:
+        f (callable): The user's ``log_like_fn``.
+        args (list or None): Extra positional arguments (``None`` means none).
+        kwargs (dict or None): Extra keyword arguments (``None`` means none).
     """
 
     def __init__(
@@ -1878,11 +2063,18 @@ class _FunctionWrapper(object):
         self.kwargs = {} if kwargs is None else kwargs
 
     def __call__(self, args_and_kwargs):
-        """
-        Internal function that takes a tuple (args, kwargs) for entrance into the Likelihood.
+        """Call ``f(*args_in, *self.args, **kwargs_in, **self.kwargs)``.
 
-        ``self.args`` and ``self.kwargs`` are added to these inputs.
+        Args:
+            args_and_kwargs (tuple[list, dict]): The sampler-built positional arguments and
+                keyword arguments of one call.
 
+        Returns:
+            object: Whatever ``f`` returns.
+
+        Raises:
+            Exception: Any exception from ``f`` is re-raised after the inputs and the
+                traceback are printed.
         """
 
         args_in_add, kwargs_in_add = args_and_kwargs
@@ -1908,16 +2100,21 @@ class _FunctionWrapper(object):
 
 
 def walkers_independent(coords_in):
-    """Determine if walkers are independent
+    """Check that the walkers are linearly independent (originally from ``emcee``).
 
-    Orginall from ``emcee``.
+    The coordinates are flattened to ``(ntemps * nwalkers, nleaves_max * ndim)``, centred,
+    and normalized per column; the walkers count as independent when every coordinate is
+    finite, no column is constant, and the condition number is at most ``1e8``.
 
     Args:
-        coords_in (np.ndarray[ntemps, nwalkers, nleaves_max, ndim]): Coordinates of the walkers.
+        coords_in (np.ndarray): Coordinates of shape
+            ``(ntemps, nwalkers, nleaves_max, ndim)``.
 
     Returns:
-        bool: If walkers are independent.
+        bool: ``True`` if the walkers are independent.
 
+    Raises:
+        AssertionError: ``coords_in`` is not 4D.
     """
     # make sure it is 4-dimensional and reshape
     # so it groups by temperature and walker

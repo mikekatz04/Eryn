@@ -3,7 +3,9 @@
 This file provides guidance to Claude Code (claude.ai/code) when working
 with code in this repository.
 
-**LISA Analysis Tools–wide conventions:** [`../LISAanalysistools/docs/conventions.md`](../LISAanalysistools/docs/conventions.md) (canonical). **This repo's map:** [`docs/codebase-map.md`](docs/codebase-map.md).
+**LISA Analysis Tools–wide conventions:** [`../LISAanalysistools/docs/conventions.md`](../LISAanalysistools/docs/conventions.md) (canonical). **This repo's map:** [`docs/codebase-map.md`](docs/codebase-map.md) (known defects and gotchas in §7; the user-facing list is [`docs/source/general/todos.rst`](docs/source/general/todos.rst)).
+
+Eryn itself is pure Python/NumPy (optional CuPy; no C++, CUDA or JAX code), so the hierarchy below governs its sibling repos and any native or JAX path added here later.
 
 ## Backend implementation hierarchy (LISA Analysis Tools–wide rule)
 
@@ -16,8 +18,8 @@ backends (GPU C++ / CPU C++ / JAX), follow this hierarchy:
 
 2. **CPU C++ mirrors GPU C++ as closely as possible.** Same kernel
    structure, same algorithm, same data flow — use `#ifdef __CUDACC__`
-   or shared compile-time macros (`CUDA_SHARED`, `THREAD_START`,
-   `BLOCK_INCR`, …) to bridge platform differences. The CPU path
+   or shared compile-time macros (`CUDA_SHARED`, `THREAD_START_X`,
+   `BLOCK_INCR_X`, …) to bridge platform differences. The CPU path
    exists primarily for testing and CPU-only environments; it must
    not diverge in algorithm or output beyond floating-point order of
    operations.

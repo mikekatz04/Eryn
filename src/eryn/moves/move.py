@@ -1,4 +1,18 @@
 # -*- coding: utf-8 -*-
+"""Base class shared by every Eryn proposal ("move").
+
+:class:`Move` holds the machinery common to all proposals: the Gibbs-split bookkeeping
+(:meth:`Move.gibbs_sampling_setup_iterator`, :meth:`Move.setup_proposals`,
+:meth:`Move.cleanup_proposals_gibbs`, :meth:`Move.fix_logp_gibbs`), the switch between
+the tempered and untempered log posterior driven by ``temperature_control``, the
+per-move acceptance counters, and :meth:`Move.update`, which merges the accepted walkers of
+a proposed :class:`~eryn.state.State` back into the current one.
+
+Concrete moves (:class:`~eryn.moves.MHMove`, :class:`~eryn.moves.RedBlueMove`,
+:class:`~eryn.moves.GroupMove`, :class:`~eryn.moves.ReversibleJumpMove`, ...) subclass it and
+implement ``propose(model, state) -> (state, accepted)``, the call
+:meth:`~eryn.ensemble.EnsembleSampler.sample` makes once per in-model (or RJ) repeat.
+"""
 
 from copy import deepcopy
 
@@ -15,54 +29,83 @@ __all__ = ["Move"]
 
 
 class Move(object):
-    """Parent class for proposals or "moves"
+    """Parent class for proposals ("moves").
+
+    Subclasses implement ``propose(model, state) -> (state, accepted)``, which
+    :meth:`~eryn.ensemble.EnsembleSampler.sample` calls once per in-model (or RJ) repeat:
+
+    * ``model`` is the :class:`eryn.model.Model` namedtuple (``log_like_fn``,
+      ``compute_log_like_fn``, ``compute_log_prior_fn``, ``temperature_control``, ``map_fn``,
+      ``random``). Moves score points with ``model.compute_log_prior_fn(coords, inds=...)`` and
+      ``model.compute_log_like_fn(coords, inds=..., logp=..., supps=..., branch_supps=...)``
+      and draw random numbers from ``model.random``.
+    * ``state`` is the current :class:`eryn.state.State`; each branch holds ``coords`` of
+      shape ``(ntemps, nwalkers, nleaves_max, ndim)`` and boolean ``inds`` of shape
+      ``(ntemps, nwalkers, nleaves_max)``; ``log_like`` and ``log_prior`` have shape
+      ``(ntemps, nwalkers)``. With independent samplers (``nsamplers > 1``) the leading axis
+      is FOLDED to ``nsamplers * ntemps``.
+    * The returned ``accepted`` is a ``(ntemps, nwalkers)`` boolean (or count) array that
+      the sampler adds to its per-iteration acceptance counter. A move also adds it to
+      :attr:`accepted` and increments :attr:`num_proposals` itself.
 
     Args:
-        temperature_control (:class:`tempering.TemperatureControl`, optional):
-            This object controls the tempering. It is passed to the parent class
-            to moves so that all proposals can share and use temperature settings.
-            (default: ``None``)
-        periodic (:class:`eryn.utils.PeriodicContainer, optional):
-            This object holds periodic information and methods for periodic parameters. It is passed to the parent class
-            to moves so that all proposals can share and use periodic information.
-            (default: ``None``)
-        gibbs_sampling_setup (str, tuple, dict, or list, optional): This sets the Gibbs Sampling setup if
-            desired. The Gibbs sampling setup is completely customizable down to the leaf and parameters.
-            All of the separate Gibbs sampling splits will be run within 1 call to this proposal.
-            If ``None``, run all branches and all parameters. If ``str``, run all parameters within the
-            branch given as the string. To enter a branch with a specific set of parameters, you can
-            provide a 2-tuple with the first entry as the branch name and the second entry as a 2D
-            boolean array of shape ``(nleaves_max, ndim)`` that indicates which leaves and/or parameters
-            you want to run. ``None`` can also be entered in the second entry if all parameters are to be run.
-            A dictionary is also possible with keys as branch names and values as the same 2D boolean array
-            of shape ``(nleaves_max, ndim)`` that indicates which leaves and/or parameters
-            you want to run. ``None`` can also be entered in the value of the dictionary
-            if all parameters are to be run. If multiple keys are provided in the dictionary, those
-            branches will be run simultaneously in the proposal as one iteration of the proposing loop.
-            The final option is a list. This is how you make sure to run all the Gibbs splits. Each entry
-            of the list can be a string, 2-tuple, or dictionary as described above. The list controls
-            the order in which all of these splits are run. (default: ``None``)
-        prevent_swaps (bool, optional): If ``True``, do not perform temperature swaps in this move.
-        skip_supp_names_update (list, optional): List of names (`str`), that can be in any
-            :class:`eryn.state.BranchSupplemental`,
-            to skip when updating states (:func:`Move.update`). This is useful if a
-            large amount of memory is stored in the branch supplementals.
-        is_rj (bool, optional): If using RJ, this should be ``True``. (default: ``False``)
-        use_gpu (bool, optional): If ``True``, use ``CuPy`` for computations.
-            Use ``NumPy`` if ``use_gpu == False``. (default: ``False``)
-        random_seed (int, optional): Set the random seed in ``CuPy/NumPy`` if not ``None``.
-            (default: ``None``)
+        temperature_control (:class:`~eryn.moves.tempering.TemperatureControl`, optional):
+            Controls the tempering. Setting it (here or later through the property) makes
+            :attr:`compute_log_posterior` the tempered
+            :meth:`~eryn.moves.tempering.TemperatureControl.compute_log_posterior_tempered`
+            and copies the ladder layout onto the move (``ntemps``, ``nsamplers``,
+            ``ntemps_per_sampler``, ``sampler_id_rows``). ``None`` uses the untempered
+            :meth:`compute_log_posterior_basic`. The
+            :class:`~eryn.ensemble.EnsembleSampler` fills it in for moves passed with
+            ``None`` when the sampler is tempered. Default ``None``.
+        periodic (:class:`~eryn.utils.PeriodicContainer`, optional): Periodic-parameter
+            information used to wrap proposed points and compute periodic distances. The
+            sampler fills in its own for moves passed with ``None``. Default ``None``.
+        gibbs_sampling_setup (str, tuple, dict, or list, optional): Gibbs splits to run within
+            ONE call to ``propose``. All splits run in order, each as a separate
+            propose/accept step.
+
+            * ``None``: one split over all branches and all parameters.
+            * ``str``: all parameters of that branch.
+            * 2-tuple ``(branch_name, mask)``: ``mask`` is a 2D boolean array of shape
+              ``(nleaves_max, ndim)`` selecting leaves and/or parameters, or ``None`` for all
+              of them.
+            * ``dict``: ``{branch_name: mask_or_None}``; all keys run together as one split.
+            * ``list``: of the above; each entry is one split, run in list order.
+
+            Default ``None``.
+        prevent_swaps (bool, optional): If ``True``, skip the temperature swaps at the end of
+            the proposal. Only :class:`~eryn.moves.ReversibleJumpMove` reads it. Default
+            ``False``.
+        skip_supp_names_update (list, optional): Supplemental keys (``str``, in the state's
+            ``supplemental`` or any branch's :class:`~eryn.state.BranchSupplemental`) that
+            :meth:`update` does not merge on accept/reject. Useful for large or frozen
+            side-channel data. Default ``[]``.
+        is_rj (bool, optional): ``True`` for reversible-jump moves. Then a Gibbs split may
+            only name branches (no leaf/parameter masks); a tuple split raises
+            ``ValueError``. Default ``False``.
+        use_gpu (bool, optional): If ``True``, :attr:`xp` is ``cupy`` (or ``numpy`` when cupy
+            is not installed). Default ``False``.
+        random_seed (int, optional): If not ``None``, seed the global ``xp.random``
+            generator with it. Default ``None``.
+        **kwargs: Accepted for cooperative multiple inheritance and ignored (not stored).
 
     Raises:
-        ValueError: Incorrect inputs.
+        ValueError: ``gibbs_sampling_setup`` has the wrong type or a malformed mask, or a
+            leaf/parameter mask is given with ``is_rj=True``.
 
     Attributes:
-        Note: All kwargs are stored as attributes.
-        num_proposals (int): the number of times this move has been run. This is needed to
-            compute the acceptance fraction.
-        gibbs_sampling_setup (list): All of the Gibbs sampling splits as described above.
-        xp (obj): ``NumPy`` or ``CuPy``.
-        use_gpu (bool): Whether ``Cupy`` (``True``) is used or not (``False``).
+        num_proposals (int): Number of propose/accept steps run so far (one per Gibbs split
+            for most moves). Divides :attr:`accepted` in :attr:`acceptance_fraction`.
+        time (int): Initialised to ``0``; not advanced by the base class.
+        gibbs_sampling_setup (list or None): Normalised Gibbs splits.
+        branch_names_run_all (list): Per split, the branch names it runs (``[None]`` when
+            there is no Gibbs setup, meaning all branches).
+        inds_run_all (list): Per split, the matching masks (``None`` = all parameters).
+        compute_log_posterior (callable): ``(logl, logp) -> logP``, tempered or basic.
+        nsamplers (int): Number of independent samplers (class default ``1``).
+        ntemps_per_sampler (int or None): Rungs per sampler.
+        sampler_id_rows (np.ndarray or None): Sampler index of each folded leading-axis row.
 
     """
 
@@ -98,6 +141,7 @@ class Move(object):
 
     @property
     def use_gpu(self):
+        """bool: Whether :attr:`xp` is ``cupy`` (``True``) or ``numpy`` (``False``)."""
         return self._use_gpu
 
     @use_gpu.setter
@@ -106,13 +150,30 @@ class Move(object):
 
     @property
     def xp(self):
+        """module: ``cupy`` if :attr:`use_gpu` is truthy, else ``numpy``.
+
+        Raises:
+            ValueError: :attr:`use_gpu` is ``None``.
+        """
         if self._use_gpu is None:
             raise ValueError("use_gpu has not been set.")
         xp = cp if self.use_gpu else np
         return xp
 
     def _initialize_branch_setup(self, gibbs_sampling_setup, is_rj=False):
-        """Initialize the gibbs setup properly."""
+        """Normalise ``gibbs_sampling_setup`` into per-split branch names and masks.
+
+        Sets :attr:`gibbs_sampling_setup` (list), ``gibbs_sampling_setup_input`` (a copy of the
+        input, only when a setup is given), :attr:`branch_names_run_all` and
+        :attr:`inds_run_all`. See the class docstring for the accepted forms.
+
+        Args:
+            gibbs_sampling_setup (str, tuple, dict, list, or None): User Gibbs setup.
+            is_rj (bool, optional): Reject leaf/parameter masks (RJ moves). Default ``False``.
+
+        Raises:
+            ValueError: Wrong type, malformed mask, or a mask given with ``is_rj=True``.
+        """
         self.gibbs_sampling_setup = gibbs_sampling_setup
 
         message_rj = """inputting gibbs indexing at the leaf/parameter level is not allowed 
@@ -222,19 +283,18 @@ class Move(object):
             self.inds_run_all = [None]
 
     def gibbs_sampling_setup_iterator(self, all_branch_names):
-        """Iterate through the gibbs splits as a generator
+        """Iterate over the Gibbs splits.
+
+        Without a Gibbs setup this yields one split covering every branch with no masks.
 
         Args:
-            all_branch_names (list): List of all branch names.
+            all_branch_names (list): All branch names of the state, used for the
+                "all branches" split.
 
         Yields:
-            2-tuple: Gibbs sampling split.
-                        First entry is the branch names to run and the second entry is the index
-                        into the leaves/parameters for this Gibbs split.
-
-        Raises:
-            ValueError: Incorrect inputs.
-
+            tuple[list, list]: ``(branch_names_run, inds_run)``: the branch names this split
+            proposes and, per branch, a ``(nleaves_max, ndim)`` boolean mask or ``None``
+            (all leaves/parameters).
         """
         for branch_names_run, inds_run in zip(
             self.branch_names_run_all, self.inds_run_all
@@ -249,23 +309,24 @@ class Move(object):
     def setup_proposals(
         self, branch_names_run, inds_run, branches_coords, branches_inds
     ):
-        """Setup proposals when gibbs sampling.
+        """Restrict the proposal inputs to one Gibbs split.
 
-        Get inputs into the proposal including Gibbs split information.
+        For a branch with a mask, a leaf takes part when any of its parameters is selected
+        AND the leaf is alive in ``branches_inds``; a branch with mask ``None`` keeps its
+        ``inds`` unchanged. Coordinates are passed through (the same arrays, not copies).
 
         Args:
-            branch_names_run (list): List of branch names to run concurrently.
-            inds_run (list): List of ``inds`` arrays including Gibbs sampling information.
-            branches_coords (dict): Dictionary of coordinate arrays for all branches.
-            branches_inds (dict): Dictionary of ``inds`` arrays for all branches.
+            branch_names_run (list): Branch names proposed together in this split.
+            inds_run (list): Per branch, a ``(nleaves_max, ndim)`` boolean mask or ``None``.
+            branches_coords (dict): ``{branch_name: coords}`` with coords of shape
+                ``(ntemps, nwalkers, nleaves_max, ndim)``.
+            branches_inds (dict): ``{branch_name: inds}`` with boolean inds of shape
+                ``(ntemps, nwalkers, nleaves_max)``.
 
         Returns:
-            tuple:  (coords, inds, at_least_one_proposal)
-                        * Coords including Gibbs sampling info.
-                        * ``inds`` including Gibbs sampling info.
-                        * ``at_least_one_proposal`` is boolean. It is passed out to
-                            indicate there is at least one leaf available for the requested branch names.
-
+            tuple[dict, dict, bool]: ``(coords, inds, at_least_one_proposal)`` restricted to
+            ``branch_names_run``; ``at_least_one_proposal`` is ``True`` when any selected leaf is
+            alive anywhere in the ensemble (callers skip the split otherwise).
         """
         inds_going_for_proposal = {}
         coords_going_for_proposal = {}
@@ -306,18 +367,25 @@ class Move(object):
         new_branch_supps=None,
         branches_supplemental=None,
     ):
-        """Set all not Gibbs-sampled parameters back
+        """Restore everything a Gibbs split did not propose, in place.
+
+        Parameters outside a branch's mask are copied back from ``branches_coords``; branches
+        missing from ``q`` (and from ``new_inds`` / ``new_branch_supps`` when given) are filled
+        with copies of the current values. ``q``, ``new_inds`` and ``new_branch_supps`` are
+        modified in place.
 
         Args:
-            branch_names_run (list): List of branch names to run concurrently.
-            inds_run (list): List of ``inds`` arrays including Gibbs sampling information.
-            q (dict): Dictionary of new coordinate arrays for all proposal branches.
-            branches_coords (dict): Dictionary of old coordinate arrays for all branches.
-            new_inds (dict, optional): Dictionary of new inds arrays for all proposal branches.
-            branches_inds (dict, optional): Dictionary of old inds arrays for all branches.
-            new_branch_supps (dict, optional): Dictionary of new branches supplemental for all proposal branches.
-            branches_supplemental (dict, optional): Dictionary of old branches supplemental for all branches.
-
+            branch_names_run (list): Branch names proposed together in this split.
+            inds_run (list): Per branch, a ``(nleaves_max, ndim)`` boolean mask or ``None``.
+            q (dict): Proposed coordinates ``{branch_name: (ntemps, nwalkers, nleaves_max,
+                ndim)}``.
+            branches_coords (dict): Current coordinates for all branches.
+            new_inds (dict, optional): Proposed ``inds`` per branch. Default ``None``.
+            branches_inds (dict, optional): Current ``inds``; required when ``new_inds`` is
+                given. Default ``None``.
+            new_branch_supps (dict, optional): Proposed branch supplementals. Default ``None``.
+            branches_supplemental (dict, optional): Current branch supplementals; required
+                when ``new_branch_supps`` is given. Default ``None``.
         """
         # add back any parameters that are fixed for this round
         for bnr, ir in zip(branch_names_run, inds_run):
@@ -337,17 +405,18 @@ class Move(object):
                 new_branch_supps[key] = branches_supplemental[key].copy()
 
     def ensure_ordering(self, correct_key_order, q, new_inds, new_branch_supps):
-        """Ensure proper order of key in dictionaries.
+        """Reorder the proposal dictionaries to the state's branch order.
 
         Args:
-            correct_key_order (list): Keys in correct order.
-            q (dict): Dictionary of new coordinate arrays for all branches.
-            new_inds (dict): Dictionary of new inds arrays for all branches.
-            new_branch_supps (dict or None): Dictionary of new branches supplemental for all proposal branches.
+            correct_key_order (list): Branch names in the state's order.
+            q (dict): Proposed coordinates for all branches.
+            new_inds (dict): Proposed ``inds`` for all branches.
+            new_branch_supps (dict or None): Proposed branch supplementals. Missing branches
+                become ``None``; the reordered dict is a deep copy.
 
         Returns:
-            Tuple: (q, new_inds, new_branch_supps) in correct key order.
-
+            tuple[dict, dict, dict or None]: ``(q, new_inds, new_branch_supps)`` in
+            ``correct_key_order`` (inputs returned unchanged when already ordered).
         """
         if list(q.keys()) != correct_key_order:
             q = {key: q[key] for key in correct_key_order}
@@ -367,14 +436,18 @@ class Move(object):
         return q, new_inds, new_branch_supps
 
     def fix_logp_gibbs(self, branch_names_run, inds_run, logp, inds):
-        """Set any walker with no leaves to have logp = -np.inf
+        """Fix the proposed log prior of walkers this Gibbs split cannot move, in place.
+
+        A walker with leaves in the model but none selected by this split gets
+        ``logp = -inf`` (so the proposal is rejected and nothing changes); a walker with no
+        leaves at all gets ``logp = 0.0``.
 
         Args:
-            branch_names_run (list): List of branch names to run concurrently.
-            inds_run (list): List of ``inds`` arrays including Gibbs sampling information.
-            logp (np.ndarray): Log of the prior going into final posterior computation.
-            inds (dict): Dictionary of ``inds`` arrays for all branches.
-
+            branch_names_run (list): Branch names proposed together in this split.
+            inds_run (list): Per branch, a ``(nleaves_max, ndim)`` boolean mask or ``None``.
+            logp (np.ndarray): Proposed log prior, shape ``(ntemps, nwalkers)``. Modified in
+                place.
+            inds (dict): ``inds`` arrays ``(ntemps, nwalkers, nleaves_max)`` for all branches.
         """
         total_leaves = np.zeros_like(logp, dtype=int)
         total_leaves_here = np.zeros_like(logp, dtype=int)
@@ -404,7 +477,11 @@ class Move(object):
 
     @property
     def accepted(self):
-        """Accepted counts for this move."""
+        """np.ndarray: Accepted counts for this move, shape ``(ntemps, nwalkers)``.
+
+        Set by :class:`~eryn.ensemble.EnsembleSampler` (zeros) before sampling; the setter
+        requires an ``np.ndarray``.
+        """
         if self._accepted is None:
             raise ValueError(
                 "accepted must be inititalized with the init_accepted function if you want to use it."
@@ -418,7 +495,7 @@ class Move(object):
 
     @property
     def acceptance_fraction(self):
-        """Acceptance fraction for this move."""
+        """np.ndarray: ``accepted / num_proposals``, shape ``(ntemps, nwalkers)``."""
         return self.accepted / self.num_proposals
 
     # independent-samplers defaults (overwritten when a sampler-aware
@@ -429,7 +506,13 @@ class Move(object):
 
     @property
     def temperature_control(self):
-        """Temperature controller"""
+        """:class:`~eryn.moves.tempering.TemperatureControl` or None: Temperature controller.
+
+        Setting it also selects :attr:`compute_log_posterior` (tempered when not ``None``) and
+        copies the ladder layout onto the move: ``ntemps`` (the folded
+        ``nsamplers * ntemps`` size), ``nsamplers``, ``ntemps_per_sampler`` and
+        ``sampler_id_rows``.
+        """
         return self._temperature_control
 
     @temperature_control.setter
@@ -457,56 +540,60 @@ class Move(object):
             )
 
     def compute_log_posterior_basic(self, logl, logp):
-        r"""Compute the log of posterior
+        r"""Compute the untempered log posterior :math:`\log{P} = \log{L} + \log{p}`.
 
-        :math:`\log{P} = \log{L} + \log{p}`
-
-        This method is to mesh with the tempered log posterior computation.
+        Used as :attr:`compute_log_posterior` when no ``temperature_control`` is set; same
+        call signature as the tempered version.
 
         Args:
-            logl (np.ndarray[ntemps, nwalkers]): Log-likelihood values.
-            logp (np.ndarray[ntemps, nwalkers]): Log-prior values.
+            logl (np.ndarray): Log-likelihood values, shape ``(ntemps, nwalkers)``.
+            logp (np.ndarray): Log-prior values, same shape.
 
         Returns:
-            np.ndarray[ntemps, nwalkers]: Log-Posterior values.
+            np.ndarray: Log-posterior values, shape ``(ntemps, nwalkers)``.
         """
         return logl + logp
 
     def tune(self, state, accepted):
-        """Tune a proposal
+        """Tune the proposal after a ``propose`` call (no-op hook).
 
-        This is a place holder for tuning.
+        :meth:`~eryn.ensemble.EnsembleSampler.sample` calls it after every ``propose`` when
+        run with ``tune=True``. Override to adapt proposal settings.
 
         Args:
-            state (:class:`eryn.state.State`): Current state of sampler.
-            accepted (np.ndarray[ntemps, nwalkers]): Accepted values for last pass
-                through proposal.
-
+            state (:class:`eryn.state.State`): State after the proposal.
+            accepted (np.ndarray): Accepted array returned by that ``propose`` call, shape
+                ``(ntemps, nwalkers)``.
         """
         pass
 
     def update(self, old_state, new_state, accepted, subset=None):
-        """Update a given subset of the ensemble with an accepted proposal
+        """Merge the accepted walkers of ``new_state`` into ``old_state`` in place.
 
-        This class was updated from ``emcee`` to handle the added structure
-        of Eryn.
+        Adapted from ``emcee`` for Eryn's branch structure. For every walker in ``subset``
+        the accepted entries of ``new_state`` replace those of ``old_state`` for
+        ``log_like``, ``log_prior``, each branch's ``inds`` and ``coords``, the branch
+        supplementals and state supplemental (except keys in ``skip_supp_names_update``), and
+        ``blobs``. ``log_like`` is merged with ``np.where`` so a rejected ``-inf`` proposal
+        cannot leave a NaN behind; for ``log_prior`` the proposed ``-inf`` values are zeroed
+        before the arithmetic blend for the same reason (a ``-inf`` prior is never accepted).
 
         Args:
-            old_state (:class:`eryn.state.State`): State with current information.
-                New information is added to this state.
-            new_state (:class:`eryn.state.State`): State with information from proposed
-                points.
-            accepted (np.ndarray[ntemps, nwalkers]): A vector of booleans indicating
-                which walkers were accepted.
-            subset (np.ndarray[ntemps, nwalkers], optional): A boolean mask
-                indicating which walkers were included in the subset.
-                This can be used, for example, when updating only the
-                primary ensemble in a :class:`RedBlueMove`.
-                (default: ``None``)
+            old_state (:class:`eryn.state.State`): Current state; modified in place.
+            new_state (:class:`eryn.state.State`): Proposed state. Its arrays have the
+                ``subset`` shape on the walker axis (``(ntemps, nsubset, ...)``).
+            accepted (np.ndarray): Boolean accept flags, shape ``(ntemps, nwalkers)`` (full
+                ensemble), indexed through ``subset``.
+            subset (np.ndarray, optional): INTEGER walker indices of shape
+                ``(ntemps, nsubset)``: row ``t`` lists the walkers of temperature ``t`` that
+                ``new_state`` describes (as used by :class:`~eryn.moves.RedBlueMove` for one
+                red/blue half). ``None`` means every walker. Default ``None``.
 
         Returns:
-            :class:`eryn.state.State`: ``old_state`` with accepted points added from ``new_state``.
+            :class:`eryn.state.State`: ``old_state``, updated.
 
+        Raises:
+            ValueError: ``new_state`` has blobs but ``old_state`` does not.
         """
 
         # TODO: update this to be use (tuples of inds) ??

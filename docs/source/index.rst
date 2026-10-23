@@ -8,7 +8,7 @@ Welcome to Eryn's documentation!
 
 .. image:: img/ents.jpg
   :width: 400
-  :alt: Alternative text
+  :alt: An Ent standing in a forest
   :align: center
 
 .. include:: readme.md

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""General Metropolis-Hastings proposal base class (:class:`MHMove`)."""
 
 from copy import deepcopy
 
@@ -11,11 +12,27 @@ __all__ = ["MHMove"]
 
 
 class MHMove(Move):
-    r"""A general Metropolis-Hastings proposal
+    r"""A general Metropolis-Hastings proposal over the whole ensemble.
 
-    Concrete implementations can be made by providing a ``get_proposal`` method.
-    For standard Gaussian Metropolis moves, :class:`moves.GaussianMove` can be used.
+    Concrete moves provide ``get_proposal``; :meth:`propose` does the rest: for every Gibbs
+    split, propose all walkers at once, score, accept per walker with
+    ``factors + logP_new - logP_old > log(U)`` and merge. Stock subclasses:
+    :class:`~eryn.moves.GaussianMove`, :class:`~eryn.moves.EigenAxisMove`,
+    :class:`~eryn.moves.DistributionGenerate`, :class:`~eryn.moves.NUTSMove`.
 
+    A subclass that has already evaluated the proposed points (for example a multiple-try
+    move) can set ``self.mt_ll`` and ``self.mt_lp`` (shape ``(ntemps, nwalkers)``) inside
+    ``get_proposal``; :meth:`propose` then uses them instead of calling the model, and
+    stores no blobs.
+
+    Args:
+        **kwargs: Forwarded to :class:`~eryn.moves.Move` (``temperature_control``,
+            ``periodic``, ``gibbs_sampling_setup``, ``skip_supp_names_update``, ...).
+
+    Attributes:
+        current_model (:class:`eryn.model.Model`): Model of the current call (set before
+            ``get_proposal``, for subclasses).
+        current_state (:class:`eryn.state.State`): State of the current call.
     """
 
     def __init__(self, **kwargs):
@@ -23,48 +40,56 @@ class MHMove(Move):
         Move.__init__(self, **kwargs)
 
     def get_proposal(self, branches_coords, random, branches_inds=None, **kwargs):
-        """Get proposal
+        """Propose new coordinates for every walker (implemented by subclasses).
 
         Args:
-            branches_coords (dict): Keys are ``branch_names`` and values are
-                np.ndarray[ntemps, nwalkers, nleaves_max, ndim] representing
-                coordinates for walkers.
-            random (object): Current random state object.
-            branches_inds (dict, optional): Keys are ``branch_names`` and values are
-                np.ndarray[ntemps, nwalkers, nleaves_max] representing which
-                leaves are currently being used. (default: ``None``)
-            **kwargs (ignored): This is added for compatibility. It is ignored in this function.
+            branches_coords (dict): ``{branch_name: coords}`` for the branches of this Gibbs
+                split, shape ``(ntemps, nwalkers, nleaves_max, ndim)``.
+            random (object): Sampler random state (``model.random``).
+            branches_inds (dict, optional): ``{branch_name: inds}``, boolean
+                ``(ntemps, nwalkers, nleaves_max)``: the leaves to move (alive leaves, further
+                restricted by the Gibbs split). Default ``None``.
+            **kwargs: :meth:`propose` also passes ``supps`` and ``branch_supps`` (deep copies
+                of the state's supplementals).
 
         Returns:
-            tuple: (Proposed coordinates, factors) -> (dict, np.ndarray)
+            tuple[dict, np.ndarray]: ``(q, factors)``: proposed coordinates with the shapes
+            of ``branches_coords`` and log proposal factors (``log q(x | y) - log q(y | x)``)
+            of shape ``(ntemps, nwalkers)``.
 
         Raises:
-            NotImplementedError: If proposal is not implemented in a subclass.
-
+            NotImplementedError: Always, in this base class.
         """
 
         raise NotImplementedError("The proposal must be implemented by " "subclasses")
 
     def setup(self, branches_coords):
-        """Any setup for the proposal.
+        """Hook run at the start of every :meth:`propose` (no-op here).
 
         Args:
-            branches_coords (dict): Keys are ``branch_names``. Values are
-                np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent
-                coordinates for all the walkers.
-
+            branches_coords (dict): ``{branch_name: coords}`` of the current state, shape
+                ``(ntemps, nwalkers, nleaves_max, ndim)``.
         """
 
     def propose(self, model, state):
-        """Use the move to generate a proposal and compute the acceptance
+        """Propose every walker once per Gibbs split and accept with Metropolis-Hastings.
+
+        Skips a split with no alive selected leaf. Scores with
+        ``model.compute_log_prior_fn(q, inds=...)`` and ``model.compute_log_like_fn`` (with
+        the copied supplementals, which the likelihood may adjust in place) unless
+        ``mt_ll`` / ``mt_lp`` are set; walkers with no selectable leaf are fixed by
+        :meth:`~eryn.moves.Move.fix_logp_gibbs`. Ends with
+        :meth:`~eryn.moves.tempering.TemperatureControl.temper_comps` when a
+        ``temperature_control`` is set.
 
         Args:
-            model (:class:`eryn.model.Model`): Carrier of sampler information.
-            state (:class:`State`): Current state of the sampler.
+            model (:class:`eryn.model.Model`): Sampler callables and ``random``.
+            state (:class:`eryn.state.State`): Current state; updated in place.
 
         Returns:
-            :class:`State`: State of sampler after proposal is complete.
-
+            tuple[:class:`eryn.state.State`, np.ndarray]: ``(state, accepted)``;
+            ``accepted`` is the boolean ``(ntemps, nwalkers)`` result of the LAST Gibbs split
+            run (all splits are added to :attr:`accepted`).
         """
 
         self.setup(state.branches_coords)

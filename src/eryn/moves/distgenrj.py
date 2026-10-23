@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Birth/death reversible-jump move drawing new leaves from a distribution."""
 
 import numpy as np
 
@@ -9,16 +10,26 @@ __all__ = ["DistributionGenerateRJ"]
 
 
 class DistributionGenerateRJ(ReversibleJumpMove):
-    """Generate Revesible-Jump proposals from a distribution.
+    """Reversible-jump birth/death move with births drawn from a fixed distribution.
 
-    The prior can be entered as the ``generate_dist`` to generate proposals directly from the prior.
+    Per walker and branch, one leaf is added (birth) or removed (death), the direction
+    chosen at random (or fixed by ``fix_change``) and forced at the leaf-count limits. A
+    born leaf is drawn from ``generate_dist[branch]``; the log factor is
+    ``-log q(new leaf)`` for a birth and ``+log q(removed leaf)`` for a death, so with
+    ``generate_dist`` equal to the prior the prior cancels and acceptance is a likelihood
+    ratio (times the edge factors). This is the default RJ move of
+    :class:`~eryn.ensemble.EnsembleSampler` (``rj_moves=True``).
 
     Args:
-        generate_dist (dict): Keys are branch names and values are :class:`ProbDistContainer` objects 
-            that have ``logpdf`` and ``rvs`` methods. If you 
-        *args (tuple, optional): Additional arguments to pass to parent classes.
-        **kwargs (dict, optional): Keyword arguments passed to parent classes.
+        generate_dist (dict): ``{branch_name: ProbDistContainer}``; each must be an
+            :class:`eryn.priors.ProbDistContainer` (``logpdf`` and ``rvs``). Passing the
+            priors draws births from the prior.
+        *args: Forwarded to :class:`~eryn.moves.ReversibleJumpMove`.
+        **kwargs: Forwarded to :class:`~eryn.moves.ReversibleJumpMove` (``nleaves_max`` and
+            ``nleaves_min`` are required there).
 
+    Raises:
+        ValueError: A ``generate_dist`` value is not a ``ProbDistContainer``.
     """
 
     def __init__(self, generate_dist, *args, **kwargs):
@@ -33,24 +44,24 @@ class DistributionGenerateRJ(ReversibleJumpMove):
         super().__init__(*args, **kwargs)
 
     def get_model_change_proposal(self, inds, random, nleaves_min, nleaves_max):
-        """Helper function for changing the model count by 1.
-        
-        This helper function works with nested models where you want to add or remove
-        one leaf at a time. 
+        """Choose, per walker, one leaf to add or remove.
+
+        The direction is ``random.choice([-1, +1])`` (or ``fix_change``), forced to ``+1``
+        at ``nleaves_min`` and ``-1`` at ``nleaves_max``. A birth picks a uniformly random
+        dead slot, a death a uniformly random alive leaf. Removed leaves keep their
+        coordinates in the state.
 
         Args:
-            inds (np.ndarray): ``inds`` values for this specific branch with shape 
+            inds (np.ndarray): Boolean ``inds`` of one branch, shape
                 ``(ntemps, nwalkers, nleaves_max)``.
-            random (object): Current random state of the sampler.
-            nleaves_min (int): Minimum allowable leaf count for this branch.
-            nleaves_max (int): Maximum allowable leaf count for this branch.
+            random (object): Sampler random state with ``choice``.
+            nleaves_min (int): Minimum leaf count for this branch.
+            nleaves_max (int): Maximum leaf count for this branch.
 
         Returns:
-            dict: Keys are ``"+1"`` and ``"-1"``. Values are indexing information.
-                    ``"+1"`` and ``"-1"`` indicate if a source is being added or removed, respectively.
-                    The indexing information is a 2D array with shape ``(number changing, 3)``.
-                    The length 3 is the index into each of the ``(ntemps, nwalkers, nleaves_max)``.
-        
+            dict: ``{"+1": idx, "-1": idx}`` for births and deaths; each ``idx`` is an
+            integer array of shape ``(nchanging, 3)`` holding ``(temp, walker, leaf)``
+            indices.
         """
 
         ntemps, nwalkers, _ = inds.shape
@@ -124,32 +135,28 @@ class DistributionGenerateRJ(ReversibleJumpMove):
     def get_proposal(
         self, all_coords, all_inds, nleaves_min_all, nleaves_max_all, random, **kwargs
     ):
-        """Make a proposal
+        """Propose one birth or death per walker in every branch of the split.
+
+        Branches with ``nleaves_min == nleaves_max`` are passed through unchanged.
 
         Args:
-            all_coords (dict): Keys are ``branch_names``. Values are
-                np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent
-                coordinates for all the walkers.
-            all_inds (dict): Keys are ``branch_names``. Values are
-                np.ndarray[ntemps, nwalkers, nleaves_max]. These are the boolean
-                arrays marking which leaves are currently used within each walker.
-            nleaves_min_all (dict): Minimum values of leaf ount for each model. Must have same order as ``all_cords``. 
-            nleaves_max_all (dict): Maximum values of leaf ount for each model. Must have same order as ``all_cords``. 
-            random (object): Current random state of the sampler.
-            **kwargs (ignored): For modularity. 
+            all_coords (dict): ``{branch_name: coords}``, shape
+                ``(ntemps, nwalkers, nleaves_max, ndim)``.
+            all_inds (dict): ``{branch_name: inds}``, boolean
+                ``(ntemps, nwalkers, nleaves_max)``; same keys and order as ``all_coords``.
+            nleaves_min_all (dict): ``{branch_name: int}`` minimum leaf counts.
+            nleaves_max_all (dict): ``{branch_name: int}`` maximum leaf counts.
+            random (object): Sampler random state (``model.random``).
+            **kwargs: Ignored.
 
         Returns:
-            tuple: Tuple containing proposal information.
-                First entry is the new coordinates as a dictionary with keys
-                as ``branch_names`` and values as
-                ``double `` np.ndarray[ntemps, nwalkers, nleaves_max, ndim] containing
-                proposed coordinates. Second entry is the new ``inds`` array with
-                boolean values flipped for added or removed sources. Third entry
-                is the factors associated with the
-                proposal necessary for detailed balance. This is effectively
-                any term in the detailed balance fraction. +log of factors if
-                in the numerator. -log of factors if in the denominator.
+            tuple[dict, dict, np.ndarray]: ``(q, new_inds, factors)``: coordinates with born
+            leaves filled from ``generate_dist``, ``inds`` with births switched on and deaths
+            off, and log factors of shape ``(ntemps, nwalkers)``
+            (``+logpdf(removed) - logpdf(born)`` summed over branches).
 
+        Raises:
+            ValueError: ``nleaves_min > nleaves_max`` for a branch.
         """
         # prepare the output dictionaries
         q = {}

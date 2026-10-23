@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""Deprecated in-memory storage for the deprecated ``ParaEnsembleSampler``.
+
+:class:`ParaBackend` stores ``ngroups`` independent single-branch ensembles with arrays of
+shape ``(nsteps, ngroups, ntemps, nwalkers, ...)``. It is superseded by
+:class:`~eryn.backends.Backend` with ``reset(..., nsamplers=...)``, whose storage always
+carries the independent-sampler axis.
+"""
 
 import warnings
 
@@ -15,51 +22,43 @@ __all__ = ["ParaBackend"]
 
 
 class ParaBackend(object):
-    """A simple default backend that stores the chain in memory
+    """In-memory storage for :class:`~eryn.paraensemble.ParaEnsembleSampler` (deprecated).
+
+    Stores ``ngroups`` independent single-branch ensembles. Coordinates of groups that are
+    not running at a step are stored as ``store_missing_leaves``. Construction emits a
+    ``DeprecationWarning``; use :class:`~eryn.backends.Backend` with
+    ``reset(..., nsamplers=...)`` instead.
 
     Args:
-        store_missing_leaves (double, optional): Number to store for leaves that are not
-            used in a specific step. (default: ``np.nan``)
-        dtype (dtype, optional): Dtype to use for data storage. If None,
-            program uses np.float64. (default: ``None``)
+        store_missing_leaves (float, optional): Value stored for the coordinates of groups
+            that are not running. Default ``np.nan``.
+        dtype (numpy.dtype, optional): Floating dtype of the stored arrays. ``None`` means
+            ``np.float64``. Default ``None``.
 
     Attributes:
-        accepted (2D int np.ndarray): Number of accepted steps for within-model moves.
-            The shape is (ntemps, nwalkers).
-        betas (2D double np.ndarray): Inverse temperature latter at each step.
-            Shape is (nsteps, ntemps). This keeps track of adjustable temperatures.
-        blobs (4D double np.ndarray): Stores extra blob information returned from
-            likelihood function. Shape is (nsteps, ntemps, nwalkers, nblobs).
-        branch_names (list of str): List of branch names.
-        chain (dict): Dictionary with branch_names as keys. The values are
-            5D double np.ndarray arrays with shape (nsteps, ntemps, nwalkers, nleaves_max, ndim).
-            These are the locations of walkers over the MCMC run.
-        dtype (dtype): Dtype to use for data storage.
-        inds (dict): Keys are branch_names. Values are 4D bool np.ndarray
-            of shape (nsteps, ntemps, nwalkers, nleaves_max). This array details which
-            leaves are used in the current step. This is really only
-            relevant for reversible jump.
-        initiailized (bool): If ``True``, backend object has been initialized.
-        iteration (int): Current index within the data storage arrays.
-        log_prior (3D double np.ndarray): Log of the prior values. Shape is
-            (nsteps, nwalkers, ntemps).
-        log_like (3D double np.ndarray): Log of the likelihood values. Shape is
-            (nsteps, nwalkers, ntemps).
-        move_info (dict): Dictionary containing move info.
-        move_keys (list): List of keys for ``move_info``.
-        nbranches (int): Number of branches.
-        ndims (dict): Dimensionality of each branch.
-        nleaves_max (dict): Maximum allowable leaves for each branch.
-        nwalkers (int): The size of the ensemble (per temperature).
-        ntemps (int): Number of rungs in the temperature ladder.
-        reset_args (tuple): Arguments to reset backend.
-        reset_kwargs (dict): Keyword arguments to reset backend.
-        rj (bool): If True, reversible-jump techniques are used.
-        rj_accepted (2D int np.ndarray): Number of accepted steps for between-model moves.
-            The shape is (ntemps, nwalkers).
-        store_missing_leaves (double): Number to store for leaves that are not
-            used in a specific step.
-
+        initialized (bool): ``True`` once :meth:`reset` has run.
+        iteration (int): Number of steps saved so far.
+        chain (dict): ``{branch_name: array}`` of shape
+            ``(nsteps, ngroups, ntemps, nwalkers, ndim)``.
+        groups_running (dict): ``{branch_name: array}`` of booleans, shape
+            ``(nsteps, ngroups)``.
+        log_like (np.ndarray): Log-likelihood, shape ``(nsteps, ngroups, ntemps, nwalkers)``.
+        log_prior (np.ndarray): Log-prior, shape ``(nsteps, ngroups, ntemps, nwalkers)``.
+        betas (np.ndarray): Inverse temperatures, shape ``(nsteps, ngroups, ntemps)``.
+        accepted (np.ndarray): Cumulative acceptance counts, shape
+            ``(ngroups, ntemps, nwalkers)``.
+        swaps_accepted (np.ndarray): Cumulative accepted swaps, shape
+            ``(ngroups, ntemps - 1)``.
+        random_state (object): Random state of the last saved step.
+        branch_name (str): Name of the single branch.
+        ndim (int): Parameters per walker.
+        nwalkers (int): Walkers per temperature.
+        ntemps (int): Temperatures per group.
+        ngroups (int): Number of independent groups.
+        reset_args (tuple): ``(ndim, nwalkers, ngroups)`` of the last :meth:`reset`.
+        reset_kwargs (dict): Keyword arguments of the last :meth:`reset`.
+        dtype (numpy.dtype): Storage dtype.
+        store_missing_leaves (float): Value stored for non-running groups.
     """
 
     def __init__(self, store_missing_leaves=np.nan, dtype=None):
@@ -78,7 +77,7 @@ class ParaBackend(object):
         self.store_missing_leaves = store_missing_leaves
 
     def reset_base(self):
-        """Allows for simple reset based on previous inputs"""
+        """Call :meth:`reset` again with the arguments of the previous call."""
         self.reset(*self.reset_args, **self.reset_kwargs)
 
     def reset(
@@ -90,30 +89,15 @@ class ParaBackend(object):
         branch_name: str = "model_0",
         **info,
     ):
-        """Clear the state of the chain and empty the backend
+        """Clear the backend and allocate empty storage for ``ngroups`` ensembles.
 
         Args:
-            nwalkers (int): The size of the ensemble (per temperature).
-            ndims (int, list of ints, or dict): The number of dimensions for each branch. If
-                ``dict``, keys should be the branch names and values the associated dimensionality.
-            nleaves_max (int, list of ints, or dict, optional): Maximum allowable leaf count for each branch.
-                It should have the same length as the number of branches.
-                If ``dict``, keys should be the branch names and values the associated maximal leaf value.
-                (default: ``1``)
-            ntemps (int, optional): Number of rungs in the temperature ladder.
-                (default: ``1``)
-            branch_names (str or list of str, optional): Names of the branches used. If not given,
-                branches will be names ``model_0``, ..., ``model_n`` for ``n`` branches.
-                (default: ``None``)
-            nbranches (int, optional): Number of branches. This is only used if ``branch_names is None``.
-                (default: ``1``)
-            rj (bool, optional): If True, reversible-jump techniques are used.
-                (default: ``False``)
-            moves (list, optional): List of all of the move classes input into the sampler.
-                (default: ``None``)
-            **info (dict, optional): Any other key-value pairs to be added
-                as attributes to the backend.
-
+            ndim: Parameters per walker.
+            nwalkers: Walkers per temperature.
+            ngroups: Number of independent groups.
+            ntemps: Temperatures per group. Default ``1``.
+            branch_name: Name of the single branch. Default ``"model_0"``.
+            **info: Extra key/value pairs set as attributes on the backend.
         """
         # store inputs for later resets
         self.reset_args = (ndim, nwalkers, ngroups)
@@ -169,22 +153,22 @@ class ParaBackend(object):
         self.initialized = True
 
     def get_value(self, name, thin=1, discard=0, slice_vals=None):
-        """Returns a requested value to user.
-
-        This function helps to streamline the backend for both
-        basic and hdf backend.
+        """Return one stored quantity, keeping the steps ``discard + thin - 1, ...``.
 
         Args:
-            name (str): Name of value requested.
-            thin (int, optional): Take only every ``thin`` steps from the
-                chain. (default: ``1``)
-            discard (int, optional): Discard the first ``discard`` steps in
-                the chain as burn-in. (default: ``0``)
-            slice_vals (indexing np.ndarray or slice, optional): Ignored for non-HDFBackend.
+            name (str): ``"chain"``, ``"groups_running"``, ``"log_like"``,
+                ``"log_prior"``, ``"betas"`` or another stored array attribute.
+            thin (int, optional): Keep every ``thin``-th step. Default ``1``.
+            discard (int, optional): Number of initial steps to drop. Default ``0``.
+            slice_vals (optional): Not supported; must be ``None``. Default ``None``.
 
         Returns:
-            dict or np.ndarray: Values requested.
+            np.ndarray: The selected steps (``chain`` and ``groups_running`` are returned
+            for the single branch, not as a dict).
 
+        Raises:
+            ValueError: ``slice_vals`` is given.
+            AttributeError: Nothing has been stored yet.
         """
         if slice_vals is not None:
             raise ValueError("slice_vals can only be used with an HDF Backend.")
@@ -214,108 +198,65 @@ class ParaBackend(object):
         return v
 
     def get_chain(self, **kwargs):
-        """Get the stored chain of MCMC samples
+        """Get the stored coordinates.
 
         Args:
-            thin (int, optional): Take only every ``thin`` steps from the
-                chain. (default: ``1``)
-            discard (int, optional): Discard the first ``discard`` steps in
-                the chain as burn-in. (default: ``0``)
-            slice_vals (indexing np.ndarray or slice, optional): This is only available in :class:`eryn.backends.hdfbackend`.
-                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``.
-                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``.
-                This is particularly useful if files are very large and the user only wants a
-                small subset of the overall array. (default: ``None``)
+            **kwargs: ``thin`` and ``discard``, forwarded to :meth:`get_value`.
 
         Returns:
-            dict: MCMC samples
-                The dictionary contains np.ndarrays of samples
-                across the branches.
-
+            np.ndarray: Coordinates of shape ``(nsteps, ngroups, ntemps, nwalkers, ndim)``
+            (an array, not a dict).
         """
         return self.get_value("chain", **kwargs)
 
     def get_groups_running(self, **kwargs):
-        """Get the stored chain of MCMC samples
+        """Get the stored running-group masks.
 
         Args:
-            thin (int, optional): Take only every ``thin`` steps from the
-                chain. (default: ``1``)
-            discard (int, optional): Discard the first ``discard`` steps in
-                the chain as burn-in. (default: ``0``)
-            slice_vals (indexing np.ndarray or slice, optional): This is only available in :class:`eryn.backends.hdfbackend`.
-                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``.
-                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``.
-                This is particularly useful if files are very large and the user only wants a
-                small subset of the overall array. (default: ``None``)
+            **kwargs: ``thin`` and ``discard``, forwarded to :meth:`get_value`.
 
         Returns:
-            dict: The ``inds`` associated with the MCMC samples.
-                  The dictionary contains np.ndarrays of ``inds``
-                  across the branches indicated which leaves were used at each step.
-
+            np.ndarray: Booleans of shape ``(nsteps, ngroups)``.
         """
         return self.get_value("groups_running", **kwargs)
 
     def get_log_like(self, **kwargs):
-        """Get the chain of log Likelihood values evaluated at the MCMC samples
+        """Get the stored log-likelihood.
 
         Args:
-            thin (int, optional): Take only every ``thin`` steps from the
-                chain. (default: ``1``)
-            discard (int, optional): Discard the first ``discard`` steps in
-                the chain as burn-in. (default: ``0``)
-            slice_vals (indexing np.ndarray or slice, optional): This is only available in :class:`eryn.backends.hdfbackend`.
-                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``.
-                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``.
-                This is particularly useful if files are very large and the user only wants a
-                small subset of the overall array. (default: ``None``)
+            **kwargs: ``thin`` and ``discard``, forwarded to :meth:`get_value`.
 
         Returns:
-            double np.ndarray[nsteps, ntemps, nwalkers]: The chain of log likelihood values.
-
+            np.ndarray: Log-likelihood of shape ``(nsteps, ngroups, ntemps, nwalkers)``.
         """
         return self.get_value("log_like", **kwargs)
 
     def get_log_prior(self, **kwargs):
-        """Get the chain of log Prior evaluated at the MCMC samples
+        """Get the stored log-prior.
 
         Args:
-            thin (int, optional): Take only every ``thin`` steps from the
-                chain. (default: ``1``)
-            discard (int, optional): Discard the first ``discard`` steps in
-                the chain as burn-in. (default: ``0``)
-            slice_vals (indexing np.ndarray or slice, optional): This is only available in :class:`eryn.backends.hdfbackend`.
-                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``.
-                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``.
-                This is particularly useful if files are very large and the user only wants a
-                small subset of the overall array. (default: ``None``)
+            **kwargs: ``thin`` and ``discard``, forwarded to :meth:`get_value`.
 
         Returns:
-            double np.ndarray[nsteps, ntemps, nwalkers]: The chain of log prior values.
-
+            np.ndarray: Log-prior of shape ``(nsteps, ngroups, ntemps, nwalkers)``.
         """
         return self.get_value("log_prior", **kwargs)
 
+    # TODO check: keep/remove/document -- betas[:, :, None] misaligned if ntemps > 1; no callers
     def get_log_posterior(self, temper: bool = False, **kwargs):
-        """Get the chain of log posterior values evaluated at the MCMC samples
+        """Get the log-posterior ``beta * log_like + log_prior`` of every stored walker.
+
+        As written, the ``(nsteps, ngroups, ntemps)`` betas are expanded as
+        ``betas[:, :, None]``, which only lines up with the
+        ``(nsteps, ngroups, ntemps, nwalkers)`` log-likelihood when ``ntemps == 1``.
 
         Args:
-            temper (bool, optional): Apply tempering to the posterior values.
-                (default: ``False``)
-            thin (int, optional): Take only every ``thin`` steps from the
-                chain. (default: ``1``)
-            discard (int, optional): Discard the first ``discard`` steps in
-                the chain as burn-in. (default: ``0``)
-            slice_vals (indexing np.ndarray or slice, optional): This is only available in :class:`eryn.backends.hdfbackend`.
-                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``.
-                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``.
-                This is particularly useful if files are very large and the user only wants a
-                small subset of the overall array. (default: ``None``)
+            temper: If ``True``, weight the log-likelihood by the stored inverse
+                temperatures; otherwise use ``beta = 1``. Default ``False``.
+            **kwargs: ``thin`` and ``discard``, forwarded to :meth:`get_value`.
 
         Returns:
-            double np.ndarray[nsteps, ntemps, nwalkers]: The chain of log prior values.
-
+            np.ndarray: Log-posterior, intended shape ``(nsteps, ngroups, ntemps, nwalkers)``.
         """
         if temper:
             betas = self.get_betas(**kwargs)
@@ -329,38 +270,28 @@ class ParaBackend(object):
         return betas[:, :, None] * log_like + log_prior
 
     def get_betas(self, **kwargs):
-        """Get the chain of inverse temperatures
+        """Get the stored inverse temperatures.
 
         Args:
-            thin (int, optional): Take only every ``thin`` steps from the
-                chain. (default: ``1``)
-            discard (int, optional): Discard the first ``discard`` steps in
-                the chain as burn-in. (default: ``0``)
-            slice_vals (indexing np.ndarray or slice, optional): This is only available in :class:`eryn.backends.hdfbackend`.
-                If provided, slice the array directly from the HDF5 file with slice = ``slice_vals``.
-                ``thin`` and ``discard`` will be ignored if slice_vals is not ``None``.
-                This is particularly useful if files are very large and the user only wants a
-                small subset of the overall array. (default: ``None``)
+            **kwargs: ``thin`` and ``discard``, forwarded to :meth:`get_value`.
 
         Returns:
-            double np.ndarray[nsteps, ntemps]: The chain of temperatures.
-
-
+            np.ndarray: Inverse temperatures of shape ``(nsteps, ngroups, ntemps)``.
         """
         return self.get_value("betas", **kwargs)
 
     def get_a_sample(self, it):
-        """Access a sample in the chain
+        """Rebuild the :class:`~eryn.state.ParaState` of one stored step.
 
         Args:
-            it (int): iteration of ParaState to return.
+            it (int): Stored step index, ``0 <= it < iteration``.
 
         Returns:
-            ParaState: :class:`eryn.state.ParaState` object containing the sample from the chain.
+            ParaState: Coordinates, ``log_like``, ``log_prior``, ``groups_running``,
+            ``betas`` of step ``it`` and the backend's latest ``random_state``.
 
         Raises:
-            AttributeError: Backend is not initialized.
-
+            AttributeError: The backend is not initialized or nothing has been stored.
         """
         if (not self.initialized) or self.iteration <= 0:
             raise AttributeError(
@@ -383,11 +314,10 @@ class ParaBackend(object):
         return sample
 
     def get_last_sample(self):
-        """Access the most recent sample in the chain
+        """Rebuild the :class:`~eryn.state.ParaState` of the last stored step.
 
         Returns:
-            ParaState: :class:`eryn.state.ParaState` object containing the last sample from the chain.
-
+            ParaState: Equivalent to ``get_a_sample(iteration - 1)``.
         """
         it = self.iteration - 1
 
@@ -398,29 +328,32 @@ class ParaBackend(object):
     def get_evidence_estimate(
         self, discard=0, thin=1, return_error=True, method="therodynamic", **ss_kwargs
     ):
-        """Get an estimate of the evidence
+        """Estimate the log-evidence from the tempered chains (same methods as ``Backend``).
 
-        This function gets the sample information and uses
-        :func:`thermodynamic_integration_log_evidence` or
-        :func:`stepping_stone_log_evidence` to compute the evidence estimate.
+        The per-temperature inputs here keep the group axis: ``betas`` of shape
+        ``(ngroups, ntemps)`` and mean log-likelihoods of shape ``(ngroups, ntemps)``,
+        while :func:`~eryn.utils.utility.thermodynamic_integration_log_evidence` and
+        :func:`~eryn.utils.utility.stepping_stone_log_evidence` document 1D
+        ``(ntemps,)`` inputs; results for ``ngroups > 1`` are not verified.
 
         Args:
-            discard (int, optional): Discard the first ``discard`` steps in
-                the chain as burn-in. (default: ``0``)
-            thin (int, optional): Use only every ``thin`` steps from the
-                chain. The returned estimate is multiplied by ``thin`` so the
-                estimated time is in units of steps, not thinned steps.
-                (default: ``1``)
-            return_error (bool, optional): If True, return the error associated
-                with the log evidence estimate. (default: ``True``)
-            method (string, optional): Method to compute the evidence. Available
-                methods are the 'thermodynamic' and 'stepping-stone' (default: ``thermodynamic``)
+            discard (int, optional): Number of initial steps to drop. Default ``0``.
+            thin (int, optional): Use every ``thin``-th step. Default ``1``.
+            return_error (bool, optional): If ``True``, also return the error estimate.
+                Default ``True``.
+            method (str, optional): ``"therodynamic"`` (default; also
+                ``"thermodynamic integration"``, ``"thermo"``, ``"ti"``) or
+                ``"stepping-stone"`` (also ``"stepping stone"``, ``"ss"``, ``"step"``,
+                ``"stone"``); case-insensitive. Default ``"therodynamic"``.
+            **ss_kwargs: Forwarded to
+                :func:`~eryn.utils.utility.stepping_stone_log_evidence`.
 
         Returns:
-            double or tuple: Evidence estimate
-                If requesting the error on the estimate, will receive a tuple:
-                ``(logZ, dlogZ)``. Otherwise, just a double value of logZ.
+            float or tuple: ``logZ``, or ``(logZ, dlogZ)`` when ``return_error``.
 
+        Raises:
+            ValueError: The inverse temperatures vary over the selected steps, or an unknown
+                ``method``.
         """
         # get all the likelihood and temperature values
         logls_all = self.get_log_like(discard=discard, thin=thin)
@@ -463,38 +396,15 @@ class ParaBackend(object):
         else:
             return logZ
 
+    # TODO check: keep/remove/document -- broken: needs branch_names/ndims/get_inds; no callers
     def get_gelman_rubin_convergence_diagnostic(
         self, discard=0, thin=1, doprint=True, **psrf_kwargs
     ):
-        """
-        The Gelman - Rubin convergence diagnostic.
-        A general approach to monitoring convergence of MCMC output of multiple walkers.
-        The function makes a comparison of within-chain and between-chain variances.
-        A large deviation between these two variances indicates non-convergence, and
-        the output [Rhat] deviates from unity.
+        """Gelman-Rubin diagnostic copied from :class:`~eryn.backends.Backend` (not working).
 
-        Based on
-        a. Brooks, SP. and Gelman, A. (1998) General methods for monitoring convergence
-        of iterative simulations. Journal of Computational and Graphical Statistics, 7, 434-455
-        b. Gelman, A and Rubin, DB (1992) Inference from iterative simulation using multiple sequences,
-        Statistical Science, 7, 457-511.
-
-        Args:
-            C (np.ndarray[nwalkers, nsamples, ndim]): The parameter traces. The MCMC chains.
-            doprint (bool, optional): Flag to print the results on screen.
-        discard (int, optional): Discard the first ``discard`` steps in
-                the chain as burn-in. (default: ``0``)
-        thin (int, optional): Use only every ``thin`` steps from the
-                chain. The returned estimate is multiplied by ``thin`` so the
-                estimated time is in units of steps, not thinned steps.
-                (default: ``1``)
-        doprint (bool, optional): Flag to print a table with the results, per temperature.
-
-        Returns
-            dict:   ``Rhat_all_branches``:
-                Returns an estimate of the Gelman-Rubin convergence diagnostic ``Rhat``,
-                per temperature, stored in a dictionary, per branch name.
-
+        It reads ``self.branch_names``, ``self.ndims`` and ``self.get_inds``, which
+        :class:`ParaBackend` does not define, and indexes :meth:`get_chain` (an array) by
+        branch name, so it raises before computing anything.
         """
         Rhat_all_branches = dict()
         # Loop over the different models
@@ -543,22 +453,15 @@ class ParaBackend(object):
 
     @property
     def shape(self):
-        """The dimensions of the ensemble
-
-        Returns:
-            tuple: ``(ngroups, ntemps, nwalkers, ndim)``.
-
-        """
+        """tuple: Per-step coordinate shape ``(ngroups, ntemps, nwalkers, ndim)``."""
         return (self.ngroups, self.ntemps, self.nwalkers, self.ndim)
 
     def grow(self, ngrow, blobs):
-        """Expand the storage space by some number of samples
+        """Make room for ``ngrow`` more steps after the current :attr:`iteration`.
 
         Args:
-            ngrow (int): The number of steps to grow the chain.
-            blobs (None or np.ndarray): The current array of blobs. This is used to compute the
-                dtype for the blobs array.
-
+            ngrow (int): Number of steps that will be saved next.
+            blobs (object): Ignored (blobs are not stored).
         """
 
         # determine the number of entries in the chains
@@ -608,7 +511,7 @@ class ParaBackend(object):
         accepted,
         swaps_accepted=None,
     ):
-        """Check all the information going in is okay."""
+        """Raise ``ValueError`` if the state or acceptance arrays have the wrong shapes."""
 
         shape = self.shape
 
@@ -674,23 +577,23 @@ class ParaBackend(object):
         accepted,
         swaps_accepted=None,
     ):
-        """Save a step to the backend
+        """Write one step at index :attr:`iteration` and advance it.
+
+        ``cupy`` inputs are copied to the host (``.get()``); ``numpy`` inputs are stored
+        directly. Coordinates of groups that are not running are replaced by
+        ``store_missing_leaves``.
 
         Args:
-            state (ParaState): The :class:`ParaState` of the ensemble.
-            accepted (ndarray): An array of boolean flags indicating whether
-                or not the proposal for each walker was accepted.
-            rj_accepted (ndarray, optional): An array of the number of accepted steps
-                for the reversible jump proposal for each walker.
-                If :code:`self.rj` is True, then rj_accepted must be an array with
-                :code:`rj_accepted.shape == accepted.shape`. If :code:`self.rj`
-                is False, then rj_accepted must be None, which is the default.
-            swaps_accepted (ndarray, optional): 1D array with number of swaps accepted
-                for the in-model step. (default: ``None``)
-            moves_accepted_fraction (dict, optional): Dict of acceptance fraction arrays for all of the
-                moves in the sampler. This dict must have the same keys as ``self.move_keys``.
-                (default: ``None``)
+            state (ParaState): State to save; arrays of shape
+                ``(ngroups, ntemps, nwalkers, ...)`` and ``groups_running`` of shape
+                ``(ngroups,)``.
+            accepted (np.ndarray or cupy.ndarray): Acceptance counts of this step, shape
+                ``(ngroups, ntemps, nwalkers)``.
+            swaps_accepted (np.ndarray or cupy.ndarray, optional): Accepted swaps, shape
+                ``(ngroups, ntemps - 1)``. Default ``None``.
 
+        Raises:
+            ValueError: A shape mismatch.
         """
         # check to make sure all information in the state is okay
         self._check(

@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""Red-blue (split-ensemble) proposal base class.
+
+:class:`RedBlueMove` splits the walkers of every temperature into ``nsplits`` sub-ensembles
+and proposes each sub-ensemble in turn against the CURRENT positions of the others (the
+complement), as in Foreman-Mackey et al. (2013). Subclasses supply ``get_proposal``; the
+stock one is :class:`~eryn.moves.StretchMove`.
+"""
 import warnings
 from abc import ABC
 from copy import deepcopy
@@ -12,29 +19,29 @@ __all__ = ["RedBlueMove"]
 
 
 class RedBlueMove(Move, ABC):
-    """
-    An abstract red-blue ensemble move with parallelization as described in
-    `Foreman-Mackey et al. (2013) <https://arxiv.org/abs/1202.3665>`_.
+    """Abstract red-blue ensemble move (Foreman-Mackey et al. 2013, arXiv:1202.3665).
 
-    This class is heavily based on the original from ``emcee``.
+    Heavily based on the original from ``emcee``. In :meth:`propose`, the walkers of every
+    temperature row are assigned to ``nsplits`` equal sub-ensembles; each sub-ensemble in
+    turn is proposed with ``get_proposal(s, c, model.random, gibbs_ndim=...)`` where ``s``
+    holds its coordinates and ``c`` the current coordinates of the other sub-ensembles at
+    the SAME temperature, then accepted or rejected per walker with the move's (tempered)
+    log posterior. Supplementals are sliced to the sub-ensemble and merged back through
+    :meth:`~eryn.moves.Move.update`.
 
     Args:
-        nsplits (int, optional): The number of sub-ensembles to use. Each
-            sub-ensemble is updated in parallel using the other sets as the
-            complementary ensemble. The default value is ``2`` and you
-            probably won't need to change that.
-        randomize_split (bool, optional): Randomly shuffle walkers between
-            sub-ensembles. The same number of walkers will be assigned to
-            each sub-ensemble on each iteration. (default: ``True``)
-        live_dangerously (bool, optional): By default, an update will fail with
-            a ``RuntimeError`` if the number of walkers is smaller than twice
-            the dimension of the problem because the walkers would then be
-            stuck on a low dimensional subspace. This can be avoided by
-            switching between the stretch move and, for example, a
-            Metropolis-Hastings step. If you want to do this and suppress the
-            error, set ``live_dangerously = True``. Thanks goes (once again)
-            to @dstndstn for this wonderful terminology. (default: ``False``)
-        **kwargs (dict, optional): Kwargs for parent classes.
+        nsplits (int, optional): Number of sub-ensembles. Each one is updated using the
+            others as the complementary ensemble. Default ``2``.
+        randomize_split (bool, optional): Shuffle the walker-to-sub-ensemble assignment
+            (independently per temperature row) on every call, keeping the sub-ensemble
+            sizes equal. Default ``True``.
+        live_dangerously (bool, optional): By default :meth:`propose` raises
+            ``RuntimeError`` when ``nwalkers < 2 * sum(nleaves_max * ndim)`` over branches,
+            because the walkers would then be stuck on a low-dimensional subspace. Mixing in
+            other moves (e.g. a Metropolis-Hastings step) avoids that; set ``True`` to
+            suppress the error. (Thanks to @dstndstn for the terminology.) Default
+            ``False``.
+        **kwargs: Forwarded to :class:`~eryn.moves.Move`.
 
     """
 
@@ -47,57 +54,63 @@ class RedBlueMove(Move, ABC):
         self.randomize_split = randomize_split
 
     def setup(self, branches_coords):
-        """Any setup for the proposal.
+        """Hook run at the start of every :meth:`propose` (no-op here).
 
         Args:
-            branches_coords (dict): Keys are ``branch_names``. Values are
-                np.ndarray[ntemps, nwalkers, nleaves_max, ndim]. These are the curent
-                coordinates for all the walkers.
-
+            branches_coords (dict): The state's branches, ``{branch_name: Branch}`` (the
+                caller passes ``state.branches``); coordinates have shape
+                ``(ntemps, nwalkers, nleaves_max, ndim)``.
         """
 
     @classmethod
     def get_proposal(self, sample, complement, random, gibbs_ndim=None):
-        """Make a proposal
+        """Propose new coordinates for one sub-ensemble (implemented by subclasses).
 
         Args:
-            sample (dict): Keys are ``branch_names``. Values are
-                np.ndarray[ntemps, nwalkers, nleaves_max, ndim].
-            complement (dict): Keys are ``branch_names``. Values are lists of other
-                other np.ndarray[ntemps, nwalkers - subset size, nleaves_max, ndim] from
-                all other subsets. This is the compliment whose ``coords`` are
-                used to form the proposal for the ``sample`` subset.
-            random (object): Current random state of the sampler.
-            gibbs_ndim (int or np.ndarray, optional): If Gibbs sampling, this indicates
-                the true dimension. If given as an array, must have shape ``(ntemps, nwalkers)``.
-                See the tutorial for more information.
-                (default: ``None``)
+            sample (dict): ``{branch_name: coords}`` of the sub-ensemble being moved, shape
+                ``(ntemps, nsub, nleaves_max, ndim)``.
+            complement (dict): ``{branch_name: list}``; the list holds one
+                ``(ntemps, nsub_j, nleaves_max, ndim)`` coordinate array per OTHER
+                sub-ensemble, used to build the proposal for ``sample``.
+            random (object): Sampler random state (``model.random``).
+            gibbs_ndim (int, optional): Number of parameters actually being moved in this
+                Gibbs split; :meth:`propose` passes a scalar (the stock
+                :meth:`~eryn.moves.StretchMove.adjust_factors` cannot take an array). See the
+                tutorial. Default ``None``.
 
         Returns:
-            tuple: Tuple contained proposal information.
-                First entry is the new coordinates as a dictionary with keys
-                as ``branch_names`` and values as np.ndarray[ntemps, nwalkers, nleaves_max, ndim]
-                of new coordinates. Second entry is the factors associated with the
-                proposal necessary for detailed balance. This is effectively
-                any term in the detailed balance fraction. +log of factors if
-                in the numerator. -log of factors if in the denominator.
+            tuple[dict, np.ndarray]: ``(q, factors)``: proposed coordinates with the shape
+            of ``sample``, and the log proposal factors of shape ``(ntemps, nsub)`` added to
+            the log acceptance (``+log`` of numerator terms, ``-log`` of denominator terms).
 
+        Raises:
+            NotImplementedError: Always, in this base class.
         """
 
         raise NotImplementedError("The proposal must be implemented by " "subclasses")
 
     def propose(self, model, state):
-        """Use the move to generate a proposal and compute the acceptance
+        """Run one red-blue sweep over every Gibbs split and sub-ensemble.
+
+        For each Gibbs split and each sub-ensemble: propose with ``get_proposal``, restore
+        the parameters outside the split, score the proposal with
+        ``model.compute_log_prior_fn`` and ``model.compute_log_like_fn`` (NaN log-likelihoods
+        become ``-1e300`` with a warning), accept walkers with
+        ``factors + logP_new - logP_old > log(U)``, and merge them into ``state``. Ends with
+        :meth:`~eryn.moves.tempering.TemperatureControl.temper_comps` when a
+        ``temperature_control`` is set.
 
         Args:
-            model (:class:`eryn.model.Model`): Carrier of sampler information.
-            state (:class:`State`): Current state of the sampler.
+            model (:class:`eryn.model.Model`): Sampler callables and ``random``.
+            state (:class:`eryn.state.State`): Current state; updated in place.
 
         Returns:
-            tuple: (state, accepted)
-                The first return is the state of the sampler after the move.
-                The second return value is the accepted count array.
+            tuple[:class:`eryn.state.State`, np.ndarray]: ``(state, accepted)``; ``accepted``
+            is a boolean ``(ntemps, nwalkers)`` array, ``True`` where any proposal of the
+            sweep was accepted.
 
+        Raises:
+            RuntimeError: Too few walkers for the dimension and ``live_dangerously`` is off.
         """
         # Check that the dimensions are compatible.
         ndim_total = 0
