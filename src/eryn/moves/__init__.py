@@ -1,54 +1,33 @@
 # -*- coding: utf-8 -*-
 
-from .move import Move
-from .mh import MHMove
-from .gaussian import GaussianMove
-from .red_blue import RedBlueMove
-from .stretch import StretchMove
-from .de import DEMove, DESnookerMove
-from .infomatrix import InfoMatrixMove
-from .independentmh import IndependentProposalMove
-from .flow import ConditionalFlowMove
-from .flownuts import FlowNUTSMove
 
-# from .kde import KDEMove
-# from .walk import WalkMove
-from .nuts import NUTSMove, NUTSSampler
-from .tempering import TemperatureControl
-from .rj import ReversibleJumpMove
+from .combine import CombineMove
+from .de import DEMove, DESnookerMove
 from .distgen import DistributionGenerate
 from .distgenrj import DistributionGenerateRJ
 from .eigenaxis import EigenAxisMove
-from .gaussian import GaussianMove
-from .red_blue import RedBlueMove
-from .stretch import StretchMove
-from .de import DEMove, DESnookerMove
-from .infomatrix import InfoMatrixMove
-from .independentmh import IndependentProposalMove
 from .flow import ConditionalFlowMove
 from .flownuts import FlowNUTSMove
-
-# from .kde import KDEMove
-# from .walk import WalkMove
-from .tempering import TemperatureControl
-from .rj import ReversibleJumpMove
-from .distgen import DistributionGenerate
-from .distgenrj import DistributionGenerateRJ
-from .multipletry import MultipleTryMove
+from .gaussian import GaussianMove
 from .group import GroupMove
-from .groupstretch import GroupStretchMove
 from .groupde import GroupDEMove, GroupDESnookerMove
-from .combine import CombineMove
-
+from .groupstretch import GroupStretchMove
+from .independentmh import IndependentProposalMove
+from .infomatrix import InfoMatrixMove
+from .mh import MHMove
+from .move import Move
 # from .basicmodelswaprj import BasicSymmetricModelSwapRJMove
 from .mtdistgen import MTDistGenMove
 from .mtdistgenrj import MTDistGenMoveRJ
+from .multipletry import MultipleTryMove
 # from .walk import WalkMove
 from .nuts import NUTSMove, NUTSSampler
 from .red_blue import RedBlueMove
 from .ridgegibbs import RidgeGibbsMove
 from .rj import ReversibleJumpMove
 from .stretch import StretchMove
+# from .kde import KDEMove
+# from .walk import WalkMove
 from .tempering import TemperatureControl
 
 __all__ = [
